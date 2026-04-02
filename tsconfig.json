@@ -3,6 +3,11 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "paths": {
+      "@apolo-energies/auth": ["./node_modules/@apolo-energies/auth"],
+      "@apolo-energies/ui": ["./node_modules/@apolo-energies/ui"],
+      "@apolo-energies/icons": ["./node_modules/@apolo-energies/icons"]
+    },
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
