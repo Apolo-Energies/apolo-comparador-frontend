@@ -3,6 +3,7 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { authInterceptor, provideAuth } from '@apolo-energies/auth';
+import { environment } from '../environments/environment';
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
@@ -12,9 +13,9 @@ export const appConfig: ApplicationConfig = {
     provideClientHydration(withEventReplay()),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
     provideAuth({
-      signInPath: 'oauth/token',
+      signInPath: `${environment.apiUrl}/auth/login`,
       loginRedirect: '/',
-      homeRedirect: '/dashboard',
+      homeRedirect: '/dashboard/comparator',
     }),
   ],
 };
