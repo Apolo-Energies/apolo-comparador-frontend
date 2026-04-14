@@ -3,6 +3,15 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "paths": {
+      "@apolo-energies/auth": ["./node_modules/@apolo-energies/auth"],
+      "@apolo-energies/ui": ["./node_modules/@apolo-energies/ui"],
+      "@apolo-energies/icons": ["./node_modules/@apolo-energies/icons"],
+      "@apolo-energies/sidebar": ["./node_modules/@apolo-energies/sidebar"],
+      "@apolo-energies/header": ["./node_modules/@apolo-energies/header"],
+      "@apolo-energies/comparator": ["./node_modules/@apolo-energies/comparator"],
+      "@apolo-energies/table": ["./node_modules/@apolo-energies/table"]
+    },
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,

@@ -1,0 +1,73 @@
+<ui-dialog [open]="open()" [closeable]="true" maxWidth="max-w-lg" (openChange)="$event ? null : onCancel()">
+
+  <!-- Progress -->
+  <div class="px-6 pt-5 space-y-1.5">
+    <div class="flex justify-between text-sm text-muted-foreground">
+      <span>Progreso</span>
+      <span>{{ progress() }}%</span>
+    </div>
+    <ui-slider [value]="progress()" [min]="0" [max]="100" [step]="1" [disabled]="true" />
+    <p class="text-xs text-muted-foreground pt-1">Complete los datos básicos del usuario</p>
+  </div>
+
+  <!-- Form -->
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="px-6 py-4 space-y-4">
+
+    <!-- Full Name -->
+    <div class="space-y-1">
+      <ui-input
+        label="Nombre completo *"
+        placeholder="Erwin Leon"
+        [value]="form.controls.fullName.value ?? ''"
+        (valueChange)="form.controls.fullName.setValue($event); form.controls.fullName.markAsTouched()"
+      />
+      @if (form.controls.fullName.invalid && form.controls.fullName.touched) {
+        <p class="text-xs text-destructive">El nombre es obligatorio</p>
+      }
+    </div>
+
+    <!-- Email -->
+    <div class="space-y-1">
+      <ui-input
+        label="Email *"
+        type="email"
+        placeholder="erwin@renovae.com"
+        [value]="form.controls.email.value ?? ''"
+        (valueChange)="form.controls.email.setValue($event); form.controls.email.markAsTouched()"
+      />
+      @if (form.controls.email.invalid && form.controls.email.touched) {
+        <p class="text-xs text-destructive">Ingresa un email válido</p>
+      }
+    </div>
+
+    <!-- Role -->
+    <div class="space-y-1">
+      <ui-select
+        label="Rol *"
+        placeholder="Seleccionar rol"
+        [options]="roleOptions"
+        [value]="form.controls.role.value ?? ''"
+        (valueChange)="form.controls.role.setValue($event); form.controls.role.markAsTouched()"
+      />
+      @if (form.controls.role.invalid && form.controls.role.touched) {
+        <p class="text-xs text-destructive">El rol es obligatorio</p>
+      }
+    </div>
+
+    <!-- Phone (optional) -->
+    <ui-input
+      label="Teléfono"
+      placeholder="+34 612 345 678"
+      [value]="form.controls.phone.value ?? ''"
+      (valueChange)="form.controls.phone.setValue($event)"
+    />
+
+  </form>
+
+  <!-- Footer -->
+  <div class="px-6 pb-5 border-t border-border pt-4 flex items-center justify-between">
+    <ui-button label="Cancelar"      variant="outline"  size="md" (click)="onCancel()" />
+    <ui-button label="Crear Usuario" variant="default"  size="md" [disabled]="form.invalid" (click)="onSubmit()" />
+  </div>
+
+</ui-dialog>

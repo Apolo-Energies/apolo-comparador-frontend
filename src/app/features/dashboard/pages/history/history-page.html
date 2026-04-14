@@ -1,0 +1,92 @@
+<div class="border border-border rounded-lg overflow-hidden shadow-sm">
+
+  <!-- Cell templates -->
+  <ng-template #emailCellTpl let-row>
+    <span class="inline-flex items-center gap-1.5">
+      <lib-apolo-icons [icon]="emailIconSrc" class="flex items-center shrink-0" />
+      <span class="text-muted-foreground">{{ row.user?.email ?? '-' }}</span>
+    </span>
+  </ng-template>
+
+  <ng-template #dateCellTpl let-row>
+    <span class="inline-flex items-center gap-1.5">
+      <lib-apolo-icons [icon]="dateIconSrc" class="flex items-center shrink-0" />
+      <span>{{ formatDate(row.createdAt) }}</span>
+    </span>
+  </ng-template>
+
+  <!-- Header -->
+  <div class="bg-card px-6 py-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+      <ui-input
+        label="Usuario"
+        placeholder="Buscar por usuario..."
+        [value]="filterUser()"
+        [leadingIcon]="searchIcon"
+        (valueChange)="filterUser.set($event)"
+      />
+      <ui-input
+        label="Email"
+        placeholder="Buscar por email..."
+        [value]="filterEmail()"
+        [leadingIcon]="searchIcon"
+        (valueChange)="filterEmail.set($event)"
+      />
+      <ui-input
+        label="Fecha"
+        type="date"
+        [value]="filterDate()"
+        (valueChange)="filterDate.set($event); currentPage.set(1)"
+      />
+      <ui-input
+        label="CUPS"
+        placeholder="Buscar por CUPS..."
+        [value]="filterCups()"
+        [leadingIcon]="searchIcon"
+        (valueChange)="filterCups.set($event)"
+      />
+    </div>
+
+    <div class="flex justify-between items-center mt-4">
+      <ui-button label="Exportar" variant="secondary" size="md" [leadingIcon]="downloadIcon" />
+      <div class="flex gap-2">
+        <ui-button label="Limpiar" variant="secondary" size="md" [leadingIcon]="xIcon"      (click)="onClearFilters()" />
+        <ui-button label="Filtrar" variant="secondary" size="md" [leadingIcon]="filterIcon" (click)="onSearch()" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <lib-data-table
+    [data]="data()"
+    [columns]="columns"
+    rowKey="id"
+    [borderTop]="false"
+    [borderBottom]="false"
+    [borderLeft]="false"
+    [borderRight]="false"
+    [roundedTopLeft]="false"
+    [roundedTopRight]="false"
+    [roundedBottomLeft]="false"
+    [roundedBottomRight]="false"
+  />
+
+  <!-- Paginator -->
+  <lib-paginator
+    [currentPage]="currentPage()"
+    [totalPages]="totalPages()"
+    [totalCount]="totalCount()"
+    [pageSize]="pageSize()"
+    [borderTop]="false"
+    [borderBottom]="false"
+    [borderLeft]="false"
+    [borderRight]="false"
+    [roundedTopLeft]="false"
+    [roundedTopRight]="false"
+    [roundedBottomLeft]="false"
+    [roundedBottomRight]="false"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+</div>
