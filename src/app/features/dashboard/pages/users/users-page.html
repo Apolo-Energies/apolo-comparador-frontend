@@ -1,0 +1,80 @@
+<ui-alert />
+
+<div class="border border-border rounded-lg overflow-hidden shadow-sm">
+
+  <!-- Header -->
+  <div class="bg-card px-6 py-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+      <ui-input
+        label="Nombre"
+        placeholder="Buscar por nombre..."
+        [value]="filterName()"
+        [leadingIcon]="searchIcon"
+        (valueChange)="filterName.set($event)"
+      />
+      <ui-input
+        label="Email"
+        placeholder="Buscar por email..."
+        [value]="filterEmail()"
+        [leadingIcon]="searchIcon"
+        (valueChange)="filterEmail.set($event)"
+      />
+      <ui-select
+        label="Rol"
+        [options]="roleOptions"
+        [value]="filterRole()"
+        [leadingIcon]="filterIcon"
+        (valueChange)="filterRole.set($event)"
+      />
+      <div class="flex gap-2 justify-end">
+        <ui-button label="Limpiar" variant="secondary" size="md" [leadingIcon]="xIcon"        (click)="onClearFilters()" />
+        <ui-button label="Buscar"  variant="secondary" size="md" [leadingIcon]="searchIcon"   (click)="onSearch()" />
+      </div>
+    </div>
+
+    <div class="flex gap-2 justify-between items-center mt-4">
+      <ui-button label="Exportar"        variant="secondary" size="md" [leadingIcon]="downloadIcon" />
+      <ui-button label="Agregar Usuario" variant="default"   size="md" [leadingIcon]="starIcon" (click)="modalOpen.set(true)" />
+    </div>
+  </div>
+
+  <!-- Table -->
+  <lib-data-table
+    [data]="data()"
+    [columns]="columns"
+    rowKey="id"
+    [borderTop]="false"
+    [borderBottom]="false"
+    [borderLeft]="false"
+    [borderRight]="false"
+    [roundedTopLeft]="false"
+    [roundedTopRight]="false"
+    [roundedBottomLeft]="false"
+    [roundedBottomRight]="false"
+  />
+
+  <!-- Paginator -->
+  <lib-paginator
+    [currentPage]="currentPage()"
+    [totalPages]="totalPages()"
+    [totalCount]="totalCount()"
+    [pageSize]="pageSize()"
+    [borderTop]="false"
+    [borderBottom]="false"
+    [borderLeft]="false"
+    [borderRight]="false"
+    [roundedTopLeft]="false"
+    [roundedTopRight]="false"
+    [roundedBottomLeft]="false"
+    [roundedBottomRight]="false"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+</div>
+
+<app-add-user-modal
+  [open]="modalOpen()"
+  (saved)="onSaved()"
+  (cancelled)="modalOpen.set(false)"
+/>

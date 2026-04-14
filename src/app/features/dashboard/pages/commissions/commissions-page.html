@@ -1,0 +1,61 @@
+<ui-alert />
+
+<!-- Actions cell template -->
+<ng-template #actionsTpl let-row>
+  <button
+    class="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+    (click)="onEdit(row)"
+  >
+    <lib-apolo-icons [icon]="editIcon" class="flex items-center" />
+    Editar
+  </button>
+</ng-template>
+
+<div class="border border-border rounded-lg overflow-hidden shadow-sm">
+
+  <!-- Header -->
+  <div class="bg-card px-6 py-4 flex justify-end">
+    <ui-button label="Agregar Comisión" variant="default" size="md" [leadingIcon]="starIcon" (click)="modalOpen.set(true)" />
+  </div>
+
+  <!-- Table -->
+  <lib-data-table
+    [data]="data()"
+    [columns]="columns"
+    rowKey="id"
+    [borderTop]="false"
+    [borderBottom]="false"
+    [borderLeft]="false"
+    [borderRight]="false"
+    [roundedTopLeft]="false"
+    [roundedTopRight]="false"
+    [roundedBottomLeft]="false"
+    [roundedBottomRight]="false"
+  />
+
+  <!-- Paginator -->
+  <lib-paginator
+    [currentPage]="currentPage()"
+    [totalPages]="totalPages()"
+    [totalCount]="totalCount()"
+    [pageSize]="pageSize()"
+    [borderTop]="false"
+    [borderBottom]="false"
+    [borderLeft]="false"
+    [borderRight]="false"
+    [roundedTopLeft]="false"
+    [roundedTopRight]="false"
+    [roundedBottomLeft]="false"
+    [roundedBottomRight]="false"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+</div>
+
+<app-add-commission-modal
+  [open]="modalOpen()"
+  [editData]="editData()"
+  (saved)="onSaved()"
+  (cancelled)="onCancelled()"
+/>

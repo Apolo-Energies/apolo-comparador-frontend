@@ -2,6 +2,10 @@
 @source "../node_modules/@apolo-energies/auth";
 @source "../node_modules/@apolo-energies/ui";
 @source "../node_modules/@apolo-energies/icons";
+@source "../node_modules/@apolo-energies/sidebar";
+@source "../node_modules/@apolo-energies/header";
+@source "../node_modules/@apolo-energies/comparator";
+@source "../node_modules/@apolo-energies/table";
 
 @layer theme, base, components, utilities;
 
@@ -47,6 +51,31 @@
   html, body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+  }
+
+  /* Date input: color scheme oscuro para el picker del sistema */
+  input[type="date"] {
+    color-scheme: dark;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: brightness(0) invert(1) opacity(0.6) !important;
+    cursor: pointer;
+  }
+
+  /* Placeholder del date input (formato dd/mm/aaaa) en color muted */
+  input[type="date"]::-webkit-datetime-edit-text,
+  input[type="date"]::-webkit-datetime-edit-month-field,
+  input[type="date"]::-webkit-datetime-edit-day-field,
+  input[type="date"]::-webkit-datetime-edit-year-field {
+    color: var(--color-muted-foreground);
+  }
+  input[type="date"]::-webkit-datetime-edit-month-field:focus,
+  input[type="date"]::-webkit-datetime-edit-day-field:focus,
+  input[type="date"]::-webkit-datetime-edit-year-field:focus {
+    background-color: var(--color-primary);
+    color: var(--color-primary-foreground);
+    border-radius: 2px;
   }
 
   input:-webkit-autofill {
