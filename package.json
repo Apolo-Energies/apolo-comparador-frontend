@@ -6,8 +6,7 @@
     "start": "ng serve",
     "build": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
-    "serve:ssr:r-comparator-frontend": "node dist/r-comparator-frontend/server/server.mjs"
+    "test": "ng test"
   },
   "private": true,
   "packageManager": "npm@11.6.2",
@@ -19,7 +18,6 @@
     "@angular/platform-browser": "^21.2.7",
     "@angular/platform-server": "^21.2.7",
     "@angular/router": "^21.2.7",
-    "@angular/ssr": "^21.2.1",
     "@apolo-energies/auth": "^0.0.12",
     "@apolo-energies/comparator": "^0.0.2",
     "@apolo-energies/header": "^0.0.1",
@@ -29,7 +27,6 @@
     "@apolo-energies/table": "^0.0.1",
     "@apolo-energies/ui": "^0.0.7",
     "date-fns": "^4.1.0",
-    "express": "^5.1.0",
     "ngx-permissions": "^19.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
