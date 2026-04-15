@@ -1,8 +1,8 @@
 {
   "framework": null,
   "installCommand": "npm install --include=dev",
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist/r-comparator-frontend/browser",
+  "buildCommand": "npm run build && (test -d dist/r-comparator-frontend/browser && cp -r dist/r-comparator-frontend/browser/. dist/r-comparator-frontend/ || true)",
+  "outputDirectory": "dist/r-comparator-frontend",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
