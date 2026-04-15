@@ -1,0 +1,89 @@
+<div class="p-6 bg-card h-116.5 rounded-lg border border-border shadow-lg">
+  <p class="text-lg font-semibold mb-4">{{ title() }}</p>
+
+  <div class="h-87.5">
+    <svg
+      #svgEl
+      width="100%"
+      height="100%"
+      [attr.height]="CHART_H"
+      style="display: block"
+      (mouseleave)="tooltipClear()"
+    >
+      @if (w() > 0) {
+
+        <!-- Horizontal grid lines + Y labels -->
+        @for (tick of gridLines(); track tick.label) {
+          <line
+            [attr.x1]="PAD_L"
+            [attr.y1]="tick.y"
+            [attr.x2]="w() - PAD_R"
+            [attr.y2]="tick.y"
+            stroke="#323438"
+            stroke-width="1"
+          />
+
+          <text
+            [attr.x]="PAD_L - 8"
+            [attr.y]="tick.y"
+            fill="#94a3b8"
+            [attr.font-size]="Y_LABEL_FONT_SIZE"
+            text-anchor="end"
+            dominant-baseline="middle"
+          >
+            {{ tick.label }}
+          </text>
+        }
+
+        <!-- Bars + X labels -->
+        @for (bar of bars(); track bar.label; let i = $index) {
+          @if (bar.h > 0) {
+            <path
+              [attr.d]="barPath(bar)"
+              [attr.fill]="hoveredBar() === i ? '#9b88f5' : BAR_COLOR"
+              (mouseenter)="tooltipSet(bar, i)"
+              (mouseleave)="tooltipClear()"
+              style="cursor: default"
+            />
+          }
+
+          <text
+            [attr.x]="bar.x + bar.w / 2"
+            [attr.y]="CHART_H - PAD_B + 18"
+            fill="#94a3b8"
+            [attr.font-size]="X_LABEL_FONT_SIZE"
+            text-anchor="middle"
+          >
+            {{ bar.label }}
+          </text>
+        }
+
+        <!-- Tooltip -->
+        @if (tooltip()) {
+          <g>
+            <rect
+              [attr.x]="clampX(tooltip()!.x - 40)"
+              [attr.y]="tooltip()!.y - 28"
+              width="80"
+              height="26"
+              rx="6"
+              fill="#1e293b"
+              stroke="#334155"
+              stroke-width="1"
+            />
+
+            <text
+              [attr.x]="clampX(tooltip()!.x - 40) + 40"
+              [attr.y]="tooltip()!.y - 11"
+              fill="#fff"
+              [attr.font-size]="TOOLTIP_FONT_SIZE"
+              text-anchor="middle"
+            >
+              {{ tooltip()!.label }}: {{ fmt(tooltip()!.value) }}
+            </text>
+          </g>
+        }
+      }
+    </svg>
+  </div>
+</div>

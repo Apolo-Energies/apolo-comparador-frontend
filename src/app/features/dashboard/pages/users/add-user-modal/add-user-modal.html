@@ -17,12 +17,12 @@
     <div class="space-y-1">
       <ui-input
         label="Nombre completo *"
-        placeholder="Erwin Leon"
+        placeholder="Renovae SL"
         [value]="form.controls.fullName.value ?? ''"
         (valueChange)="form.controls.fullName.setValue($event); form.controls.fullName.markAsTouched()"
       />
       @if (form.controls.fullName.invalid && form.controls.fullName.touched) {
-        <p class="text-xs text-destructive">El nombre es obligatorio</p>
+        <p class="text-xs text-red-500">El nombre es obligatorio</p>
       }
     </div>
 
@@ -31,12 +31,12 @@
       <ui-input
         label="Email *"
         type="email"
-        placeholder="erwin@renovae.com"
+        placeholder="renovae@renovae.com"
         [value]="form.controls.email.value ?? ''"
         (valueChange)="form.controls.email.setValue($event); form.controls.email.markAsTouched()"
       />
       @if (form.controls.email.invalid && form.controls.email.touched) {
-        <p class="text-xs text-destructive">Ingresa un email válido</p>
+        <p class="text-xs text-red-500">Ingresa un email válido</p>
       }
     </div>
 
@@ -50,7 +50,7 @@
         (valueChange)="form.controls.role.setValue($event); form.controls.role.markAsTouched()"
       />
       @if (form.controls.role.invalid && form.controls.role.touched) {
-        <p class="text-xs text-destructive">El rol es obligatorio</p>
+        <p class="text-xs text-red-500">El rol es obligatorio</p>
       }
     </div>
 

@@ -46,12 +46,16 @@ export class CommissionService {
     return this.http.get<CommissionPaged>(`${environment.apiUrl}/commission`, { params });
   }
 
+  getAllCommissions() {
+    return this.http.get<{ result: CommissionRow[] }>(`${environment.apiUrl}/commission/all`);
+  }
+
   create(data: CreateCommissionRequest) {
     return this.http.post<{ result: CommissionRow }>(`${environment.apiUrl}/commission`, data);
   }
 
   update(id: string, data: CreateCommissionRequest) {
-    return this.http.put<{ result: CommissionRow }>(`${environment.apiUrl}/commission/${id}`, data);
+    return this.http.patch<{ result: CommissionRow }>(`${environment.apiUrl}/commission/${id}`, data);
   }
 
   delete(id: string) {

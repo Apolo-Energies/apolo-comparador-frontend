@@ -1,30 +1,30 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, PLATFORM_ID } from '@angular/core';
+import {
+  AfterViewInit, ChangeDetectionStrategy, Component, computed,
+  inject, signal, PLATFORM_ID, TemplateRef, ViewChild,
+} from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
 import { AlertComponent, ButtonComponent, InputFieldComponent, SelectFieldComponent, SelectOption } from '@apolo-energies/ui';
 import { DownloadIcon, filterIcon, SearchIcon, StarIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
 import { UserService } from '../../../../services/user.service';
 import { AddUserModalComponent } from './add-user-modal/add-user-modal';
-
-interface UserRow {
-  id:             string;
-  fullName:       string;
-  email:          string;
-  phone:          string;
-  role:           string;
-  isActive:       boolean;
-  isEnergyExpert: boolean;
-  commissions:    { commissionType: { name: string } }[];
-}
+import { UserActionsMenuComponent, UserRow } from './user-actions-menu/user-actions-menu.component';
+import { getRoleLabel, UserRole } from '../../../../entities/user-role';
 
 @Component({
   selector: 'app-users-page',
   standalone: true,
-  imports: [DataTableComponent, PaginatorComponent, InputFieldComponent, SelectFieldComponent, ButtonComponent, AlertComponent, AddUserModalComponent],
+  imports: [
+    DataTableComponent, PaginatorComponent, InputFieldComponent,
+    SelectFieldComponent, ButtonComponent, AlertComponent,
+    AddUserModalComponent, UserActionsMenuComponent,
+  ],
   templateUrl: './users-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class UsersPageComponent {
+export class UsersPageComponent implements AfterViewInit {
+  @ViewChild('actionsTpl') private actionsTpl!: TemplateRef<{ $implicit: UserRow }>;
+
   private userService = inject(UserService);
   private platformId  = inject(PLATFORM_ID);
 
@@ -50,13 +50,33 @@ export class UsersPageComponent {
 
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.pageSize())));
 
+  readonly columns = signal<TableColumn<UserRow>[]>([
+    { key: 'fullName', label: 'Nombre' },
+    { key: 'email',    label: 'Email', textColor: 'text-muted-foreground' },
+    // { key: 'phone',    label: 'Teléfono' },
+    { key: 'role',     label: 'Rol', align: 'center', format: row => getRoleLabel(row.role) },
+    { key: 'isActive', label: 'Estado', align: 'center',
+      format: row => row.isActive ? 'Activo' : 'Inactivo' },
+    { key: 'isEnergyExpert', label: 'Energy Expert', align: 'center',
+      format: row => row.isEnergyExpert ? 'Sí' : 'No' },
+    { key: 'commissions', label: 'Comisión', align: 'center',
+      format: row => row.commissions?.find(c => c.isActive)?.commissionType?.name ?? '-' },
+  ]);
+
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
       this.load();
     }
   }
 
-  private load() {
+  ngAfterViewInit(): void {
+    this.columns.update(cols => [
+      ...cols,
+      { key: 'actions', label: '', align: 'center', cellTemplate: this.actionsTpl },
+    ]);
+  }
+
+  load() {
     this.userService.getByFilters({
       fullName: this.filterName()  || undefined,
       email:    this.filterEmail() || undefined,
@@ -105,16 +125,4 @@ export class UsersPageComponent {
     { value: 'Tester',        label: 'Tester' },
   ];
 
-  readonly columns: TableColumn<UserRow>[] = [
-    { key: 'fullName', label: 'Nombre' },
-    { key: 'email',    label: 'Email', textColor: 'text-muted-foreground' },
-    { key: 'phone',    label: 'Teléfono' },
-    { key: 'role',     label: 'Rol', align: 'center' },
-    { key: 'isActive', label: 'Estado', align: 'center',
-      format: row => row.isActive ? 'Activo' : 'Inactivo' },
-    { key: 'isEnergyExpert', label: 'Energy Expert', align: 'center',
-      format: row => row.isEnergyExpert ? 'Sí' : 'No' },
-    { key: 'commissions', label: 'Comisión', align: 'center',
-      format: row => row.commissions?.[0]?.commissionType?.name ?? '-' },
-  ];
 }
