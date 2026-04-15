@@ -1,0 +1,149 @@
+<button type="button"
+  class="inline-flex items-center gap-2 h-9 px-3.5 rounded-md border border-border bg-card text-sm font-medium text-foreground hover:bg-accent transition-colors"
+  (click)="toggleOpen()">
+  <!-- Calendar icon -->
+  <svg class="w-4 h-4 text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+    <line x1="16" y1="2" x2="16" y2="6" />
+    <line x1="8" y1="2" x2="8" y2="6" />
+    <line x1="3" y1="10" x2="21" y2="10" />
+  </svg>
+  {{ buttonLabel() }}
+</button>
+
+<!-- ── Dropdown panel ─────────────────────────────────────────────────── -->
+@if (isOpen()) {
+<div class="absolute top-full left-0 mt-2 z-50 bg-card border border-border rounded-xl shadow-2xl flex overflow-hidden"
+  style="min-width: 680px">
+
+  <!-- LEFT sidebar: tabs + presets -->
+  <div class="flex flex-col border-r border-border p-4 gap-1" style="width: 180px">
+
+    <!-- Tabs -->
+    <button type="button" class="w-full text-left px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
+      [class.bg-accent]="activeTab() === CalendarTab.DATES"
+      [class.text-foreground]="activeTab() === CalendarTab.DATES"
+      [class.text-muted-foreground]="activeTab() !== CalendarTab.DATES"
+      (click)="activeTab.set(CalendarTab.DATES)">Fechas</button>
+
+    <button type="button"
+      class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors opacity-40 cursor-not-allowed"
+      disabled title="Próximamente">Meses</button>
+
+    <!-- Quick presets -->
+    <p class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mt-3 mb-1 px-3">Rápidos</p>
+
+    @for (preset of datePresets; track preset.days) {
+    <button type="button"
+      class="w-full text-left px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+      (click)="applyPreset(preset.days)">{{ preset.label }}</button>
+    }
+
+    <!-- Spacer + Clear -->
+    <div class="flex-1"></div>
+    <button type="button"
+      class="w-full text-left px-3 py-1.5 rounded-lg text-sm text-primary hover:bg-accent transition-colors mt-3"
+      (click)="onClear()">Limpiar</button>
+  </div>
+
+  <!-- RIGHT: dual calendar + apply -->
+  <div class="flex flex-col flex-1">
+
+    <!-- Calendars row -->
+    <div class="flex flex-1 divide-x divide-border">
+
+      <!-- Left calendar -->
+      <div class="relative flex-1 p-4" style="min-width: 260px">
+        <!-- Prev arrow -->
+        <button type="button"
+          class="absolute left-3 top-4 p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+          (click)="prevMonth()">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+
+        <p class="text-sm font-semibold text-foreground text-center mb-3">{{ leftTitle() }}</p>
+
+        <div class="grid grid-cols-7 mb-1">
+          @for (d of DAY_ABBR; track d) {
+          <span class="text-center text-[11px] font-medium text-muted-foreground py-1">{{ d }}</span>
+          }
+        </div>
+
+        @for (week of leftCalendar(); track $index) {
+        <div class="grid grid-cols-7">
+          @for (day of week; track $index) {
+          <button type="button"
+            class="relative flex items-center justify-center text-[13px] h-8 w-full transition-colors"
+            [class.text-muted-foreground]="!day.isCurrentMonth"
+            [class.text-foreground]="day.isCurrentMonth && !isRangeEdge(day.date)"
+            [class.font-semibold]="day.isToday"
+            [class.bg-primary]="isRangeEdge(day.date)"
+            [class.text-primary-foreground]="isRangeEdge(day.date)"
+            [class.rounded-full]="isRangeEdge(day.date)"
+            [class.bg-primary/15]="isInRange(day.date)"
+            [class.hover:bg-accent]="!isRangeEdge(day.date)"
+            (click)="onDayClick(day.date)"
+            (mouseenter)="onDayHover(day.date)"
+            (mouseleave)="onDayLeave()">{{ day.date.getDate() }}</button>
+          }
+        </div>
+        }
+      </div>
+
+      <!-- Right calendar -->
+      <div class="relative flex-1 p-4" style="min-width: 260px">
+        <!-- Next arrow -->
+        <button type="button"
+          class="absolute right-3 top-4 p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+          (click)="nextMonth()">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+
+        <p class="text-sm font-semibold text-foreground text-center mb-3">{{ rightTitle() }}</p>
+
+        <div class="grid grid-cols-7 mb-1">
+          @for (d of DAY_ABBR; track d) {
+          <span class="text-center text-[11px] font-medium text-muted-foreground py-1">{{ d }}</span>
+          }
+        </div>
+
+        @for (week of rightCalendar(); track $index) {
+        <div class="grid grid-cols-7">
+          @for (day of week; track $index) {
+          <button type="button"
+            class="relative flex items-center justify-center text-[13px] h-8 w-full transition-colors"
+            [class.text-muted-foreground]="!day.isCurrentMonth"
+            [class.text-foreground]="day.isCurrentMonth && !isRangeEdge(day.date)"
+            [class.font-semibold]="day.isToday"
+            [class.bg-primary]="isRangeEdge(day.date)"
+            [class.text-primary-foreground]="isRangeEdge(day.date)"
+            [class.rounded-full]="isRangeEdge(day.date)"
+            [class.bg-primary/15]="isInRange(day.date)"
+            [class.hover:bg-accent]="!isRangeEdge(day.date)"
+            (click)="onDayClick(day.date)"
+            (mouseenter)="onDayHover(day.date)"
+            (mouseleave)="onDayLeave()">{{ day.date.getDate() }}</button>
+          }
+        </div>
+        }
+      </div>
+
+    </div>
+
+    <!-- Apply / footer -->
+    <div class="flex items-center justify-end gap-3 px-4 py-3 border-t border-border">
+      <button type="button"
+        class="px-5 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
+        (click)="onApply()">
+        Aplicar
+      </button>
+    </div>
+
+  </div>
+</div>
+}
