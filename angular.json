@@ -19,6 +19,10 @@
           "options": {
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
+            "outputPath": {
+              "base": "dist/r-comparator-frontend",
+              "browser": ""
+            },
             "assets": [
               {
                 "glob": "**/*",
