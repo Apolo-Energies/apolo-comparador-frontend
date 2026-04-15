@@ -4,7 +4,6 @@ import { provideClientHydration, withEventReplay } from '@angular/platform-brows
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
 import { authInterceptor, AuthService, provideAuth } from '@apolo-energies/auth';
-import { provideSips } from '@apolo-energies/sips';
 import { environment } from '../environments/environment';
 import { routes } from './app.routes';
 import { tokenExpiryInterceptor } from './interceptors/token-expiry.interceptor';
@@ -28,10 +27,6 @@ export const appConfig: ApplicationConfig = {
       signInPath: `${environment.apiUrl}/auth/login`,
       loginRedirect: '/',
       homeRedirect: '/dashboard/comparator',
-    }),
-    provideSips({
-      sipsPath:  `${environment.apiUrl}/sips`,
-      excelPath: `${environment.apiUrl}/sips/excel`,
     }),
     {
       provide: APP_INITIALIZER,

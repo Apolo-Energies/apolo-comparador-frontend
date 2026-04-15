@@ -4,7 +4,7 @@
 
   <!-- Header -->
   <div class="bg-card px-6 py-5">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
       <ui-input
         label="Nombre"
         placeholder="Buscar por nombre..."
@@ -38,10 +38,15 @@
     </div>
   </div>
 
+  <!-- Actions cell template: gear icon per row -->
+  <ng-template #actionsTpl let-row>
+    <app-user-actions-menu [user]="row" (updated)="load()" />
+  </ng-template>
+
   <!-- Table -->
   <lib-data-table
     [data]="data()"
-    [columns]="columns"
+    [columns]="columns()"
     rowKey="id"
     [borderTop]="false"
     [borderBottom]="false"

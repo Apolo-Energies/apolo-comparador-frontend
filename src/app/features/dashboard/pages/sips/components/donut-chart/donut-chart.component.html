@@ -1,0 +1,66 @@
+<div class="bg-card rounded-lg border border-border p-6 shadow-sm">
+  <div>
+
+    <p class="text-lg font-medium text-foreground">{{ title() }}</p>
+    <p class="text-4xl font-bold">{{ value() }}</p>
+
+    <div class="flex items-center gap-4 p-1 rounded-md">
+      <p class="text-sm text-muted-foreground">Últimos 12 meses</p>
+      @if (trend()) {
+      <div class="flex items-center gap-1 px-1 py-0.5 rounded-md text-[10px] font-medium" [style.background]="trendBg()"
+        [style.color]="trendColor()">
+        @if (trend()!.trend === 'up') {
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+          <polyline points="16 7 22 7 22 13" />
+        </svg>
+        }
+        @if (trend()!.trend === 'down') {
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 17 13.5 8.5 8.5 13.5 2 7" />
+          <polyline points="16 17 22 17 22 11" />
+        </svg>
+        }
+        {{ trendLabel() }}
+      </div>
+      }
+    </div>
+  </div>
+
+  <!-- Legend left + pie right -->
+  <div class="flex items-center h-80">
+    <div class="flex flex-col gap-4 min-w-25">
+      @for (s of slices(); track s.label) {
+      <div class="flex items-center gap-2">
+        <span [style.width.px]="12" [style.height.px]="12" [style.border-radius]="'50%'"
+          [style.display]="'inline-block'" [style.flex-shrink]="0" [style.border]="'3px solid ' + s.fill"
+          [style.background]="'transparent'"></span>
+        <span class="text-sm text-muted-foreground">{{ s.label }}</span>
+      </div>
+      }
+    </div>
+
+    <!-- Pie SVG — always in DOM so ResizeObserver fires -->
+    <div class="flex-1 h-full" #pieContainer>
+      <svg #svgEl width="100%" height="100%" style="display:block">
+        @if (pieW() > 0 && pieH() > 0) {
+        @for (s of slices(); track s.label) {
+        <path [attr.d]="s.d" [attr.fill]="s.fill" stroke="none">
+          <title>{{ s.label }}: {{ s.percent }}%</title>
+        </path>
+        @if (s.percent >= 5) {
+        <text [attr.x]="s.lx" [attr.y]="s.ly" fill="#fff" text-anchor="middle" dominant-baseline="central"
+          font-size="12" font-weight="500">{{ s.percent }}%</text>
+        }
+        }
+        @if (!slices().length) {
+        <circle [attr.cx]="pieW() / 2" [attr.cy]="pieH() / 2" [attr.r]="outerR()" fill="none" stroke="#323438"
+          [attr.stroke-width]="outerR() - innerR()" />
+        }
+        }
+      </svg>
+    </div>
+  </div>
+</div>
