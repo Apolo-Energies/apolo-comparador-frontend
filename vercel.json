@@ -1,0 +1,6 @@
+{
+  "outputDirectory": "dist/r-comparator-frontend/browser",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

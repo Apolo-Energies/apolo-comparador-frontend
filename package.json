@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build --configuration production && cp dist/r-comparator-frontend/browser/index.csr.html dist/r-comparator-frontend/browser/index.html",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:r-comparator-frontend": "node dist/r-comparator-frontend/server/server.mjs"
