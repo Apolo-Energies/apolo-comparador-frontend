@@ -4,9 +4,7 @@ import { AuthLayout } from './layout/auth-layout';
 import { guestGuard } from '../../guards/guest.guard';
 
 const slides: LoginSlide[] = [
-  { src: '/images/login/image1.webp', alt: 'Descripción imagen 1' },
-  { src: '/images/login/image2.webp', alt: 'Descripción imagen 2' },
-  { src: '/images/login/image3.webp', alt: 'Descripción imagen 3' },
+  { src: '/images/login/image3.png', alt: 'Slide of Coexpal' },
 ];
 
 export const AUTH_ROUTES: Routes = [
