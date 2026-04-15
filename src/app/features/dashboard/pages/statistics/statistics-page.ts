@@ -4,11 +4,12 @@ import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-ener
 import { ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
 import { DownloadIcon, filterIcon, SearchIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
 import { StatisticsService, StatisticsRow } from '../../../../services/statistics.service';
+import { StatisticsDashboardComponent } from './components/statistics-dashboard/statistics-dashboard';
 
 @Component({
   selector: 'app-statistics-page',
   standalone: true,
-  imports: [DataTableComponent, PaginatorComponent, InputFieldComponent, ButtonComponent],
+  imports: [DataTableComponent, PaginatorComponent, InputFieldComponent, ButtonComponent, StatisticsDashboardComponent],
   templateUrl: './statistics-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
