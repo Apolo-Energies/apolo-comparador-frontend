@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build --configuration production && if [ -f dist/r-comparator-frontend/browser/index.csr.html ]; then cp dist/r-comparator-frontend/browser/index.csr.html dist/r-comparator-frontend/browser/index.html; fi",
+    "build": "npx ng build --configuration production && cp dist/r-comparator-frontend/browser/index.csr.html dist/r-comparator-frontend/browser/index.html || true",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:r-comparator-frontend": "node dist/r-comparator-frontend/server/server.mjs"
@@ -35,6 +35,7 @@
     "tslib": "^2.3.0"
   },
   "devDependencies": {
+    "@angular-devkit/build-angular": "^21.2.7",
     "@angular/build": "^21.2.1",
     "@angular/cli": "^21.2.1",
     "@angular/compiler-cli": "^21.2.0",
