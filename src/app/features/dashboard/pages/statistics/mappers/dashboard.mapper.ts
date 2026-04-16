@@ -48,9 +48,9 @@ export function mapSummaryToKpis(result: SummaryApiResult): KpiCardViewModel[] {
     {
       id:          'cups',
       label:       'Numero de CUPS presupuestado',
-      value:       result.totalCUPS.toLocaleString(NUMBER_LOCALE),
-      percent:     result.percentCUPS,
-      trend:       toTrend(result.percentCUPS),
+      value:       result.totalCups.toLocaleString(NUMBER_LOCALE),
+      percent:     result.percentCups,
+      trend:       toTrend(result.percentCups),
       description: 'puntos de suministro',
     },
     {
@@ -69,7 +69,7 @@ export function mapDailyToChart(items: DailySummaryApiItem[]): ChartBar[] {
     label:      formatDayLabel(item.date),
     value:      item.totalConsumption,
     tooltip:    `Consumo Anual : ${formatConsumptionTooltip(item.totalConsumption)}`,
-    tooltipSub: `CUPS : ${item.totalCUPS}`,
+    tooltipSub: `CUPS : ${item.totalCups}`,
   }));
 }
 
@@ -78,6 +78,6 @@ export function mapMonthlyToChart(items: MonthlySummaryApiItem[]): ChartBar[] {
     label:      `${MONTH_ABBR[item.month - 1].toLowerCase()} ${String(item.year).slice(2)}`,
     value:      item.totalConsumption,
     tooltip:    `Consumo Anual : ${formatConsumptionTooltip(item.totalConsumption)}`,
-    tooltipSub: `CUPS : ${item.totalCUPS}`,
+    tooltipSub: `CUPS : ${item.totalCups}`,
   }));
 }

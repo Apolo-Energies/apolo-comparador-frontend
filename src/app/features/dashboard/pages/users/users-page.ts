@@ -10,6 +10,7 @@ import { UserService } from '../../../../services/user.service';
 import { AddUserModalComponent } from './add-user-modal/add-user-modal';
 import { UserActionsMenuComponent, UserRow } from './user-actions-menu/user-actions-menu.component';
 import { getRoleLabel, UserRole } from '../../../../entities/user-role';
+import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
 
 @Component({
   selector: 'app-users-page',
@@ -17,7 +18,7 @@ import { getRoleLabel, UserRole } from '../../../../entities/user-role';
   imports: [
     DataTableComponent, PaginatorComponent, InputFieldComponent,
     SelectFieldComponent, ButtonComponent, AlertComponent,
-    AddUserModalComponent, UserActionsMenuComponent,
+    AddUserModalComponent, UserActionsMenuComponent, LoadingOverlayComponent,
   ],
   templateUrl: './users-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,6 +47,7 @@ export class UsersPageComponent implements AfterViewInit {
   readonly totalCount  = signal(0);
 
   readonly modalOpen = signal(false);
+  readonly loading   = signal(false);
   readonly data      = signal<UserRow[]>([]);
 
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.pageSize())));
@@ -77,15 +79,20 @@ export class UsersPageComponent implements AfterViewInit {
   }
 
   load() {
+    this.loading.set(true);
     this.userService.getByFilters({
       fullName: this.filterName()  || undefined,
       email:    this.filterEmail() || undefined,
       role:     this.filterRole()  || undefined,
       page:     this.currentPage(),
       pageSize: this.pageSize(),
-    }).subscribe(res => {
-      this.data.set(res.items as unknown as UserRow[]);
-      this.totalCount.set(res.totalCount);
+    }).subscribe({
+      next: res => {
+        this.data.set(res.items as unknown as UserRow[]);
+        this.totalCount.set(res.totalCount);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
     });
   }
 

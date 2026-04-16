@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs';
-import { ComparadorFormValue, ComparadorResult, OcrResult } from '@apolo-energies/comparator';
+import { ComparadorFormValue, ComparadorResult, OcrResult } from '../features/dashboard/pages/comparator/comparator.models';
 import { environment } from '../../environments/environment';
 import { Tariff } from '../entities/provider.model';
 import { ProviderService } from './provider.service';

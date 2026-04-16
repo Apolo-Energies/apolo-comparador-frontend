@@ -5,7 +5,7 @@ import { map } from 'rxjs';
 import { ApoloSidebar, SidebarSection } from '@apolo-energies/sidebar';
 import { ApoloHeader, HeaderWelcomeContent, HeaderActionLink, UserMenuItem } from '@apolo-energies/header';
 import { AuthService } from '@apolo-energies/auth';
-import { ArrowDownBoxIcon, chevronDownIcon, chevronRightIcon, CircleIcon, CompassIcon, ListIcon, LogoutIcon, PieIcon, SettingsIcon, StarIcon, SupportIcon, UiIconSource, UserIcon, UserSimpleIcon } from '@apolo-energies/icons';
+import { ArrowDownBoxIcon, chevronDownIcon, chevronRightIcon, CircleIcon, CompassIcon, InfoIcon, ListIcon, LogoutIcon, PieIcon, SettingsIcon, StarIcon, SupportIcon, UiIconSource, UserIcon, UserSimpleIcon } from '@apolo-energies/icons';
 import { getUserRoles } from '../../utils/auth.utils';
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -165,7 +165,15 @@ export class Layout {
   ];
 
   readonly welcome: HeaderWelcomeContent = {
-    title: 'Bienvenido al panel',
+    title: 'Bienvenido al portal de colaboradores de Apolo Energies.',
+    subtitle: 'Tu panel de control para gestionar clientes, analizar consumos y acceder a insights clave del mercado energético.',
+    icon: {
+      type: 'apolo',
+      icon: InfoIcon,
+      size: 20,
+      className: 'text-primary-button',
+      strokeWidth: 0.2,
+    },
   };
 
   readonly quickAction = signal<HeaderActionLink>({

@@ -79,7 +79,7 @@ export class SipsPageComponent {
   private readonly sipsService = inject(SipsService);
   private readonly router = inject(Router);
 
-  readonly searchIcon: UiIconSource = { type: 'apolo', icon: SearchIcon, size: 16 };
+  //readonly searchIcon: UiIconSource = { type: 'apolo', icon: SearchIcon, size: 16 };
   readonly downloadIcon: UiIconSource = { type: 'apolo', icon: DownloadIcon, size: 16 };
 
   readonly cups = signal('');

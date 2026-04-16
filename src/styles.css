@@ -4,7 +4,6 @@
 @source "../node_modules/@apolo-energies/icons";
 @source "../node_modules/@apolo-energies/sidebar";
 @source "../node_modules/@apolo-energies/header";
-@source "../node_modules/@apolo-energies/comparator";
 @source "../node_modules/@apolo-energies/table";
 
 @layer theme, base, components, utilities;

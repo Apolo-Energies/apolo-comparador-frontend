@@ -1,23 +1,27 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { AuthService } from '@apolo-energies/auth';
+import { getUserRoles } from '../../../../utils/auth.utils';
+import { ComparatorService } from '../../../../services/comparator.service';
+import { CommissionService } from '../../../../services/commission.service';
+import { UserService } from '../../../../services/user.service';
+import { ComparadorUploadComponent } from './components/comparador-upload/comparador-upload';
+import { ComparadorModalComponent } from './components/comparador-modal/comparador-modal';
+import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
 import {
-  ComparadorComponent,
-  ComparadorModalComponent,
   ComparadorCompareEvent,
+  ComparadorDownloadEvent,
   ComparadorFormValue,
   ComparadorResult,
   ComparadorUser,
   ComparatorProductsByTariff,
   OcrResult,
-} from '@apolo-energies/comparator';
-import { AuthService } from '@apolo-energies/auth';
-import { getUserRoles } from '../../../../utils/auth.utils';
-import { ComparatorService } from '../../../../services/comparator.service';
-import { CommissionService } from '../../../../services/commission.service';
+} from './comparator.models';
 
 @Component({
   selector: 'app-comparator',
-  imports: [ComparadorComponent, ComparadorModalComponent],
+  standalone: true,
+  imports: [ComparadorUploadComponent, ComparadorModalComponent, LoadingOverlayComponent],
   templateUrl: './comparator.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -25,6 +29,7 @@ export class Comparator {
   private auth              = inject(AuthService);
   private comparatorService = inject(ComparatorService);
   private commissionService = inject(CommissionService);
+  private userService       = inject(UserService);
   private platformId        = inject(PLATFORM_ID);
 
   constructor() {
@@ -32,14 +37,22 @@ export class Comparator {
       this.comparatorService.loadTariffs();
       const userId = this.auth.currentUser()?.id;
       if (userId) this.commissionService.load(String(userId));
+      if (this.isMaster()) this.loadUsers();
     }
   }
 
-  readonly loading   = signal(false);
-  readonly modalOpen = signal(false);
-  readonly result    = signal<ComparadorResult | null>(null);
-  readonly ocrResult = signal<OcrResult | null>(null);
-  readonly fileId    = signal<string>('');
+  // ── state ──────────────────────────────────────────────────────────────────
+
+  readonly loading        = signal(false);
+  readonly modalOpen      = signal(false);
+  readonly result         = signal<ComparadorResult | null>(null);
+  readonly ocrResult      = signal<OcrResult | null>(null);
+  readonly fileId         = signal<string>('');
+  readonly selectedUserId = signal<string>('');
+  readonly comisionBase   = signal(0);
+  readonly users          = signal<ComparadorUser[]>([]);
+
+  // ── computed roles ─────────────────────────────────────────────────────────
 
   readonly currentUser = this.auth.currentUser;
 
@@ -51,9 +64,7 @@ export class Comparator {
     getUserRoles(this.currentUser()).includes('Referenciador')
   );
 
-  readonly comisionBase = signal(0);
-
-  readonly users = signal<ComparadorUser[]>([]);
+  // ── static config ──────────────────────────────────────────────────────────
 
   readonly productsByTariff: ComparatorProductsByTariff = {
     '2.0TD': ['Index Base', 'Index Coste', 'Index Promo', 'Fijo Snap', 'Fijo Snap Mini', 'Passpool'],
@@ -61,11 +72,21 @@ export class Comparator {
     '6.1TD': ['Index Base', 'Index Coste', 'Index Promo', 'Fijo Fácil', 'Fijo Estable', 'Fijo Dyn', 'Promo 3M Pro'],
   };
 
-  readonly feeLockedProducts = ['Fijo Snap', 'Fijo Snap Mini', 'Fijo Snap Maxi', 'Promo 3M Pro'];
+  readonly feeLockedProducts = [
+    'Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi',
+    'Promo 3M Lite', 'Promo 3M Pro', 'Promo 3M Plus',
+  ];
+
+  // ── handlers ───────────────────────────────────────────────────────────────
 
   onCompare(event: ComparadorCompareEvent): void {
     this.loading.set(true);
-    this.comparatorService.upload(event.file, event.userId).subscribe({
+    this.result.set(null);
+    this.ocrResult.set(null);
+
+    const userId = event.userId || this.auth.currentUser()?.id || '';
+
+    this.comparatorService.upload(event.file, String(userId)).subscribe({
       next: (res) => {
         this.fileId.set(res.fileId);
         this.ocrResult.set(res.ocrData);
@@ -79,19 +100,35 @@ export class Comparator {
   onFormChange(form: ComparadorFormValue): void {
     const ocr = this.ocrResult();
     if (!ocr) return;
+
     const base = this.comparatorService.getComisionBase(form.producto);
-    console.log('[onFormChange]', {
-      producto:        form.producto,
-      comisionBase:    base,
-      comisionEnergia: form.comisionEnergia,
-      feePotencia:     form.feePotencia,
-      feeEnergia:      form.feeEnergia,
-    });
     this.comisionBase.set(base);
-    this.result.set(this.comparatorService.calculate(form, ocr));
+
+    // For non-referrers always override comisionEnergia with the fresh base
+    const correctedForm: ComparadorFormValue = this.isReferrer()
+      ? form
+      : { ...form, comisionEnergia: base };
+
+    this.result.set(this.comparatorService.calculate(correctedForm, ocr));
   }
 
-  onDownload(event: { type: 'pdf' | 'excel'; formValue: ComparadorFormValue }): void {
-    this.comparatorService.download(event.type, event.formValue, this.result(), this.ocrResult(), this.fileId());
+  onDownload(event: ComparadorDownloadEvent): void {
+    this.comparatorService.download(
+      event.type,
+      event.formValue,
+      this.result(),
+      this.ocrResult(),
+      this.fileId(),
+    );
+  }
+
+  // ── private ────────────────────────────────────────────────────────────────
+
+  private loadUsers() {
+    this.userService.getByFilters({ pageSize: 200 }).subscribe(res => {
+      this.users.set(
+        res.items.map(u => ({ id: u.id, name: u.fullName }))
+      );
+    });
   }
 }

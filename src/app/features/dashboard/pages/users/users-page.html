@@ -1,3 +1,5 @@
+<app-loading-overlay [loading]="loading()" />
+
 <ui-alert />
 
 <div class="border border-border rounded-lg overflow-hidden shadow-sm">
@@ -49,7 +51,7 @@
     [columns]="columns()"
     rowKey="id"
     [borderTop]="false"
-    [borderBottom]="false"
+    [borderBottom]="true"
     [borderLeft]="false"
     [borderRight]="false"
     [roundedTopLeft]="false"

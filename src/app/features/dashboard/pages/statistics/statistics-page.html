@@ -1,3 +1,5 @@
+<app-loading-overlay [loading]="loading()" />
+
 <!-- Dashboard de estadísticas -->
 <app-statistics-dashboard />
 
@@ -27,9 +29,9 @@
   <lib-data-table
     [data]="data()"
     [columns]="columns"
-    rowKey="id"
+    rowKey="email"
     [borderTop]="false"
-    [borderBottom]="false"
+    [borderBottom]="true"
     [borderLeft]="false"
     [borderRight]="false"
     [roundedTopLeft]="false"

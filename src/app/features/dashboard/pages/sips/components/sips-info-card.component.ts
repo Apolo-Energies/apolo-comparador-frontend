@@ -4,13 +4,9 @@ import { DownloadIcon, XIcon, filterIcon, UiIconSource } from '@apolo-energies/i
 import { SipsPs } from '../../../../../entities/sips.model';
 
 const TARIFF_LABELS: Record<string, string> = {
-  '001': '2.0A',    '003': '2.0DHA',  '004': '2.0DHS',
-  '006': '2.1A',    '007': '2.1DHA',  '008': '2.1DHS',
-  '011': '3.0A',    '012': '3.1A',    '013': '6.1A',
-  '014': '6.1B',    '015': '6.2',     '016': '6.3',
-  '017': '6.4',     '018': '6.5',     '019': '6.1',
-  '020': '6.2',     '021': '6.3',     '022': '6.4',
-  '023': '6.5',
+  "018": "2.0TD",
+  "019": "3.0TD",
+  "020": "6.1TD",
 };
 
 function getTarifaLabel(code?: string): string {

@@ -5,11 +5,12 @@ import { ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
 import { DownloadIcon, filterIcon, SearchIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
 import { StatisticsService, StatisticsRow } from '../../../../services/statistics.service';
 import { StatisticsDashboardComponent } from './components/statistics-dashboard/statistics-dashboard';
+import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
 
 @Component({
   selector: 'app-statistics-page',
   standalone: true,
-  imports: [DataTableComponent, PaginatorComponent, InputFieldComponent, ButtonComponent, StatisticsDashboardComponent],
+  imports: [DataTableComponent, PaginatorComponent, InputFieldComponent, ButtonComponent, StatisticsDashboardComponent, LoadingOverlayComponent],
   templateUrl: './statistics-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -29,7 +30,8 @@ export class StatisticsPageComponent {
   readonly pageSize    = signal(10);
   readonly totalCount  = signal(0);
 
-  readonly data = signal<StatisticsRow[]>([]);
+  readonly data    = signal<StatisticsRow[]>([]);
+  readonly loading = signal(false);
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
@@ -38,13 +40,18 @@ export class StatisticsPageComponent {
   }
 
   private load() {
+    this.loading.set(true);
     this.statisticsService.getByFilters({
       name:     this.filterName() || undefined,
       page:     this.currentPage(),
       pageSize: this.pageSize(),
-    }).subscribe(res => {
-      this.data.set(res.result ?? []);
-      this.totalCount.set(res.total ?? res.result?.length ?? 0);
+    }).subscribe({
+      next: res => {
+        this.data.set(res.result ?? []);
+        this.totalCount.set(res.total ?? res.result?.length ?? 0);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
     });
   }
 
@@ -73,10 +80,10 @@ export class StatisticsPageComponent {
   }
 
   readonly columns: TableColumn<StatisticsRow>[] = [
-    { key: 'nombre',        label: 'Nombre' },
-    { key: 'comparaciones', label: 'Comparaciones', align: 'center' },
-    { key: 'ahorro',        label: 'Ahorro total (€)', align: 'right',
-      format: row => `${row.ahorro.toFixed(2)} €` },
-    { key: 'fecha',         label: 'Última actividad', align: 'center' },
+    { key: 'fullName',               label: 'Nombre' },
+    { key: 'email',                  label: 'Email' },
+    { key: 'totalCups',              label: 'Total CUPS',              align: 'center' },
+    { key: 'totalAnnualConsumption', label: 'Consumo anual (kWh)',     align: 'right',
+      format: row => `${row.totalAnnualConsumption.toFixed(2)} kWh` },
   ];
 }

@@ -1,4 +1,4 @@
-import { ComparadorFormValue, ComparadorPeriodo, ComparadorResult, OcrResult } from '@apolo-energies/comparator';
+import { ComparadorFormValue, ComparadorPeriodo, ComparadorResult, OcrResult } from '../features/dashboard/pages/comparator/comparator.models';
 import { Tariff } from '../entities/provider.model';
 
 type Periodo = 1 | 2 | 3 | 4 | 5 | 6;

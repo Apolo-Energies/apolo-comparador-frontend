@@ -21,7 +21,6 @@
           [label]="loading() ? 'Consultando...' : 'Consultar'"
           variant="default"
           size="sm"
-          [leadingIcon]="searchIcon"
           [disabled]="!cups().trim() || loading()"
           (click)="onConsultar()"
         />

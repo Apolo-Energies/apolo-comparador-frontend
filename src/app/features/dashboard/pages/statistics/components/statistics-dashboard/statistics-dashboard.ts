@@ -78,7 +78,7 @@ export class StatisticsDashboardComponent {
   }
 
   private isDashboardEmpty(result: SummaryApiResult): boolean {
-    return result.totalCUPS === 0;
+    return result.totalCups === 0;
   }
 
   onDateRangeChange(range: DateRange): void {

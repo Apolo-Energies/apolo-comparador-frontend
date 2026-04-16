@@ -1,21 +1,30 @@
+<app-loading-overlay [loading]="loading()" />
+
 <div class="h-full flex flex-col">
-  <lib-comparador
+
+  <app-comparador-upload
     [showUserSelector]="isMaster()"
     [users]="users()"
+    [selectedUserId]="selectedUserId()"
     [loading]="loading()"
     (compare)="onCompare($event)"
+    (userChange)="selectedUserId.set($event)"
   />
 
-  <lib-comparador-modal
+  <app-comparador-modal
     [open]="modalOpen()"
     [ocrResult]="ocrResult()"
     [productsByTariff]="productsByTariff"
     [feeLockedProducts]="feeLockedProducts"
     [isReferrer]="isReferrer()"
     [comisionBase]="comisionBase()"
+    [referrerDefaultFee]="0.3"
+    [maxFeeEnergia]="50"
+    [maxFeePotencia]="25"
     [result]="result()"
     (openChange)="modalOpen.set($event)"
     (formChange)="onFormChange($event)"
     (download)="onDownload($event)"
   />
+
 </div>
