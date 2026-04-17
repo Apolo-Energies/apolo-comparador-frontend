@@ -1,7 +1,6 @@
 {
   "framework": null,
   "installCommand": "NODE_ENV=development npm install",
-  "buildCommand": "npm run build",
   "outputDirectory": "dist/r-comparator-frontend/browser",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }

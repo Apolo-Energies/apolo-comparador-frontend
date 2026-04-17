@@ -1,8 +1,8 @@
 export const environment = {
-  production: false,
-  clientName: 'apolo',
-  apiUrl: 'http://localhost:5102/api/renovae/v1',
-  logoUrl: '/apolo/logo.svg',
+  production: true,
+  clientName: 'coexpal',
+  apiUrl: 'https://api.apoloenergies.es',
+  logoUrl: '/coexpal/logo.svg',
   features: {
     comparator: true,
     sips: true,

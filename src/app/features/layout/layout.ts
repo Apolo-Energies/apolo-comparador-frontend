@@ -7,6 +7,7 @@ import { ApoloHeader, HeaderWelcomeContent, HeaderActionLink, UserMenuItem } fro
 import { AuthService } from '@apolo-energies/auth';
 import { ArrowDownBoxIcon, chevronDownIcon, chevronRightIcon, CircleIcon, CompassIcon, InfoIcon, ListIcon, LogoutIcon, PieIcon, SettingsIcon, StarIcon, SupportIcon, UiIconSource, UserIcon, UserSimpleIcon } from '@apolo-energies/icons';
 import { getUserRoles } from '../../utils/auth.utils';
+import { environment } from '../../../environments/environment';
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   'Colaborador': [
@@ -38,6 +39,8 @@ export class Layout {
   );
 
   readonly mobileOpen = signal(false);
+
+  readonly logoSrc = environment.logoUrl;
 
   readonly userMenuIcon = {
     type: 'apolo' as const,

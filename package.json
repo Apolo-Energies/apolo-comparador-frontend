@@ -5,6 +5,12 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build --configuration production",
+    "build:apolo": "ng build --configuration apolo",
+    "build:renova": "ng build --configuration renova",
+    "build:coexpal": "ng build --configuration coexpal",
+    "start:apolo": "ng serve --configuration apolo",
+    "start:renova": "ng serve --configuration renova",
+    "start:coexpal": "ng serve --configuration coexpal",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
