@@ -30,7 +30,7 @@
               label="Precio medio OMIE (€/MWh)"
               type="number"
               placeholder="20"
-              [value]="precioMedio().toString()"
+              [value]="precioMedio() === 0 ? '' : precioMedio().toString()"
               (valueChange)="onPrecioMedioChange($event)"
             />
         </div>

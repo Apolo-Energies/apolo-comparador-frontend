@@ -137,7 +137,7 @@ export class ComparatorService {
         ahorro: result.ahorroEstudio,
         ahorroPorcentaje: result.ahorro_porcent,
         ahorroAnual: result.ahorroXAnio,
-        consumoAnual: ocr.energia?.reduce((a, e) => a + (e.activa?.kwh ?? 0), 0) ?? 0,
+        consumoAnual: (ocr.energia?.reduce((a, e) => a + (e.activa?.kwh ?? 0), 0) ?? 0) * 10,
         precioPromedioOmie: form.precioMedio,
         feeEnergia: form.feeEnergia,
         feePotencia: form.feePotencia,

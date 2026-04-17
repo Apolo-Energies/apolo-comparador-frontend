@@ -48,7 +48,7 @@
     </div>
 
     <div class="flex justify-between items-center mt-4">
-      <ui-button label="Exportar" variant="secondary" size="md" [leadingIcon]="downloadIcon" />
+      <ui-button label="Exportar" variant="secondary" size="md" [leadingIcon]="downloadIcon" (click)="onExport()" />
       <div class="flex gap-2">
         <ui-button label="Limpiar" variant="secondary" size="md" [leadingIcon]="xIcon"      (click)="onClearFilters()" />
         <ui-button label="Filtrar" variant="secondary" size="md" [leadingIcon]="filterIcon" (click)="onSearch()" />

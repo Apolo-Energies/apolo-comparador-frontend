@@ -114,6 +114,19 @@ export class UsersPageComponent implements AfterViewInit {
     this.load();
   }
 
+  onExport(): void {
+    this.userService.downloadExcel().subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `users-report.xlsx`;
+        link.click();
+        URL.revokeObjectURL(url);
+      },
+    });
+  }
+
   onPageChange(page: number) {
     this.currentPage.set(page);
     this.load();

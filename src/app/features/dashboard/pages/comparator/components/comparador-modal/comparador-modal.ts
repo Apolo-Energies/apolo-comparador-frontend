@@ -54,7 +54,7 @@ export class ComparadorModalComponent {
   // ── form signals ───────────────────────────────────────────────────────────
   readonly tariff          = signal('');
   readonly producto        = signal('');
-  readonly precioMedio     = signal(20);
+  readonly precioMedio     = signal(0);
   readonly feeEnergia      = signal(0);
   readonly feePotencia     = signal(0);
   readonly comisionEnergia = signal(0);
@@ -87,7 +87,7 @@ export class ComparadorModalComponent {
         const producto = this.productsByTariff()[tariff]?.[0] ?? '';
         this.tariff.set(tariff);
         this.producto.set(producto);
-        this.precioMedio.set(50);
+        this.precioMedio.set(0);
         this.feeEnergia.set(0);
         this.feePotencia.set(0);
         this.comisionEnergia.set(this.referrerDefaultFee());

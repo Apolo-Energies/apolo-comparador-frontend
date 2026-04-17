@@ -30,7 +30,7 @@
           size="sm"
           [leadingIcon]="downloadIcon"
           [disabled]="!hasData()"
-          (click)="onExportar()"
+          (click)="onExport()"
         />
       </div>
 
@@ -39,7 +39,7 @@
 } @else {
   <app-sips-info-card
     [psData]="mappedPs()!"
-    (onExport)="onExportar()"
+    (onExport)="onExport()"
     (onComparativa)="onComparativa()"
     (onClear)="onClear()"
   />

@@ -35,7 +35,7 @@
     </div>
 
     <div class="flex gap-2 justify-between items-center mt-4">
-      <ui-button label="Exportar"        variant="secondary" size="md" [leadingIcon]="downloadIcon" />
+      <ui-button label="Exportar"        variant="secondary" size="md" [leadingIcon]="downloadIcon" (click)="onExport()" />
       <ui-button label="Agregar Usuario" variant="default"   size="md" [leadingIcon]="starIcon" (click)="modalOpen.set(true)" />
     </div>
   </div>

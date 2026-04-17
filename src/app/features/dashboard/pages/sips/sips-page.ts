@@ -132,7 +132,7 @@ export class SipsPageComponent {
     });
   }
 
-  onExportar(): void {
+  onExport(): void {
     const cups = this.cups().trim();
     if (!cups) return;
 

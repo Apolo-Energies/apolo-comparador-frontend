@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
+import { Observable } from 'rxjs';
 
 export interface HistoryUser {
   id:             string;
@@ -60,5 +61,9 @@ export class HistoryService {
       `${environment.apiUrl}/comparison-history`,
       { params }
     );
+  }
+
+  downloadExcel(): Observable<Blob> {
+    return this.http.get(`${environment.apiUrl}/reports/comparison-history/excel`, { responseType: 'blob' });
   }
 }

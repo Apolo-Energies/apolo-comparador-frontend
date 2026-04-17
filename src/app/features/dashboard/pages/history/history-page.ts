@@ -25,7 +25,7 @@ export class HistoryPageComponent implements AfterViewInit {
   readonly filterIcon:   UiIconSource = { type: 'apolo', icon: filterIcon,   size: 16 };
   readonly downloadIcon: UiIconSource = { type: 'apolo', icon: DownloadIcon, size: 16 };
   readonly xIcon:        UiIconSource = { type: 'apolo', icon: XIcon,        size: 16 };
-  readonly dateIconSrc:  UiIconSource = { type: 'apolo', icon: DateIcon,  size: 16 };
+  readonly dateIconSrc:  UiIconSource = { type: 'apolo', icon: DateIcon,  size: 20 };
   readonly emailIconSrc: UiIconSource = { type: 'apolo', icon: EmailIcon, size: 20};
 
   // filters
@@ -100,6 +100,19 @@ export class HistoryPageComponent implements AfterViewInit {
     this.filterCups.set('');
     this.currentPage.set(1);
     this.load();
+  }
+
+  onExport(): void {
+    this.historyService.downloadExcel().subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `history-report.xlsx`;
+        link.click();
+        URL.revokeObjectURL(url);
+      },
+    });
   }
 
   onPageChange(page: number) {

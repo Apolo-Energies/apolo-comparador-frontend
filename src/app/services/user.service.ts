@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { UserFilters, UserPaged } from '../entities/user.model';
 import { environment } from '../../environments/environment';
+import { Observable } from 'rxjs';
 
 export interface CreateUserRequest {
   fullName:  string;
@@ -53,5 +54,9 @@ export class UserService {
     if (filters.role)     params = params.set('role',     filters.role);
 
     return this.http.get<UserPaged>(`${environment.apiUrl}/users`, { params });
+  }
+
+  downloadExcel(): Observable<Blob> {
+    return this.http.get(`${environment.apiUrl}/reports/users/excel`, { responseType: 'blob' });
   }
 }
