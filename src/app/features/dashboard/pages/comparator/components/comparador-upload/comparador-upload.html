@@ -1,0 +1,41 @@
+<div
+  class="w-full rounded-lg border border-border bg-card px-8 py-8 flex flex-col gap-6 transition-all"
+  [class.h-full]="!!file()"
+>
+
+  <!-- Selector de usuario (solo para rol Master) -->
+  @if (showUserSelector()) {
+    <ui-combobox
+      placeholder="Seleccionar usuario"
+      [options]="usersAsOptions()"
+      [value]="selectedUserId() || internalUser()"
+      (valueChange)="onUserChange($event)"
+    />
+  }
+
+  <!-- Zona de carga: crece solo cuando hay archivo -->
+  <div
+    class="flex flex-col"
+    [class.flex-1]="!!file()"
+    [class.min-h-0]="!!file()"
+  >
+    <ui-dropzone
+      label="Sube la factura"
+      hint="JPG, PNG, WEBP, BMP, TIFF, PDF"
+      [fullHeight]="!!file()"
+      (fileSelect)="onFileSelect($event)"
+    />
+  </div>
+
+  <!-- Botón comparar -->
+  <div class="border-t border-gray-200 mt-6 pt-4 flex justify-center">
+    <ui-button
+      label="Comparar"
+      variant="secondary"
+      size="md"
+      [disabled]="!file() || loading()"
+      (click)="onComparar()"
+    />
+  </div>
+
+</div>

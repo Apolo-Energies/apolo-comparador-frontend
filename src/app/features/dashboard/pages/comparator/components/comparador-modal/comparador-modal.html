@@ -1,0 +1,218 @@
+<ui-dialog
+  [open]="open()"
+  [closeable]="true"
+  maxWidth="max-w-xl"
+  (openChange)="openChange.emit($event)"
+>
+
+  <!-- ── Body ───────────────────────────────────────────────────────────── -->
+  <div class="space-y-6 p-12">
+
+    <!-- LEFT: Formulario ──────────────────────────────────────────────── -->
+    <div class="flex flex-col gap-5">
+      <div class="flex items-center justify-between">
+          <p class="text-lg font-semibold text-foreground">
+            Configura el producto
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <ui-select
+          label="Producto"
+          placeholder="Selecciona producto"
+          [options]="productoOptions()"
+          [value]="producto()"
+          (valueChange)="onProductoChange($event)"
+        />
+
+          <!-- Precio medio OMIE -->
+          <ui-input
+              label="Precio medio OMIE (€/MWh)"
+              type="number"
+              placeholder="20"
+              [value]="precioMedio() === 0 ? '' : precioMedio().toString()"
+              (valueChange)="onPrecioMedioChange($event)"
+            />
+        </div>
+
+      <!-- Producto -->
+
+
+      <!-- Fee Energía -->
+      <div class="flex flex-col gap-2">
+        <div class="flex justify-between items-center">
+          <span class="text-sm font-medium text-foreground">
+            Fee Energía
+            <span class="text-xs font-normal text-muted-foreground ml-1">€/MWh</span>
+          </span>
+          <span class="text-sm font-mono font-semibold text-primary">{{ feeEnergia() }}</span>
+        </div>
+        <ui-slider
+          [value]="feeEnergia()"
+          [min]="0"
+          [max]="maxFeeEnergia()"
+          [step]="1"
+          [disabled]="isFeeBlocked()"
+          (valueChange)="onFeeEnergiaChange($event)"
+        />
+        @if (isFeeBlocked()) {
+          <p class="text-xs text-muted-foreground">Bloqueado en 0 para este producto</p>
+        }
+      </div>
+
+      <!-- Fee Potencia -->
+      <div class="flex flex-col gap-2">
+        <div class="flex justify-between items-center">
+          <span class="text-sm font-medium text-foreground">
+            Fee Potencia
+            <span class="text-xs font-normal text-muted-foreground ml-1">€/kW/año</span>
+          </span>
+          <span class="text-sm font-mono font-semibold text-primary">{{ feePotencia() }}</span>
+        </div>
+        <ui-slider
+          [value]="feePotencia()"
+          [min]="0"
+          [max]="maxFeePotencia()"
+          [step]="1"
+          [disabled]="isFeeBlocked()"
+          (valueChange)="onFeePotenciaChange($event)"
+        />
+      </div>
+
+      <!-- Comisión Energía
+      @if (isReferrer()) {
+        <ui-input
+          label="Comisión Energía (editable)"
+          type="number"
+          [value]="comisionEnergia().toString()"
+          (valueChange)="onComisionEnergiaChange($event)"
+        />
+      } @else {
+        <div class="flex flex-col gap-1.5">
+          <span class="text-sm font-medium text-foreground">Comisión Energía</span>
+          <div class="flex items-center gap-2 px-3 py-2 bg-accent/40 rounded-md border border-border">
+            <span class="text-sm font-mono text-foreground">{{ comisionBase() }}</span>
+            <span class="text-xs text-muted-foreground">calculada según tu comisión asignada</span>
+          </div>
+        </div>
+      } -->
+    </div>
+
+
+      @if (result(); as r) {
+        <!-- KPI cards -->
+        <div class="grid grid-cols-2 gap-4">
+
+          <!-- Comisión comercial -->
+          <div class="p-4 rounded-lg bg-card border border-border">
+            <p class="text-sm font-medium text-foreground mb-1">Comisión comercial</p>
+            <p class="text-2xl font-bold text-foreground">{{ truncate(r.comision) }}€</p>
+            <p class="text-sm text-green-400">+ 10% extra</p>
+          </div>
+
+          <!-- Ahorro cliente -->
+          <div class="p-4 rounded-lg bg-card border border-border">
+            <p class="text-sm font-medium text-foreground mb-1">Ahorro cliente</p>
+            <p class="text-xl font-bold text-foreground">{{ truncate(r.ahorroEstudio) }}€ al mes</p>
+            <p
+              class="text-xl font-bold"
+              [class.text-green-400]="r.ahorroXAnio > 0"
+              [class.text-red-400]="r.ahorroXAnio <= 0"
+            >{{ truncate(r.ahorroXAnio) }}€ al año</p>
+            <p
+              class="text-sm"
+              [class.text-green-400]="r.ahorro_porcent > 0"
+              [class.text-red-400]="r.ahorro_porcent <= 0"
+            >+ {{ r.ahorro_porcent }}% de ahorro</p>
+          </div>
+
+        </div>
+
+        <!-- Precios ofertados colapsable -->
+        <div class="bg-card border border-border rounded-xl p-3 w-full transition-all duration-300">
+
+          <!-- Header -->
+          <div class="flex items-center gap-3">
+            <lib-apolo-icons [icon]="lightningIcon" class="flex items-center shrink-0" />
+            <p class="flex-1 text-lg font-semibold text-foreground">Precios ofertados</p>
+            <button
+              class="h-8 w-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:bg-accent transition-colors"
+              (click)="periodosOpen.set(!periodosOpen())"
+            >
+              <span
+                class="inline-block text-lg font-bold transition-transform duration-300"
+                [class.rotate-180]="!periodosOpen()"
+              >–</span>
+            </button>
+          </div>
+
+          <!-- Contenido expandible -->
+          <div
+            class="overflow-hidden transition-all duration-300"
+            [class.max-h-0]="!periodosOpen()"
+            [class.opacity-0]="!periodosOpen()"
+            [class.max-h-96]="periodosOpen()"
+            [class.opacity-100]="periodosOpen()"
+            [class.mt-2]="periodosOpen()"
+          >
+            <div class="grid grid-cols-2 gap-10 text-sm text-foreground pl-16">
+
+              <!-- Energía -->
+              <div class="space-y-3">
+                @for (p of PERIODOS; track p) {
+                  <p>
+                    <span class="opacity-70">Energía P{{ p }}:</span>
+                    <span class="text-blue-300 ml-1">{{ getPrecioEnergia(r.periodos, p) }}</span>
+                  </p>
+                }
+              </div>
+
+              <!-- Potencia -->
+              <div class="space-y-3">
+                @for (p of PERIODOS; track p) {
+                  <p>
+                    <span class="opacity-70">Potencia P{{ p }}:</span>
+                    <span class="text-blue-300 ml-1">{{ getPrecioPotencia(r.periodos, p) }}</span>
+                  </p>
+                }
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+      } @else {
+        <!-- Empty state -->
+        <div class="flex flex-col items-center justify-center gap-3 py-16 text-center">
+          <svg class="h-10 w-10 text-muted-foreground/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+          <p class="text-sm text-muted-foreground">Ajusta los parámetros para ver los resultados</p>
+        </div>
+      }
+
+  </div>
+
+  <!-- ── Footer ─────────────────────────────────────────────────────────── -->
+  <div class="flex items-center justify-between gap-2 px-6 py-4 border-t border-border">
+    <ui-button
+      label="Exportar Excel"
+      variant="secondary"
+      size="md"
+      [leadingIcon]="excelIcon"
+      [disabled]="!result()"
+      (click)="onDownload('excel')"
+    />
+    <ui-button
+      label="Descargar PDF"
+      variant="default"
+      size="md"
+      [leadingIcon]="pdfIcon"
+      [disabled]="!result()"
+      (click)="onDownload('pdf')"
+    />
+  </div>
+
+</ui-dialog>

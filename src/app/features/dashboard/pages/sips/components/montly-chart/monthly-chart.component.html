@@ -1,0 +1,116 @@
+<div class="p-6 bg-card rounded-lg border border-border shadow-lg">
+      <div class="flex items-center justify-between mb-4">
+        <p class="text-lg font-semibold">{{ title() }}</p>
+
+        <div class="hidden md:flex gap-4">
+          @for (entry of legendEntries; track entry.key) {
+            <div class="flex items-center gap-2">
+              <span
+                [style.width.px]="12"
+                [style.height.px]="12"
+                [style.border-radius]="'50%'"
+                [style.display]="'inline-block'"
+                [style.flex-shrink]="0"
+                [style.border]="'3px solid ' + entry.color"
+                [style.background]="'transparent'"
+              ></span>
+              <span class="text-xs text-muted-foreground">{{ entry.key }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="h-87.5">
+        <svg
+          #svgEl
+          width="100%"
+          [attr.height]="CHART_H"
+          style="display:block"
+          (mouseleave)="tooltipClear()"
+        >
+          @if (w() > 0) {
+            @for (tick of gridLines(); track tick.label) {
+              <line
+                [attr.x1]="PAD_L"
+                [attr.y1]="tick.y"
+                [attr.x2]="w() - PAD_R"
+                [attr.y2]="tick.y"
+                stroke="rgba(255,255,255,0.1)"
+                stroke-width="1"
+              />
+              <text
+                [attr.x]="PAD_L - 8"
+                [attr.y]="tick.y"
+                fill="#94a3b8"
+                [attr.font-size]="16"
+                text-anchor="end"
+                dominant-baseline="middle"
+              >
+                {{ tick.label }}
+              </text>
+            }
+
+            @for (bar of bars(); track bar.month) {
+              <g
+                (mouseenter)="tooltipSet(bar)"
+                (mouseleave)="tooltipClear()"
+                style="cursor:default"
+              >
+                @for (seg of bar.segments; track seg.period; let last = $last) {
+                  @if (seg.h > 0) {
+                    @if (last) {
+                      <path
+                        [attr.d]="roundedTop(bar.x, seg.y, bar.w, seg.h)"
+                        [attr.fill]="seg.color"
+                      />
+                    } @else {
+                      <rect
+                        [attr.x]="bar.x"
+                        [attr.y]="seg.y"
+                        [attr.width]="bar.w"
+                        [attr.height]="seg.h"
+                        [attr.fill]="seg.color"
+                      />
+                    }
+                  }
+                }
+              </g>
+
+              <text
+                [attr.x]="bar.x + bar.w / 2"
+                [attr.y]="CHART_H - PAD_B + 18"
+                fill="#94a3b8"
+                [attr.font-size]="16"
+                text-anchor="middle"
+              >
+                {{ bar.month }}
+              </text>
+            }
+
+            @if (tooltip()) {
+              <g>
+                <rect
+                  [attr.x]="clampX(tooltip()!.x - 50)"
+                  [attr.y]="tooltip()!.y - 28"
+                  width="100"
+                  height="26"
+                  rx="6"
+                  fill="#1e293b"
+                  stroke="#334155"
+                  stroke-width="1"
+                />
+                <text
+                  [attr.x]="clampX(tooltip()!.x - 50) + 50"
+                  [attr.y]="tooltip()!.y - 11"
+                  fill="#fff"
+                  font-size="11"
+                  text-anchor="middle"
+                >
+                  {{ tooltip()!.month }}: {{ fmt(tooltip()!.total) }} kWh
+                </text>
+              </g>
+            }
+          }
+        </svg>
+      </div>
+    </div>

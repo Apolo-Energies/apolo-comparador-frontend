@@ -1,0 +1,20 @@
+export const environment = {
+  production: true,
+  clientName: 'renova',
+  apiUrl: 'https://api.apoloenergies.es',
+  logoUrl: '/renova/logo.svg',
+  features: {
+    comparator: true,
+    sips: true,
+    statistics: true,
+    history: true,
+    commissions: true,
+    usersManagement: true,
+    forgotPassword: true,
+    resetPassword: true,
+    quickAction: true,
+    excelReports: true,
+    contracts: false,
+    support: false,
+  },
+};

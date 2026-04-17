@@ -1,0 +1,59 @@
+<ui-dialog [open]="open()" [closeable]="true" maxWidth="max-w-md" (openChange)="$event ? null : onCancel()">
+
+  <!-- Progress -->
+  <div class="px-6 pt-5 space-y-1.5">
+    <div class="flex justify-between text-sm text-muted-foreground">
+      <span>Progreso</span>
+      <span>{{ progress() }}%</span>
+    </div>
+    <ui-slider [value]="progress()" [min]="0" [max]="100" [step]="1" [disabled]="true" />
+    <p class="text-xs text-muted-foreground pt-1">
+      {{ isEditMode() ? 'Actualice los datos de la comisión' : 'Complete los datos básicos de la comisión' }}
+    </p>
+  </div>
+
+  <!-- Form -->
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="px-6 py-4 space-y-5">
+
+    <!-- Name -->
+    <div class="space-y-1">
+      <ui-input
+        label="Nombre Comisión *"
+        placeholder="Oro"
+        [value]="form.controls.name.value ?? ''"
+        (valueChange)="form.controls.name.setValue($event); form.controls.name.markAsTouched()"
+      />
+      @if (form.controls.name.invalid && form.controls.name.touched) {
+        <p class="text-xs text-destructive">El nombre es obligatorio</p>
+      }
+    </div>
+
+    <!-- Percentage -->
+    <div class="space-y-1">
+      <ui-input
+        label="Porcentaje *"
+        type="number"
+        placeholder="30"
+        [value]="(form.controls.percentage.value ?? 0).toString()"
+        (valueChange)="onPercentageInput($event); form.controls.percentage.markAsTouched()"
+      />
+      @if (form.controls.percentage.invalid && form.controls.percentage.touched) {
+        <p class="text-xs text-destructive">El porcentaje debe estar entre 1 y 100</p>
+      }
+    </div>
+
+  </form>
+
+  <!-- Footer -->
+  <div class="px-6 pb-5 border-t border-border pt-4 flex items-center justify-between">
+    <ui-button label="Cancelar" variant="outline" size="md" (click)="onCancel()" />
+    <ui-button
+      [label]="isEditMode() ? 'Guardar Cambios' : 'Crear Comisión'"
+      variant="default"
+      size="md"
+      [disabled]="form.invalid"
+      (click)="onSubmit()"
+    />
+  </div>
+
+</ui-dialog>

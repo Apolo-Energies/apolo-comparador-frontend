@@ -1,0 +1,20 @@
+export const environment = {
+  production: false,
+  clientName: 'apolo',
+  apiUrl: 'http://localhost:5102/api/renovae/v1',
+  logoUrl: '/apolo/logo.svg',
+  features: {
+    comparator: true,
+    sips: true,
+    statistics: true,
+    history: true,
+    commissions: true,
+    usersManagement: true,
+    forgotPassword: true,
+    resetPassword: true,
+    quickAction: true,
+    excelReports: true,
+    contracts: false,
+    support: false,
+  },
+};

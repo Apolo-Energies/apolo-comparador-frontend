@@ -1,3 +1,84 @@
-/* You can add global styles to this file, and also import other style files */
+@import "tailwindcss";
+@source "../node_modules/@apolo-energies/auth";
+@source "../node_modules/@apolo-energies/ui";
+@source "../node_modules/@apolo-energies/icons";
+@source "../node_modules/@apolo-energies/sidebar";
+@source "../node_modules/@apolo-energies/header";
+@source "../node_modules/@apolo-energies/table";
 
-@import 'tailwindcss';
+@layer theme, base, components, utilities;
+
+@theme {
+  --font-poppins: var(--font-poppins);
+
+  --color-background: #25272a;
+  --color-body: #25272a;
+  --color-foreground: #f8fafc;
+
+  --color-card: #17181a;
+  --color-card-foreground: #f8fafc;
+
+  --color-popover: #0f172a;
+  --color-popover-foreground: #f8fafc;
+
+  --color-primary: #60a5fa;
+  --color-primary-foreground: #0f172a;
+  --color-primary-button: #12AFF0;
+
+  --color-secondary: #1e293b;
+  --color-secondary-foreground: #f8fafc;
+
+  --color-accent: #323438;
+  --color-accent-foreground: #f8fafc;
+
+  --color-destructive: #7f1d1d;
+  --color-destructive-foreground: #f8fafc;
+
+  --color-border: #323438;
+  --color-input: #17181a;
+  --color-ring: #94a3b8;
+
+  --color-muted: #1e293b;
+  --color-muted-foreground: #809FB8;
+}
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+
+  /* Date input: color scheme oscuro para el picker del sistema */
+  input[type="date"] {
+    color-scheme: dark;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: brightness(0) invert(1) opacity(0.6) !important;
+    cursor: pointer;
+  }
+
+  /* Placeholder del date input (formato dd/mm/aaaa) en color muted */
+  input[type="date"]::-webkit-datetime-edit-text,
+  input[type="date"]::-webkit-datetime-edit-month-field,
+  input[type="date"]::-webkit-datetime-edit-day-field,
+  input[type="date"]::-webkit-datetime-edit-year-field {
+    color: var(--color-muted-foreground);
+  }
+  input[type="date"]::-webkit-datetime-edit-month-field:focus,
+  input[type="date"]::-webkit-datetime-edit-day-field:focus,
+  input[type="date"]::-webkit-datetime-edit-year-field:focus {
+    background-color: var(--color-primary);
+    color: var(--color-primary-foreground);
+    border-radius: 2px;
+  }
+
+  input:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0px 1000px var(--color-card) inset !important;
+    -webkit-text-fill-color: var(--color-foreground) !important;
+  }
+}
