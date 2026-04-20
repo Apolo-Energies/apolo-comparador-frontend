@@ -2,7 +2,7 @@ export const environment = {
   production: true,
   clientName: 'renova',
   apiUrl: 'https://api.apoloenergies.es',
-  logoUrl: '/renova/logo.svg',
+  logoUrl: '/renova/logo.webp',
   features: {
     comparator: true,
     sips: true,
