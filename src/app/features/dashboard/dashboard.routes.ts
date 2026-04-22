@@ -9,6 +9,7 @@ import { Layout } from '../layout/layout';
 import { permissionGuard } from '../../guards/permission.guard';
 import { ForbiddenComponent } from '../../pages/forbidden/forbidden';
 import { SipsPageComponent } from './pages/sips/sips-page';
+import { RatesPageComponent } from './pages/rates/rates-page';
 
 export const DASHBOARD_ROUTES: Routes = [
   {
@@ -41,7 +42,7 @@ export const DASHBOARD_ROUTES: Routes = [
         children: [
           { path: 'users',       component: UsersPageComponent },
           { path: 'commission',  component: CommissionsPageComponent },
-          { path: 'rates',       component: ForbiddenComponent },
+          { path: 'rates',       component: RatesPageComponent },
         ],
       },
 
