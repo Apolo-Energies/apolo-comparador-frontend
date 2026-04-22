@@ -17,6 +17,6 @@ export class ProviderService {
   }
 
   getByUser() {
-    return this.http.get<{ result: Provider }>(`${environment.apiUrl}/provider/user-provider`);
+    return this.http.get<Provider>(`${environment.apiUrl}/provider/user-provider`);
   }
 }
