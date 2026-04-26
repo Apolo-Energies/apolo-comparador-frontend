@@ -1,13 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, inject, PLATFORM_ID, signal } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { forkJoin } from 'rxjs';
+import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal } from '@angular/core';
 import { ButtonComponent } from '@apolo-energies/ui';
 import { DownloadIcon, UiIconSource } from '@apolo-energies/icons';
 
-import { DashboardStatsService } from '../../../../../../services/dashboard-stats.service';
 import { mapDailyToChart, mapMonthlyToChart, mapSummaryToKpis } from '../../mappers/dashboard.mapper';
 import { ChartBar, DASHBOARD_STATUS, DateRange, DashboardStatus, KpiCardViewModel } from '../../models/dashboard-ui.models';
-import { SummaryApiResult } from '../../models/dashboard-api.models';
+import { DailySummaryApiItem, MonthlySummaryApiItem, SummaryApiResult } from '../../models/dashboard-api.models';
 import { KpiCardComponent } from '../kpi-card/kpi-card';
 import { BarChartComponent } from '../bar-chart/bar-chart';
 import { DateRangePickerComponent } from '../date-range-picker/date-range-picker';
@@ -27,8 +24,13 @@ const CHART_TITLES = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StatisticsDashboardComponent {
-  private dashboardService = inject(DashboardStatsService);
-  private platformId       = inject(PLATFORM_ID);
+  summary = input<SummaryApiResult | null>(null);
+  dailySummary = input<DailySummaryApiItem[]>([]);
+  monthlySummary = input<MonthlySummaryApiItem[]>([]);
+  loading = input(false);
+
+  rangeChange = output<DateRange>();
+  retryRequest = output<void>();
 
   readonly downloadIcon: UiIconSource = { type: 'apolo', icon: DownloadIcon, size: 16 };
 
@@ -40,40 +42,31 @@ export class StatisticsDashboardComponent {
   readonly kpis        = signal<KpiCardViewModel[]>([]);
   readonly dailyBars   = signal<ChartBar[]>([]);
   readonly monthlyBars = signal<ChartBar[]>([]);
-  readonly dateRange   = signal<DateRange>({ from: null, to: null });
 
   /** Derived state booleans — keep template free of string comparisons. */
-  readonly isLoading = computed(() => this.status() === DASHBOARD_STATUS.LOADING);
+  readonly isLoading = computed(() => this.loading() || this.status() === DASHBOARD_STATUS.LOADING);
   readonly isSuccess = computed(() => this.status() === DASHBOARD_STATUS.SUCCESS);
   readonly isError   = computed(() => this.status() === DASHBOARD_STATUS.ERROR);
   readonly isEmpty   = computed(() => this.status() === DASHBOARD_STATUS.EMPTY);
 
   constructor() {
-    if (isPlatformBrowser(this.platformId)) {
-      this.load();
-    }
-  }
+    effect(() => {
+      const summaryData = this.summary();
+      const dailyData = this.dailySummary();
+      const monthlyData = this.monthlySummary();
 
-  private load(): void {
-    this.status.set(DASHBOARD_STATUS.LOADING);
-    const range = this.dateRange();
-
-    forkJoin({
-      summary: this.dashboardService.getSummary(range),
-      daily:   this.dashboardService.getDailySummary(range),
-      monthly: this.dashboardService.getMonthlySummary(range),
-    }).subscribe({
-      next: ({ summary, daily, monthly }) => {
-        this.kpis.set(mapSummaryToKpis(summary));
-        this.dailyBars.set(mapDailyToChart(daily));
-        this.monthlyBars.set(mapMonthlyToChart(monthly));
+      if (summaryData) {
+        this.kpis.set(mapSummaryToKpis(summaryData));
+        this.dailyBars.set(mapDailyToChart(dailyData));
+        this.monthlyBars.set(mapMonthlyToChart(monthlyData));
         this.status.set(
-          this.isDashboardEmpty(summary)
+          this.isDashboardEmpty(summaryData)
             ? DASHBOARD_STATUS.EMPTY
             : DASHBOARD_STATUS.SUCCESS,
         );
-      },
-      error: () => this.status.set(DASHBOARD_STATUS.ERROR),
+      } else if (!this.loading()) {
+        this.status.set(DASHBOARD_STATUS.EMPTY);
+      }
     });
   }
 
@@ -82,8 +75,7 @@ export class StatisticsDashboardComponent {
   }
 
   onDateRangeChange(range: DateRange): void {
-    this.dateRange.set(range);
-    this.load();
+    this.rangeChange.emit(range);
   }
 
   onExportReport(): void {
@@ -91,6 +83,6 @@ export class StatisticsDashboardComponent {
   }
 
   onRetry(): void {
-    this.load();
+    this.retryRequest.emit();
   }
 }
