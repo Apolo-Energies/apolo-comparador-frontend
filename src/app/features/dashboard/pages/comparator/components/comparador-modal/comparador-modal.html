@@ -135,7 +135,7 @@
               class="text-sm"
               [class.text-green-400]="r.ahorro_porcent > 0"
               [class.text-red-400]="r.ahorro_porcent <= 0"
-            >+ {{ r.ahorro_porcent }}% de ahorro</p>
+            >{{ r.ahorro_porcent > 0 ? '+' : '-' }} {{ r.ahorro_porcent < 0 ? r.ahorro_porcent * -1 : r.ahorro_porcent }}% de ahorro</p>
           </div>
 
         </div>

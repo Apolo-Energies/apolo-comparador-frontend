@@ -46,9 +46,13 @@ export const appConfig: ApplicationConfig = {
         if (token && isJwtExpired(token) && !refreshTokenSvc.getRefreshToken()) {
           auth.signOut();
         }
-        if ((environment as { faviconUrl?: string }).faviconUrl) {
+        const env = environment as { faviconUrl?: string; appTitle?: string };
+        if (env.faviconUrl) {
           const link = document.querySelector<HTMLLinkElement>("link[rel='icon']");
-          if (link) link.href = (environment as { faviconUrl: string }).faviconUrl;
+          if (link) link.href = env.faviconUrl;
+        }
+        if (env.appTitle) {
+          document.title = env.appTitle;
         }
       },
       deps: [AuthService, PLATFORM_ID, RefreshTokenService],

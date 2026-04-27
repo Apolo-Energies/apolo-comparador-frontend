@@ -1,3 +1,35 @@
+/** Usuario dentro de un registro de comparación */
+export interface ComparisonUser {
+  id:              string;
+  fullName:        string;
+  email:           string;
+  phone:           string | null;
+  isEnergyExpert:  boolean;
+  isActive:        boolean;
+  role:            string;
+  providerId:      number;
+  provider:        unknown | null;
+  commissions:     unknown[];
+}
+
+/** Registro individual de comparación (history.items y by-id endpoint) */
+export interface ComparisonDetailItem {
+  id:                string;
+  userId:            string;
+  user:              ComparisonUser;
+  fileId:            string;
+  file:              unknown | null;
+  cups:              string;
+  annualConsumption: number;
+  createdAt:         string;
+  commissionAmount:  number | null;
+  commissionPercent: number | null;
+  monthlySavings:    number | null;
+  annualSavings:     number | null;
+  savingsPercent:    number | null;
+}
+
+/** Fila agregada por usuario (summary.data) */
 export interface HistoryItem {
   userId:                 string;
   fullName:               string;
@@ -7,7 +39,18 @@ export interface HistoryItem {
 }
 
 export interface PaginatedHistory {
-  items:           HistoryItem[];
+  items:           ComparisonDetailItem[];
+  currentPage:     number;
+  pageSize:        number;
+  totalCount:      number;
+  totalPages:      number;
+  hasPreviousPage: boolean;
+  hasNextPage:     boolean;
+}
+
+/** Respuesta paginada del endpoint /comparison-history/by-id */
+export interface PaginatedComparisonDetail {
+  items:           ComparisonDetailItem[];
   currentPage:     number;
   pageSize:        number;
   totalCount:      number;
@@ -17,6 +60,7 @@ export interface PaginatedHistory {
 }
 
 export interface SummaryApiResult {
+  data:                     HistoryItem[];
   totalCups:                number;
   totalAnnualConsumption:   number;
   totalUsersActive:         number;
@@ -59,7 +103,7 @@ export interface FiltersData {
   providers: FilterProvider[];
 }
 
-/** Respuesta consolidada del nuevo endpoint /comparison-history/data */
+/** Respuesta consolidada del endpoint /comparison-history/data */
 export interface ConsolidatedComparisonData {
   history:         PaginatedHistory | null;
   summary:         SummaryApiResult | null;
@@ -84,40 +128,4 @@ export interface ConsolidatedDataParams {
   historySortDirection?:    'Asc' | 'Desc';
   historyPage?:             number;
   historyPageSize?:         number;
-}
-
-/** Detalle de comparación individual */
-export interface ComparisonDetailItem {
-  id:                 string;
-  userId:             string;
-  user:               ComparisonUser;
-  fileId:             string;
-  file:               unknown | null;
-  cups:               string;
-  annualConsumption:  number;
-  createdAt:          string;
-}
-
-export interface ComparisonUser {
-  id:              string;
-  fullName:        string;
-  email:           string;
-  phone:           string | null;
-  isEnergyExpert:  boolean;
-  isActive:        boolean;
-  role:            string;
-  providerId:      number;
-  provider:        unknown | null;
-  commissions:     unknown[];
-}
-
-/** Respuesta paginada del detalle de comparaciones por usuario */
-export interface PaginatedComparisonDetail {
-  items:           ComparisonDetailItem[];
-  currentPage:     number;
-  pageSize:        number;
-  totalCount:      number;
-  totalPages:      number;
-  hasPreviousPage: boolean;
-  hasNextPage:     boolean;
 }

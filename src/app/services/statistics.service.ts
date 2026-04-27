@@ -29,8 +29,8 @@ export class StatisticsService {
 
   getByFilters(filters: StatisticsFilters = {}) {
     let params = new HttpParams()
-      .set('includeHistory', 'true')
-      .set('includeSummary', 'false');
+      .set('includeHistory', 'false')
+      .set('includeSummary', 'true');
 
     if (filters.name)          params = params.set('historyFullNameFilter', filters.name);
     if (filters.email)         params = params.set('historyEmailFilter', filters.email);
@@ -43,12 +43,15 @@ export class StatisticsService {
       `${environment.apiUrl}/${BASE_PATH}/data`,
       { params }
     ).pipe(
-      map(res => ({ 
-        result: (res.history?.items ?? []) as StatisticsRow[], 
-        total: res.history?.totalCount ?? 0,
-        totalPages: res.history?.totalPages ?? 1,
-        currentPage: res.history?.currentPage ?? 1
-      }))
+      map(res => {
+        const rows = (res.summary?.data ?? []) as StatisticsRow[];
+        return {
+          result:      rows,
+          total:       res.summary?.totalUsersActive ?? rows.length,
+          totalPages:  1,
+          currentPage: 1,
+        };
+      })
     );
   }
 }
