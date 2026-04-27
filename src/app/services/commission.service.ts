@@ -51,20 +51,20 @@ export class CommissionService {
   }
 
   create(data: CreateCommissionRequest) {
-    return this.http.post<{ result: CommissionRow }>(`${environment.apiUrl}/commission`, data);
+    return this.http.post<{ result: CommissionRow }>(`${environment.apiUrl}/commission/create`, data);
   }
 
   update(id: string, data: CreateCommissionRequest) {
-    return this.http.patch<{ result: CommissionRow }>(`${environment.apiUrl}/commission/${id}`, data);
+    return this.http.put<{ result: CommissionRow }>(`${environment.apiUrl}/commission/update/${id}`, data);
   }
 
   delete(id: string) {
-    return this.http.delete(`${environment.apiUrl}/commission/${id}`);
+    return this.http.delete(`${environment.apiUrl}/commission/remove/${id}`);
   }
 
   load(userId: string) {
     if (this.loaded) return;
-    this.http.get<{ result: UserCommission }>(`${environment.apiUrl}/commission/${userId}`)
+    this.http.get<{ result: UserCommission }>(`${environment.apiUrl}/user-commission/${userId}`)
       .pipe(
         tap(res => {
           this.commission.set(res.result?.commissionType?.percentage ?? 0);

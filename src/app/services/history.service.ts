@@ -64,6 +64,6 @@ export class HistoryService {
   }
 
   downloadExcel(): Observable<Blob> {
-    return this.http.get(`${environment.apiUrl}/reports/comparison-history/excel`, { responseType: 'blob' });
+    return this.http.post(`${environment.apiUrl}/reports/excel-report`, {}, { responseType: 'blob' });
   }
 }

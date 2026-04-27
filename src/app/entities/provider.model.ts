@@ -1,3 +1,5 @@
+import { Period } from '../shared/constants/period';
+
 export interface Provider {
   id:      number;
   name:    string;
@@ -24,7 +26,7 @@ export interface BoePower {
 
 export interface BoePowerPeriod {
   id:         number;
-  period:     string;  // "P1", "P2", etc.
+  period:     Period;
   value:      number;
   boePowerId: number;
   boePower:   BoePower | null;
@@ -40,7 +42,7 @@ export interface OmieDistribution {
 
 export interface OmieDistributionPeriod {
   id:                 number;
-  period:             string;  // "P1", "P2", etc.
+  period:             Period;
   factor:             number;
   omieDistributionId: number;
   omieDistribution:   OmieDistribution | null;
@@ -56,7 +58,7 @@ export interface Product {
 
 export interface ProductPeriod {
   id:        number;
-  period:    string;  // "P1", "P2", etc.
+  period:    Period;
   value:     number;
   productId: number;
   product:   Product | null;

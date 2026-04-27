@@ -17,6 +17,7 @@ import {
   ComparatorProductsByTariff,
   OcrResult,
 } from '../../comparator.models';
+import { PERIOD_NUMBERS } from '../../../../../../shared/constants/period';
 
 @Component({
   selector: 'app-comparador-modal',
@@ -38,10 +39,26 @@ export class ComparadorModalComponent {
   readonly maxFeePotencia     = input(25);
   readonly result             = input<ComparadorResult | null>(null);
 
+  // ── visibility flags (default = current private behavior) ──────────────────
+  readonly showPrecioMedio     = input(true);
+  readonly showFeeEnergia      = input(true);
+  readonly showFeePotencia     = input(true);
+  readonly showComisionCard    = input(true);
+  readonly showExcelButton     = input(true);
+  readonly showContratarButton = input(false);
+  readonly showProductoSelector = input(true);
+
+  // ── button labels / variants ───────────────────────────────────────────────
+  readonly contratarButtonLabel   = input<string>('Contratar Apolo');
+  readonly pdfButtonLabel         = input<string>('Descargar PDF');
+  readonly contratarButtonVariant = input<'default' | 'secondary'>('secondary');
+  readonly pdfButtonVariant       = input<'default' | 'secondary'>('default');
+
   // ── outputs ────────────────────────────────────────────────────────────────
   readonly openChange = output<boolean>();
   readonly formChange = output<ComparadorFormValue>();
   readonly download   = output<ComparadorDownloadEvent>();
+  readonly contratar  = output<ComparadorFormValue>();
 
   // ── icons ──────────────────────────────────────────────────────────────────
   readonly excelIcon:    UiIconSource = { type: 'apolo', icon: FileSpreadsheetIcon, size: 16 };
@@ -151,6 +168,10 @@ export class ComparadorModalComponent {
     this.download.emit({ type, formValue: this.buildFormValue() });
   }
 
+  onContratar() {
+    this.contratar.emit(this.buildFormValue());
+  }
+
   // ── helpers ────────────────────────────────────────────────────────────────
 
   private applyFeeBlocking(producto: string) {
@@ -177,7 +198,7 @@ export class ComparadorModalComponent {
 
   // ── formatting ─────────────────────────────────────────────────────────────
 
-  readonly PERIODOS = [1, 2, 3, 4, 5, 6] as const;
+  readonly PERIODOS = PERIOD_NUMBERS;
 
   getPrecioEnergia(periodos: { periodo: number | string; precioEnergiaOferta?: number }[], p: number): string {
     const found = periodos.find(x => Number(x.periodo) === p);

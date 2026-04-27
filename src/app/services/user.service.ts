@@ -37,11 +37,11 @@ export class UserService {
   private http = inject(HttpClient);
 
   create(data: CreateUserRequest) {
-    return this.http.post<CreateUserResponse>(`${environment.apiUrl}/users`, data);
+    return this.http.post<CreateUserResponse>(`${environment.apiUrl}/user`, data);
   }
 
   patch(id: string, data: UpdateUserRequest) {
-    return this.http.patch(`${environment.apiUrl}/users/${id}`, data);
+    return this.http.patch(`${environment.apiUrl}/user/${id}`, data);
   }
 
   getByFilters(filters: UserFilters = {}) {
@@ -53,10 +53,10 @@ export class UserService {
     if (filters.email)    params = params.set('email',    filters.email);
     if (filters.role)     params = params.set('role',     filters.role);
 
-    return this.http.get<UserPaged>(`${environment.apiUrl}/users`, { params });
+    return this.http.get<UserPaged>(`${environment.apiUrl}/user/user-filter`, { params });
   }
 
   downloadExcel(): Observable<Blob> {
-    return this.http.get(`${environment.apiUrl}/reports/users/excel`, { responseType: 'blob' });
+    return this.http.post(`${environment.apiUrl}/reports/excel-users-report`, {}, { responseType: 'blob' });
   }
 }

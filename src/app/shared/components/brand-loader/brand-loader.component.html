@@ -1,0 +1,148 @@
+@if (visible()) {
+  <div
+    [class]="outerClass()"
+    [style.background]="outerBackground()"
+    role="status"
+    aria-live="polite"
+  >
+    <div class="flex flex-col items-center text-center px-6 w-full max-w-md bl-content">
+      @if (showLogo()) {
+        <div
+          class="relative flex items-center justify-center"
+          [class.mb-8]="showWordmark() || showTitle() || showDescription() || showBar() || showMicrocopy()"
+          [style.width.px]="size()"
+          [style.height.px]="size()"
+        >
+          <svg
+            class="absolute inset-0 h-full w-full bl-spin"
+            [style.filter]="'drop-shadow(0 0 18px ' + theme().glowColor + ')'"
+            viewBox="0 0 100 100"
+            aria-hidden="true"
+          >
+            <circle
+              cx="50"
+              cy="50"
+              [attr.r]="radius"
+              stroke="rgba(255, 255, 255, 0.07)"
+              stroke-width="2"
+              fill="none"
+            />
+            <circle
+              cx="50"
+              cy="50"
+              [attr.r]="radius"
+              [attr.stroke]="theme().ringColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              fill="none"
+              transform="rotate(-90 50 50)"
+              class="bl-arc"
+              [attr.stroke-dasharray]="ringDashArray"
+            />
+          </svg>
+
+          <img
+            [src]="theme().logoSrc"
+            [alt]="theme().wordmark"
+            class="relative object-contain select-none pointer-events-none"
+            [style.width.px]="size() * 0.55"
+            [style.height.px]="size() * 0.55"
+            draggable="false"
+          />
+        </div>
+      }
+
+      @if (showWordmark()) {
+        <h1 class="text-white text-2xl font-semibold tracking-tight">
+          {{ theme().wordmark }}
+        </h1>
+      }
+
+      @if (showTitle()) {
+        <h2
+          class="text-white/90 text-base font-medium"
+          [class.mt-2]="showWordmark()"
+        >
+          {{ title() }}
+        </h2>
+      }
+
+      @if (showDescription() && description()) {
+        <p
+          class="text-white/55 text-sm leading-relaxed max-w-sm"
+          [class.mt-3]="showTitle() || showWordmark()"
+        >
+          {{ description() }}
+        </p>
+      }
+
+      @if (showBar()) {
+        <div
+          class="w-full max-w-xs"
+          [class.mt-8]="showLogo() || showWordmark() || showTitle() || showDescription()"
+        >
+          <div class="relative h-0.75 w-full rounded-full bg-white/10 overflow-visible">
+            <div
+              class="absolute inset-y-0 left-0 rounded-full bl-bar-fill"
+              [style.width.%]="displayProgress()"
+              [style.background]="
+                'linear-gradient(90deg, ' +
+                theme().ringColor + '80 0%, ' +
+                theme().ringColor + ' 70%, ' +
+                theme().accentColor + ' 100%)'
+              "
+              [style.boxShadow]="'0 0 12px ' + theme().glowColor"
+            ></div>
+
+            <div
+              class="bl-bar-icon"
+              [style.left.%]="displayProgress()"
+              [style.filter]="'drop-shadow(0 0 10px ' + theme().glowColor + ')'"
+              aria-hidden="true"
+            >
+              <img
+                [src]="theme().logoSrc"
+                [alt]=""
+                class="bl-bar-icon-img"
+                draggable="false"
+              />
+            </div>
+          </div>
+
+          @if (showPercent()) {
+            <div
+              class="mt-4 text-sm tabular-nums font-medium"
+              [style.color]="theme().accentColor"
+            >
+              {{ progressLabel() }}
+            </div>
+          }
+        </div>
+      }
+
+      @if (showMicrocopy() && microcopy()) {
+        <div
+          class="flex items-center gap-2 text-white/40 text-xs"
+          [class.mt-6]="showLogo() || showWordmark() || showTitle() || showDescription() || showBar()"
+        >
+          @if (showMicrocopyIcon()) {
+            <svg
+              class="h-3.5 w-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 2" />
+            </svg>
+          }
+          <span>{{ microcopy() }}</span>
+        </div>
+      }
+    </div>
+  </div>
+}

@@ -1,7 +1,7 @@
 export const environment = {
   production: true,
   clientName: 'apolo',
-  apiUrl: 'https://api.apolo.com',
+  apiUrl: 'https://api.apoloenergies.es/api/apolo/v1',
   logoUrl: '/apolo/apolologo.webp',
   features: {
     comparator: true,

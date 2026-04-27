@@ -16,68 +16,78 @@
           </p>
         </div>
 
-        <div class="grid grid-cols-2 gap-2">
-          <ui-select
-          label="Producto"
-          placeholder="Selecciona producto"
-          [options]="productoOptions()"
-          [value]="producto()"
-          (valueChange)="onProductoChange($event)"
-        />
+        @if (showProductoSelector() || showPrecioMedio()) {
+          <div [class.grid]="showPrecioMedio() && showProductoSelector()" [class.grid-cols-2]="showPrecioMedio() && showProductoSelector()" [class.gap-2]="showPrecioMedio() && showProductoSelector()">
+            @if (showProductoSelector()) {
+              <ui-select
+                label="Producto"
+                placeholder="Selecciona producto"
+                [options]="productoOptions()"
+                [value]="producto()"
+                (valueChange)="onProductoChange($event)"
+              />
+            }
 
-          <!-- Precio medio OMIE -->
-          <ui-input
-              label="Precio medio OMIE (€/MWh)"
-              type="number"
-              placeholder="20"
-              [value]="precioMedio() === 0 ? '' : precioMedio().toString()"
-              (valueChange)="onPrecioMedioChange($event)"
-            />
-        </div>
+            <!-- Precio medio OMIE -->
+            @if (showPrecioMedio()) {
+              <ui-input
+                  label="Precio medio OMIE (€/MWh)"
+                  type="number"
+                  placeholder="20"
+                  [value]="precioMedio() === 0 ? '' : precioMedio().toString()"
+                  (valueChange)="onPrecioMedioChange($event)"
+                />
+            }
+          </div>
+        }
 
       <!-- Producto -->
 
 
       <!-- Fee Energía -->
-      <div class="flex flex-col gap-2">
-        <div class="flex justify-between items-center">
-          <span class="text-sm font-medium text-foreground">
-            Fee Energía
-            <span class="text-xs font-normal text-muted-foreground ml-1">€/MWh</span>
-          </span>
-          <span class="text-sm font-mono font-semibold text-primary">{{ feeEnergia() }}</span>
+      @if (showFeeEnergia()) {
+        <div class="flex flex-col gap-2">
+          <div class="flex justify-between items-center">
+            <span class="text-sm font-medium text-foreground">
+              Fee Energía
+              <span class="text-xs font-normal text-muted-foreground ml-1">€/MWh</span>
+            </span>
+            <span class="text-sm font-mono font-semibold text-primary">{{ feeEnergia() }}</span>
+          </div>
+          <ui-slider
+            [value]="feeEnergia()"
+            [min]="0"
+            [max]="maxFeeEnergia()"
+            [step]="1"
+            [disabled]="isFeeBlocked()"
+            (valueChange)="onFeeEnergiaChange($event)"
+          />
+          @if (isFeeBlocked()) {
+            <p class="text-xs text-muted-foreground">Bloqueado en 0 para este producto</p>
+          }
         </div>
-        <ui-slider
-          [value]="feeEnergia()"
-          [min]="0"
-          [max]="maxFeeEnergia()"
-          [step]="1"
-          [disabled]="isFeeBlocked()"
-          (valueChange)="onFeeEnergiaChange($event)"
-        />
-        @if (isFeeBlocked()) {
-          <p class="text-xs text-muted-foreground">Bloqueado en 0 para este producto</p>
-        }
-      </div>
+      }
 
       <!-- Fee Potencia -->
-      <div class="flex flex-col gap-2">
-        <div class="flex justify-between items-center">
-          <span class="text-sm font-medium text-foreground">
-            Fee Potencia
-            <span class="text-xs font-normal text-muted-foreground ml-1">€/kW/año</span>
-          </span>
-          <span class="text-sm font-mono font-semibold text-primary">{{ feePotencia() }}</span>
+      @if (showFeePotencia()) {
+        <div class="flex flex-col gap-2">
+          <div class="flex justify-between items-center">
+            <span class="text-sm font-medium text-foreground">
+              Fee Potencia
+              <span class="text-xs font-normal text-muted-foreground ml-1">€/kW/año</span>
+            </span>
+            <span class="text-sm font-mono font-semibold text-primary">{{ feePotencia() }}</span>
+          </div>
+          <ui-slider
+            [value]="feePotencia()"
+            [min]="0"
+            [max]="maxFeePotencia()"
+            [step]="1"
+            [disabled]="isFeeBlocked()"
+            (valueChange)="onFeePotenciaChange($event)"
+          />
         </div>
-        <ui-slider
-          [value]="feePotencia()"
-          [min]="0"
-          [max]="maxFeePotencia()"
-          [step]="1"
-          [disabled]="isFeeBlocked()"
-          (valueChange)="onFeePotenciaChange($event)"
-        />
-      </div>
+      }
 
       <!-- Comisión Energía
       @if (isReferrer()) {
@@ -101,14 +111,16 @@
 
       @if (result(); as r) {
         <!-- KPI cards -->
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid gap-4" [class.grid-cols-2]="showComisionCard()" [class.grid-cols-1]="!showComisionCard()">
 
           <!-- Comisión comercial -->
-          <div class="p-4 rounded-lg bg-card border border-border">
-            <p class="text-sm font-medium text-foreground mb-1">Comisión comercial</p>
-            <p class="text-2xl font-bold text-foreground">{{ truncate(r.comision) }}€</p>
-            <p class="text-sm text-green-400">+ 10% extra</p>
-          </div>
+          @if (showComisionCard()) {
+            <div class="p-4 rounded-lg bg-card border border-border">
+              <p class="text-sm font-medium text-foreground mb-1">Comisión comercial</p>
+              <p class="text-2xl font-bold text-foreground">{{ truncate(r.comision) }}€</p>
+              <p class="text-sm text-green-400">+ 10% extra</p>
+            </div>
+          }
 
           <!-- Ahorro cliente -->
           <div class="p-4 rounded-lg bg-card border border-border">
@@ -197,17 +209,28 @@
 
   <!-- ── Footer ─────────────────────────────────────────────────────────── -->
   <div class="flex items-center justify-between gap-2 px-6 py-4 border-t border-border">
+    @if (showExcelButton()) {
+      <ui-button
+        label="Exportar Excel"
+        variant="secondary"
+        size="md"
+        [leadingIcon]="excelIcon"
+        [disabled]="!result()"
+        (click)="onDownload('excel')"
+      />
+    }
+    @if (showContratarButton()) {
+      <ui-button
+        [label]="contratarButtonLabel()"
+        [variant]="contratarButtonVariant()"
+        size="md"
+        [disabled]="!result()"
+        (click)="onContratar()"
+      />
+    }
     <ui-button
-      label="Exportar Excel"
-      variant="secondary"
-      size="md"
-      [leadingIcon]="excelIcon"
-      [disabled]="!result()"
-      (click)="onDownload('excel')"
-    />
-    <ui-button
-      label="Descargar PDF"
-      variant="default"
+      [label]="pdfButtonLabel()"
+      [variant]="pdfButtonVariant()"
       size="md"
       [leadingIcon]="pdfIcon"
       [disabled]="!result()"

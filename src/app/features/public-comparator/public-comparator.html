@@ -1,0 +1,36 @@
+<app-brand-loader [visible]="loading()" />
+
+<div #root class="bg-transparent p-4">
+  <div class="mx-auto max-w-2xl">
+    <app-comparador-upload
+      [showUserSelector]="false"
+      [loading]="loading()"
+      (compare)="onCompare($event)"
+    />
+  </div>
+
+  <app-comparador-modal
+    [open]="modalOpen()"
+    [ocrResult]="ocrResult()"
+    [productsByTariff]="productsByTariff"
+    [feeLockedProducts]="feeLockedProducts"
+    [isReferrer]="false"
+    [comisionBase]="0"
+    [result]="result()"
+    [showPrecioMedio]="false"
+    [showFeeEnergia]="false"
+    [showFeePotencia]="false"
+    [showComisionCard]="false"
+    [showExcelButton]="false"
+    [showContratarButton]="true"
+    [showProductoSelector]="false"
+    contratarButtonLabel="Ver comparativa"
+    pdfButtonLabel="Solicitar oferta"
+    contratarButtonVariant="secondary"
+    pdfButtonVariant="default"
+    (openChange)="modalOpen.set($event)"
+    (formChange)="onFormChange($event)"
+    (download)="onSolicitarOferta()"
+    (contratar)="onVerComparativa($event)"
+  />
+</div>

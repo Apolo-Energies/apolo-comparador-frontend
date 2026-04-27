@@ -1,7 +1,7 @@
 export const environment = {
   production: false,
   clientName: 'apolo',
-  apiUrl: 'http://localhost:5102/api/renovae/v1',
+  apiUrl: 'http://localhost:5025/api/apolo/v1',
   logoUrl: '/apolo/apolologo.webp',
   features: {
     comparator: true,
