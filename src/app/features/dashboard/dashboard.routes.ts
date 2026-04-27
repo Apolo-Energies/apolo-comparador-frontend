@@ -12,6 +12,7 @@ import { ForbiddenComponent } from '../../pages/forbidden/forbidden';
 import { SipsPageComponent } from './pages/sips/sips-page';
 import { FastDischarge } from './pages/fast-discharge/fast-discharge';
 import { FAST_DISCHARGE_ROUTES } from './pages/fast-discharge/fast-discharge.routes';
+import { RatesPageComponent } from './pages/rates/rates-page';
 
 export const DASHBOARD_ROUTES: Routes = [
   {
