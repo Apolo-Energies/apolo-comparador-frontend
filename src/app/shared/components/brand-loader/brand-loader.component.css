@@ -1,0 +1,87 @@
+:host {
+  display: contents;
+}
+
+@keyframes bl-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes bl-content-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes bl-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes bl-pulse {
+  0%, 100% { opacity: 0.9; }
+  50%      { opacity: 1; }
+}
+
+@keyframes bl-bar-icon-dance {
+  0%, 100% { transform: rotate(90deg) scale(1); }
+  50%      { transform: rotate(102deg) scale(1.15); }
+}
+
+.bl-overlay {
+  animation: bl-overlay-in 320ms ease-out;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+
+.bl-content {
+  animation: bl-content-in 420ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
+}
+
+.bl-spin {
+  animation: bl-spin 2.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  transform-origin: center;
+}
+
+.bl-arc {
+  animation: bl-pulse 2.4s ease-in-out infinite;
+}
+
+.bl-bar-fill {
+  transition: width 420ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bl-bar-icon {
+  position: absolute;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  transform: translate(-50%, -50%);
+  transition: left 420ms cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.bl-bar-icon-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  transform-origin: center;
+  animation: bl-bar-icon-dance 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bl-overlay,
+  .bl-content,
+  .bl-spin,
+  .bl-arc,
+  .bl-bar-icon-img {
+    animation: none;
+  }
+  .bl-bar-icon-img {
+    transform: rotate(90deg);
+  }
+  .bl-bar-fill,
+  .bl-bar-icon {
+    transition: none;
+  }
+}

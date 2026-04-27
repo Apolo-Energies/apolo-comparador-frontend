@@ -9,8 +9,7 @@ import { SipsPowerChartComponent, PowerBarDatum } from './components/power-chart
 import { SipsMonthlyChartComponent } from './components/montly-chart/monthly-chart.component';
 import { SipsConsumo, SipsPs } from '../../../../entities/sips.model';
 import { getMonthlyStackedChartData, MonthlyRowDatum } from '../../../../shared/utils/chart.utils';
-
-const PERIODS = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'] as const;
+import { PERIODS } from '../../../../shared/constants/period';
 
 function wToKwh(wh: number): number {
   return wh / 1000;

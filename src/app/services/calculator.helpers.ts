@@ -1,11 +1,6 @@
 import { ComparadorFormValue, ComparadorPeriodo, ComparadorResult, OcrResult } from '../features/dashboard/pages/comparator/comparator.models';
 import { Tariff } from '../entities/provider.model';
-
-type Periodo = 1 | 2 | 3 | 4 | 5 | 6;
-type PeriodoString = 'P1' | 'P2' | 'P3' | 'P4' | 'P5' | 'P6';
-
-// Convertir número de período a string (1 -> "P1", 2 -> "P2", etc.)
-const periodToString = (periodo: Periodo): PeriodoString => `P${periodo}` as PeriodoString;
+import { PERIOD_NUMBERS, PeriodNumber, numberToPeriod } from '../shared/constants/period';
 
 const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
@@ -53,23 +48,23 @@ const POTENCIA_FIJA_SNAP: Record<string, number> = {
 const getTariff = (tariffs: Tariff[], code: string) =>
   tariffs.find(t => t.code === code);
 
-const getBaseValue = (tariffs: Tariff[], tarifa: string, producto: string, periodo: Periodo): number => {
+const getBaseValue = (tariffs: Tariff[], tarifa: string, producto: string, periodo: PeriodNumber): number => {
   const t    = getTariff(tariffs, tarifa);
   const prod = t?.products.find(p => p.name === producto);
-  const periodoStr = periodToString(periodo);
+  const periodoStr = numberToPeriod(periodo);
   return prod?.periods.find(p => p.period === periodoStr)?.value ?? 0;
 };
 
-const getRepartoOmie = (tariffs: Tariff[], tarifa: string, periodo: Periodo): number => {
+const getRepartoOmie = (tariffs: Tariff[], tarifa: string, periodo: PeriodNumber): number => {
   const t       = getTariff(tariffs, tarifa);
-  const periodoStr = periodToString(periodo);
+  const periodoStr = numberToPeriod(periodo);
   const reparto = t?.omieDistributions.find(r => r.periods.some(p => p.period === periodoStr));
   return reparto?.periods.find(p => p.period === periodoStr)?.factor ?? 0;
 };
 
-const getPotenciaBOE = (tariffs: Tariff[], tarifa: string, periodo: Periodo): number => {
+const getPotenciaBOE = (tariffs: Tariff[], tarifa: string, periodo: PeriodNumber): number => {
   const t       = getTariff(tariffs, tarifa);
-  const periodoStr = periodToString(periodo);
+  const periodoStr = numberToPeriod(periodo);
   const boe     = t?.boePowers.find(r => r.periods.some(p => p.period === periodoStr));
   return boe?.periods.find(p => p.period === periodoStr)?.value ?? 0;
 };
@@ -78,7 +73,7 @@ const calcularPrecios = (
   tariffs: Tariff[],
   tarifa: string,
   modalidad: string,
-  periodo: Periodo,
+  periodo: PeriodNumber,
   precioMedioOmie: number,
   feeEnergia: number
 ): { base: number; oferta: number } => {
@@ -111,7 +106,7 @@ const calcularPrecios = (
 const calcularPotencia = (
   tariffs: Tariff[],
   tarifa: string,
-  periodo: Periodo,
+  periodo: PeriodNumber,
   feePotencia: number,
   modalidad: string
 ): { base: number; oferta: number } => {
@@ -133,7 +128,7 @@ export const calcularFactura = (
   ocr: OcrResult,
   tariffs: Tariff[]
 ): ComparadorResult => {
-  const PS: Periodo[] = [1, 2, 3, 4, 5, 6];
+  const PS = PERIOD_NUMBERS;
 
   const energiaPrecios  = PS.map(p => calcularPrecios(tariffs, form.tariff, form.producto, p, form.precioMedio, form.feeEnergia));
   const potenciaPrecios = PS.map(p => calcularPotencia(tariffs, form.tariff, p, form.feePotencia, form.producto));

@@ -6,9 +6,9 @@ import { environment } from '../../environments/environment';
 import { Tariff } from '../entities/provider.model';
 import { ProviderService } from './provider.service';
 import { CommissionService } from './commission.service';
+import { PublicComparatorService } from './public-comparator.service';
 import { calcularFactura } from './calculator.helpers';
-
-const PERIOD_LABELS = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'] as const;
+import { PERIODS } from '../shared/constants/period';
 
 const SNAP_ENERGIA: Record<string, number> = {
   'Fijo Snap Mini': 50,
@@ -29,6 +29,7 @@ export class ComparatorService {
   private http = inject(HttpClient);
   private providerService = inject(ProviderService);
   private commissionService = inject(CommissionService);
+  private publicService = inject(PublicComparatorService);
 
   readonly tariffs = signal<Tariff[]>([]);
   private loaded = false;
@@ -36,6 +37,16 @@ export class ComparatorService {
   loadTariffs() {
     if (this.loaded) return;
     this.providerService.getByUser().pipe(
+      tap(res => {
+        this.tariffs.set(res.tariffs);
+        this.loaded = true;
+      })
+    ).subscribe();
+  }
+
+  loadTariffsPublic() {
+    if (this.loaded) return;
+    this.publicService.getTariffs().pipe(
       tap(res => {
         this.tariffs.set(res.tariffs);
         this.loaded = true;
@@ -66,8 +77,9 @@ export class ComparatorService {
   upload(file: File, userId: string) {
     const form = new FormData();
     form.append('file', file);
-    form.append('userId', userId);
-    return this.http.post<{ fileId: string; ocrData: OcrResult }>(`${environment.apiUrl}/file/upload-and-process`, form);
+    form.append('name', file.name);
+    if (userId) form.append('userId', userId);
+    return this.http.post<{ fileId: string; ocrData: OcrResult }>(`${environment.apiUrl}/files/upload-and-process`, form);
   }
 
   calculate(form: ComparadorFormValue, ocr: OcrResult): ComparadorResult {
@@ -92,7 +104,7 @@ export class ComparatorService {
     const ivaOferta = totalOferta - subTotalOferta;
 
     const lineas = [
-      ...PERIOD_LABELS.map((label, idx) => {
+      ...PERIODS.map((label, idx) => {
         const kwh = ocr.energia?.[idx]?.activa?.kwh ?? 0;
         const precioActual = ocr.energia?.[idx]?.activa?.tarifa ?? 0;
         const costeActual = ocr.energia?.[idx]?.activa?.importe ?? 0;
@@ -107,7 +119,7 @@ export class ComparatorService {
           costeOferta: periodo?.costeEnergia ?? 0,
         };
       }),
-      ...PERIOD_LABELS.map((label, idx) => {
+      ...PERIODS.map((label, idx) => {
         const kw = ocr.potencia?.[idx]?.contratada?.kw ?? 0;
         const precioActual = ocr.potencia?.[idx]?.contratada?.tarifa ?? 0;
         const costeActual = ocr.potencia?.[idx]?.contratada?.importe ?? 0;
@@ -175,17 +187,129 @@ export class ComparatorService {
       lineas,
     };
 
-    return this.http.post(
-      `${environment.apiUrl}/reports/${type}`,
-      payload,
-      { responseType: 'blob' }
-    ).subscribe(blob => {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `comparador.${type === 'excel' ? 'xlsx' : 'pdf'}`;
-      a.click();
-      URL.revokeObjectURL(url);
+    const reportUrl = type === 'pdf'
+      ? `${environment.apiUrl}/comparison-history/pdf`
+      : `${environment.apiUrl}/reports/excel-report`;
+
+    return this.http.post(reportUrl, payload, { responseType: 'blob' }).subscribe(blob => {
+      this.triggerBlobDownload(blob, `comparador.${type === 'excel' ? 'xlsx' : 'pdf'}`);
     });
+  }
+
+  downloadPublicPdf(form: ComparadorFormValue, result: ComparadorResult | null, ocr: OcrResult | null, fileId: string) {
+    if (!result || !ocr) return;
+    const payload = this.buildReportPayload(form, result, ocr, fileId);
+    return this.publicService.downloadPdf(payload).subscribe(blob => {
+      this.triggerBlobDownload(blob as Blob, 'comparador.pdf');
+    });
+  }
+
+  private buildReportPayload(form: ComparadorFormValue, result: ComparadorResult, ocr: OcrResult, fileId: string) {
+    const dias = result.dias ?? ocr.periodo_facturacion?.numero_dias ?? 0;
+    const totalActual = ocr.total ?? 0;
+    const totalOferta = totalActual - result.ahorroEstudio;
+
+    const baseActual = (ocr.totales_electricidad?.energia?.activa ?? 0)
+      + (ocr.totales_electricidad?.potencia?.contratada ?? 0);
+    const ieActual = ocr.ie?.importe ?? 0;
+    const ivaActual = ocr.iva?.importe ?? 0;
+
+    const subTotalOferta = totalOferta / (1 + 0.21);
+    const ieOferta = subTotalOferta * 0.0511269632 / (1 + 0.0511269632);
+    const baseOferta = subTotalOferta - ieOferta;
+    const ivaOferta = totalOferta - subTotalOferta;
+
+    const lineas = [
+      ...PERIODS.map((label, idx) => {
+        const kwh = ocr.energia?.[idx]?.activa?.kwh ?? 0;
+        const precioActual = ocr.energia?.[idx]?.activa?.tarifa ?? 0;
+        const costeActual = ocr.energia?.[idx]?.activa?.importe ?? 0;
+        const periodo = result.periodos.find(p => Number(p.periodo) === idx + 1);
+        return {
+          termino: `ENERGÍA ${label}`,
+          unidad: 'kWh',
+          valor: kwh,
+          precioActual,
+          costeActual,
+          precioOferta: periodo?.precioEnergiaOferta ?? 0,
+          costeOferta: periodo?.costeEnergia ?? 0,
+        };
+      }),
+      ...PERIODS.map((label, idx) => {
+        const kw = ocr.potencia?.[idx]?.contratada?.kw ?? 0;
+        const precioActual = ocr.potencia?.[idx]?.contratada?.tarifa ?? 0;
+        const costeActual = ocr.potencia?.[idx]?.contratada?.importe ?? 0;
+        const periodo = result.periodos.find(p => Number(p.periodo) === idx + 1);
+        return {
+          termino: `POTENCIA ${label}`,
+          unidad: 'kW',
+          valor: kw,
+          precioActual,
+          costeActual,
+          precioOferta: periodo?.precioPotenciaOferta ?? 0,
+          costeOferta: periodo?.costePotencia ?? 0,
+        };
+      }),
+    ];
+
+    return {
+      fileId,
+      cups: ocr.cliente?.cups ?? '',
+      providerId: 1,
+      datos: {
+        titulo: 'Comparativa de oferta',
+        tarifa: form.tariff,
+        modalidad: form.producto,
+        periodo: ocr.periodo_facturacion?.fecha_fin ?? '',
+        diasFactura: dias,
+        ahorro: result.ahorroEstudio,
+        ahorroPorcentaje: result.ahorro_porcent,
+        ahorroAnual: result.ahorroXAnio,
+        consumoAnual: (ocr.energia?.reduce((a, e) => a + (e.activa?.kwh ?? 0), 0) ?? 0) * 10,
+        precioPromedioOmie: form.precioMedio,
+        feeEnergia: form.feeEnergia,
+        feePotencia: form.feePotencia,
+      },
+      cliente: {
+        nombreCliente: ocr.cliente?.titular ?? '',
+        razonSocial: '',
+        cif: ocr.cliente?.nif ?? '',
+        direccion: [
+          ocr.cliente?.direccion?.tipo_via,
+          ocr.cliente?.direccion?.nombre_via,
+          ocr.cliente?.direccion?.numero,
+          ocr.cliente?.direccion?.detalles,
+        ].filter(Boolean).join(' '),
+        cp: ocr.cliente?.direccion?.cp ?? '',
+        provincia: ocr.cliente?.direccion?.provincia ?? '',
+      },
+      totales: {
+        baseActual,
+        baseOferta: Number(baseOferta.toFixed(2)),
+        impuestoElectricoActual: ieActual,
+        impuestoElectricoOferta: Number(ieOferta.toFixed(2)),
+        alquilerEquipo: 0,
+        ivaActual,
+        ivaOferta: Number(ivaOferta.toFixed(2)),
+        totalActual,
+        totalOferta: Number(totalOferta.toFixed(2)),
+        otrosNoComunesActual: 0,
+        otrosNoComunesOferta: 0,
+        otrosComunesSinIeActual: 0,
+        otrosComunesSinIeOferta: 0,
+        otrosComunesConIeActual: 0,
+        otrosComunesConIeOferta: 0,
+      },
+      lineas,
+    };
+  }
+
+  private triggerBlobDownload(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 }

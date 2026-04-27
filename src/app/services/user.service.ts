@@ -51,7 +51,7 @@ export class UserService {
   }
 
   assignCommission(userID: string, commissionId: string) {
-    return this.http.post(`${environment.apiUrl}/usercommission/assign`, { userID, commissionId });
+    return this.http.post(`${environment.apiUrl}/user-commission/assign`, { userID, commissionId });
   }
 
   getByFilters(filters: UserFilters = {}) {
@@ -75,10 +75,6 @@ export class UserService {
   }
 
   downloadExcel(): Observable<Blob> {
-    return this.http.post(
-      `${environment.apiUrl}/reports/excel-users-report`,
-      {},
-      { responseType: 'blob' }
-    );
+    return this.http.post(`${environment.apiUrl}/reports/excel-users-report`, {}, { responseType: 'blob' });
   }
 }

@@ -17,11 +17,13 @@ import {
   ComparatorProductsByTariff,
   OcrResult,
 } from './comparator.models';
+import { BrandLoaderComponent } from '../../../../shared/components/brand-loader/brand-loader.component';
+import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-comparator',
   standalone: true,
-  imports: [ComparadorUploadComponent, ComparadorModalComponent, LoadingOverlayComponent],
+  imports: [ComparadorUploadComponent, ComparadorModalComponent, BrandLoaderComponent, LoadingOverlayComponent],
   templateUrl: './comparator.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -43,6 +45,7 @@ export class Comparator {
 
   // ── state ──────────────────────────────────────────────────────────────────
 
+  readonly isApolo        = environment.clientName === 'apolo';
   readonly loading        = signal(false);
   readonly modalOpen      = signal(false);
   readonly result         = signal<ComparadorResult | null>(null);

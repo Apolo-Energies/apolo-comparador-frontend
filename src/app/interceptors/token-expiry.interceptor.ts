@@ -1,4 +1,5 @@
-import { inject } from '@angular/core';
+import { inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpBackend, HttpClient, HttpInterceptorFn } from '@angular/common/http';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthService } from '@apolo-energies/auth';
@@ -22,6 +23,7 @@ export const tokenExpiryInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const refreshTokenService = inject(RefreshTokenService);
   const httpBackend = inject(HttpBackend);
+  const platformId = inject(PLATFORM_ID);
 
   return next(req).pipe(
     catchError(error => {
