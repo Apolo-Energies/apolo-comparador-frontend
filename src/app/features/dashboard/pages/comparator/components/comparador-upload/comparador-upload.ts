@@ -43,7 +43,7 @@ export class ComparadorUploadComponent {
   onComparar() {
     const f      = this.file();
     const userId = this.selectedUserId() || this.internalUser();
-    if (!f || this.loading()) return;
+    if (!f || this.loading() || (this.showUserSelector() && !userId)) return;
     this.compare.emit({ file: f, userId });
   }
 }

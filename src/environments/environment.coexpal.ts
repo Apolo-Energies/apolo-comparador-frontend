@@ -4,6 +4,7 @@ export const environment = {
   apiUrl: 'https://api.apoloenergies.es/api/coexpal/v1',
   logoUrl: '/coexpal/logo-1.webp',
   faviconUrl: '/coexpal/favicon.ico',
+  appTitle: 'COEXPAL',
   auth: {
     tokenStorage: 'cookie' as const,
     refreshTokenCookie: 'apolo_rt',

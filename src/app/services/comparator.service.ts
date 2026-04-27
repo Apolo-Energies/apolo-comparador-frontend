@@ -189,7 +189,7 @@ export class ComparatorService {
 
     const reportUrl = type === 'pdf'
       ? `${environment.apiUrl}/comparison-history/pdf`
-      : `${environment.apiUrl}/reports/excel-report`;
+      : `${environment.apiUrl}/provider/excel`;
 
     return this.http.post(reportUrl, payload, { responseType: 'blob' }).subscribe(blob => {
       this.triggerBlobDownload(blob, `comparador.${type === 'excel' ? 'xlsx' : 'pdf'}`);

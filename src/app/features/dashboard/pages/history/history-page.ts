@@ -29,10 +29,11 @@ export class HistoryPageComponent implements AfterViewInit {
   readonly emailIconSrc: UiIconSource = { type: 'apolo', icon: EmailIcon, size: 20};
 
   // filters
-  readonly filterUser  = signal('');
-  readonly filterEmail = signal('');
-  readonly filterDate  = signal('');
-  readonly filterCups  = signal('');
+  readonly filterUser      = signal('');
+  readonly filterEmail     = signal('');
+  readonly filterStartDate = signal('');
+  readonly filterEndDate   = signal('');
+  readonly filterCups      = signal('');
 
   // pagination
   readonly currentPage = signal(1);
@@ -73,13 +74,16 @@ export class HistoryPageComponent implements AfterViewInit {
   }
 
   private load() {
+    const start = this.filterStartDate() || undefined;
+    const end   = this.filterEndDate()   || undefined;
     this.historyService.getByFilters({
-      fullName: this.filterUser()  || undefined,
-      email:    this.filterEmail() || undefined,
-      date:     this.filterDate()  || undefined,
-      cups:     this.filterCups()  || undefined,
-      page:     this.currentPage(),
-      pageSize: this.pageSize(),
+      fullName:  this.filterUser()  || undefined,
+      email:     this.filterEmail() || undefined,
+      startDate: start ?? end,
+      endDate:   end   ?? start,
+      cups:      this.filterCups()  || undefined,
+      page:      this.currentPage(),
+      pageSize:  this.pageSize(),
     }).subscribe(res => {
       this.data.set(res.items);
       this.totalCount.set(res.totalCount);
@@ -96,7 +100,8 @@ export class HistoryPageComponent implements AfterViewInit {
   onClearFilters() {
     this.filterUser.set('');
     this.filterEmail.set('');
-    this.filterDate.set('');
+    this.filterStartDate.set('');
+    this.filterEndDate.set('');
     this.filterCups.set('');
     this.currentPage.set(1);
     this.load();

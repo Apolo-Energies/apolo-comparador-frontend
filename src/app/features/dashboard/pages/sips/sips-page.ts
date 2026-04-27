@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Router } from '@angular/router';
 import { ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
 import { SipsInfoCardComponent } from './components/sips-info-card.component';
-import { DownloadIcon, SearchIcon, UiIconSource } from '@apolo-energies/icons';
+import { DownloadIcon, UiIconSource } from '@apolo-energies/icons';
 import { SipsService } from '../../../../services/sips.service';
 import { SipsDonutChartComponent, DonutDatum, TrendData } from './components/donut-chart/donut-chart.component';
 import { SipsPowerChartComponent, PowerBarDatum } from './components/power-chart/power-chart.component';

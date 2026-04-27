@@ -64,6 +64,9 @@ export class StatisticsPageComponent implements AfterViewInit {
   readonly selectedUserId   = signal('');
   readonly selectedUserName = signal('');
 
+  // Mapa email → userId construido desde history.items
+  private readonly emailToUserId = new Map<string, string>();
+
   // TODO: Descomentar cuando se tenga la relación de tarifas y productos en BD
   // Computed: productos disponibles basados en la tarifa seleccionada
   // readonly availableProducts = computed(() => {
@@ -125,11 +128,7 @@ export class StatisticsPageComponent implements AfterViewInit {
 
   private load(includeOnlyHistory = false) {
     this.loading.set(true);
-    
-    // TODO: Descomentar cuando se tenga la relación de tarifas y productos en BD
-    // const tariffIds = this.selectedTariffId() !== null ? [this.selectedTariffId()!] : undefined;
-    // const productIds = this.selectedProductId() !== null ? [this.selectedProductId()!] : undefined;
-    
+
     this.dashboardService.getConsolidatedData(
       this.dateRange(),
       this.filterName() || undefined,
@@ -138,39 +137,34 @@ export class StatisticsPageComponent implements AfterViewInit {
       this.sortDirection(),
       this.currentPage(),
       this.pageSize(),
-      includeOnlyHistory,
-      undefined, // tariffIds
-      undefined  // productIds
+      false, // siempre incluir summary — contiene los datos de la tabla
+      undefined,
+      undefined
     ).subscribe({
       next: data => {
-        // Solo actualizar dashboard si vienen los datos
-        if (data.summary) {
-          this.summary.set(data.summary);
+        // Actualizar dashboard solo en carga completa (no al filtrar/paginar)
+        if (!includeOnlyHistory) {
+          if (data.summary)        this.summary.set(data.summary);
+          if (data.dailySummary)   this.dailySummary.set(data.dailySummary);
+          if (data.monthlySummary) this.monthlySummary.set(data.monthlySummary);
         }
-        if (data.dailySummary) {
-          this.dailySummary.set(data.dailySummary);
-        }
-        if (data.monthlySummary) {
-          this.monthlySummary.set(data.monthlySummary);
-        }
-        
-        // TODO: Descomentar cuando se tenga la relación de tarifas y productos en BD
-        // Actualizar filtros disponibles
-        // if (data.filters) {
-        //   this.availableFilters.set(data.filters);
-        // }
-        
-        // Siempre actualizar history
-        if (data.history) {
-          this.data.set(data.history.items as StatisticsRow[]);
-          this.totalCount.set(data.history.totalCount);
-          this.totalPages.set(data.history.totalPages);
-        } else {
-          this.data.set([]);
-          this.totalCount.set(0);
-          this.totalPages.set(1);
-        }
-        
+
+        // Poblar mapa email→userId desde history.items
+        (data.history?.items ?? []).forEach(item => {
+          if (item.user?.email && item.userId) {
+            this.emailToUserId.set(item.user.email, item.userId);
+          }
+        });
+
+        // La tabla usa summary.data (datos agregados por usuario)
+        const rows = (data.summary?.data ?? []).map(row => ({
+          ...row,
+          userId: this.emailToUserId.get((row as StatisticsRow).email) ?? '',
+        })) as StatisticsRow[];
+        this.data.set(rows);
+        this.totalCount.set(data.summary?.totalUsersActive ?? rows.length);
+        this.totalPages.set(1);
+
         this.loading.set(false);
       },
       error: () => this.loading.set(false),

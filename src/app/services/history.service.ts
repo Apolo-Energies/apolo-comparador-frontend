@@ -35,12 +35,13 @@ export interface HistoryPaged {
 }
 
 export interface HistoryFilters {
-  fullName?: string;
-  email?:    string;
-  date?:     string;
-  cups?:     string;
-  page?:     number;
-  pageSize?: number;
+  fullName?:  string;
+  email?:     string;
+  startDate?: string;
+  endDate?:   string;
+  cups?:      string;
+  page?:      number;
+  pageSize?:  number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -54,11 +55,12 @@ export class HistoryService {
 
     if (filters.fullName) params = params.set('fullName', filters.fullName);
     if (filters.email)    params = params.set('email',    filters.email);
-    if (filters.date)     params = params.set('fecha',    filters.date);
+    if (filters.startDate) params = params.set('startDate', filters.startDate);
+    if (filters.endDate)   params = params.set('endDate',   filters.endDate);
     if (filters.cups)     params = params.set('cups',     filters.cups);
 
     return this.http.get<HistoryPaged>(
-      `${environment.apiUrl}/comparisonhistory`,
+      `${environment.apiUrl}/comparison-history`,
       { params }
     );
   }
