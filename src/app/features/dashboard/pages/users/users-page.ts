@@ -24,7 +24,8 @@ import { LoadingOverlayComponent } from '../../../../shared/components/loading-o
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UsersPageComponent implements AfterViewInit {
-  @ViewChild('actionsTpl') private actionsTpl!: TemplateRef<{ $implicit: UserRow }>;
+  @ViewChild('actionsTpl')         private actionsTpl!: TemplateRef<{ $implicit: UserRow }>;
+  @ViewChild('contractStatusTpl') private contractStatusTpl!: TemplateRef<{ $implicit: UserRow }>;
 
   private userService = inject(UserService);
   private platformId  = inject(PLATFORM_ID);
@@ -74,8 +75,28 @@ export class UsersPageComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     this.columns.update(cols => [
       ...cols,
-      { key: 'actions', label: '', align: 'center', cellTemplate: this.actionsTpl },
+      { key: 'contractStatus', label: 'Contrato', align: 'center', cellTemplate: this.contractStatusTpl },
+      { key: 'actions',        label: '',          align: 'center', cellTemplate: this.actionsTpl },
     ]);
+  }
+
+  private static readonly CONTRACT_STATUS_MAP: Record<string, { label: string; cls: string }> = {
+    NoContract:   { label: 'Sin contrato',    cls: 'bg-muted text-muted-foreground' },
+    DocsPending:  { label: 'Docs pendientes', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' },
+    ReadyToSign:  { label: 'Listo p/firma',   cls: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' },
+    InProgress:   { label: 'En firma',        cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
+    Active:       { label: 'Activo',          cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' },
+    ExpiringSoon: { label: 'Por vencer',      cls: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' },
+    Expired:      { label: 'Vencido',         cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' },
+    Declined:     { label: 'Cancelado',       cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' },
+  };
+
+  contractStatusLabel(status: string): string {
+    return UsersPageComponent.CONTRACT_STATUS_MAP[status]?.label ?? status;
+  }
+
+  contractStatusCls(status: string): string {
+    return UsersPageComponent.CONTRACT_STATUS_MAP[status]?.cls ?? 'bg-muted text-muted-foreground';
   }
 
   load() {

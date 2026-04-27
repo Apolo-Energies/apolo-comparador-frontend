@@ -58,12 +58,12 @@ export class HistoryService {
     if (filters.cups)     params = params.set('cups',     filters.cups);
 
     return this.http.get<HistoryPaged>(
-      `${environment.apiUrl}/comparison-history`,
+      `${environment.apiUrl}/comparisonhistory`,
       { params }
     );
   }
 
   downloadExcel(): Observable<Blob> {
-    return this.http.get(`${environment.apiUrl}/reports/comparison-history/excel`, { responseType: 'blob' });
+    return this.http.get(`${environment.apiUrl}/reports/comparisonhistory/excel`, { responseType: 'blob' });
   }
 }

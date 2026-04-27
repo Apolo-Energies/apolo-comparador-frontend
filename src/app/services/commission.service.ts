@@ -64,7 +64,7 @@ export class CommissionService {
 
   load(userId: string) {
     if (this.loaded) return;
-    this.http.get<{ result: UserCommission }>(`${environment.apiUrl}/commission/${userId}`)
+    this.http.get<{ result: UserCommission }>(`${environment.apiUrl}/usercommission/${userId}`)
       .pipe(
         tap(res => {
           this.commission.set(res.result?.commissionType?.percentage ?? 0);

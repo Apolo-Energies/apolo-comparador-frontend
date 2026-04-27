@@ -3,6 +3,11 @@ export const environment = {
   clientName: 'renova',
   apiUrl: 'https://api.apoloenergies.es',
   logoUrl: '/renova/logo.webp',
+  auth: {
+    tokenStorage: 'cookie' as const,
+    refreshTokenCookie: 'apolo_rt',
+    accessTokenKey: 'auth_token',
+  },
   features: {
     comparator: true,
     sips: true,
