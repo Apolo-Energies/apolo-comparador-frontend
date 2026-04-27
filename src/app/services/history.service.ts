@@ -58,7 +58,7 @@ export class HistoryService {
     if (filters.cups)     params = params.set('cups',     filters.cups);
 
     return this.http.get<HistoryPaged>(
-      `${environment.apiUrl}/comparison-history`,
+      `${environment.apiUrl}/comparisonhistory`,
       { params }
     );
   }

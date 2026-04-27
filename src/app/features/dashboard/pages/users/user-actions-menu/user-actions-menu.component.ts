@@ -3,12 +3,13 @@ import {
   ViewChild, effect, inject, input, output, signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AlertService, SelectOption } from '@apolo-energies/ui';
 import { SvgIcon, SettingsIcon } from '@apolo-energies/icons';
 import { UserService } from '../../../../../services/user.service';
-import { CommissionService } from '../../../../../services/commission.service';
-import { ProviderService } from '../../../../../services/provider.service';
+import { CatalogService } from '../../../../../services/catalog.service';
 import { RestorePasswordModalComponent } from '../restore-password-modal/restore-password-modal.component';
+import { SendContractModalComponent } from '../send-contract-modal/send-contract-modal.component';
 import { UserRole, UserRoleLabel } from '../../../../../entities/user-role';
 
 export interface UserRow {
@@ -22,6 +23,8 @@ export interface UserRow {
   commissions:    { isActive: boolean; commissionType: { id: string; name: string } }[];
   providerId:     number | null;
   provider:       { id: number; name: string } | null;
+  customerId?:      string | null;
+  contractStatus?:  string | null;
 }
 
 const PANEL_H = 260;
@@ -36,10 +39,25 @@ const SELECT_CLS = [
 @Component({
   selector: 'app-user-actions-menu',
   standalone: true,
-  imports: [FormsModule, SvgIcon, RestorePasswordModalComponent],
+  imports: [FormsModule, SvgIcon, RestorePasswordModalComponent, SendContractModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div #container>
+    <div class="flex items-center gap-0.5">
+
+      <!-- Eye: navigate to user detail -->
+      <button
+        type="button"
+        class="p-2 rounded-md hover:bg-muted cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
+        title="Ver detalles"
+        (click)="goToDetail()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+
+      <div #container>
 
       <!-- Gear trigger -->
       <button
@@ -105,7 +123,13 @@ const SELECT_CLS = [
           </div>
 
           <!-- Footer -->
-          <div class="border-t border-border">
+          <div class="border-t border-border grid grid-cols-2">
+            <button
+              type="button"
+              class="px-3 py-2 text-left text-xs sm:text-sm hover:bg-muted text-primary border-r border-border"
+              (click)="openSendContractModal()">
+              Enviar contrato
+            </button>
             <button
               type="button"
               class="w-full px-4 py-2 text-left text-sm text-destructive hover:bg-muted"
@@ -115,13 +139,23 @@ const SELECT_CLS = [
           </div>
         </div>
       }
-    </div>
+      </div><!-- /#container -->
+
+    </div><!-- /.flex -->
 
     <app-restore-password-modal
       [open]="passwordModalOpen()"
       [userEmail]="user().email"
       [userName]="user().fullName"
       (closed)="passwordModalOpen.set(false)"
+    />
+
+    <app-send-contract-modal
+      [open]="sendContractModalOpen()"
+      [customerId]="user().customerId"
+      [userName]="user().fullName"
+      [userEmail]="user().email"
+      (closed)="sendContractModalOpen.set(false)"
     />
   `,
 })
@@ -132,18 +166,19 @@ export class UserActionsMenuComponent {
   readonly user    = input.required<UserRow>();
   readonly updated = output<void>();
 
-  private readonly userService       = inject(UserService);
-  private readonly commissionService = inject(CommissionService);
-  private readonly providerService   = inject(ProviderService);
-  private readonly alertService      = inject(AlertService);
+  private readonly userService   = inject(UserService);
+  private readonly catalogSvc    = inject(CatalogService);
+  private readonly alertService  = inject(AlertService);
+  private readonly router        = inject(Router);
 
   readonly settingsIcon = SettingsIcon;
   readonly selectCls    = SELECT_CLS;
 
-  readonly isOpen            = signal(false);
-  readonly panelTop          = signal(0);
-  readonly panelLeft         = signal(0);
-  readonly passwordModalOpen = signal(false);
+  readonly isOpen                = signal(false);
+  readonly panelTop              = signal(0);
+  readonly panelLeft             = signal(0);
+  readonly passwordModalOpen     = signal(false);
+  readonly sendContractModalOpen = signal(false);
 
   readonly selectedRole       = signal('');
   readonly selectedStatus     = signal('');
@@ -181,14 +216,9 @@ export class UserActionsMenuComponent {
       this.selectedProvider.set(u.providerId != null ? String(u.providerId) : '');
     });
 
-    // Load commission options
-    this.commissionService.getAll({ pageSize: 100 }).subscribe(res => {
-      this.commissionOptions.set(res.items.map(c => ({ value: c.id, label: c.name })));
-    });
-
-    // Load provider options
-    this.providerService.getAll().subscribe(providers => {
-      this.providerOptions.set(providers.map(p => ({ value: String(p.id), label: p.name })));
+    this.catalogSvc.get().subscribe(catalog => {
+      this.commissionOptions.set(catalog.commissions.map(c => ({ value: c.id, label: c.name })));
+      this.providerOptions.set(catalog.providers.map(p => ({ value: p.id, label: p.name })));
     });
   }
 
@@ -256,7 +286,7 @@ export class UserActionsMenuComponent {
   onCommissionChange(value: string): void {
     this.selectedCommission.set(value);
     if (!value) return;
-    this.userService.patch(this.user().id, { commissionId: value }).subscribe({
+    this.userService.assignCommission(this.user().id, value).subscribe({
       next:  () => { this.alertService.show('Comisión actualizada', 'success'); this.updated.emit(); },
       error: () => this.alertService.show('Error al actualizar la comisión', 'error'),
     });
@@ -274,5 +304,14 @@ export class UserActionsMenuComponent {
   openPasswordModal(): void {
     this.isOpen.set(false);
     this.passwordModalOpen.set(true);
+  }
+
+  openSendContractModal(): void {
+    this.isOpen.set(false);
+    this.sendContractModalOpen.set(true);
+  }
+
+  goToDetail(): void {
+    this.router.navigate(['/dashboard/settings/users', this.user().id]);
   }
 }
