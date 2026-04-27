@@ -1,8 +1,14 @@
 export const environment = {
   production: false,
   clientName: 'apolo',
-  apiUrl: 'http://localhost:5102/api/renovae/v1',
+  apiUrl: 'http://localhost:5025/api/apolo/v1',
   logoUrl: '/apolo/apolologo.webp',
+  faviconUrl: '/apolo/favicon.ico',
+  auth: {
+    tokenStorage: 'cookie' as const,
+    refreshTokenCookie: 'apolo_rt',
+    accessTokenKey: 'auth_token',
+  },
   features: {
     comparator: true,
     sips: true,

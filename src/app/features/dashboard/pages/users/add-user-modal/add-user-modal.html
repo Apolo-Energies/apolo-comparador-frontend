@@ -1,73 +1,68 @@
-<ui-dialog [open]="open()" [closeable]="true" maxWidth="max-w-lg" (openChange)="$event ? null : onCancel()">
+<ui-dialog [open]="open()" [closeable]="true" maxWidth="max-w-xl" (openChange)="$event ? null : onCancel()">
 
-  <!-- Progress -->
-  <div class="px-6 pt-5 space-y-1.5">
-    <div class="flex justify-between text-sm text-muted-foreground">
-      <span>Progreso</span>
-      <span>{{ progress() }}%</span>
-    </div>
-    <ui-slider [value]="progress()" [min]="0" [max]="100" [step]="1" [disabled]="true" />
-    <p class="text-xs text-muted-foreground pt-1">Complete los datos básicos del usuario</p>
-  </div>
+  <div class="flex flex-col" style="height: 90vh; max-height: 90vh">
 
-  <!-- Form -->
-  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="px-6 py-4 space-y-4">
+    <!-- Header fijo -->
+    <div class="shrink-0 px-6 pt-5 space-y-4">
 
-    <!-- Full Name -->
-    <div class="space-y-1">
-      <ui-input
-        label="Nombre completo *"
-        placeholder="Renovae SL"
-        [value]="form.controls.fullName.value ?? ''"
-        (valueChange)="form.controls.fullName.setValue($event); form.controls.fullName.markAsTouched()"
-      />
-      @if (form.controls.fullName.invalid && form.controls.fullName.touched) {
-        <p class="text-xs text-red-500">El nombre es obligatorio</p>
-      }
-    </div>
+      <!-- Barra de progreso -->
+      <div class="space-y-1">
+        <div class="flex justify-between text-sm text-muted-foreground">
+          <span>Progreso</span>
+          <span>{{ progress() }}%</span>
+        </div>
+        <div class="w-full bg-muted rounded-full h-1.5">
+          <div
+            class="bg-primary-button h-1.5 rounded-full transition-all duration-300"
+            [style.width.%]="progress()"
+          ></div>
+        </div>
+      </div>
 
-    <!-- Email -->
-    <div class="space-y-1">
-      <ui-input
-        label="Email *"
-        type="email"
-        placeholder="renovae@renovae.com"
-        [value]="form.controls.email.value ?? ''"
-        (valueChange)="form.controls.email.setValue($event); form.controls.email.markAsTouched()"
-      />
-      @if (form.controls.email.invalid && form.controls.email.touched) {
-        <p class="text-xs text-red-500">Ingresa un email válido</p>
-      }
-    </div>
+      <!-- Toggle -->
+      <div class="flex rounded-lg border border-border p-1 bg-muted gap-1">
+        @for (opt of viewOptions; track opt.value) {
+          <button
+            type="button"
+            (click)="setView(opt.value)"
+            class="flex-1 text-sm py-1.5 rounded-md transition-all font-medium"
+            [class.bg-card]="view() === opt.value"
+            [class.text-foreground]="view() === opt.value"
+            [class.shadow-sm]="view() === opt.value"
+            [class.text-muted-foreground]="view() !== opt.value"
+          >
+            {{ opt.label }}
+          </button>
+        }
+      </div>
 
-    <!-- Role -->
-    <div class="space-y-1">
-      <ui-select
-        label="Rol *"
-        placeholder="Seleccionar rol"
-        [options]="roleOptions"
-        [value]="form.controls.role.value ?? ''"
-        (valueChange)="form.controls.role.setValue($event); form.controls.role.markAsTouched()"
-      />
-      @if (form.controls.role.invalid && form.controls.role.touched) {
-        <p class="text-xs text-red-500">El rol es obligatorio</p>
-      }
+      <!-- Título -->
+      <div>
+        <p class="text-base font-semibold text-foreground">Datos del usuario</p>
+        <p class="text-sm text-muted-foreground">Complete los datos básicos del usuario</p>
+      </div>
+
     </div>
 
-    <!-- Phone (optional) -->
-    <ui-input
-      label="Teléfono"
-      placeholder="+34 612 345 678"
-      [value]="form.controls.phone.value ?? ''"
-      (valueChange)="form.controls.phone.setValue($event)"
-    />
+    <!-- Body con scroll -->
+    <form class="flex flex-col flex-1 min-h-0">
 
-  </form>
+      <div class="flex-1 overflow-y-auto px-6 py-4">
+        @if (view() === 'Individual') {
+          <app-form-individual-user [form]="individualForm" [submitted]="submitted()" />
+        } @else {
+          <app-form-company-user [form]="companyForm" [submitted]="submitted()" />
+        }
+      </div>
 
-  <!-- Footer -->
-  <div class="px-6 pb-5 border-t border-border pt-4 flex items-center justify-between">
-    <ui-button label="Cancelar"      variant="outline"  size="md" (click)="onCancel()" />
-    <ui-button label="Crear Usuario" variant="default"  size="md" [disabled]="form.invalid" (click)="onSubmit()" />
+      <!-- Footer fijo -->
+      <div class="shrink-0 border-t border-border px-6 py-4 flex items-center justify-between">
+        <ui-button label="Cancelar"      variant="outline" size="md" (click)="onCancel()" />
+        <ui-button label="Crear Usuario" variant="default" size="md" (click)="onSubmit()" />
+      </div>
+
+    </form>
+
   </div>
 
 </ui-dialog>
