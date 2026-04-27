@@ -46,7 +46,7 @@ export const DASHBOARD_ROUTES: Routes = [
           { path: 'users',       component: UsersPageComponent },
           { path: 'users/:id',   component: UserDetailPageComponent },
           { path: 'commission',  component: CommissionsPageComponent },
-          { path: 'rates',       component: ForbiddenComponent },
+          { path: 'rates',       component: RatesPageComponent },
         ],
       },
 

@@ -1,0 +1,108 @@
+<!-- Header -->
+<div class="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+  <div>
+    <h1 class="text-2xl font-bold text-foreground mb-1">Gestión de Tarifarios</h1>
+    <p class="text-sm text-muted-foreground">Administra tarifas, reparto OMIE y potencias BOE</p>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <button
+      class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      [disabled]="loading() || !providerData()"
+      (click)="onExportExcel()"
+    >
+      <lucide-icon [img]="DownloadIcon" [size]="16" />
+      <span>Exportar Excel</span>
+    </button>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="mb-6">
+  <div class="flex gap-1 bg-card rounded-lg p-1">
+    <button
+      class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all rounded-md"
+      [class.bg-primary]="activeTab() === 'provider'"
+      [class.text-primary-foreground]="activeTab() === 'provider'"
+      [class.text-muted-foreground]="activeTab() !== 'provider'"
+      [class.hover:text-foreground]="activeTab() !== 'provider'"
+      (click)="setActiveTab('provider')"
+    >
+      <lucide-icon [img]="BuildingIcon" [size]="16" />
+      <span>Proveedor</span>
+    </button>
+
+    <button
+      class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all rounded-md"
+      [class.bg-primary]="activeTab() === 'tariffs'"
+      [class.text-primary-foreground]="activeTab() === 'tariffs'"
+      [class.text-muted-foreground]="activeTab() !== 'tariffs'"
+      [class.hover:text-foreground]="activeTab() !== 'tariffs'"
+      (click)="setActiveTab('tariffs')"
+    >
+      <lucide-icon [img]="CalculatorIcon" [size]="16" />
+      <span>Tarifas</span>
+    </button>
+
+    <button
+      class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all rounded-md"
+      [class.bg-primary]="activeTab() === 'omie'"
+      [class.text-primary-foreground]="activeTab() === 'omie'"
+      [class.text-muted-foreground]="activeTab() !== 'omie'"
+      [class.hover:text-foreground]="activeTab() !== 'omie'"
+      (click)="setActiveTab('omie')"
+    >
+      <lucide-icon [img]="TrendingUpIcon" [size]="16" />
+      <span>Reparto OMIE</span>
+    </button>
+
+    <button
+      class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all rounded-md"
+      [class.bg-primary]="activeTab() === 'boe'"
+      [class.text-primary-foreground]="activeTab() === 'boe'"
+      [class.text-muted-foreground]="activeTab() !== 'boe'"
+      [class.hover:text-foreground]="activeTab() !== 'boe'"
+      (click)="setActiveTab('boe')"
+    >
+      <lucide-icon [img]="ZapIcon" [size]="16" />
+      <span>Potencia BOE</span>
+    </button>
+  </div>
+</div>
+
+<!-- Loading state -->
+@if (loading()) {
+  <div class="flex items-center justify-center p-12">
+    <div class="text-center">
+      <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+      <p class="mt-4 text-sm text-muted-foreground">Cargando datos...</p>
+    </div>
+  </div>
+}
+
+<!-- Error state -->
+@if (error() && !loading()) {
+  <div class="rounded-lg border border-destructive bg-destructive/10 p-4">
+    <p class="text-sm text-destructive">{{ error() }}</p>
+  </div>
+}
+
+<!-- Tab content -->
+@if (!loading() && !error() && providerData()) {
+  <div class="tab-content">
+    @switch (activeTab()) {
+      @case ('provider') {
+        <app-provider-tab [provider]="providerData()!" />
+      }
+      @case ('tariffs') {
+        <app-tariffs-tab [tariffs]="providerData()!.tariffs" />
+      }
+      @case ('omie') {
+        <app-omie-distribution-tab [tariffs]="providerData()!.tariffs" />
+      }
+      @case ('boe') {
+        <app-boe-power-tab [tariffs]="providerData()!.tariffs" />
+      }
+    }
+  </div>
+}

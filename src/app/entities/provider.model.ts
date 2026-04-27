@@ -9,6 +9,7 @@ export interface Tariff {
   id:                number;
   code:              string;
   providerId:        number;
+  provider:          Provider | null;
   products:          Product[];
   omieDistributions: OmieDistribution[];
   boePowers:         BoePower[];
@@ -17,40 +18,46 @@ export interface Tariff {
 export interface BoePower {
   id:       number;
   tariffId: number;
+  tariff:   Tariff | null;
   periods:  BoePowerPeriod[];
 }
 
 export interface BoePowerPeriod {
   id:         number;
-  period:     number;
+  period:     string;  // "P1", "P2", etc.
   value:      number;
   boePowerId: number;
+  boePower:   BoePower | null;
 }
 
 export interface OmieDistribution {
   id:         number;
   periodName: string;
   tariffId:   number;
+  tariff:     Tariff | null;
   periods:    OmieDistributionPeriod[];
 }
 
 export interface OmieDistributionPeriod {
   id:                 number;
-  period:             number;
+  period:             string;  // "P1", "P2", etc.
   factor:             number;
   omieDistributionId: number;
+  omieDistribution:   OmieDistribution | null;
 }
 
 export interface Product {
   id:       number;
   name:     string;
   tariffId: number;
+  tariff:   Tariff | null;
   periods:  ProductPeriod[];
 }
 
 export interface ProductPeriod {
   id:        number;
-  period:    number;
+  period:    string;  // "P1", "P2", etc.
   value:     number;
   productId: number;
+  product:   Product | null;
 }

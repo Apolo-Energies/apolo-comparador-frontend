@@ -2,6 +2,10 @@ import { ComparadorFormValue, ComparadorPeriodo, ComparadorResult, OcrResult } f
 import { Tariff } from '../entities/provider.model';
 
 type Periodo = 1 | 2 | 3 | 4 | 5 | 6;
+type PeriodoString = 'P1' | 'P2' | 'P3' | 'P4' | 'P5' | 'P6';
+
+// Convertir número de período a string (1 -> "P1", 2 -> "P2", etc.)
+const periodToString = (periodo: Periodo): PeriodoString => `P${periodo}` as PeriodoString;
 
 const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
@@ -52,19 +56,22 @@ const getTariff = (tariffs: Tariff[], code: string) =>
 const getBaseValue = (tariffs: Tariff[], tarifa: string, producto: string, periodo: Periodo): number => {
   const t    = getTariff(tariffs, tarifa);
   const prod = t?.products.find(p => p.name === producto);
-  return prod?.periods.find(p => p.period === periodo)?.value ?? 0;
+  const periodoStr = periodToString(periodo);
+  return prod?.periods.find(p => p.period === periodoStr)?.value ?? 0;
 };
 
 const getRepartoOmie = (tariffs: Tariff[], tarifa: string, periodo: Periodo): number => {
   const t       = getTariff(tariffs, tarifa);
-  const reparto = t?.omieDistributions.find(r => r.periods.some(p => p.period === periodo));
-  return reparto?.periods.find(p => p.period === periodo)?.factor ?? 0;
+  const periodoStr = periodToString(periodo);
+  const reparto = t?.omieDistributions.find(r => r.periods.some(p => p.period === periodoStr));
+  return reparto?.periods.find(p => p.period === periodoStr)?.factor ?? 0;
 };
 
 const getPotenciaBOE = (tariffs: Tariff[], tarifa: string, periodo: Periodo): number => {
   const t       = getTariff(tariffs, tarifa);
-  const boe     = t?.boePowers.find(r => r.periods.some(p => p.period === periodo));
-  return boe?.periods.find(p => p.period === periodo)?.value ?? 0;
+  const periodoStr = periodToString(periodo);
+  const boe     = t?.boePowers.find(r => r.periods.some(p => p.period === periodoStr));
+  return boe?.periods.find(p => p.period === periodoStr)?.value ?? 0;
 };
 
 const calcularPrecios = (

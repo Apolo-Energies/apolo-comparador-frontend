@@ -37,7 +37,7 @@ export class ComparatorService {
     if (this.loaded) return;
     this.providerService.getByUser().pipe(
       tap(res => {
-        this.tariffs.set(res.result.tariffs);
+        this.tariffs.set(res.tariffs);
         this.loaded = true;
       })
     ).subscribe();
