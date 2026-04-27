@@ -3,6 +3,7 @@ export const environment = {
   clientName: 'apolo',
   apiUrl: 'https://api.apolo.com',
   logoUrl: '/apolo/apolologo.webp',
+  faviconUrl: '/apolo/favicon.ico',
   auth: {
     tokenStorage: 'cookie' as const,
     refreshTokenCookie: 'apolo_rt',
