@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { ProviderService } from '../../../../services/provider.service';
 import { Provider } from '../../../../entities/provider.model';
 import { TabType } from '../../../../entities/rates.model';
@@ -25,6 +26,7 @@ import { BoePowerTabComponent } from './components/boe-power-tab.component';
 })
 export class RatesPageComponent {
   private readonly providerService = inject(ProviderService);
+  private readonly platformId      = inject(PLATFORM_ID);
 
   // Tab icons
   readonly BuildingIcon = Building;
@@ -44,7 +46,9 @@ export class RatesPageComponent {
   readonly tariffsCount = computed(() => this.providerData()?.tariffs?.length || 0);
 
   constructor() {
-    this.loadData();
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadData();
+    }
   }
 
   private loadData(): void {

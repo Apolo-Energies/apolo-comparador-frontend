@@ -1,6 +1,7 @@
 import {
-  ChangeDetectionStrategy, Component, computed, inject, OnInit, signal,
+  ChangeDetectionStrategy, Component, computed, inject, OnInit, signal, PLATFORM_ID,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '@apolo-energies/auth';
 import { AlertService, ButtonComponent } from '@apolo-energies/ui';
@@ -35,6 +36,7 @@ export class UserDetailPageComponent implements OnInit {
   private readonly userService  = inject(UserService);
   private readonly auth         = inject(AuthService);
   private readonly alertService = inject(AlertService);
+  private readonly platformId   = inject(PLATFORM_ID);
 
   readonly loading            = signal(false);
   readonly user               = signal<UserDetail | null>(null);
@@ -107,7 +109,9 @@ export class UserDetailPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.userId = this.route.snapshot.paramMap.get('id') ?? '';
-    this.load();
+    if (isPlatformBrowser(this.platformId)) {
+      this.load();
+    }
   }
 
   load(): void {
