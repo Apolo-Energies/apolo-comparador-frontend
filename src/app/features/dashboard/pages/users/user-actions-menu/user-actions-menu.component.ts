@@ -11,20 +11,29 @@ import { CatalogService } from '../../../../../services/catalog.service';
 import { RestorePasswordModalComponent } from '../restore-password-modal/restore-password-modal.component';
 import { SendContractModalComponent } from '../send-contract-modal/send-contract-modal.component';
 import { UserRole, UserRoleLabel, normalizeRoleToOptionValue } from '../../../../../entities/user-role';
+import { environment } from '../../../../../../environments/environment';
 
 export interface UserRow {
   id:             string;
   fullName:       string;
   email:          string;
   phone:          string | null;
-  role:           number;
+  role:           string | number;
   isActive:       boolean;
   isEnergyExpert: boolean;
   commissions:    { isActive: boolean; commissionType: { id: string; name: string } }[];
   providerId:     number | null;
   provider:       { id: number; name: string } | null;
-  customerId?:      string | null;
-  contractStatus?:  string | null;
+  customerId?:                string | null;
+  identifier?:                string | null;
+  contractSignatureStatus?:   string | null;
+  hasActiveContract?:         boolean;
+  customer?: {
+    personType:  string;
+    dni:         string | null;
+    cif:         string | null;
+    companyName: string | null;
+  } | null;
 }
 
 const PANEL_H = 260;
@@ -44,18 +53,20 @@ const SELECT_CLS = [
   template: `
     <div class="flex items-center gap-0.5">
 
-      <!-- Eye: navigate to user detail -->
-      <button
-        type="button"
-        class="p-2 rounded-md hover:bg-muted cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
-        title="Ver detalles"
-        (click)="goToDetail()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-          <circle cx="12" cy="12" r="3"/>
-        </svg>
-      </button>
+      <!-- Eye: navigate to user detail (Apolo only) -->
+      @if (showUserDetail) {
+        <button
+          type="button"
+          class="p-2 rounded-md hover:bg-muted cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
+          title="Ver detalles"
+          (click)="goToDetail()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      }
 
       <div #container>
 
@@ -123,13 +134,15 @@ const SELECT_CLS = [
           </div>
 
           <!-- Footer -->
-          <div class="border-t border-border grid grid-cols-2">
-            <button
-              type="button"
-              class="px-3 py-2 text-left text-xs sm:text-sm hover:bg-muted text-primary border-r border-border"
-              (click)="openSendContractModal()">
-              Enviar contrato
-            </button>
+          <div class="border-t border-border" [class]="showContracts ? 'grid grid-cols-2' : 'flex'">
+            @if (showContracts) {
+              <button
+                type="button"
+                class="px-3 py-2 text-left text-xs sm:text-sm hover:bg-muted text-primary border-r border-border"
+                (click)="openSendContractModal()">
+                Enviar contrato
+              </button>
+            }
             <button
               type="button"
               class="w-full px-4 py-2 text-left text-sm text-destructive hover:bg-muted"
@@ -171,8 +184,10 @@ export class UserActionsMenuComponent {
   private readonly alertService  = inject(AlertService);
   private readonly router        = inject(Router);
 
-  readonly settingsIcon = SettingsIcon;
-  readonly selectCls    = SELECT_CLS;
+  readonly settingsIcon    = SettingsIcon;
+  readonly selectCls       = SELECT_CLS;
+  readonly showUserDetail  = environment.features.userDetail;
+  readonly showContracts   = environment.features.contracts;
 
   readonly isOpen                = signal(false);
   readonly panelTop              = signal(0);
