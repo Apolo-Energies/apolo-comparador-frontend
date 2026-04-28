@@ -1,4 +1,20 @@
-<app-loading-overlay [loading]="loading()" />
+@if (isApolo) {
+  <app-brand-loader
+    [visible]="loading()"
+    [fullscreen]="true"
+    [showBar]="true"
+    [showWordmark]="false"
+    [showTitle]="true"
+    title="Cargando....."
+    [showDescription]="false"
+    [showMicrocopy]="false"
+    [showBackdrop]="true"
+    [showMicrocopyIcon]="false"
+    [size]="100"
+  />
+} @else {
+  <app-loading-overlay [loading]="loading()" />
+}
 
 <div class="h-full flex flex-col">
 

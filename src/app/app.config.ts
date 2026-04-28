@@ -4,9 +4,13 @@ import { provideClientHydration, withEventReplay } from '@angular/platform-brows
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { isPlatformBrowser } from '@angular/common';
 import { authInterceptor, AuthService, provideAuth } from '@apolo-energies/auth';
+import { providePrimeNG } from 'primeng/config';
+import Aura from '@primeuix/themes/aura';
 import { environment } from '../environments/environment';
 import { routes } from './app.routes';
+import { authResponseInterceptor } from './interceptors/auth-response.interceptor';
 import { tokenExpiryInterceptor } from './interceptors/token-expiry.interceptor';
+import { RefreshTokenService } from './services/refresh-token.service';
 
 function isJwtExpired(token: string): boolean {
   try {
@@ -21,23 +25,37 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes, withComponentInputBinding()),
+    providePrimeNG({ theme: { preset: Aura, options: { darkModeSelector: '.dark' } } }),
     provideClientHydration(withEventReplay()),
-    provideHttpClient(withFetch(), withInterceptors([authInterceptor, tokenExpiryInterceptor])),
+    provideHttpClient(
+      withFetch(),
+      withInterceptors([authResponseInterceptor, authInterceptor, tokenExpiryInterceptor]),
+    ),
     provideAuth({
       signInPath: `${environment.apiUrl}/auth/login`,
       loginRedirect: '/',
       homeRedirect: '/dashboard/comparator',
+      tokenStorage: environment.auth.tokenStorage,
+      tokenCookieName: environment.auth.accessTokenKey,
     }),
     {
       provide: APP_INITIALIZER,
-      useFactory: (auth: AuthService, platformId: object) => () => {
+      useFactory: (auth: AuthService, platformId: object, refreshTokenSvc: RefreshTokenService) => () => {
         if (!isPlatformBrowser(platformId)) return;
         const token = auth.token();
-        if (token && isJwtExpired(token)) {
+        if (token && isJwtExpired(token) && !refreshTokenSvc.getRefreshToken()) {
           auth.signOut();
         }
+        const env = environment as { faviconUrl?: string; appTitle?: string };
+        if (env.faviconUrl) {
+          const link = document.querySelector<HTMLLinkElement>("link[rel='icon']");
+          if (link) link.href = env.faviconUrl;
+        }
+        if (env.appTitle) {
+          document.title = env.appTitle;
+        }
       },
-      deps: [AuthService, PLATFORM_ID],
+      deps: [AuthService, PLATFORM_ID, RefreshTokenService],
       multi: true,
     },
   ],

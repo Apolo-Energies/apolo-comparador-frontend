@@ -2,12 +2,14 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { RouterOutlet, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 import { ApoloSidebar, SidebarSection } from '@apolo-energies/sidebar';
 import { ApoloHeader, HeaderWelcomeContent, HeaderActionLink, UserMenuItem } from '@apolo-energies/header';
 import { AuthService } from '@apolo-energies/auth';
 import { ArrowDownBoxIcon, chevronDownIcon, chevronRightIcon, CircleIcon, CompassIcon, InfoIcon, ListIcon, LogoutIcon, PieIcon, SettingsIcon, StarIcon, SupportIcon, UiIconSource, UserIcon, UserSimpleIcon } from '@apolo-energies/icons';
 import { getUserRoles } from '../../utils/auth.utils';
 import { environment } from '../../../environments/environment';
+import { RefreshTokenService } from '../../services/refresh-token.service';
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   'Colaborador': [
@@ -32,6 +34,8 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
 export class Layout {
   private auth = inject(AuthService);
   private router = inject(Router);
+  private http = inject(HttpClient);
+  private refreshTokenService = inject(RefreshTokenService);
 
   readonly currentUrl = toSignal(
     this.router.events.pipe(map(() => this.router.url)),
@@ -181,8 +185,8 @@ export class Layout {
 
   readonly quickAction = signal<HeaderActionLink>({
     label: 'Alta Rápida',
-    type: 'external',
-    url: 'https://ee.apoloenergies.es/App/',
+    type: 'internal',
+    url: '/dashboard/altaRapida',
     icon: {
       type: 'apolo',
       icon: StarIcon,
@@ -190,7 +194,7 @@ export class Layout {
       size: 14,
       strokeWidth: 0.2
     },
-    target: '_blank',
+    // target: '_blank',
   });
 
   readonly menuItems: UserMenuItem[] = [
@@ -218,6 +222,20 @@ export class Layout {
   };
 
   onLogout() {
-    this.auth.signOut();
+    const userId = this.refreshTokenService.getUserIdFromToken();
+    const refreshToken = this.refreshTokenService.getRefreshToken();
+
+    const finish = () => {
+      this.refreshTokenService.clear();
+      this.auth.signOut();
+    };
+
+    if (userId && refreshToken) {
+      this.http
+        .post(`${environment.apiUrl}/auth/logout`, { userId, refreshToken })
+        .subscribe({ next: finish, error: finish });
+    } else {
+      finish();
+    }
   }
 }

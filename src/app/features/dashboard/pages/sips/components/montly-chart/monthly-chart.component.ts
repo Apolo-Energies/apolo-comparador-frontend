@@ -12,6 +12,7 @@ import {
   signal,
 } from '@angular/core';
 import { MonthlyRowDatum } from '../../../../../../shared/utils/chart.utils';
+import { PERIODS } from '../../../../../../shared/constants/period';
 
 interface Segment {
   y: number;
@@ -41,8 +42,6 @@ const PAD_T = 10;
 const PAD_B = 40;
 const TICK_CNT = 5;
 const DRAW_H = CHART_H - PAD_T - PAD_B;
-
-const PERIODS = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'] as const;
 
 const COLORS: Record<string, string> = {
   P1: '#7C67F2',

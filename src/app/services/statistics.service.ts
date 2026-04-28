@@ -2,8 +2,10 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+import { ConsolidatedComparisonData, HistoryItem } from '../features/dashboard/pages/statistics/models/dashboard-api.models';
 
 export interface StatisticsRow {
+  userId:                 string;
   fullName:               string;
   email:                  string;
   totalCups:              number;
@@ -11,14 +13,12 @@ export interface StatisticsRow {
 }
 
 export interface StatisticsFilters {
-  name?:     string;
-  page?:     number;
-  pageSize?: number;
-}
-
-interface SummaryResponse {
-  data:             StatisticsRow[];
-  totalUsersActive: number;
+  name?:          string;
+  email?:         string;
+  sortBy?:        'FullName' | 'Email' | 'TotalCups' | 'TotalAnnualConsumption';
+  sortDirection?: 'Asc' | 'Desc';
+  page?:          number;
+  pageSize?:      number;
 }
 
 const BASE_PATH = 'comparison-history';
@@ -29,16 +29,29 @@ export class StatisticsService {
 
   getByFilters(filters: StatisticsFilters = {}) {
     let params = new HttpParams()
-      .set('page',     String(filters.page     ?? 1))
-      .set('pageSize', String(filters.pageSize ?? 10));
+      .set('includeHistory', 'false')
+      .set('includeSummary', 'true');
 
-    if (filters.name) params = params.set('nombre', filters.name);
+    if (filters.name)          params = params.set('historyFullNameFilter', filters.name);
+    if (filters.email)         params = params.set('historyEmailFilter', filters.email);
+    if (filters.sortBy)        params = params.set('historySortBy', filters.sortBy);
+    if (filters.sortDirection) params = params.set('historySortDirection', filters.sortDirection);
+    if (filters.page)          params = params.set('historyPage', String(filters.page));
+    if (filters.pageSize)      params = params.set('historyPageSize', String(filters.pageSize));
 
-    return this.http.get<SummaryResponse>(
-      `${environment.apiUrl}/${BASE_PATH}/summary`,
+    return this.http.get<ConsolidatedComparisonData>(
+      `${environment.apiUrl}/${BASE_PATH}/data`,
       { params }
     ).pipe(
-      map(res => ({ result: res.data ?? [], total: res.totalUsersActive ?? res.data?.length ?? 0 }))
+      map(res => {
+        const rows = (res.summary?.data ?? []) as StatisticsRow[];
+        return {
+          result:      rows,
+          total:       res.summary?.totalUsersActive ?? rows.length,
+          totalPages:  1,
+          currentPage: 1,
+        };
+      })
     );
   }
 }

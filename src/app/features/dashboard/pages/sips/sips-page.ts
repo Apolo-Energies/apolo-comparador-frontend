@@ -2,15 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Router } from '@angular/router';
 import { ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
 import { SipsInfoCardComponent } from './components/sips-info-card.component';
-import { DownloadIcon, SearchIcon, UiIconSource } from '@apolo-energies/icons';
+import { DownloadIcon, UiIconSource } from '@apolo-energies/icons';
 import { SipsService } from '../../../../services/sips.service';
 import { SipsDonutChartComponent, DonutDatum, TrendData } from './components/donut-chart/donut-chart.component';
 import { SipsPowerChartComponent, PowerBarDatum } from './components/power-chart/power-chart.component';
 import { SipsMonthlyChartComponent } from './components/montly-chart/monthly-chart.component';
 import { SipsConsumo, SipsPs } from '../../../../entities/sips.model';
 import { getMonthlyStackedChartData, MonthlyRowDatum } from '../../../../shared/utils/chart.utils';
-
-const PERIODS = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'] as const;
+import { PERIODS } from '../../../../shared/constants/period';
 
 function wToKwh(wh: number): number {
   return wh / 1000;

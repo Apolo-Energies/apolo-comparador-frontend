@@ -1,22 +1,32 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { AfterViewInit, ChangeDetectionStrategy, Component, computed, inject, signal, PLATFORM_ID, TemplateRef, ViewChild } from '@angular/core';
+import { isPlatformBrowser, NgIf } from '@angular/common';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
 import { ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
 import { DownloadIcon, filterIcon, SearchIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
-import { StatisticsService, StatisticsRow } from '../../../../services/statistics.service';
+import { DashboardStatsService } from '../../../../services/dashboard-stats.service';
+import { StatisticsRow } from '../../../../services/statistics.service';
 import { StatisticsDashboardComponent } from './components/statistics-dashboard/statistics-dashboard';
+import { UserDetailDialogComponent } from './components/user-detail-dialog/user-detail-dialog';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
+import { DailySummaryApiItem, SummaryApiResult, MonthlySummaryApiItem/*, FiltersData, FilterProduct*/ } from './models/dashboard-api.models';
+import { DateRange } from './models/dashboard-ui.models';
+
+type SortField = 'FullName' | 'Email' | 'TotalCups' | 'TotalAnnualConsumption';
+type SortDirection = 'Asc' | 'Desc';
 
 @Component({
   selector: 'app-statistics-page',
   standalone: true,
-  imports: [DataTableComponent, PaginatorComponent, InputFieldComponent, ButtonComponent, StatisticsDashboardComponent, LoadingOverlayComponent],
+  imports: [DataTableComponent, PaginatorComponent, InputFieldComponent, ButtonComponent, StatisticsDashboardComponent, UserDetailDialogComponent, LoadingOverlayComponent, NgIf],
   templateUrl: './statistics-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class StatisticsPageComponent {
-  private statisticsService = inject(StatisticsService);
-  private platformId        = inject(PLATFORM_ID);
+export class StatisticsPageComponent implements AfterViewInit {
+  @ViewChild('cupsHeaderTpl') private cupsHeaderTpl!: TemplateRef<void>;
+  @ViewChild('consumptionHeaderTpl') private consumptionHeaderTpl!: TemplateRef<void>;
+  @ViewChild('actionsTpl') private actionsTpl!: TemplateRef<{ $implicit: StatisticsRow }>;
+  private dashboardService = inject(DashboardStatsService);
+  private platformId       = inject(PLATFORM_ID);
 
   // icons
   readonly searchIcon:   UiIconSource = { type: 'apolo', icon: SearchIcon,   size: 16 };
@@ -25,65 +35,227 @@ export class StatisticsPageComponent {
   readonly xIcon:        UiIconSource = { type: 'apolo', icon: XIcon,        size: 16 };
 
   // filters
-  readonly filterName  = signal('');
+  readonly filterName      = signal('');
+  readonly filterEmail     = signal('');
+  readonly sortBy          = signal<SortField>('FullName');
+  readonly sortDirection   = signal<SortDirection>('Asc');
+
+  // TODO: Descomentar cuando se tenga la relación de tarifas y productos en BD
+  // tariff and product filters
+  // readonly selectedTariffId  = signal<number | null>(null);
+  // readonly selectedProductId = signal<number | null>(null);
+  // readonly availableFilters  = signal<FiltersData | null>(null);
+
+  readonly data        = signal<StatisticsRow[]>([]);
+  readonly loading     = signal(false);
+  readonly columns     = signal<TableColumn<StatisticsRow>[]>([]);
   readonly currentPage = signal(1);
   readonly pageSize    = signal(10);
   readonly totalCount  = signal(0);
+  readonly totalPages  = signal(1);
 
-  readonly data    = signal<StatisticsRow[]>([]);
-  readonly loading = signal(false);
+  readonly dateRange      = signal<DateRange>({ from: null, to: null });
+  readonly summary        = signal<SummaryApiResult | null>(null);
+  readonly dailySummary   = signal<DailySummaryApiItem[]>([]);
+  readonly monthlySummary = signal<MonthlySummaryApiItem[]>([]);
+
+  // Modal de detalle
+  readonly detailDialogOpen = signal(false);
+  readonly selectedUserId   = signal('');
+  readonly selectedUserName = signal('');
+
+  // Mapa email → userId construido desde history.items
+  private readonly emailToUserId = new Map<string, string>();
+
+  // TODO: Descomentar cuando se tenga la relación de tarifas y productos en BD
+  // Computed: productos disponibles basados en la tarifa seleccionada
+  // readonly availableProducts = computed(() => {
+  //   const selectedTariffId = this.selectedTariffId();
+  //   const filters = this.availableFilters();
+  //   
+  //   if (selectedTariffId === null || !filters) {
+  //     return [];
+  //   }
+  //   
+  //   const products: FilterProduct[] = [];
+  //   
+  //   // Buscar la tarifa seleccionada en todos los providers
+  //   filters.providers.forEach(provider => {
+  //     const tariff = provider.tariffs.find(t => t.id === selectedTariffId);
+  //     if (tariff) {
+  //       products.push(...tariff.products);
+  //     }
+  //   });
+  //   
+  //   return products;
+  // });
+
+  // Los datos ya vienen paginados del servidor
+  readonly pagedData = computed(() => this.data());
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
+      this.initializeColumns();
       this.load();
     }
   }
 
-  private load() {
+  ngAfterViewInit(): void {
+    this.columns.update(cols => cols.map(col => {
+      if (col.key === 'totalCups') {
+        return { ...col, headerIconTemplate: this.cupsHeaderTpl };
+      }
+      if (col.key === 'totalAnnualConsumption') {
+        return { ...col, headerIconTemplate: this.consumptionHeaderTpl };
+      }
+      if (col.key === 'actions') {
+        return { ...col, cellTemplate: this.actionsTpl };
+      }
+      return col;
+    }));
+  }
+
+  private initializeColumns() {
+    this.columns.set([
+      { key: 'fullName',               label: 'Nombre' },
+      { key: 'email',                  label: 'Email' },
+      { key: 'totalCups',              label: 'Total CUPS',              align: 'center' },
+      { key: 'totalAnnualConsumption', label: 'Consumo anual (kWh)',     align: 'right',
+        format: row => `${row.totalAnnualConsumption.toFixed(2)} kWh` },
+      { key: 'actions',                label: 'Acciones',                align: 'center' },
+    ]);
+  }
+
+  private load(includeOnlyHistory = false) {
     this.loading.set(true);
-    this.statisticsService.getByFilters({
-      name:     this.filterName() || undefined,
-      page:     this.currentPage(),
-      pageSize: this.pageSize(),
-    }).subscribe({
-      next: res => {
-        this.data.set(res.result ?? []);
-        this.totalCount.set(res.total ?? res.result?.length ?? 0);
+
+    this.dashboardService.getConsolidatedData(
+      this.dateRange(),
+      this.filterName() || undefined,
+      this.filterEmail() || undefined,
+      this.sortBy(),
+      this.sortDirection(),
+      this.currentPage(),
+      this.pageSize(),
+      false, // siempre incluir summary — contiene los datos de la tabla
+      undefined,
+      undefined
+    ).subscribe({
+      next: data => {
+        // Actualizar dashboard solo en carga completa (no al filtrar/paginar)
+        if (!includeOnlyHistory) {
+          if (data.summary)        this.summary.set(data.summary);
+          if (data.dailySummary)   this.dailySummary.set(data.dailySummary);
+          if (data.monthlySummary) this.monthlySummary.set(data.monthlySummary);
+        }
+
+        // Poblar mapa email→userId desde history.items
+        (data.history?.items ?? []).forEach(item => {
+          if (item.user?.email && item.userId) {
+            this.emailToUserId.set(item.user.email, item.userId);
+          }
+        });
+
+        // La tabla usa summary.data (datos agregados por usuario)
+        const rows = (data.summary?.data ?? []).map(row => ({
+          ...row,
+          userId: this.emailToUserId.get((row as StatisticsRow).email) ?? '',
+        })) as StatisticsRow[];
+        this.data.set(rows);
+        this.totalCount.set(data.summary?.totalUsersActive ?? rows.length);
+        this.totalPages.set(1);
+
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
     });
   }
 
-  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.pageSize())));
-
   onSearch() {
     this.currentPage.set(1);
-    this.load();
+    this.load(true); // Solo history al filtrar
   }
 
   onClearFilters() {
     this.filterName.set('');
+    this.filterEmail.set('');
+    this.sortBy.set('FullName');
+    this.sortDirection.set('Asc');
+    // TODO: Descomentar cuando se tenga la relación de tarifas y productos en BD
+    // this.selectedTariffId.set(null);
+    // this.selectedProductId.set(null);
     this.currentPage.set(1);
     this.load();
   }
 
+  // TODO: Descomentar cuando se tenga la relación de tarifas y productos en BD
+  // onTariffChange(value: any): void {
+  //   // Convertir a número si no es null
+  //   const numValue = value === 'null' || value === null ? null : Number(value);
+  //   this.selectedTariffId.set(numValue);
+  //   // Resetear el producto seleccionado cuando cambia la tarifa
+  //   this.selectedProductId.set(null);
+  // }
+
+  // onProductChange(value: any): void {
+  //   // Convertir a número si no es null
+  //   const numValue = value === 'null' || value === null ? null : Number(value);
+  //   this.selectedProductId.set(numValue);
+  // }
+
+  onDateRangeChange(range: DateRange) {
+    this.dateRange.set(range);
+    this.currentPage.set(1);
+    this.load(); // Datos completos al cambiar fecha
+  }
+
+  onRetry() {
+    this.load();
+  }
+
+  onColumnSort(field: SortField) {
+    if (this.sortBy() === field) {
+      // Toggle direction si es la misma columna
+      this.sortDirection.set(this.sortDirection() === 'Asc' ? 'Desc' : 'Asc');
+    } else {
+      // Nueva columna, empezar en descendente
+      this.sortBy.set(field);
+      this.sortDirection.set('Desc');
+    }
+    this.currentPage.set(1);
+    this.load(true); // Solo history al ordenar
+  }
+
   onPageChange(page: number) {
     this.currentPage.set(page);
-    this.load();
+    this.load(true); // Solo history al cambiar página
   }
 
   onPageSizeChange(size: number) {
     this.pageSize.set(size);
     this.currentPage.set(1);
-    this.load();
+    this.load(true); // Solo history al cambiar tamaño
   }
 
-  readonly columns: TableColumn<StatisticsRow>[] = [
-    { key: 'fullName',               label: 'Nombre' },
-    { key: 'email',                  label: 'Email' },
-    { key: 'totalCups',              label: 'Total CUPS',              align: 'center' },
-    { key: 'totalAnnualConsumption', label: 'Consumo anual (kWh)',     align: 'right',
-      format: row => `${row.totalAnnualConsumption.toFixed(2)} kWh` },
-  ];
+  isSortedBy(field: SortField): boolean {
+    return this.sortBy() === field;
+  }
+
+  isSortAsc(field: SortField): boolean {
+    return this.isSortedBy(field) && this.sortDirection() === 'Asc';
+  }
+
+  isSortDesc(field: SortField): boolean {
+    return this.isSortedBy(field) && this.sortDirection() === 'Desc';
+  }
+
+  onRowClick(row: StatisticsRow) {
+    this.selectedUserId.set(row.userId);
+    this.selectedUserName.set(row.fullName);
+    this.detailDialogOpen.set(true);
+  }
+
+  onDetailDialogClose() {
+    this.detailDialogOpen.set(false);
+  }
 }

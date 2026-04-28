@@ -33,11 +33,19 @@
         (valueChange)="filterEmail.set($event)"
       />
       <ui-input
-        label="Fecha"
+        label="Fecha inicio"
         type="date"
-        [value]="filterDate()"
-        (valueChange)="filterDate.set($event); currentPage.set(1)"
+        [value]="filterStartDate()"
+        (valueChange)="filterStartDate.set($event)"
       />
+      <ui-input
+        label="Fecha fin"
+        type="date"
+        [value]="filterEndDate()"
+        (valueChange)="filterEndDate.set($event)"
+      />
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end mt-4">
       <ui-input
         label="CUPS"
         placeholder="Buscar por CUPS..."

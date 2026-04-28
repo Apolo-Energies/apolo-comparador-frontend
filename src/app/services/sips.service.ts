@@ -10,10 +10,10 @@ export class SipsService {
   private readonly http = inject(HttpClient);
 
   getByCups(cups: string): Observable<SipsApiResponse> {
-    return this.http.get<SipsApiResponse>(`${environment.apiUrl}/sips/${cups}`);
+    return this.http.post<SipsApiResponse>(`${environment.apiUrl}/sips`, { cups });
   }
 
   downloadExcel(cups: string): Observable<Blob> {
-    return this.http.get(`${environment.apiUrl}/reports/sips/${cups}`, { responseType: 'blob' });
+    return this.http.post(`${environment.apiUrl}/sips/sips-excel`, { cups }, { responseType: 'blob' });
   }
 }

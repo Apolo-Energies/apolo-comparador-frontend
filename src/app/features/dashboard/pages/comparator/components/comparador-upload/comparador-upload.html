@@ -11,6 +11,11 @@
       [value]="selectedUserId() || internalUser()"
       (valueChange)="onUserChange($event)"
     />
+    @if (file() && !internalUser() && !selectedUserId()) {
+      <p class="text-xs text-amber-400 -mt-2">
+        Selecciona un usuario para continuar con la comparación.
+      </p>
+    }
   }
 
   <!-- Zona de carga: crece solo cuando hay archivo -->
@@ -31,9 +36,9 @@
   <div class="border-t border-gray-200 mt-6 pt-4 flex justify-center">
     <ui-button
       label="Comparar"
-      variant="secondary"
+      variant="default"
       size="md"
-      [disabled]="!file() || loading()"
+      [disabled]="!file() || loading() || (showUserSelector() && !internalUser() && !selectedUserId())"
       (click)="onComparar()"
     />
   </div>

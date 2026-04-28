@@ -1,8 +1,15 @@
 export const environment = {
   production: true,
   clientName: 'apolo',
-  apiUrl: 'https://api.apolo.com',
+  apiUrl: 'https://api.apoloenergies.es/api/apolo/v1',
   logoUrl: '/apolo/apolologo.webp',
+  faviconUrl: '/apolo/favicon.ico',
+  appTitle: 'APOLO ENERGIES',
+  auth: {
+    tokenStorage: 'cookie' as const,
+    refreshTokenCookie: 'apolo_rt',
+    accessTokenKey: 'auth_token',
+  },
   features: {
     comparator: true,
     sips: true,
