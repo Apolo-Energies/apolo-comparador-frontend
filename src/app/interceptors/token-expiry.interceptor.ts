@@ -7,8 +7,10 @@ import { RefreshTokenService } from '../services/refresh-token.service';
 import { environment } from '../../environments/environment';
 
 interface RefreshResponse {
-  accessToken: string;
-  refreshToken: string;
+  accessToken?:  string;
+  access_token?: string;
+  refreshToken?:  string;
+  refresh_token?: string;
 }
 
 /**
@@ -48,12 +50,15 @@ export const tokenExpiryInterceptor: HttpInterceptorFn = (req, next) => {
         .post<RefreshResponse>(`${environment.apiUrl}/auth/refresh`, { userId, refreshToken })
         .pipe(
           switchMap(response => {
-            auth.token.set(response.accessToken);
-            saveAccessToken(response.accessToken);
-            refreshTokenService.save(response.refreshToken);
+            const newToken   = response.accessToken  ?? response.access_token  ?? '';
+            const newRefresh = response.refreshToken ?? response.refresh_token ?? '';
+
+            auth.token.set(newToken);
+            saveAccessToken(newToken);
+            if (newRefresh) refreshTokenService.save(newRefresh);
 
             const retryReq = req.clone({
-              setHeaders: { Authorization: `Bearer ${response.accessToken}` },
+              setHeaders: { Authorization: `Bearer ${newToken}` },
             });
             return next(retryReq);
           }),
