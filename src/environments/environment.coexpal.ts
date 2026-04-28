@@ -1,7 +1,7 @@
 export const environment = {
   production: true,
   clientName: 'coexpal',
-  apiUrl: 'https://api.apoloenergies.es/api/coexpal/v1',
+  apiUrl: 'https://api.apoloenergies.es/coexpal/api/coexpal/v1',
   logoUrl: '/coexpal/logo-1.webp',
   faviconUrl: '/coexpal/favicon.ico',
   appTitle: 'COEXPAL',
