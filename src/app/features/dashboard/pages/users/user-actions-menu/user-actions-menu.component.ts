@@ -10,7 +10,7 @@ import { UserService } from '../../../../../services/user.service';
 import { CatalogService } from '../../../../../services/catalog.service';
 import { RestorePasswordModalComponent } from '../restore-password-modal/restore-password-modal.component';
 import { SendContractModalComponent } from '../send-contract-modal/send-contract-modal.component';
-import { UserRole, UserRoleLabel } from '../../../../../entities/user-role';
+import { UserRole, UserRoleLabel, normalizeRoleToOptionValue } from '../../../../../entities/user-role';
 
 export interface UserRow {
   id:             string;
@@ -207,7 +207,7 @@ export class UserActionsMenuComponent {
     // Sync selects whenever the user input changes
     effect(() => {
       const u = this.user();
-      this.selectedRole.set(String(u.role));
+      this.selectedRole.set(normalizeRoleToOptionValue(u.role));
       this.selectedStatus.set(String(u.isActive));
       this.selectedExpert.set(String(u.isEnergyExpert));
       this.selectedCommission.set(
