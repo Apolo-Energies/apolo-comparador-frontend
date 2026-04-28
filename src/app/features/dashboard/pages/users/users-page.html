@@ -42,14 +42,7 @@
 
   <!-- Contract status badge template -->
   <ng-template #contractStatusTpl let-row>
-    @if (row.contractStatus; as s) {
-      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-        [class]="contractStatusCls(s)">
-        {{ contractStatusLabel(s) }}
-      </span>
-    } @else {
-      <span class="text-xs text-muted-foreground">-</span>
-    }
+    <span class="text-sm">{{ contractStatusLabel(row.contractSignatureStatus) }}</span>
   </ng-template>
 
   <!-- Actions cell template: gear icon per row -->
