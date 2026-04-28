@@ -8,6 +8,7 @@ import { CommissionsPageComponent } from './pages/commissions/commissions-page';
 import { StatisticsPageComponent } from './pages/statistics/statistics-page';
 import { Layout } from '../layout/layout';
 import { permissionGuard } from '../../guards/permission.guard';
+import { featureGuard } from '../../guards/feature.guard';
 import { ForbiddenComponent } from '../../pages/forbidden/forbidden';
 import { SipsPageComponent } from './pages/sips/sips-page';
 import { FastDischarge } from './pages/fast-discharge/fast-discharge';
@@ -45,7 +46,7 @@ export const DASHBOARD_ROUTES: Routes = [
         data: { roles: ['Master'] },
         children: [
           { path: 'users',       component: UsersPageComponent },
-          { path: 'users/:id',   component: UserDetailPageComponent },
+          { path: 'users/:id',   component: UserDetailPageComponent, canActivate: [featureGuard], data: { roles: ['Master'], feature: 'userDetail' } },
           { path: 'commission',  component: CommissionsPageComponent },
           { path: 'rates',       component: RatesPageComponent },
         ],

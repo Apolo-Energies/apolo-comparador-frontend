@@ -9,8 +9,9 @@ import { DownloadIcon, filterIcon, SearchIcon, StarIcon, UiIconSource, XIcon } f
 import { UserService } from '../../../../services/user.service';
 import { AddUserModalComponent } from './add-user-modal/add-user-modal';
 import { UserActionsMenuComponent, UserRow } from './user-actions-menu/user-actions-menu.component';
-import { getRoleLabel, UserRole } from '../../../../entities/user-role';
+import { getRoleLabel } from '../../../../entities/user-role';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
+import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-users-page',
@@ -53,18 +54,18 @@ export class UsersPageComponent implements AfterViewInit {
 
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.pageSize())));
 
-  readonly columns = signal<TableColumn<UserRow>[]>([
-    { key: 'fullName', label: 'Nombre' },
-    { key: 'email',    label: 'Email', textColor: 'text-muted-foreground' },
-    // { key: 'phone',    label: 'Teléfono' },
-    { key: 'role',     label: 'Rol', align: 'center', format: row => getRoleLabel(row.role) },
-    { key: 'isActive', label: 'Estado', align: 'center',
-      format: row => row.isActive ? 'Activo' : 'Inactivo' },
-    { key: 'isEnergyExpert', label: 'Energy Expert', align: 'center',
-      format: row => row.isEnergyExpert ? 'Sí' : 'No' },
-    { key: 'commissions', label: 'Comisión', align: 'center',
-      format: row => row.commissions?.find(c => c.isActive)?.commissionType?.name ?? '-' },
-  ]);
+  private readonly isApolo = environment.features.userDetail;
+
+  readonly columns = signal<TableColumn<UserRow>[]>(
+    this.isApolo ? [] : [
+      { key: 'fullName',       label: 'Nombre' },
+      { key: 'email',          label: 'Email', textColor: 'text-muted-foreground' },
+      { key: 'role',           label: 'Rol',           align: 'center', format: row => getRoleLabel(row.role) },
+      { key: 'isActive',       label: 'Estado',        align: 'center', format: row => row.isActive ? 'Activo' : 'Inactivo' },
+      { key: 'isEnergyExpert', label: 'Energy Expert', align: 'center', format: row => row.isEnergyExpert ? 'Sí' : 'No' },
+      { key: 'commissions',    label: 'Comisión',      align: 'center', format: row => row.commissions?.find(c => c.isActive)?.commissionType?.name ?? '-' },
+    ]
+  );
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
@@ -73,30 +74,49 @@ export class UsersPageComponent implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.columns.update(cols => [
-      ...cols,
-      { key: 'contractStatus', label: 'Contrato', align: 'center', cellTemplate: this.contractStatusTpl },
-      { key: 'actions',        label: '',          align: 'center', cellTemplate: this.actionsTpl },
-    ]);
+    if (this.isApolo) {
+      this.columns.set([
+        { key: 'fullName',                label: 'Razón Social' },
+        { key: 'customer',                label: 'SIPS/DNI',        format: row => {
+            const c = row.customer;
+            if (!c) return '-';
+            return c.personType === 'Individual' ? (c.dni ?? '-') : (c.cif ?? '-');
+          }
+        },
+        { key: 'email',                   label: 'Usuario' },
+        { key: 'phone',                   label: 'Teléfono',        format: row => row.phone || '-' },
+        { key: 'role',                    label: 'Rol',             align: 'center', format: row => getRoleLabel(row.role) },
+        { key: 'contractSignatureStatus', label: 'Estado Contrato', align: 'center', cellTemplate: this.contractStatusTpl },
+        { key: 'isEnergyExpert',          label: 'Energy Expert',   align: 'center', format: row => row.isEnergyExpert ? 'Sí' : 'No' },
+        { key: 'commissions',             label: 'Comisión',        align: 'center', format: row => row.commissions?.find(c => c.isActive)?.commissionType?.name ?? '-' },
+        { key: 'provider',                label: 'Proveedor',       align: 'center', format: row => row.provider?.name ?? '-' },
+        { key: 'isActive',                label: 'Estado Usuario',  align: 'center', format: row => row.isActive ? 'Activo' : 'Inactivo' },
+        { key: 'actions',                 label: '',                align: 'center', cellTemplate: this.actionsTpl },
+      ]);
+    } else {
+      this.columns.update(cols => [
+        ...cols,
+        { key: 'actions', label: '', align: 'center', cellTemplate: this.actionsTpl },
+      ]);
+    }
   }
 
   private static readonly CONTRACT_STATUS_MAP: Record<string, { label: string; cls: string }> = {
-    NoContract:   { label: 'Sin contrato',    cls: 'bg-muted text-muted-foreground' },
-    DocsPending:  { label: 'Docs pendientes', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' },
-    ReadyToSign:  { label: 'Listo p/firma',   cls: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' },
+    Pending:      { label: 'Pendiente',       cls: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' },
+    Signed:       { label: 'Firmado',         cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' },
+    Declined:     { label: 'Cancelado',       cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' },
+    Expired:      { label: 'Vencido',         cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' },
     InProgress:   { label: 'En firma',        cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
+    ReadyToSign:  { label: 'Listo p/firma',   cls: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' },
+    DocsPending:  { label: 'Docs pendientes', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' },
     Active:       { label: 'Activo',          cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' },
     ExpiringSoon: { label: 'Por vencer',      cls: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' },
-    Expired:      { label: 'Vencido',         cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' },
-    Declined:     { label: 'Cancelado',       cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' },
+    NoContract:   { label: 'Sin contrato',    cls: 'bg-muted text-muted-foreground' },
   };
 
-  contractStatusLabel(status: string): string {
+  contractStatusLabel(status: string | null | undefined): string {
+    if (!status) return 'Sin contrato';
     return UsersPageComponent.CONTRACT_STATUS_MAP[status]?.label ?? status;
-  }
-
-  contractStatusCls(status: string): string {
-    return UsersPageComponent.CONTRACT_STATUS_MAP[status]?.cls ?? 'bg-muted text-muted-foreground';
   }
 
   load() {

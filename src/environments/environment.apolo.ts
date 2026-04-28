@@ -21,7 +21,8 @@ export const environment = {
     resetPassword: true,
     quickAction: true,
     excelReports: true,
-    contracts: false,
+    contracts: true,
+    userDetail: true,
     support: false,
   },
 };

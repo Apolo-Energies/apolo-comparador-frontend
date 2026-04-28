@@ -22,6 +22,7 @@ export const environment = {
     quickAction: true,
     excelReports: true,
     contracts: false,
+    userDetail: false,
     support: false,
   },
 };
