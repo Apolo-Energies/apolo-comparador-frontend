@@ -5,6 +5,8 @@ export const environment = {
   logoUrl: '/renova/logo.webp',
   faviconUrl: '/renova/favicon.ico',
   appTitle: 'RENOVAE',
+  contractsUrl: null as string | null,  // pendiente URL del cliente
+  supportUrl:   null as string | null,  // pendiente URL / WhatsApp del cliente
   auth: {
     tokenStorage: 'cookie' as const,
     refreshTokenCookie: 'apolo_rt',
@@ -19,7 +21,7 @@ export const environment = {
     usersManagement: true,
     forgotPassword: true,
     resetPassword: true,
-    quickAction: true,
+    quickAction: false,  // pendiente URL del cliente
     excelReports: true,
     contracts: false,
     userDetail: false,

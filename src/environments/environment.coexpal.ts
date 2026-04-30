@@ -5,6 +5,8 @@ export const environment = {
   logoUrl: '/coexpal/logo-1.webp',
   faviconUrl: '/coexpal/favicon.ico',
   appTitle: 'COEXPAL',
+  contractsUrl: null as string | null,
+  supportUrl:   null as string | null,
   auth: {
     tokenStorage: 'cookie' as const,
     refreshTokenCookie: 'apolo_rt',
@@ -19,7 +21,7 @@ export const environment = {
     usersManagement: true,
     forgotPassword: true,
     resetPassword: true,
-    quickAction: true,
+    quickAction: false,
     excelReports: true,
     contracts: false,
     userDetail: false,
