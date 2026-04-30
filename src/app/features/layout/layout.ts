@@ -12,15 +12,7 @@ import { environment } from '../../../environments/environment';
 import { RefreshTokenService } from '../../services/refresh-token.service';
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
-  'Colaborador': [
-    'contracts:view',
-    'comparator:view',
-    'sips:view',
-    'settings:view',
-    'settings.users:view',
-    'settings.commission:view',
-    'settings.rates:view',
-  ],
+  'Colaborador':  ['comparator:view', 'sips:view'],
   'Referenciador': ['comparator:view', 'sips:view'],
   'Tester':        ['comparator:view', 'sips:view'],
 };
