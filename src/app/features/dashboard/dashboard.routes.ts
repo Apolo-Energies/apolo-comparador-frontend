@@ -28,11 +28,11 @@ export const DASHBOARD_ROUTES: Routes = [
       { path: 'sips', component: SipsPageComponent },
       { path: 'altaRapida', component: FastDischarge, children: FAST_DISCHARGE_ROUTES },
 
-      // Master + Colaborador
+      // Master only
       {
         path: 'analytics',
         canActivate: [permissionGuard],
-        data: { roles: ['Master', 'Colaborador'] },
+        data: { roles: ['Master'] },
         children: [
           { path: 'history',    component: HistoryPageComponent },
           { path: 'statistics', component: StatisticsPageComponent },
