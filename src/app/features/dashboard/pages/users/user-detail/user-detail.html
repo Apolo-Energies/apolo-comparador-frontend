@@ -1,22 +1,6 @@
 <app-loading-overlay [loading]="loading()" />
 
 <div class="mx-auto w-full space-y-6">
-
-  <!-- Back button -->
-  <!-- <div>
-    <button type="button"
-      class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      (click)="goBack()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="19" y1="12" x2="5" y2="12"/>
-        <polyline points="12 19 5 12 12 5"/>
-      </svg>
-      Volver a usuarios
-    </button>
-  </div> -->
-
-  <!-- Missing documents alert (non-master only) -->
   @if (!isMaster() && missingDocCount() > 0) {
     <div class="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4
                 dark:border-amber-900/40 dark:bg-amber-900/20">

@@ -12,41 +12,44 @@
 @theme {
   --font-poppins: var(--font-poppins);
 
-  --color-background: #25272a;
-  --color-body: #25272a;
-  --color-foreground: #f8fafc;
+  /* — Surfaces — */
+  --color-background:        #18181b;  /* zinc-900 */
+  --color-body:              #18181b;  /* zinc-900 */
+  --color-foreground:        #fafafa;  /* zinc-50 */
 
-  --color-card: #17181a;
-  --color-card-foreground: #f8fafc;
+  --color-card:              #27272a;  /* zinc-800 */
+  --color-card-foreground:   #fafafa;
 
-  --color-popover: #0f172a;
-  --color-popover-foreground: #f8fafc;
+  --color-popover:           #18181b;
+  --color-popover-foreground:#fafafa;
 
-  --color-primary: #60a5fa;
-  --color-primary-foreground: #0f172a;
-  --color-primary-button: #12AFF0;
+  /* — Accent (azul eléctrico) — */
+  --color-primary:           #3b82f6;  /* blue-500 */
+  --color-primary-foreground:#ffffff;
+  --color-primary-button:    #3b82f6;
 
-  --color-secondary: #1e293b;
-  --color-secondary-foreground: #f8fafc;
+  /* — Secondary / accent surfaces — */
+  --color-secondary:         #27272a;  /* zinc-800 */
+  --color-secondary-foreground:#fafafa;
 
-  --color-accent: #323438;
-  --color-accent-foreground: #f8fafc;
+  --color-accent:            #3f3f46;  /* zinc-700 */
+  --color-accent-foreground: #fafafa;
 
-  --color-destructive: #7f1d1d;
-  --color-destructive-foreground: #f8fafc;
+  --color-destructive:       #b91c1c;
+  --color-destructive-foreground:#fafafa;
 
-  --color-border: #323438;
-  --color-input: #17181a;
-  --color-ring: #94a3b8;
+  /* — Borders / inputs / rings — */
+  --color-border:            #3f3f46;  /* zinc-700 */
+  --color-input:             #27272a;  /* zinc-800 */
+  --color-ring:              #52525b;  /* zinc-600 */
 
-  --color-muted: #1e293b;
-  --color-muted-foreground: #809FB8;
+  /* — Muted (textos secundarios y backgrounds suaves) — */
+  --color-muted:             #27272a;  /* zinc-800 */
+  --color-muted-foreground:  #a1a1aa;  /* zinc-400 */
 }
 
 @layer base {
-  *, *::before, *::after {
-    box-sizing: border-box;
-  }
+  *, *::before, *::after { box-sizing: border-box; }
 
   html, body {
     background-color: var(--color-background);
@@ -54,29 +57,15 @@
   }
 
   /* Date input: color scheme oscuro para el picker del sistema */
-  input[type="date"] {
-    color-scheme: dark;
-  }
-
-  input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: brightness(0) invert(1) opacity(0.6) !important;
-    cursor: pointer;
-  }
-
-  /* Placeholder del date input (formato dd/mm/aaaa) en color muted */
+  input[type="date"]                                         { color-scheme: dark; }
+  input[type="date"]::-webkit-calendar-picker-indicator      { filter: brightness(0) invert(1) opacity(0.6) !important; cursor: pointer; }
   input[type="date"]::-webkit-datetime-edit-text,
   input[type="date"]::-webkit-datetime-edit-month-field,
   input[type="date"]::-webkit-datetime-edit-day-field,
-  input[type="date"]::-webkit-datetime-edit-year-field {
-    color: var(--color-muted-foreground);
-  }
+  input[type="date"]::-webkit-datetime-edit-year-field       { color: var(--color-muted-foreground); }
   input[type="date"]::-webkit-datetime-edit-month-field:focus,
   input[type="date"]::-webkit-datetime-edit-day-field:focus,
-  input[type="date"]::-webkit-datetime-edit-year-field:focus {
-    background-color: var(--color-primary);
-    color: var(--color-primary-foreground);
-    border-radius: 2px;
-  }
+  input[type="date"]::-webkit-datetime-edit-year-field:focus { background-color: var(--color-primary); color: var(--color-primary-foreground); border-radius: 2px; }
 
   input:-webkit-autofill {
     -webkit-box-shadow: 0 0 0px 1000px var(--color-card) inset !important;
@@ -84,7 +73,105 @@
   }
 }
 
-/* ── Tema del comparador público (claro + Space Grotesk, incluye dialog en portal) ── */
+/* ─────────────────────────────────────────────────────────────────────────
+   PrimeNG — sincronizado con la paleta zinc.
+   Cubre tanto las variables nuevas (--p-*) como las legacy (--surface-*).
+   ───────────────────────────────────────────────────────────────────────── */
+:root,
+.p-component,
+[class*="p-"] {
+  --surface-ground:  #18181b;  /* zinc-900 */
+  --surface-section: #27272a;  /* zinc-800 */
+  --surface-card:    #27272a;  /* zinc-800 */
+  --surface-overlay: #27272a;
+  --surface-border:  #3f3f46;  /* zinc-700 */
+  --surface-hover:   #3f3f46;  /* zinc-700 */
+  --surface-0:       #fafafa;
+  --surface-50:      #f4f4f5;
+  --surface-100:     #e4e4e7;
+  --surface-200:     #d4d4d8;
+  --surface-300:     #a1a1aa;
+  --surface-400:     #71717a;
+  --surface-500:     #52525b;
+  --surface-600:     #3f3f46;
+  --surface-700:     #27272a;
+  --surface-800:     #18181b;
+  --surface-900:     #09090b;
+
+  /* PrimeNG v17+ surface palette */
+  --p-content-background:        #27272a;  /* zinc-800 */
+  --p-content-hover-background:  #3f3f46;
+  --p-content-border-color:      #3f3f46;
+  --p-content-color:             #fafafa;
+  --p-content-hover-color:       #ffffff;
+  --p-content-padding:           1rem;
+
+  --p-form-field-background:     #18181b;
+  --p-form-field-disabled-background:#27272a;
+  --p-form-field-filled-background:  #27272a;
+  --p-form-field-border-color:   #3f3f46;
+  --p-form-field-hover-border-color: #52525b;
+  --p-form-field-focus-border-color: #3b82f6;
+  --p-form-field-color:          #fafafa;
+  --p-form-field-placeholder-color:#a1a1aa;
+
+  --p-overlay-modal-background:  #18181b;
+  --p-overlay-modal-border-color:#3f3f46;
+  --p-overlay-popover-background:#27272a;
+  --p-overlay-popover-border-color:#3f3f46;
+
+  --p-text-color:                #fafafa;
+  --p-text-muted-color:          #a1a1aa;
+  --p-text-hover-color:          #ffffff;
+
+  --p-primary-color:             #3b82f6;
+  --p-primary-contrast-color:    #ffffff;
+  --p-primary-hover-color:       #60a5fa;
+  --p-primary-active-color:      #2563eb;
+
+  --p-button-primary-background: #3b82f6;
+  --p-button-primary-hover-background:#60a5fa;
+  --p-button-primary-active-background:#2563eb;
+  --p-button-primary-border-color:#3b82f6;
+  --p-button-primary-color:      #ffffff;
+
+  --p-focus-ring-color:          #3b82f6;
+  --p-focus-ring-width:          2px;
+  --p-focus-ring-style:          solid;
+  --p-focus-ring-offset:         2px;
+
+  --p-border-radius-md:          0.5rem;
+  --p-border-radius-lg:          0.75rem;
+}
+lib-apolo-sidebar a[href*="/analytics/opportunities"] lib-sidebar-item button {
+  position: relative;
+}
+lib-apolo-sidebar a[href*="/analytics/opportunities"] lib-sidebar-item button::after {
+  content: var(--opp-count);
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.25rem;
+  padding: 0 0.4rem;
+  border-radius: 9999px;
+  background: rgb(59 130 246 / 0.12);
+  color: rgb(96 165 250);
+  border: 1px solid rgb(59 130 246 / 0.30);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Tema del comparador público (claro). Conservado para no romperlo.
+   ───────────────────────────────────────────────────────────────────────── */
 body.apolo-light {
   --color-background:         #ffffff;
   --color-body:               #ffffff;
@@ -113,6 +200,4 @@ body.apolo-light {
   font-family: 'Space Grotesk', system-ui, sans-serif;
 }
 
-body.apolo-light * {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
-}
+body.apolo-light * { font-family: 'Space Grotesk', system-ui, sans-serif; }
