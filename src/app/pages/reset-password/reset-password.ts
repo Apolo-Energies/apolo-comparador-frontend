@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { AlertComponent, AlertService, ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
+import { AlertComponent, AlertService } from '@apolo-energies/ui';
 import { PasswordService } from '../../services/password.service';
 
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [ReactiveFormsModule, ButtonComponent, InputFieldComponent, AlertComponent, RouterLink],
+  imports: [ReactiveFormsModule, AlertComponent, RouterLink],
   templateUrl: './reset-password.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -18,16 +18,27 @@ export class ResetPasswordComponent implements OnInit {
   private router          = inject(Router);
   private alertService    = inject(AlertService);
 
-  readonly loading = signal(false);
-  readonly done    = signal(false);
+  readonly loading      = signal(false);
+  readonly done         = signal(false);
+  readonly showPassword = signal(false);
+  readonly showConfirm  = signal(false);
 
   private userId = '';
   private token  = '';
 
   readonly form = this.fb.group({
-    newPassword:     ['', [Validators.required, Validators.minLength(8), Validators.pattern(/\d/)]],
+    newPassword:     ['', [Validators.required, Validators.minLength(8), this.passwordStrength]],
     confirmPassword: ['', [Validators.required]],
   }, { validators: this.matchPasswords });
+
+  private passwordStrength(control: import('@angular/forms').AbstractControl) {
+    const v = control.value ?? '';
+    if (!/[A-Z]/.test(v)) return { noUppercase: true };
+    if (!/[a-z]/.test(v)) return { noLowercase: true };
+    if (!/[0-9]/.test(v)) return { noDigit: true };
+    if (!/[^a-zA-Z0-9]/.test(v)) return { noSpecial: true };
+    return null;
+  }
 
   private matchPasswords(group: import('@angular/forms').AbstractControl) {
     const pw  = group.get('newPassword')?.value;
