@@ -1,3 +1,4 @@
+// Apolo dev (descomentar para desarrollar con apolo)
 // export const environment = {
 //   production: false,
 //   clientName: 'apolo',
@@ -5,25 +6,13 @@
 //   logoUrl: '/apolo/apolologo.webp',
 //   faviconUrl: '/apolo/favicon.ico',
 //   appTitle: 'APOLO ENERGIES',
-//   auth: {
-//     tokenStorage: 'cookie' as const,
-//     refreshTokenCookie: 'apolo_rt',
-//     accessTokenKey: 'auth_token',
-//   },
+//   contractsUrl: null as string | null,
+//   supportUrl:   null as string | null,
+//   auth: { tokenStorage: 'cookie' as const, refreshTokenCookie: 'apolo_rt', accessTokenKey: 'auth_token' },
 //   features: {
-//     comparator: true,
-//     sips: true,
-//     statistics: true,
-//     history: true,
-//     commissions: true,
-//     usersManagement: true,
-//     forgotPassword: true,
-//     resetPassword: true,
-//     quickAction: true,
-//     excelReports: true,
-//     contracts: true,
-//     userDetail: true,
-//     support: false,
+//     comparator: true, sips: true, statistics: true, history: true, commissions: true,
+//     usersManagement: true, forgotPassword: true, resetPassword: true,
+//     quickAction: true, excelReports: true, contracts: true, userDetail: true, support: false,
 //   },
 // };
 
@@ -34,6 +23,8 @@ export const environment = {
   logoUrl: '/renova/logo.webp',
   faviconUrl: '/renova/favicon.ico',
   appTitle: 'RENOVAE',
+  contractsUrl: null as string | null,
+  supportUrl:   null as string | null,
   auth: {
     tokenStorage: 'cookie' as const,
     refreshTokenCookie: 'apolo_rt',
@@ -48,7 +39,7 @@ export const environment = {
     usersManagement: true,
     forgotPassword: true,
     resetPassword: true,
-    quickAction: true,
+    quickAction: false,
     excelReports: true,
     contracts: false,
     userDetail: false,

@@ -63,105 +63,71 @@ export class Layout {
     size: 16,
   };
 
-  readonly sections: SidebarSection[] = [
-    {
-      section: 'GENERAL',
-      items: [
-        {
-          title: 'Contratos',
-          icon: {
-            type: 'apolo',
-            icon: ListIcon,
-            size: 20,
-          },
-          url: '/projects',
-          access: ['contracts:view'],
-        },
-        {
-          title: 'Analítica',
-          icon: {
-            type: 'apolo',
-            icon: PieIcon,
-            size: 20,
-          },
-          access: ['analytics:view'],
-          children: [
-            {
-              title: 'Historial',
-              url: '/dashboard/analytics/history',
-              access: ['analytics.history:view'],
-            },
-            {
-              title: 'Estadísticas',
-              url: '/dashboard/analytics/statistics',
-              access: ['analytics.statistics:view'],
-            },
-          ],
-        },
-        {
-          title: 'Comparador',
-          icon: {
-            type: 'apolo',
-            icon: ArrowDownBoxIcon,
-            size: 20,
-          },
-          url: '/dashboard/comparator',
-          access: ['comparator:view'],
-        },
-        {
-          title: 'Consultas SIPS',
-          icon: {
-            type: 'apolo',
-            icon: CompassIcon,
-            size: 20,
-          },
-          url: '/dashboard/sips',
-          access: ['sips:view'],
-        },
-      ],
-    },
-    {
-      section: 'SOPORTE',
-      items: [
-        {
-          title: 'Ajustes',
-          icon: {
-            type: 'apolo',
-            icon: SettingsIcon,
-            size: 20,
-          },
-          access: ['settings:view'],
-          children: [
-            {
-              title: 'Usuarios',
-              url: '/dashboard/settings/users',
-              access: ['settings.users:view'],
-            },
-            {
-              title: 'Comisión',
-              url: '/dashboard/settings/commission',
-              access: ['settings.commission:view'],
-            },
-            {
-              title: 'Tarifas',
-              url: '/dashboard/settings/rates',
-              access: ['settings.rates:view'],
-            },
-          ],
-        },
-        {
-          title: 'Soporte',
-          icon: {
-            type: 'apolo',
-            icon: SupportIcon,
-            size: 20,
-          },
-          url: '/dashboard/support',
-          access: ['support:view'],
-        },
-      ],
-    },
-  ];
+  readonly sections: SidebarSection[] = (() => {
+    const env = environment as typeof environment & { contractsUrl?: string | null; supportUrl?: string | null };
+
+    const generalItems: SidebarSection['items'] = [];
+
+    if (env.contractsUrl) {
+      generalItems.push({
+        title: 'Contratos',
+        icon: { type: 'apolo', icon: ListIcon, size: 20 },
+        url: env.contractsUrl,
+        access: ['contracts:view'],
+      });
+    }
+
+    generalItems.push(
+      {
+        title: 'Analítica',
+        icon: { type: 'apolo', icon: PieIcon, size: 20 },
+        access: ['analytics:view'],
+        children: [
+          { title: 'Historial',     url: '/dashboard/analytics/history',    access: ['analytics.history:view'] },
+          { title: 'Estadísticas',  url: '/dashboard/analytics/statistics', access: ['analytics.statistics:view'] },
+        ],
+      },
+      {
+        title: 'Comparador',
+        icon: { type: 'apolo', icon: ArrowDownBoxIcon, size: 20 },
+        url: '/dashboard/comparator',
+        access: ['comparator:view'],
+      },
+      {
+        title: 'Consultas SIPS',
+        icon: { type: 'apolo', icon: CompassIcon, size: 20 },
+        url: '/dashboard/sips',
+        access: ['sips:view'],
+      },
+    );
+
+    const supportItems: SidebarSection['items'] = [
+      {
+        title: 'Ajustes',
+        icon: { type: 'apolo', icon: SettingsIcon, size: 20 },
+        access: ['settings:view'],
+        children: [
+          { title: 'Usuarios',  url: '/dashboard/settings/users',      access: ['settings.users:view'] },
+          { title: 'Comisión',  url: '/dashboard/settings/commission', access: ['settings.commission:view'] },
+          { title: 'Tarifas',   url: '/dashboard/settings/rates',      access: ['settings.rates:view'] },
+        ],
+      },
+    ];
+
+    if (env.supportUrl) {
+      supportItems.push({
+        title: 'Soporte',
+        icon: { type: 'apolo', icon: SupportIcon, size: 20 },
+        url: env.supportUrl,
+        access: ['support:view'],
+      });
+    }
+
+    return [
+      { section: 'GENERAL',  items: generalItems },
+      { section: 'SOPORTE',  items: supportItems },
+    ];
+  })();
 
   readonly welcome: HeaderWelcomeContent = {
     title: 'Bienvenido al portal de colaboradores de Apolo Energies.',
@@ -175,19 +141,14 @@ export class Layout {
     },
   };
 
-  readonly quickAction = signal<HeaderActionLink>({
-    label: 'Alta Rápida',
-    type: 'internal',
-    url: '/dashboard/altaRapida',
-    icon: {
-      type: 'apolo',
-      icon: StarIcon,
-      className: 'text-current',
-      size: 14,
-      strokeWidth: 0.2
-    },
-    // target: '_blank',
-  });
+  readonly quickAction = signal<HeaderActionLink | null>(
+    environment.features.quickAction ? {
+      label: 'Alta Rápida',
+      type: 'internal',
+      url: '/dashboard/altaRapida',
+      icon: { type: 'apolo', icon: StarIcon, className: 'text-current', size: 14, strokeWidth: 0.2 },
+    } : null
+  );
 
   readonly menuItems: UserMenuItem[] = [
     { id: 'logout', label: 'Cerrar sesión',  icon: {
