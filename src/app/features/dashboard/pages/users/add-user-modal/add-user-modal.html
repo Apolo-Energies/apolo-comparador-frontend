@@ -1,68 +1,139 @@
-<ui-dialog [open]="open()" [closeable]="true" maxWidth="max-w-xl" (openChange)="$event ? null : onCancel()">
+@if (isApolo) {
 
-  <div class="flex flex-col" style="height: 90vh; max-height: 90vh">
+  <!-- ═══════════════ APOLO: modal completo ═══════════════ -->
+  <ui-dialog [open]="open()" [closeable]="true" maxWidth="max-w-2xl" (openChange)="$event ? null : onCancel()">
 
-    <!-- Header fijo -->
-    <div class="shrink-0 px-6 pt-5 space-y-4">
+    <div class="flex flex-col" style="min-height: 80vh; max-height: 92vh">
 
-      <!-- Barra de progreso -->
-      <div class="space-y-1">
-        <div class="flex justify-between text-sm text-muted-foreground">
-          <span>Progreso</span>
-          <span>{{ progress() }}%</span>
+      <!-- Header fijo -->
+      <div class="shrink-0 px-6 pt-5 space-y-4">
+
+        <!-- Barra de progreso -->
+        <div class="space-y-1">
+          <div class="flex justify-between text-sm text-muted-foreground">
+            <span>Progreso</span>
+            <span>{{ progress() }}%</span>
+          </div>
+          <div class="w-full bg-muted rounded-full h-1.5">
+            <div
+              class="bg-primary-button h-1.5 rounded-full transition-all duration-300"
+              [style.width.%]="progress()"
+            ></div>
+          </div>
         </div>
-        <div class="w-full bg-muted rounded-full h-1.5">
-          <div
-            class="bg-primary-button h-1.5 rounded-full transition-all duration-300"
-            [style.width.%]="progress()"
-          ></div>
+
+        <!-- Toggle Persona Física / Jurídica -->
+        <div class="flex rounded-lg border border-border p-1 bg-muted gap-1">
+          @for (opt of viewOptions; track opt.value) {
+            <button
+              type="button"
+              (click)="setView(opt.value)"
+              class="flex-1 text-sm py-1.5 rounded-md transition-all font-medium"
+              [class.bg-card]="view() === opt.value"
+              [class.text-foreground]="view() === opt.value"
+              [class.shadow-sm]="view() === opt.value"
+              [class.text-muted-foreground]="view() !== opt.value"
+            >
+              {{ opt.label }}
+            </button>
+          }
         </div>
+
+        <!-- Título -->
+        <div>
+          <p class="text-base font-semibold text-foreground">Datos del usuario</p>
+          <p class="text-sm text-muted-foreground">Complete los datos básicos del usuario</p>
+        </div>
+
       </div>
 
-      <!-- Toggle -->
-      <div class="flex rounded-lg border border-border p-1 bg-muted gap-1">
-        @for (opt of viewOptions; track opt.value) {
-          <button
-            type="button"
-            (click)="setView(opt.value)"
-            class="flex-1 text-sm py-1.5 rounded-md transition-all font-medium"
-            [class.bg-card]="view() === opt.value"
-            [class.text-foreground]="view() === opt.value"
-            [class.shadow-sm]="view() === opt.value"
-            [class.text-muted-foreground]="view() !== opt.value"
-          >
-            {{ opt.label }}
-          </button>
-        }
-      </div>
+      <!-- Body con scroll -->
+      <form class="flex flex-col flex-1 min-h-0">
 
-      <!-- Título -->
-      <div>
-        <p class="text-base font-semibold text-foreground">Datos del usuario</p>
-        <p class="text-sm text-muted-foreground">Complete los datos básicos del usuario</p>
-      </div>
+        <div class="flex-1 overflow-y-auto px-6 py-4">
+          @if (view() === 'Individual') {
+            <app-form-individual-user [form]="individualForm" [submitted]="submitted()" />
+          } @else {
+            <app-form-company-user [form]="companyForm" [submitted]="submitted()" />
+          }
+        </div>
+
+        <!-- Footer fijo -->
+        <div class="shrink-0 border-t border-border px-6 py-4 flex items-center justify-between">
+          <ui-button label="Cancelar"      variant="outline" size="md" (click)="onCancel()" />
+          <ui-button label="Crear Usuario" variant="default" size="md" (click)="onSubmit()" />
+        </div>
+
+      </form>
 
     </div>
 
-    <!-- Body con scroll -->
-    <form class="flex flex-col flex-1 min-h-0">
+  </ui-dialog>
 
-      <div class="flex-1 overflow-y-auto px-6 py-4">
-        @if (view() === 'Individual') {
-          <app-form-individual-user [form]="individualForm" [submitted]="submitted()" />
-        } @else {
-          <app-form-company-user [form]="companyForm" [submitted]="submitted()" />
+} @else {
+
+  <!-- ═══════════════ COEXPAL / RENOVAE: modal simple ═══════════════ -->
+  <ui-dialog [open]="open()" [closeable]="true" maxWidth="max-w-md" (openChange)="$event ? null : onCancel()">
+
+    <div class="px-6 pt-5 pb-2 space-y-1">
+      <p class="text-base font-semibold text-foreground">Nuevo usuario</p>
+      <p class="text-sm text-muted-foreground">Complete los datos del usuario</p>
+    </div>
+
+    <form [formGroup]="simpleForm" class="px-6 pb-6 pt-4 space-y-4">
+
+      <div class="space-y-1">
+        <label class="text-sm font-medium text-muted-foreground">Email *</label>
+        <input formControlName="email" type="email" placeholder="usuario@email.com"
+          class="w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
+          [class.border-red-500]="simpleErr('email')" />
+        @if (simpleErr('email')) {
+          <p class="text-xs text-red-500">{{ simpleErrMsg('email') }}</p>
         }
       </div>
 
-      <!-- Footer fijo -->
-      <div class="shrink-0 border-t border-border px-6 py-4 flex items-center justify-between">
+      <div class="space-y-1">
+        <label class="text-sm font-medium text-muted-foreground">Rol *</label>
+        <select formControlName="role"
+          class="w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all cursor-pointer"
+          [class.border-red-500]="simpleErr('role')">
+          <option value="" disabled>Seleccionar rol</option>
+          @for (opt of simpleRoleOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+        @if (simpleErr('role')) {
+          <p class="text-xs text-red-500">El rol es obligatorio</p>
+        }
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-sm font-medium text-muted-foreground">Nombre *</label>
+        <input formControlName="name" placeholder="Juan"
+          class="w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
+          [class.border-red-500]="simpleErr('name')" />
+        @if (simpleErr('name')) {
+          <p class="text-xs text-red-500">{{ simpleErrMsg('name') }}</p>
+        }
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-sm font-medium text-muted-foreground">Apellidos *</label>
+        <input formControlName="surnames" placeholder="García López"
+          class="w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
+          [class.border-red-500]="simpleErr('surnames')" />
+        @if (simpleErr('surnames')) {
+          <p class="text-xs text-red-500">{{ simpleErrMsg('surnames') }}</p>
+        }
+      </div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-border">
         <ui-button label="Cancelar"      variant="outline" size="md" (click)="onCancel()" />
         <ui-button label="Crear Usuario" variant="default" size="md" (click)="onSubmit()" />
       </div>
 
     </form>
 
-  </div>
+  </ui-dialog>
 
-</ui-dialog>
+}

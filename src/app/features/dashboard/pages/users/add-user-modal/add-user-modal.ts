@@ -4,6 +4,7 @@ import { DialogComponent, ButtonComponent, AlertService } from '@apolo-energies/
 import { UserService } from '../../../../../services/user.service';
 import { FormIndividualUserComponent } from './form-individual-user';
 import { FormCompanyUserComponent } from './form-company-user';
+import { environment } from '../../../../../../environments/environment';
 
 type PersonView = 'Individual' | 'Company';
 
@@ -27,6 +28,7 @@ export class AddUserModalComponent {
   private readonly userService  = inject(UserService);
   private readonly alertService = inject(AlertService);
 
+  readonly isApolo   = environment.features.userDetail;
   readonly view      = signal<PersonView>('Individual');
   readonly submitted = signal(false);
 
@@ -47,6 +49,13 @@ export class AddUserModalComponent {
     bankAccount:         ['', [Validators.pattern(/^ES\d{2}(?:\s?\d{4}){5}$/)]],
   };
 
+  readonly simpleForm = this.fb.nonNullable.group({
+    email:    ['', [Validators.required, Validators.email]],
+    role:     ['', Validators.required],
+    name:     ['', [Validators.required, Validators.maxLength(50)]],
+    surnames: ['', [Validators.required, Validators.maxLength(50)]],
+  });
+
   readonly individualForm = this.fb.nonNullable.group({ ...this.sharedControls });
 
   readonly companyForm = this.fb.nonNullable.group({
@@ -54,6 +63,27 @@ export class AddUserModalComponent {
     companyName: ['', [Validators.required, Validators.maxLength(100)]],
     cif:         ['', [Validators.required, Validators.pattern(/^[A-Z]\d{7}[A-Z0-9]$/)]],
   });
+
+  readonly simpleRoleOptions = [
+    { value: '1', label: 'Master' },
+    { value: '2', label: 'Colaborador' },
+    { value: '4', label: 'Referenciador' },
+    { value: '8', label: 'Tester' },
+  ];
+
+  simpleErr(field: string): boolean {
+    const c = this.simpleForm.get(field);
+    return !!c && c.invalid && (c.touched || this.submitted());
+  }
+
+  simpleErrMsg(field: string): string {
+    const errors = this.simpleForm.get(field)?.errors;
+    if (!errors) return '';
+    if (errors['required']) return 'Este campo es obligatorio';
+    if (errors['email']) return 'Email inválido';
+    if (errors['maxlength']) return `Máximo ${errors['maxlength'].requiredLength} caracteres`;
+    return 'Campo inválido';
+  }
 
   readonly activeForm = computed(() =>
     this.view() === 'Individual' ? this.individualForm : this.companyForm
@@ -73,12 +103,13 @@ export class AddUserModalComponent {
 
   onSubmit(): void {
     this.submitted.set(true);
-    if (this.activeForm().invalid) return;
+    const form = this.isApolo ? this.activeForm() : this.simpleForm;
+    if (form.invalid) return;
 
-    const raw = this.activeForm().getRawValue() as Record<string, string>;
+    const raw = form.getRawValue() as Record<string, string>;
 
     this.userService.create({
-      personType:           this.view() === 'Individual' ? 0 : 1,
+      personType:           this.isApolo ? (this.view() === 'Individual' ? 0 : 1) : 0,
       email:               raw['email'].toLowerCase().trim(),
       role:                Number(raw['role']),
       name:                raw['name'],
@@ -93,6 +124,7 @@ export class AddUserModalComponent {
     }).subscribe({
       next: () => {
         this.alertService.show('Usuario creado correctamente', 'success');
+        this.simpleForm.reset();
         this.individualForm.reset();
         this.companyForm.reset();
         this.submitted.set(false);
@@ -109,6 +141,7 @@ export class AddUserModalComponent {
   }
 
   onCancel(): void {
+    this.simpleForm.reset();
     this.individualForm.reset();
     this.companyForm.reset();
     this.submitted.set(false);
