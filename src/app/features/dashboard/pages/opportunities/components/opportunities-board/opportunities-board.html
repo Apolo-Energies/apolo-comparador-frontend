@@ -1,0 +1,84 @@
+<div
+  class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4"
+  cdkDropListGroup
+>
+  @for (col of columns(); track trackByStatus($index, col)) {
+    @let palette = paletteFor(col.status);
+
+    <section class="flex flex-col rounded-2xl border border-zinc-700/40 bg-zinc-800/20 backdrop-blur-sm
+                    transition-colors duration-300 hover:border-zinc-700/70 overflow-hidden">
+
+      <!-- Column header -->
+      <header class="flex items-center justify-between px-4 py-3 border-b border-zinc-700/40">
+        <div class="inline-flex items-center gap-2.5 min-w-0">
+          <span class="w-2 h-2 rounded-full shrink-0" [class]="palette.dot"></span>
+          <h2 class="text-sm font-semibold text-zinc-100 truncate tracking-wide">{{ col.label }}</h2>
+        </div>
+        <span class="inline-flex items-center justify-center min-w-7 rounded-md px-1.5 py-0.5
+                     text-[11px] font-semibold ring-1 ring-inset"
+              [class]="palette.badge">
+          {{ col.totalCount }}
+        </span>
+      </header>
+
+      <!-- Drop list -->
+      <div
+        class="flex-1 min-h-70 p-3 space-y-2 overflow-y-auto max-h-[calc(100vh-340px)] relative"
+        cdkDropList
+        [id]="'column-' + col.status"
+        [cdkDropListData]="col.items"
+        [cdkDropListConnectedTo]="listIds"
+        (cdkDropListDropped)="onDrop($event, col.status)"
+      >
+        @for (item of col.items; track trackById($index, item)) {
+          <div cdkDrag [cdkDragData]="item">
+            <app-opportunity-card
+              [opportunity]="item"
+              (open)="onCardOpen($event)"
+            />
+
+            <!-- Drag preview (rotated card) -->
+            <div *cdkDragPreview class="rotate-1 shadow-2xl shadow-black/40">
+              <app-opportunity-card [opportunity]="item" />
+            </div>
+
+            <!-- Placeholder while dragging -->
+            <div *cdkDragPlaceholder
+                 class="rounded-xl bg-zinc-800/40 border-2 border-dashed border-zinc-600/40 h-28"></div>
+          </div>
+        } @empty {
+          @if (col.loading) {
+            <div class="space-y-2">
+              <div class="h-22 rounded-xl bg-zinc-800/40 animate-pulse"></div>
+              <div class="h-22 rounded-xl bg-zinc-800/30 animate-pulse"></div>
+            </div>
+          } @else {
+            <!-- Empty state -->
+            <div class="flex flex-col items-center justify-center text-center py-12 px-4
+                        border-2 border-dashed border-zinc-700/30 rounded-xl">
+              <div class="w-14 h-14 rounded-full ring-1 flex items-center justify-center
+                          bg-zinc-900/60 mb-3 transition-transform duration-300 group-hover:scale-105"
+                   [class]="palette.iconRing + ' ' + palette.iconText">
+                @if (palette.emptyIcon) {
+                  <lib-apolo-icons [icon]="palette.emptyIcon" />
+                }
+              </div>
+              <p class="text-sm font-medium text-zinc-200">Sin oportunidades</p>
+              <p class="text-xs text-zinc-500 mt-1 max-w-50">
+                {{ palette.emptyDescription }}
+              </p>
+            </div>
+          }
+        }
+
+        <!-- "More" hint -->
+        @if (!col.loading && col.totalCount > col.items.length) {
+          <div class="text-[11px] text-center text-zinc-500 py-2 mt-2 border-t border-dashed border-zinc-700/40">
+            Mostrando {{ col.items.length }} de {{ col.totalCount }} —
+            <span class="text-blue-400">usa los filtros para refinar</span>
+          </div>
+        }
+      </div>
+    </section>
+  }
+</div>

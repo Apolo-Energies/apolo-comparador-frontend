@@ -1,6 +1,5 @@
 {
   "framework": null,
-  "buildCommand": "npm run build:coexpal",
   "installCommand": "NODE_ENV=development npm install",
   "outputDirectory": "dist/r-comparator-frontend/browser",
   "rewrites": [

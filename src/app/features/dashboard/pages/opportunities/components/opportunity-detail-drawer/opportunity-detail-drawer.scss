@@ -1,0 +1,23 @@
+:host ::ng-deep {
+  .opp-drawer.p-drawer {
+    background: rgb(24 24 27);
+    border-left: 1px solid rgb(39 39 42);
+    box-shadow: -20px 0 50px -12px rgba(0, 0, 0, 0.5);
+    color: rgb(244 244 245);
+  }
+
+  .opp-drawer .p-drawer-header {
+    display: none;
+  }
+
+  .opp-drawer .p-drawer-content {
+    padding: 0;
+    background: transparent;
+    overflow-y: auto;
+  }
+
+  .p-drawer-mask {
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+  }
+}
