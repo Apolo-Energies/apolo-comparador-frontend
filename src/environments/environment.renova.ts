@@ -1,7 +1,7 @@
 export const environment = {
   production: true,
   clientName: 'renova',
-  apiUrl: 'http://localhost:5102/api/renovae/v1',
+  apiUrl: 'https://apiestudios.renovaenergy.es/api/renovae/v1',
   logoUrl: '/renova/logo.webp',
   faviconUrl: '/renova/favicon.ico',
   appTitle: 'RENOVAE',
