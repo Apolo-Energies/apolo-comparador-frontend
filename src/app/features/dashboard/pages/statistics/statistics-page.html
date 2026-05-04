@@ -18,6 +18,7 @@
   [loading]="loading()"
   (rangeChange)="onDateRangeChange($event)"
   (retryRequest)="onRetry()"
+  (exportReport)="onExport()"
 />
 
 <!-- Tabla de usuarios -->
@@ -41,11 +42,10 @@
       />
     </div>
 
-    <!-- TODO: Descomentar cuando se tenga la relación de tarifas y productos en BD -->
-    <!-- Filtros de Tarifa y Producto -->
-    <!-- <div class="grid grid-cols-1 gap-3" [class.md:grid-cols-2]="selectedTariffId() !== null"> -->
+    <!-- Filtros de Tarifa/Producto y Acciones -->
+    <div class="flex flex-col md:flex-row gap-3 items-end">
       <!-- Selector de Tarifa -->
-      <!-- <div>
+      <div class="flex-1 w-full">
         <label class="block text-sm font-medium text-foreground mb-2">Tarifa</label>
         <select 
           class="w-full px-4 py-2 bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
@@ -61,11 +61,11 @@
             </optgroup>
           }
         </select>
-      </div> --> 
+      </div>
 
       <!-- Selector de Producto (solo visible cuando hay tarifa seleccionada) -->
-      <!-- @if (selectedTariffId() !== null) {
-        <div>
+      @if (selectedTariffId() !== null) {
+        <div class="flex-1 w-full">
           <label class="block text-sm font-medium text-foreground mb-2">Producto</label>
           <select 
             class="w-full px-4 py-2 bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
@@ -78,14 +78,13 @@
             }
           </select>
         </div>
-      } -->
-    <!-- </div> -->
+      }
 
-    <!-- Acciones -->
-    <div class="flex gap-2 justify-end">
-      <ui-button label="Exportar" variant="secondary" size="md" [leadingIcon]="downloadIcon" />
-      <ui-button label="Limpiar" variant="secondary" size="md" [leadingIcon]="xIcon"       (click)="onClearFilters()" />
-      <ui-button label="Filtrar" variant="secondary" size="md" [leadingIcon]="filterIcon"  (click)="onSearch()" />
+      <!-- Acciones -->
+      <div class="flex gap-2 flex-shrink-0">
+        <ui-button label="Limpiar" variant="secondary" size="md" [leadingIcon]="xIcon"      (click)="onClearFilters()" />
+        <ui-button label="Filtrar" variant="secondary" size="md" [leadingIcon]="filterIcon" (click)="onSearch()" />
+      </div>
     </div>
   </div>
 

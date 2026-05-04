@@ -36,6 +36,12 @@ export const DASHBOARD_ROUTES: Routes = [
         children: [
           { path: 'history',    component: HistoryPageComponent },
           { path: 'statistics', component: StatisticsPageComponent },
+          {
+            path: 'opportunities',
+            loadComponent: () =>
+              import('./pages/opportunities/opportunities-page')
+                .then(m => m.OpportunitiesPageComponent),
+          },
         ],
       },
 
@@ -48,7 +54,7 @@ export const DASHBOARD_ROUTES: Routes = [
           { path: 'users',       component: UsersPageComponent },
           { path: 'users/:id',   component: UserDetailPageComponent, canActivate: [featureGuard], data: { roles: ['Master'], feature: 'userDetail' } },
           { path: 'commission',  component: CommissionsPageComponent },
-          { path: 'rates',       component: RatesPageComponent },
+          // { path: 'rates',       component: RatesPageComponent },
         ],
       },
 

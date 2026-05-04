@@ -5,6 +5,7 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import { isPlatformBrowser } from '@angular/common';
 import { authInterceptor, AuthService, provideAuth } from '@apolo-energies/auth';
 import { providePrimeNG } from 'primeng/config';
+import { MessageService } from 'primeng/api';
 import Aura from '@primeuix/themes/aura';
 import { environment } from '../environments/environment';
 import { routes } from './app.routes';
@@ -26,6 +27,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes, withComponentInputBinding()),
     providePrimeNG({ theme: { preset: Aura, options: { darkModeSelector: '.dark' } } }),
+    MessageService,
     provideClientHydration(withEventReplay()),
     provideHttpClient(
       withFetch(),
