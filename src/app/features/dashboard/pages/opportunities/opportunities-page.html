@@ -1,4 +1,4 @@
-<div class="min-h-full bg-zinc-900 text-zinc-100 -mx-6 -my-6 px-6 py-6 lg:-mx-8 lg:-my-8 lg:px-8 lg:py-8 space-y-6">
+<div class="min-h-full bg-body text-zinc-100 -mx-6 -my-6 px-6 py-6 lg:-mx-8 lg:-my-8 lg:px-8 lg:py-8 space-y-6">
 
   <!-- Cell templates (table mode) -->
   <ng-template #statusCellTpl let-row>
@@ -53,14 +53,14 @@
     </div>
 
     <!-- Segmented control -->
-    <div class="inline-flex rounded-xl border border-zinc-700/50 bg-zinc-800/40 p-1 self-start lg:self-auto shadow-inner shadow-black/20">
+    <div class="inline-flex rounded-xl border border-border bg-card p-1 self-start lg:self-auto shadow-inner shadow-black/20">
       <button
         type="button"
         class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold
                transition-all duration-300"
         [class]="viewMode() === 'board'
           ? 'bg-blue-500 text-white shadow-md shadow-blue-500/20'
-          : 'text-zinc-300 hover:bg-zinc-700/40'"
+          : 'text-zinc-300 hover:bg-accent'"
         (click)="setViewMode('board')"
       >
         <lib-apolo-icons [icon]="tableroIcon" class="flex items-center" />
@@ -72,7 +72,7 @@
                transition-all duration-300"
         [class]="viewMode() === 'table'
           ? 'bg-blue-500 text-white shadow-md shadow-blue-500/20'
-          : 'text-zinc-300 hover:bg-zinc-700/40'"
+          : 'text-zinc-300 hover:bg-accent'"
         (click)="setViewMode('table')"
       >
         <lib-apolo-icons [icon]="tablaIcon" class="flex items-center" />
@@ -84,8 +84,8 @@
   <!-- ============ KPI CARDS ============ -->
   <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
     <!-- Total -->
-    <div class="group relative overflow-hidden rounded-2xl border border-zinc-700/40
-                bg-zinc-800/50 hover:bg-zinc-800
+    <div class="group relative overflow-hidden rounded-2xl border border-border
+                bg-card hover:bg-card/80
                 shadow-lg shadow-black/10
                 transition-all duration-300 ease-out hover:-translate-y-0.5 p-5">
       <div class="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-blue-500/5 blur-3xl
@@ -103,8 +103,8 @@
     </div>
 
     <!-- Ganadas -->
-    <div class="group relative overflow-hidden rounded-2xl border border-zinc-700/40
-                bg-zinc-800/50 hover:bg-zinc-800
+    <div class="group relative overflow-hidden rounded-2xl border border-border
+                bg-card hover:bg-card/80
                 shadow-lg shadow-black/10
                 transition-all duration-300 ease-out hover:-translate-y-0.5 p-5">
       <div class="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-emerald-500/5 blur-3xl
@@ -122,8 +122,8 @@
     </div>
 
     <!-- Conversión -->
-    <div class="group relative overflow-hidden rounded-2xl border border-zinc-700/40
-                bg-zinc-800/50 hover:bg-zinc-800
+    <div class="group relative overflow-hidden rounded-2xl border border-border
+                bg-card hover:bg-card/80
                 shadow-lg shadow-black/10
                 transition-all duration-300 ease-out hover:-translate-y-0.5 p-5">
       <div class="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-amber-500/5 blur-3xl
@@ -141,8 +141,8 @@
     </div>
 
     <!-- Perdidas -->
-    <div class="group relative overflow-hidden rounded-2xl border border-zinc-700/40
-                bg-zinc-800/50 hover:bg-zinc-800
+    <div class="group relative overflow-hidden rounded-2xl border border-border
+                bg-card hover:bg-card/80
                 shadow-lg shadow-black/10
                 transition-all duration-300 ease-out hover:-translate-y-0.5 p-5">
       <div class="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-rose-500/5 blur-3xl
@@ -161,8 +161,8 @@
   </section>
 
   <!-- ============ FILTER BAR ============ -->
-  <section class="rounded-2xl border border-zinc-700/40 bg-zinc-800/50 backdrop-blur-sm p-3 shadow-lg shadow-black/10
-                  transition-colors duration-300 hover:bg-zinc-800/70">
+  <section class="rounded-2xl border border-border bg-card backdrop-blur-sm p-3 shadow-lg shadow-black/10
+                  transition-colors duration-300 hover:bg-card/80">
     <div class="flex flex-wrap items-center gap-2">
       <div class="flex-1 min-w-60" (keydown)="onFilterKeydown($event)">
         <ui-input
@@ -186,7 +186,7 @@
     </div>
 
     @if (filtersOpen()) {
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3 pt-3 border-t border-zinc-700/40">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3 pt-3 border-t border-border">
         <ui-select
           label="Estado"
           [options]="statusOptions"
@@ -220,7 +220,7 @@
       Arrastra una tarjeta a otra columna para cambiar su estado · sólo se aplican transiciones válidas.
     </p>
   } @else {
-    <div class="border border-zinc-700/40 rounded-2xl overflow-hidden shadow-lg shadow-black/10 bg-zinc-800/50">
+    <div class="border border-border rounded-2xl overflow-hidden shadow-lg shadow-black/10 bg-card">
       <lib-data-table
         [data]="tableData()"
         [columns]="columns"
@@ -236,7 +236,7 @@
       />
 
       @if (!loadingTable() && tableData().length === 0) {
-        <div class="text-center py-12 px-6 text-sm text-zinc-500 border-t border-zinc-700/40">
+        <div class="text-center py-12 px-6 text-sm text-zinc-500 border-t border-border">
           No hay oportunidades que coincidan con los filtros.
         </div>
       }

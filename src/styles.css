@@ -13,14 +13,14 @@
   --font-poppins: var(--font-poppins);
 
   /* — Surfaces — */
-  --color-background:        #18181b;  /* zinc-900 */
-  --color-body:              #18181b;  /* zinc-900 */
+  --color-background:        #25272A;
+  --color-body:              #25272A;
   --color-foreground:        #fafafa;  /* zinc-50 */
 
-  --color-card:              #27272a;  /* zinc-800 */
+  --color-card:              #17181A;
   --color-card-foreground:   #fafafa;
 
-  --color-popover:           #18181b;
+  --color-popover:           #17181A;
   --color-popover-foreground:#fafafa;
 
   /* — Accent (azul eléctrico) — */
@@ -143,6 +143,11 @@
   --p-border-radius-md:          0.5rem;
   --p-border-radius-lg:          0.75rem;
 }
+lib-apolo-sidebar > div > aside,
+lib-apolo-sidebar aside {
+  background-color: #17181A;
+}
+
 lib-apolo-sidebar a[href*="/analytics/opportunities"] lib-sidebar-item button {
   position: relative;
 }
