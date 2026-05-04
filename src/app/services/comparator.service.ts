@@ -79,7 +79,7 @@ export class ComparatorService {
     form.append('file', file);
     form.append('name', file.name);
     if (userId) form.append('userId', userId);
-    return this.http.post<{ fileId: string; ocrData: OcrResult }>(`${environment.apiUrl}/files/upload-and-process`, form);
+    return this.http.post<{ fileId: string; ocrData: OcrResult }>(`${environment.apiUrl}/file/upload-and-process`, form);
   }
 
   calculate(form: ComparadorFormValue, ocr: OcrResult): ComparadorResult {
