@@ -1,18 +1,30 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { RouterOutlet, Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, PLATFORM_ID, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
+import { filter, map } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { ApoloSidebar, SidebarSection } from '@apolo-energies/sidebar';
 import { ApoloHeader, HeaderWelcomeContent, HeaderActionLink, UserMenuItem } from '@apolo-energies/header';
 import { AuthService } from '@apolo-energies/auth';
-import { ArrowDownBoxIcon, chevronDownIcon, chevronRightIcon, CircleIcon, CompassIcon, InfoIcon, ListIcon, LogoutIcon, PieIcon, SettingsIcon, StarIcon, SupportIcon, UiIconSource, UserIcon, UserSimpleIcon } from '@apolo-energies/icons';
+import { ArrowDownBoxIcon, chevronDownIcon, chevronRightIcon, CircleIcon, CompassIcon, InfoIcon, LogoutIcon, PieIcon, SettingsIcon, StarIcon, SupportIcon, UiIconSource, UserIcon } from '@apolo-energies/icons';
 import { getUserRoles } from '../../utils/auth.utils';
 import { environment } from '../../../environments/environment';
 import { RefreshTokenService } from '../../services/refresh-token.service';
+import { OpportunityService } from '../../services/opportunity.service';
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
-  'Colaborador':  ['comparator:view', 'sips:view'],
+  'Colaborador': [
+    'comparator:view',
+    'sips:view',
+    'analytics:view',
+    'analytics.history:view',
+    'analytics.statistics:view',
+    'opportunities:view',
+    'settings:view',
+    'settings.users:view',
+    'settings.commission:view',
+  ],
   'Referenciador': ['comparator:view', 'sips:view'],
   'Tester':        ['comparator:view', 'sips:view'],
 };
@@ -28,6 +40,8 @@ export class Layout {
   private router = inject(Router);
   private http = inject(HttpClient);
   private refreshTokenService = inject(RefreshTokenService);
+  private oppService = inject(OpportunityService);
+  private platformId = inject(PLATFORM_ID);
 
   readonly currentUrl = toSignal(
     this.router.events.pipe(map(() => this.router.url)),
@@ -35,6 +49,32 @@ export class Layout {
   );
 
   readonly mobileOpen = signal(false);
+
+  /** Total opportunities — refreshed on init and on every route change. */
+  readonly opportunitiesCount = signal<number>(0);
+
+  constructor() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    this.refreshOpportunitiesCount();
+    this.router.events
+      .pipe(filter(e => e instanceof NavigationEnd))
+      .subscribe(() => this.refreshOpportunitiesCount());
+    effect(() => {
+      const count = this.opportunitiesCount();
+      if (count > 0) {
+        document.documentElement.style.setProperty('--opp-count', `"${count}"`);
+      } else {
+        document.documentElement.style.removeProperty('--opp-count');
+      }
+    });
+  }
+
+  private refreshOpportunitiesCount(): void {
+    this.oppService.list({ pageSize: 1 }).subscribe({
+      next: res => this.opportunitiesCount.set(res.totalCount),
+      error: () => { },
+    });
+  }
 
   readonly logoSrc = environment.logoUrl;
 
@@ -62,72 +102,104 @@ export class Layout {
     icon: chevronDownIcon,
     size: 16,
   };
+  readonly sections = computed<SidebarSection[]>(() => this.buildSections());
 
-  readonly sections: SidebarSection[] = (() => {
-    const env = environment as typeof environment & { contractsUrl?: string | null; supportUrl?: string | null };
-
-    const generalItems: SidebarSection['items'] = [];
-
-    if (env.contractsUrl) {
-      generalItems.push({
-        title: 'Contratos',
-        icon: { type: 'apolo', icon: ListIcon, size: 20 },
-        url: env.contractsUrl,
-        access: ['contracts:view'],
-      });
-    }
-
-    generalItems.push(
-      {
-        title: 'Analítica',
-        icon: { type: 'apolo', icon: PieIcon, size: 20 },
-        access: ['analytics:view'],
-        children: [
-          { title: 'Historial',     url: '/dashboard/analytics/history',    access: ['analytics.history:view'] },
-          { title: 'Estadísticas',  url: '/dashboard/analytics/statistics', access: ['analytics.statistics:view'] },
-        ],
-      },
-      {
-        title: 'Comparador',
-        icon: { type: 'apolo', icon: ArrowDownBoxIcon, size: 20 },
-        url: '/dashboard/comparator',
-        access: ['comparator:view'],
-      },
-      {
-        title: 'Consultas SIPS',
-        icon: { type: 'apolo', icon: CompassIcon, size: 20 },
-        url: '/dashboard/sips',
-        access: ['sips:view'],
-      },
-    );
-
-    const supportItems: SidebarSection['items'] = [
-      {
-        title: 'Ajustes',
-        icon: { type: 'apolo', icon: SettingsIcon, size: 20 },
-        access: ['settings:view'],
-        children: [
-          { title: 'Usuarios',  url: '/dashboard/settings/users',      access: ['settings.users:view'] },
-          { title: 'Comisión',  url: '/dashboard/settings/commission', access: ['settings.commission:view'] },
-          { title: 'Tarifas',   url: '/dashboard/settings/rates',      access: ['settings.rates:view'] },
-        ],
-      },
-    ];
-
-    if (env.supportUrl) {
-      supportItems.push({
-        title: 'Soporte',
-        icon: { type: 'apolo', icon: SupportIcon, size: 20 },
-        url: env.supportUrl,
-        access: ['support:view'],
-      });
-    }
-
+  private buildSections(): SidebarSection[] {
     return [
-      { section: 'GENERAL',  items: generalItems },
-      { section: 'SOPORTE',  items: supportItems },
+    {
+      section: 'GENERAL',
+      items: [
+        {
+          title: 'Analítica',
+          icon: {
+            type: 'apolo',
+            icon: PieIcon,
+            size: 20,
+          },
+          access: ['analytics:view'],
+          children: [
+            {
+              title: 'Historial',
+              url: '/dashboard/analytics/history',
+              access: ['analytics.history:view'],
+            },
+            {
+              title: 'Estadísticas',
+              url: '/dashboard/analytics/statistics',
+              access: ['analytics.statistics:view'],
+            },
+          ],
+        },
+        {
+              title: 'Oportunidades',
+              icon:{
+                type: 'apolo',
+                icon: StarIcon,
+                size: 20,
+              },
+              url: '/dashboard/analytics/opportunities',
+              access: ['opportunities:view'],
+        },
+        {
+          title: 'Comparador',
+          icon: {
+            type: 'apolo',
+            icon: ArrowDownBoxIcon,
+            size: 20,
+          },
+          url: '/dashboard/comparator',
+          access: ['comparator:view'],
+        },
+        {
+          title: 'Consultas SIPS',
+          icon: {
+            type: 'apolo',
+            icon: CompassIcon,
+            size: 20,
+          },
+          url: '/dashboard/sips',
+          access: ['sips:view'],
+        },
+      ],
+    },
+    {
+      section: 'SOPORTE',
+      items: [
+        {
+          title: 'Ajustes',
+          icon: {
+            type: 'apolo',
+            icon: SettingsIcon,
+            size: 20,
+          },
+          access: ['settings:view'],
+          children: [
+            {
+              title: 'Usuarios',
+              url: '/dashboard/settings/users',
+              access: ['settings.users:view'],
+            },
+            {
+              title: 'Comisión',
+              url: '/dashboard/settings/commission',
+              access: ['settings.commission:view'],
+            },
+          ],
+        },
+        {
+          title: 'Soporte',
+          icon: {
+            type: 'apolo',
+            icon: SupportIcon,
+            size: 20,
+          },
+          url: '/dashboard/support',
+          access: ['support:view'],
+        },
+      ],
+    },
     ];
-  })();
+  }
 
   readonly welcome: HeaderWelcomeContent = {
     title: 'Bienvenido al portal de colaboradores de Apolo Energies.',

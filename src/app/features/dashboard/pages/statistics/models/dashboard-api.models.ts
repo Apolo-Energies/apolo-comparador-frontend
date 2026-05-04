@@ -39,7 +39,7 @@ export interface HistoryItem {
 }
 
 export interface PaginatedHistory {
-  items:           ComparisonDetailItem[];
+  items:           HistoryItem[];
   currentPage:     number;
   pageSize:        number;
   totalCount:      number;
