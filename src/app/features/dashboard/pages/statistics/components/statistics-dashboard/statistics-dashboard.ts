@@ -31,6 +31,7 @@ export class StatisticsDashboardComponent {
 
   rangeChange = output<DateRange>();
   retryRequest = output<void>();
+  exportReport = output<void>();
 
   readonly downloadIcon: UiIconSource = { type: 'apolo', icon: DownloadIcon, size: 16 };
 
@@ -79,7 +80,7 @@ export class StatisticsDashboardComponent {
   }
 
   onExportReport(): void {
-    // TODO: conectar con endpoint de descarga de reporte
+    this.exportReport.emit();
   }
 
   onRetry(): void {

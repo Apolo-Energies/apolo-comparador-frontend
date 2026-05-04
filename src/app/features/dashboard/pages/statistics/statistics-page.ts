@@ -2,13 +2,13 @@ import { AfterViewInit, ChangeDetectionStrategy, Component, computed, inject, si
 import { isPlatformBrowser, NgIf } from '@angular/common';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
 import { ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
-import { DownloadIcon, filterIcon, SearchIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
+import { filterIcon, SearchIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
 import { DashboardStatsService } from '../../../../services/dashboard-stats.service';
 import { StatisticsRow } from '../../../../services/statistics.service';
 import { StatisticsDashboardComponent } from './components/statistics-dashboard/statistics-dashboard';
 import { UserDetailDialogComponent } from './components/user-detail-dialog/user-detail-dialog';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
-import { DailySummaryApiItem, SummaryApiResult, MonthlySummaryApiItem/*, FiltersData, FilterProduct*/ } from './models/dashboard-api.models';
+import { DailySummaryApiItem, SummaryApiResult, MonthlySummaryApiItem, FiltersData, FilterProduct } from './models/dashboard-api.models';
 import { DateRange } from './models/dashboard-ui.models';
 
 type SortField = 'FullName' | 'Email' | 'TotalCups' | 'TotalAnnualConsumption';
@@ -31,7 +31,6 @@ export class StatisticsPageComponent implements AfterViewInit {
   // icons
   readonly searchIcon:   UiIconSource = { type: 'apolo', icon: SearchIcon,   size: 16 };
   readonly filterIcon:   UiIconSource = { type: 'apolo', icon: filterIcon,   size: 16 };
-  readonly downloadIcon: UiIconSource = { type: 'apolo', icon: DownloadIcon, size: 16 };
   readonly xIcon:        UiIconSource = { type: 'apolo', icon: XIcon,        size: 16 };
 
   // filters
@@ -40,11 +39,10 @@ export class StatisticsPageComponent implements AfterViewInit {
   readonly sortBy          = signal<SortField>('FullName');
   readonly sortDirection   = signal<SortDirection>('Asc');
 
-  // TODO: Descomentar cuando se tenga la relación de tarifas y productos en BD
   // tariff and product filters
-  // readonly selectedTariffId  = signal<number | null>(null);
-  // readonly selectedProductId = signal<number | null>(null);
-  // readonly availableFilters  = signal<FiltersData | null>(null);
+  readonly selectedTariffId  = signal<number | null>(null);
+  readonly selectedProductId = signal<number | null>(null);
+  readonly availableFilters  = signal<FiltersData | null>(null);
 
   readonly data        = signal<StatisticsRow[]>([]);
   readonly loading     = signal(false);
@@ -64,31 +62,27 @@ export class StatisticsPageComponent implements AfterViewInit {
   readonly selectedUserId   = signal('');
   readonly selectedUserName = signal('');
 
-  // Mapa email → userId construido desde history.items
-  private readonly emailToUserId = new Map<string, string>();
-
-  // TODO: Descomentar cuando se tenga la relación de tarifas y productos en BD
   // Computed: productos disponibles basados en la tarifa seleccionada
-  // readonly availableProducts = computed(() => {
-  //   const selectedTariffId = this.selectedTariffId();
-  //   const filters = this.availableFilters();
-  //   
-  //   if (selectedTariffId === null || !filters) {
-  //     return [];
-  //   }
-  //   
-  //   const products: FilterProduct[] = [];
-  //   
-  //   // Buscar la tarifa seleccionada en todos los providers
-  //   filters.providers.forEach(provider => {
-  //     const tariff = provider.tariffs.find(t => t.id === selectedTariffId);
-  //     if (tariff) {
-  //       products.push(...tariff.products);
-  //     }
-  //   });
-  //   
-  //   return products;
-  // });
+  readonly availableProducts = computed(() => {
+    const selectedTariffId = this.selectedTariffId();
+    const filters = this.availableFilters();
+    
+    if (selectedTariffId === null || !filters) {
+      return [];
+    }
+    
+    const products: FilterProduct[] = [];
+    
+    // Buscar la tarifa seleccionada en todos los providers
+    filters.providers.forEach(provider => {
+      const tariff = provider.tariffs.find(t => t.id === selectedTariffId);
+      if (tariff) {
+        products.push(...tariff.products);
+      }
+    });
+    
+    return products;
+  });
 
   // Los datos ya vienen paginados del servidor
   readonly pagedData = computed(() => this.data());
@@ -129,6 +123,9 @@ export class StatisticsPageComponent implements AfterViewInit {
   private load(includeOnlyHistory = false) {
     this.loading.set(true);
 
+    const tariffIds = this.selectedTariffId() !== null ? [this.selectedTariffId()!] : undefined;
+    const productIds = this.selectedProductId() !== null ? [this.selectedProductId()!] : undefined;
+
     this.dashboardService.getConsolidatedData(
       this.dateRange(),
       this.filterName() || undefined,
@@ -137,9 +134,9 @@ export class StatisticsPageComponent implements AfterViewInit {
       this.sortDirection(),
       this.currentPage(),
       this.pageSize(),
-      false, // siempre incluir summary — contiene los datos de la tabla
-      undefined,
-      undefined
+      includeOnlyHistory,
+      tariffIds,
+      productIds
     ).subscribe({
       next: data => {
         // Actualizar dashboard solo en carga completa (no al filtrar/paginar)
@@ -147,23 +144,22 @@ export class StatisticsPageComponent implements AfterViewInit {
           if (data.summary)        this.summary.set(data.summary);
           if (data.dailySummary)   this.dailySummary.set(data.dailySummary);
           if (data.monthlySummary) this.monthlySummary.set(data.monthlySummary);
+          if (data.filters)        this.availableFilters.set(data.filters);
         }
 
-        // Poblar mapa email→userId desde history.items
-        (data.history?.items ?? []).forEach(item => {
-          if (item.user?.email && item.userId) {
-            this.emailToUserId.set(item.user.email, item.userId);
-          }
-        });
-
-        // La tabla usa summary.data (datos agregados por usuario)
-        const rows = (data.summary?.data ?? []).map(row => ({
-          ...row,
-          userId: this.emailToUserId.get((row as StatisticsRow).email) ?? '',
+        // Los datos agregados por usuario vienen directamente en history.items
+        const historyItems = data.history?.items ?? [];
+        const rows = historyItems.map(item => ({
+          userId: item.userId,
+          fullName: item.fullName,
+          email: item.email,
+          totalCups: item.totalCups,
+          totalAnnualConsumption: item.totalAnnualConsumption,
         })) as StatisticsRow[];
+
         this.data.set(rows);
-        this.totalCount.set(data.summary?.totalUsersActive ?? rows.length);
-        this.totalPages.set(1);
+        this.totalCount.set(data.history?.totalCount ?? 0);
+        this.totalPages.set(data.history?.totalPages ?? 1);
 
         this.loading.set(false);
       },
@@ -181,27 +177,25 @@ export class StatisticsPageComponent implements AfterViewInit {
     this.filterEmail.set('');
     this.sortBy.set('FullName');
     this.sortDirection.set('Asc');
-    // TODO: Descomentar cuando se tenga la relación de tarifas y productos en BD
-    // this.selectedTariffId.set(null);
-    // this.selectedProductId.set(null);
+    this.selectedTariffId.set(null);
+    this.selectedProductId.set(null);
     this.currentPage.set(1);
     this.load();
   }
 
-  // TODO: Descomentar cuando se tenga la relación de tarifas y productos en BD
-  // onTariffChange(value: any): void {
-  //   // Convertir a número si no es null
-  //   const numValue = value === 'null' || value === null ? null : Number(value);
-  //   this.selectedTariffId.set(numValue);
-  //   // Resetear el producto seleccionado cuando cambia la tarifa
-  //   this.selectedProductId.set(null);
-  // }
+  onTariffChange(value: any): void {
+    // Convertir a número si no es null
+    const numValue = value === 'null' || value === null ? null : Number(value);
+    this.selectedTariffId.set(numValue);
+    // Resetear el producto seleccionado cuando cambia la tarifa
+    this.selectedProductId.set(null);
+  }
 
-  // onProductChange(value: any): void {
-  //   // Convertir a número si no es null
-  //   const numValue = value === 'null' || value === null ? null : Number(value);
-  //   this.selectedProductId.set(numValue);
-  // }
+  onProductChange(value: any): void {
+    // Convertir a número si no es null
+    const numValue = value === 'null' || value === null ? null : Number(value);
+    this.selectedProductId.set(numValue);
+  }
 
   onDateRangeChange(range: DateRange) {
     this.dateRange.set(range);
@@ -257,5 +251,9 @@ export class StatisticsPageComponent implements AfterViewInit {
 
   onDetailDialogClose() {
     this.detailDialogOpen.set(false);
+  }
+
+  onExport() {
+    this.dashboardService.exportToExcel(this.dateRange());
   }
 }
