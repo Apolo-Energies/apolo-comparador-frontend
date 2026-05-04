@@ -40,7 +40,7 @@ export class PublicComparatorService {
     form.append('file', file);
     form.append('name', file.name);
     return this.http.post<{ fileId: string; name: string; url: string; createdAt: string; ocrData: OcrResult }>(
-      `${environment.apiUrl}/public/file/upload-and-process`,
+      `${environment.apiUrl}/public/files/upload-and-process`,
       form,
     );
   }
