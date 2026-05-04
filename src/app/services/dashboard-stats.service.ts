@@ -112,6 +112,57 @@ export class DashboardStatsService {
     );
   }
 
+  /**
+   * Exporta el reporte de comparaciones a Excel
+   */
+  exportToExcel(range?: DateRange): void {
+    let params = new HttpParams();
+    
+    if (range?.from) params = params.set('startDate', this.formatDateParam(range.from));
+    if (range?.to)   params = params.set('endDate', this.formatDateParam(range.to));
+
+    this.http.get(
+      `${environment.apiUrl}/${BASE_PATH}/export-excel`,
+      { 
+        params,
+        responseType: 'blob',
+        observe: 'response'
+      }
+    ).subscribe({
+      next: (response) => {
+        const blob = response.body;
+        if (!blob) return;
+
+        // Crear URL temporal para el blob
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        
+        // Obtener nombre del archivo del header o usar uno por defecto
+        const contentDisposition = response.headers.get('content-disposition');
+        let filename = 'reporte-comparaciones.xlsx';
+        
+        if (contentDisposition) {
+          const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+          if (matches?.[1]) {
+            filename = matches[1].replace(/['"]/g, '');
+          }
+        }
+        
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        
+        // Limpiar
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      },
+      error: (error) => {
+        console.error('Error al exportar:', error);
+      }
+    });
+  }
+
   private buildParams(params: ConsolidatedDataParams): HttpParams {
     let httpParams = new HttpParams();
     
