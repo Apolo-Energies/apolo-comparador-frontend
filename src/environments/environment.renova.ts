@@ -25,6 +25,7 @@ export const environment = {
     excelReports: true,
     contracts: false,
     userDetail: false,
+    opportunities: false,
     support: false,
   },
 };

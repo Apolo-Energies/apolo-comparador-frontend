@@ -4,7 +4,7 @@ import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { ApoloSidebar, SidebarSection } from '@apolo-energies/sidebar';
+import { ApoloSidebar, SidebarChildItem, SidebarSection } from '@apolo-energies/sidebar';
 import { ApoloHeader, HeaderWelcomeContent, HeaderActionLink, UserMenuItem } from '@apolo-energies/header';
 import { AuthService } from '@apolo-energies/auth';
 import { ArrowDownBoxIcon, chevronDownIcon, chevronRightIcon, CircleIcon, CompassIcon, InfoIcon, LogoutIcon, PieIcon, SettingsIcon, StarIcon, SupportIcon, UiIconSource, UserIcon } from '@apolo-energies/icons';
@@ -22,8 +22,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     'analytics.statistics:view',
     'opportunities:view',
     'settings:view',
-    'settings.users:view',
-    'settings.commission:view',
+    'settings.colaborador:view',
   ],
   'Referenciador': ['comparator:view', 'sips:view'],
   'Tester':        ['comparator:view', 'sips:view'],
@@ -105,99 +104,70 @@ export class Layout {
   readonly sections = computed<SidebarSection[]>(() => this.buildSections());
 
   private buildSections(): SidebarSection[] {
+    const roles         = getUserRoles(this.auth.currentUser());
+    const isColaborador = roles.includes('Colaborador') && !roles.includes('Master');
+    const isApolo       = environment.features.userDetail;
+
+    const ajustesChildren: SidebarChildItem[] = isColaborador && isApolo
+      ? [
+          { title: 'Mis Colaboradores', url: '/dashboard/settings/mis-colaboradores',      access: ['settings.colaborador:view'] },
+          { title: 'Comisiones',         url: '/dashboard/settings/comisiones-colaborador', access: ['settings.colaborador:view'] },
+        ]
+      : [
+          { title: 'Usuarios', url: '/dashboard/settings/users',      access: ['settings.users:view'] },
+          { title: 'Comisión', url: '/dashboard/settings/commission', access: ['settings.commission:view'] },
+        ];
+
     return [
-    {
-      section: 'GENERAL',
-      items: [
-        {
-          title: 'Analítica',
-          icon: {
-            type: 'apolo',
-            icon: PieIcon,
-            size: 20,
+      {
+        section: 'GENERAL',
+        items: [
+          {
+            title: 'Analítica',
+            icon: { type: 'apolo', icon: PieIcon, size: 20 },
+            access: ['analytics:view'],
+            children: [
+              { title: 'Historial',    url: '/dashboard/analytics/history',    access: ['analytics.history:view'] },
+              { title: 'Estadísticas', url: '/dashboard/analytics/statistics', access: ['analytics.statistics:view'] },
+            ],
           },
-          access: ['analytics:view'],
-          children: [
-            {
-              title: 'Historial',
-              url: '/dashboard/analytics/history',
-              access: ['analytics.history:view'],
-            },
-            {
-              title: 'Estadísticas',
-              url: '/dashboard/analytics/statistics',
-              access: ['analytics.statistics:view'],
-            },
-          ],
-        },
-        {
-              title: 'Oportunidades',
-              icon:{
-                type: 'apolo',
-                icon: StarIcon,
-                size: 20,
-              },
-              url: '/dashboard/analytics/opportunities',
-              access: ['opportunities:view'],
-        },
-        {
-          title: 'Comparador',
-          icon: {
-            type: 'apolo',
-            icon: ArrowDownBoxIcon,
-            size: 20,
+          ...(environment.features.opportunities ? [{
+            title: 'Oportunidades',
+            icon: { type: 'apolo' as const, icon: StarIcon, size: 20 },
+            url: '/dashboard/analytics/opportunities',
+            access: ['opportunities:view'],
+          }] : []),
+          {
+            title: 'Comparador',
+            icon: { type: 'apolo', icon: ArrowDownBoxIcon, size: 20 },
+            url: '/dashboard/comparator',
+            access: ['comparator:view'],
           },
-          url: '/dashboard/comparator',
-          access: ['comparator:view'],
-        },
-        {
-          title: 'Consultas SIPS',
-          icon: {
-            type: 'apolo',
-            icon: CompassIcon,
-            size: 20,
+          {
+            title: 'Consultas SIPS',
+            icon: { type: 'apolo', icon: CompassIcon, size: 20 },
+            url: '/dashboard/sips',
+            access: ['sips:view'],
           },
-          url: '/dashboard/sips',
-          access: ['sips:view'],
-        },
-      ],
-    },
-    {
-      section: 'SOPORTE',
-      items: [
-        {
-          title: 'Ajustes',
-          icon: {
-            type: 'apolo',
-            icon: SettingsIcon,
-            size: 20,
+        ],
+      },
+      {
+        section: 'SOPORTE',
+        items: [
+          {
+            title: 'Ajustes',
+            icon: { type: 'apolo', icon: SettingsIcon, size: 20 },
+            access: ['settings:view'],
+            children: ajustesChildren,
           },
-          access: ['settings:view'],
-          children: [
-            {
-              title: 'Usuarios',
-              url: '/dashboard/settings/users',
-              access: ['settings.users:view'],
-            },
-            {
-              title: 'Comisión',
-              url: '/dashboard/settings/commission',
-              access: ['settings.commission:view'],
-            },
-          ],
-        },
-        {
-          title: 'Soporte',
-          icon: {
-            type: 'apolo',
-            icon: SupportIcon,
-            size: 20,
+          {
+            title: 'Soporte',
+            icon: { type: 'apolo', icon: SupportIcon, size: 20 },
+            url: '/dashboard/support',
+            access: ['support:view'],
           },
-          url: '/dashboard/support',
-          access: ['support:view'],
-        },
-      ],
-    },
+        ],
+      },
     ];
   }
 
@@ -222,14 +192,32 @@ export class Layout {
     } : null
   );
 
-  readonly menuItems: UserMenuItem[] = [
-    { id: 'logout', label: 'Cerrar sesión',  icon: {
-        type: 'apolo',
-        icon: LogoutIcon,
-        className: 'text-red-600',
-        size: 20,
-      }, type: 'action', danger: true },
-  ];
+  readonly menuItems = computed<UserMenuItem[]>(() => {
+    const items: UserMenuItem[] = [];
+
+    const userId       = this.refreshTokenService.getUserIdFromToken();
+    const isSubUser    = !!this.refreshTokenService.getParentUserIdFromToken();
+
+    if (userId && !isSubUser) {
+      items.push({
+        id: 'profile',
+        label: 'Mi Perfil',
+        icon: { type: 'apolo', icon: UserIcon, size: 20 },
+        type: 'internal',
+        url: `/dashboard/settings/users/${userId}`,
+      });
+    }
+
+    items.push({
+      id: 'logout',
+      label: 'Cerrar sesión',
+      icon: { type: 'apolo', icon: LogoutIcon, className: 'text-red-600', size: 20 },
+      type: 'action',
+      danger: true,
+    });
+
+    return items;
+  });
 
   readonly logoutSidebarIcon: UiIconSource = {
     type: 'apolo',
