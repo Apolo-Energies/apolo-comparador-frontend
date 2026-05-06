@@ -14,6 +14,8 @@ import { SipsPageComponent } from './pages/sips/sips-page';
 import { FastDischarge } from './pages/fast-discharge/fast-discharge';
 import { FAST_DISCHARGE_ROUTES } from './pages/fast-discharge/fast-discharge.routes';
 import { RatesPageComponent } from './pages/rates/rates-page';
+import { MisColaboradoresPage } from './pages/mis-colaboradores/mis-colaboradores';
+import { ComisionesColaboradorPage } from './pages/comisiones-colaborador/comisiones-colaborador';
 
 export const DASHBOARD_ROUTES: Routes = [
   {
@@ -51,11 +53,27 @@ export const DASHBOARD_ROUTES: Routes = [
         canActivate: [permissionGuard],
         data: { roles: ['Master'] },
         children: [
-          { path: 'users',       component: UsersPageComponent },
-          { path: 'users/:id',   component: UserDetailPageComponent, canActivate: [featureGuard], data: { roles: ['Master'], feature: 'userDetail' } },
-          { path: 'commission',  component: CommissionsPageComponent },
-          // { path: 'rates',       component: RatesPageComponent },
+          { path: 'users',      component: UsersPageComponent },
+          { path: 'commission', component: CommissionsPageComponent },
+          // { path: 'rates',   component: RatesPageComponent },
         ],
+      },
+
+      // Todos los roles autenticados — perfil propio
+      { path: 'settings/users/:id', component: UserDetailPageComponent },
+
+      // Colaborador only — Apolo exclusivo
+      {
+        path: 'settings/mis-colaboradores',
+        component: MisColaboradoresPage,
+        canActivate: [featureGuard, permissionGuard],
+        data: { feature: 'userDetail', roles: ['Colaborador'] },
+      },
+      {
+        path: 'settings/comisiones-colaborador',
+        component: ComisionesColaboradorPage,
+        canActivate: [featureGuard, permissionGuard],
+        data: { feature: 'userDetail', roles: ['Colaborador'] },
       },
 
       // Master only

@@ -1,0 +1,104 @@
+<ui-alert />
+
+<!-- Status cell -->
+<ng-template #statusTpl let-row>
+  <span
+    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+    [class.bg-green-100]="row.isActive"
+    [class.text-green-700]="row.isActive"
+    [class.bg-red-100]="!row.isActive"
+    [class.text-red-700]="!row.isActive"
+  >
+    {{ row.isActive ? 'Activo' : 'Inactivo' }}
+  </span>
+</ng-template>
+
+<!-- Commission cell -->
+<ng-template #commTpl let-row>
+  <span class="text-sm text-foreground">
+    {{ row.commissionPercentage !== null ? (row.commissionPercentage + '%') : '—' }}
+  </span>
+</ng-template>
+
+<div class="border border-border rounded-lg overflow-hidden shadow-sm">
+
+  <!-- Header -->
+  <div class="bg-card px-6 py-4 flex items-center justify-between">
+    <div>
+      <p class="text-base font-semibold text-foreground">Mis Colaboradores</p>
+      <p class="text-sm text-muted-foreground">Gestiona los colaboradores bajo tu cuenta</p>
+    </div>
+    <ui-button label="Nuevo Colaborador" variant="default" size="md" [leadingIcon]="addIcon" (click)="onOpenModal()" />
+  </div>
+
+  <!-- Table -->
+  <lib-data-table
+    [data]="data()"
+    [columns]="columns"
+    rowKey="userId"
+    [borderTop]="false"
+    [borderBottom]="false"
+    [borderLeft]="false"
+    [borderRight]="false"
+    [roundedTopLeft]="false"
+    [roundedTopRight]="false"
+    [roundedBottomLeft]="false"
+    [roundedBottomRight]="false"
+  />
+
+  @if (!loading() && data().length === 0) {
+    <div class="py-12 text-center text-sm text-muted-foreground">
+      No tienes colaboradores aún. Crea el primero con el botón "Nuevo Colaborador".
+    </div>
+  }
+
+</div>
+
+<!-- Create modal -->
+<ui-dialog [open]="modalOpen()" [closeable]="true" maxWidth="max-w-md" (openChange)="$event ? null : onCancel()">
+
+  <div class="px-6 pt-5 pb-2 space-y-1">
+    <p class="text-base font-semibold text-foreground">Nuevo Colaborador</p>
+    <p class="text-sm text-muted-foreground">Se creará como Colaborador bajo tu cuenta</p>
+  </div>
+
+  <form [formGroup]="form" class="px-6 pb-6 pt-4 space-y-4">
+
+    <div class="space-y-1">
+      <label class="text-sm font-medium text-muted-foreground">Email *</label>
+      <input formControlName="email" type="email" placeholder="colaborador@email.com"
+        class="w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
+        [class.border-red-500]="hasErr('email')" />
+      @if (hasErr('email')) {
+        <p class="text-xs text-red-500">{{ errMsg('email') }}</p>
+      }
+    </div>
+
+    <div class="space-y-1">
+      <label class="text-sm font-medium text-muted-foreground">Nombre *</label>
+      <input formControlName="name" placeholder="Juan"
+        class="w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
+        [class.border-red-500]="hasErr('name')" />
+      @if (hasErr('name')) {
+        <p class="text-xs text-red-500">{{ errMsg('name') }}</p>
+      }
+    </div>
+
+    <div class="space-y-1">
+      <label class="text-sm font-medium text-muted-foreground">Apellidos *</label>
+      <input formControlName="surnames" placeholder="García López"
+        class="w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
+        [class.border-red-500]="hasErr('surnames')" />
+      @if (hasErr('surnames')) {
+        <p class="text-xs text-red-500">{{ errMsg('surnames') }}</p>
+      }
+    </div>
+
+    <div class="flex items-center justify-between pt-2 border-t border-border">
+      <ui-button label="Cancelar"           variant="outline" size="md" (click)="onCancel()" />
+      <ui-button label="Crear Colaborador"  variant="default" size="md" (click)="onSubmit()" />
+    </div>
+
+  </form>
+
+</ui-dialog>

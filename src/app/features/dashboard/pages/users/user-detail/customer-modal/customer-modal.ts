@@ -221,7 +221,7 @@ export class CustomerModalComponent {
       if (!u || !this.open()) return;
 
       const c = u.customer;
-      this.personType.set(c?.personType ?? 0);
+      this.personType.set(c?.personType === 'Company' ? 1 : 0);
 
       this.form.patchValue({
         firstName:           c?.firstName           ?? '',

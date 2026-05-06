@@ -1,9 +1,9 @@
-export const DOC_TYPE_LABELS: Record<number, string> = {
-  0: 'DNI / NIE (Frontal)',
-  1: 'DNI / NIE (Reverso)',
-  2: 'Certificado AEAT',
-  3: 'Certificado Seguridad Social',
-  4: 'Extracto Bancario',
-  5: 'Certificado CIF',
-  6: 'Contrato Firmado',
+export const DOC_TYPE_LABELS: Record<string, string> = {
+  'DniFront': 'DNI / NIE (Frontal)',
+  'DniBack': 'DNI / NIE (Reverso)',
+  'AeatCertificate': 'Certificado AEAT',
+  'SsCertificate': 'Certificado Seguridad Social',
+  'BankStatement': 'Extracto Bancario',
+  'CifCertificate': 'Certificado CIF',
+  'SignedContract': 'Contrato Firmado',
 };

@@ -32,14 +32,21 @@ export class RefreshTokenService {
   // ── Access token — lee desde cookie o localStorage según environment ───────
 
   getUserIdFromToken(): string | null {
+    return (this.decodePayload()?.['sub'] as string) ?? null;
+  }
+
+  getParentUserIdFromToken(): string | null {
+    return (this.decodePayload()?.['parentUserId'] as string) ?? null;
+  }
+
+  decodePayload(): Record<string, unknown> | null {
     if (!isPlatformBrowser(this.platformId)) return null;
     const token = this.loadAccessToken();
     if (!token) return null;
     try {
-      const payload = JSON.parse(
+      return JSON.parse(
         atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')),
-      );
-      return (payload.sub as string) ?? null;
+      ) as Record<string, unknown>;
     } catch {
       return null;
     }

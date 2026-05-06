@@ -29,7 +29,7 @@ import { ContractService } from '../../../services/contract.service';
 export class ContractActionButtonComponent {
   readonly customerId       = input<string | null | undefined>(null);
   readonly contractId       = input<string | null | undefined>(null);
-  readonly signatureStatus  = input<number | null>(null);
+  readonly signatureStatus  = input<string | null>(null);
   readonly actions          = input<string[]>([]);
 
   private readonly contractSvc = inject(ContractService);
@@ -40,8 +40,8 @@ export class ContractActionButtonComponent {
   readonly canRequestSignature = computed(() => this.actions().includes('RequestSignature'));
   readonly canRenew            = computed(() => this.actions().includes('Renew'));
   readonly canResend           = computed(() => this.actions().includes('Resend'));
-  // signatureStatus 1 = InProgress (sent, awaiting client signature)
-  readonly isInProgress        = computed(() => this.signatureStatus() === 1);
+  // signatureStatus 'InProgress' = sent, awaiting client signature
+  readonly isInProgress        = computed(() => this.signatureStatus() === 'InProgress');
 
   onRequestSignature(): void {
     const cid = this.customerId();

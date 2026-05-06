@@ -8,13 +8,29 @@ export const environment = {
   appTitle: 'APOLO ENERGIES',
   contractsUrl: null as string | null,
   supportUrl:   null as string | null,
-  auth: { tokenStorage: 'cookie' as const, refreshTokenCookie: 'apolo_rt', accessTokenKey: 'auth_token' },
+  auth: {
+    tokenStorage: 'cookie' as const,
+    refreshTokenCookie: 'apolo_rt',
+    accessTokenKey: 'auth_token',
+  },
   features: {
-    comparator: true, sips: true, statistics: true, history: true, commissions: true,
-    usersManagement: true, forgotPassword: true, resetPassword: true,
-    quickAction: true, excelReports: true, contracts: true, userDetail: true, support: false,
+    comparator: true,
+    sips: true,
+    statistics: true,
+    history: true,
+    commissions: true,
+    usersManagement: true,
+    forgotPassword: true,
+    resetPassword: true,
+    quickAction: true,
+    excelReports: true,
+    contracts: true,
+    userDetail: true,
+    opportunities: true,
+    support: false,
   },
 };
+
 
 // export const environment = {
 //   production: false,

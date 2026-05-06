@@ -1,0 +1,68 @@
+<ui-alert />
+
+<!-- Commission input cell -->
+<ng-template #commTpl let-row>
+  <input
+    type="number"
+    min="0"
+    max="100"
+    step="0.5"
+    [(ngModel)]="row.draftPercentage"
+    placeholder="0"
+    class="w-24 px-2 py-1 text-sm text-center rounded-md border bg-card border-border text-foreground focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 focus:outline-none transition-all"
+  />
+</ng-template>
+
+<!-- Actions cell -->
+<ng-template #actionsTpl let-row>
+  <div class="flex items-center justify-center gap-3">
+    <button
+      class="text-xs font-medium text-primary-button hover:underline disabled:opacity-40"
+      [disabled]="row.saving"
+      (click)="onSave(row)"
+    >
+      Guardar
+    </button>
+    @if (row.commissionPercentage !== null) {
+      <button
+        class="inline-flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors disabled:opacity-40"
+        [disabled]="row.saving"
+        (click)="onDelete(row)"
+      >
+        <lib-apolo-icons [icon]="deleteIcon" class="flex items-center" />
+        Quitar
+      </button>
+    }
+  </div>
+</ng-template>
+
+<div class="border border-border rounded-lg overflow-hidden shadow-sm">
+
+  <!-- Header -->
+  <div class="bg-card px-6 py-4">
+    <p class="text-base font-semibold text-foreground">Comisiones de Colaboradores</p>
+    <p class="text-sm text-muted-foreground">Asigna o modifica el porcentaje de comisión de cada colaborador</p>
+  </div>
+
+  <!-- Table -->
+  <lib-data-table
+    [data]="data()"
+    [columns]="columns"
+    rowKey="userId"
+    [borderTop]="false"
+    [borderBottom]="false"
+    [borderLeft]="false"
+    [borderRight]="false"
+    [roundedTopLeft]="false"
+    [roundedTopRight]="false"
+    [roundedBottomLeft]="false"
+    [roundedBottomRight]="false"
+  />
+
+  @if (!loading() && data().length === 0) {
+    <div class="py-12 text-center text-sm text-muted-foreground">
+      No tienes colaboradores. Ve a "Mis Colaboradores" para crear el primero.
+    </div>
+  }
+
+</div>

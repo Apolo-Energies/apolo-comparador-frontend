@@ -6,27 +6,33 @@ import { environment } from '../../environments/environment';
 export class ContractDocumentService {
   private http = inject(HttpClient);
 
-  upload(contractId: string, documentType: number, file: File) {
+  upload(contractId: string, documentType: string, file: File) {
     const fd = new FormData();
-    fd.append('documentType', String(documentType));
+    fd.append('documentType', documentType);
     fd.append('file', file, file.name);
     fd.append('Name', file.name);
-    return this.http.post<{ message: string }>(`${environment.apiUrl}/contractdocument/${contractId}`, fd);
+    return this.http.post<{ message: string }>(`${environment.apiUrl}/contract-document/${contractId}`, fd);
   }
 
   validate(id: string) {
-    return this.http.post(`${environment.apiUrl}/contractdocument/validate/${id}`, {});
+    return this.http.post(`${environment.apiUrl}/contract-document/validate/${id}`, {});
   }
 
   validateSigned(id: string) {
     return this.http.post(`${environment.apiUrl}/contracts/validate-signed/${id}`, {});
   }
 
-  reject(id: string, observation: string) {
-    return this.http.post(`${environment.apiUrl}/contractdocument/reject/${id}`, { observation });
+  reject(id: string, comment: string) {
+    return this.http.post(`${environment.apiUrl}/contract-document/reject/${id}`, { comment });
+  }
+
+  replace(documentId: string, file: File) {
+    const fd = new FormData();
+    fd.append('file', file, file.name);
+    return this.http.post(`${environment.apiUrl}/contract-document/replace/${documentId}`, fd);
   }
 
   delete(id: string) {
-    return this.http.delete(`${environment.apiUrl}/contractdocument/${id}`);
+    return this.http.delete(`${environment.apiUrl}/contract-document/${id}`);
   }
 }
