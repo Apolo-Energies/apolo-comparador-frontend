@@ -32,7 +32,7 @@ export interface CommissionType {
 export interface CustomerDetail {
   id: string;
   kind: number;
-  personType: number;
+  personType: string;
   firstName: string;
   lastName: string;
   companyName: string | null;
@@ -51,8 +51,8 @@ export interface ContractDetail {
   id: string;
   customerId: string;
   signatureRequestId: string | null;
-  signatureStatus: number;
-  origin: number;
+  signatureStatus: string;
+  origin: string;
   isActive: boolean;
   startDate: string | null;
   endDate: string | null;
@@ -71,8 +71,8 @@ export interface ContractDocuments {
 export interface ContractDocument {
   id: string;
   contractId: string;
-  documentType: number;
-  status: number;
+  documentType: string;
+  status: string;
   fileUrl: string;
   previewUrl?: string;
   reviewComment: string | null;
