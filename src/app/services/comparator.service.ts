@@ -204,6 +204,7 @@ export class ComparatorService {
     result: ComparadorResult,
     ocr: OcrResult,
     fileId: string,
+    targetUserId?: string,
   ): Observable<SaveComparisonResponse> {
     const snapshot = this.buildReportPayload(form, result, ocr, fileId);
     const cliente = ocr.cliente;
@@ -217,6 +218,7 @@ export class ComparatorService {
     const body: SaveComparisonRequest = {
       fileId,
       cups:              cliente?.cups ?? '',
+      ...(targetUserId ? { targetUserId } : {}),
       annualConsumption: snapshot.datos.consumoAnual,
       tariff:            form.tariff,
       product:           form.producto,
@@ -252,10 +254,11 @@ export class ComparatorService {
     result: ComparadorResult | null,
     ocr: OcrResult | null,
     fileId: string,
+    targetUserId?: string,
   ): Observable<SaveComparisonResponse> | undefined {
     if (!result || !ocr) return undefined;
 
-    return this.saveComparison(form, result, ocr, fileId).pipe(
+    return this.saveComparison(form, result, ocr, fileId, targetUserId).pipe(
       tap(saved => {
         this.downloadPdfFromHistory(saved.id).subscribe(blob => {
           this.triggerBlobDownload(blob, `Comparacion_${saved.id}.pdf`);
@@ -291,9 +294,9 @@ export class ComparatorService {
    * @deprecated Use saveAndDownloadPdf for PDFs and downloadExcel for Excel.
    * Mantenido temporalmente para que callers existentes no se rompan.
    */
-  download(type: 'pdf' | 'excel', form: ComparadorFormValue, result: ComparadorResult | null, ocr: OcrResult | null, fileId: string) {
+  download(type: 'pdf' | 'excel', form: ComparadorFormValue, result: ComparadorResult | null, ocr: OcrResult | null, fileId: string, targetUserId?: string) {
     if (type === 'excel') return this.downloadExcel(form, result, ocr, fileId);
-    return this.saveAndDownloadPdf(form, result, ocr, fileId)?.subscribe();
+    return this.saveAndDownloadPdf(form, result, ocr, fileId, targetUserId)?.subscribe();
   }
 
   private triggerBlobDownload(blob: Blob, filename: string) {

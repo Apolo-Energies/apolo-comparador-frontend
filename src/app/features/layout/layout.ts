@@ -17,10 +17,6 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   'Colaborador': [
     'comparator:view',
     'sips:view',
-    'analytics:view',
-    'analytics.history:view',
-    'analytics.statistics:view',
-    'opportunities:view',
     'settings:view',
     'settings.colaborador:view',
   ],
@@ -198,7 +194,7 @@ export class Layout {
     const userId       = this.refreshTokenService.getUserIdFromToken();
     const isSubUser    = !!this.refreshTokenService.getParentUserIdFromToken();
 
-    if (userId && !isSubUser) {
+    if (environment.features.userDetail && userId && !isSubUser) {
       items.push({
         id: 'profile',
         label: 'Mi Perfil',

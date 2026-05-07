@@ -6,13 +6,14 @@ import { isPlatformBrowser } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DataTableComponent, TableColumn } from '@apolo-energies/table';
 import { AlertComponent, AlertService, ButtonComponent, DialogComponent } from '@apolo-energies/ui';
+import { BrandLoaderComponent } from '../../../../shared/components/brand-loader/brand-loader.component';
 import { StarIcon, UiIconSource } from '@apolo-energies/icons';
 import { SubUsersService, SubUser } from '../../../../services/sub-users.service';
 
 @Component({
   selector: 'app-mis-colaboradores',
   standalone: true,
-  imports: [DataTableComponent, ButtonComponent, AlertComponent, DialogComponent, ReactiveFormsModule],
+  imports: [DataTableComponent, ButtonComponent, AlertComponent, DialogComponent, ReactiveFormsModule, BrandLoaderComponent],
   templateUrl: './mis-colaboradores.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

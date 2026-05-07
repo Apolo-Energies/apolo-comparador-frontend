@@ -56,6 +56,7 @@ export interface SaveComparisonRequest {
   fileId:            string;
   cups:              string;
   annualConsumption: number;
+  targetUserId?:     string;
   tariff?:           string;
   product?:          string;
   omieAveragePrice?: number;

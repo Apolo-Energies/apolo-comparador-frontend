@@ -39,6 +39,12 @@ export interface OcrResult {
       provincia?:  string;
     };
   };
+  contrato?: {
+    tarifa?:                        string;
+    nombre_comercializadora?:       string;
+    numero_orden_comercializadora?: string;
+    fecha_fin?:                     string;
+  };
   descuentos?: Array<{ importe?: number; descripcion?: string }>;
   totales_electricidad?: {
     energia?:  { activa?: number; reactiva?: number };
