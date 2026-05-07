@@ -87,7 +87,9 @@ export class Comparator {
     this.result.set(null);
     this.ocrResult.set(null);
 
-    const userId = event.userId || this.auth.currentUser()?.id || '';
+    const selectedId = this.isMaster() ? (event.userId || '') : '';
+    this.selectedUserId.set(selectedId);
+    const userId = selectedId || this.auth.currentUser()?.id || '';
 
     this.comparatorService.upload(event.file, String(userId)).subscribe({
       next: (res) => {
@@ -116,12 +118,14 @@ export class Comparator {
   }
 
   onDownload(event: ComparadorDownloadEvent): void {
+    const targetUserId = this.isMaster() ? (this.selectedUserId() || undefined) : undefined;
     this.comparatorService.download(
       event.type,
       event.formValue,
       this.result(),
       this.ocrResult(),
       this.fileId(),
+      targetUserId,
     );
   }
 

@@ -9,6 +9,7 @@ import { AlertComponent, AlertService } from '@apolo-energies/ui';
 import { ApoloIcons, XIcon, UiIconSource } from '@apolo-energies/icons';
 import { SubUsersService, SubUser } from '../../../../services/sub-users.service';
 import { RefreshTokenService } from '../../../../services/refresh-token.service';
+import { BrandLoaderComponent } from '../../../../shared/components/brand-loader/brand-loader.component';
 
 interface SubUserRow extends SubUser {
   draftPercentage: string;
@@ -18,7 +19,7 @@ interface SubUserRow extends SubUser {
 @Component({
   selector: 'app-comisiones-colaborador',
   standalone: true,
-  imports: [DataTableComponent, AlertComponent, FormsModule, ApoloIcons],
+  imports: [DataTableComponent, AlertComponent, FormsModule, ApoloIcons, BrandLoaderComponent],
   templateUrl: './comisiones-colaborador.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

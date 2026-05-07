@@ -10,6 +10,7 @@ import { SipsMonthlyChartComponent } from './components/montly-chart/monthly-cha
 import { SipsConsumo, SipsPs } from '../../../../entities/sips.model';
 import { getMonthlyStackedChartData, MonthlyRowDatum } from '../../../../shared/utils/chart.utils';
 import { PERIODS } from '../../../../shared/constants/period';
+import { BrandLoaderComponent } from '../../../../shared/components/brand-loader/brand-loader.component';
 
 function wToKwh(wh: number): number {
   return wh / 1000;
@@ -70,6 +71,7 @@ function buildPowerData(ps: SipsPs): PowerBarDatum[] {
     SipsDonutChartComponent,
     SipsPowerChartComponent,
     SipsMonthlyChartComponent,
+    BrandLoaderComponent,
   ],
   templateUrl: './sips-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
