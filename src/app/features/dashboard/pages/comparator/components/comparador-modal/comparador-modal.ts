@@ -99,9 +99,10 @@ export class ComparadorModalComponent {
       const ocr = this.ocrResult();
       if (!ocr) return;
       untracked(() => {
-        const tarifas  = Object.keys(this.productsByTariff());
-        const tariff   = tarifas[0] ?? '';
-        const producto = this.productsByTariff()[tariff]?.[0] ?? '';
+        const tarifas    = Object.keys(this.productsByTariff());
+        const ocrTarifa  = ocr.contrato?.tarifa ?? '';
+        const tariff     = tarifas.includes(ocrTarifa) ? ocrTarifa : (tarifas[0] ?? '');
+        const producto   = this.productsByTariff()[tariff]?.[0] ?? '';
         this.tariff.set(tariff);
         this.producto.set(producto);
         this.precioMedio.set(0);

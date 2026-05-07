@@ -1,14 +1,12 @@
+<app-brand-loader [visible]="loading()" [showBar]="false" [showPercent]="false" [showTitle]="false" [showWordmark]="false" [description]="null" [microcopy]="null" />
+
 <ui-alert />
 
 <!-- Status cell -->
 <ng-template #statusTpl let-row>
-  <span
-    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-    [class.bg-green-100]="row.isActive"
-    [class.text-green-700]="row.isActive"
-    [class.bg-red-100]="!row.isActive"
-    [class.text-red-700]="!row.isActive"
-  >
+  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+    [class.bg-green-100]="row.isActive" [class.text-green-700]="row.isActive" [class.bg-red-100]="!row.isActive"
+    [class.text-red-700]="!row.isActive">
     {{ row.isActive ? 'Activo' : 'Inactivo' }}
   </span>
 </ng-template>
@@ -32,24 +30,14 @@
   </div>
 
   <!-- Table -->
-  <lib-data-table
-    [data]="data()"
-    [columns]="columns"
-    rowKey="userId"
-    [borderTop]="false"
-    [borderBottom]="false"
-    [borderLeft]="false"
-    [borderRight]="false"
-    [roundedTopLeft]="false"
-    [roundedTopRight]="false"
-    [roundedBottomLeft]="false"
-    [roundedBottomRight]="false"
-  />
+  <lib-data-table [data]="data()" [columns]="columns" rowKey="userId" [borderTop]="false" [borderBottom]="false"
+    [borderLeft]="false" [borderRight]="false" [roundedTopLeft]="false" [roundedTopRight]="false"
+    [roundedBottomLeft]="false" [roundedBottomRight]="false" />
 
   @if (!loading() && data().length === 0) {
-    <div class="py-12 text-center text-sm text-muted-foreground">
-      No tienes colaboradores aún. Crea el primero con el botón "Nuevo Colaborador".
-    </div>
+  <div class="py-12 text-center text-sm text-muted-foreground">
+    No tienes colaboradores aún. Crea el primero con el botón "Nuevo Colaborador".
+  </div>
   }
 
 </div>
@@ -70,7 +58,7 @@
         class="w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
         [class.border-red-500]="hasErr('email')" />
       @if (hasErr('email')) {
-        <p class="text-xs text-red-500">{{ errMsg('email') }}</p>
+      <p class="text-xs text-red-500">{{ errMsg('email') }}</p>
       }
     </div>
 
@@ -80,7 +68,7 @@
         class="w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
         [class.border-red-500]="hasErr('name')" />
       @if (hasErr('name')) {
-        <p class="text-xs text-red-500">{{ errMsg('name') }}</p>
+      <p class="text-xs text-red-500">{{ errMsg('name') }}</p>
       }
     </div>
 
@@ -90,13 +78,13 @@
         class="w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
         [class.border-red-500]="hasErr('surnames')" />
       @if (hasErr('surnames')) {
-        <p class="text-xs text-red-500">{{ errMsg('surnames') }}</p>
+      <p class="text-xs text-red-500">{{ errMsg('surnames') }}</p>
       }
     </div>
 
     <div class="flex items-center justify-between pt-2 border-t border-border">
-      <ui-button label="Cancelar"           variant="outline" size="md" (click)="onCancel()" />
-      <ui-button label="Crear Colaborador"  variant="default" size="md" (click)="onSubmit()" />
+      <ui-button label="Cancelar" variant="outline" size="md" (click)="onCancel()" />
+      <ui-button label="Crear Colaborador" variant="default" size="md" (click)="onSubmit()" />
     </div>
 
   </form>
