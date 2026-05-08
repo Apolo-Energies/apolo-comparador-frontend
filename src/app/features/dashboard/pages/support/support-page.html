@@ -1,0 +1,68 @@
+<div class="mb-6 bg-card rounded-lg border border-border p-6">
+
+  <!-- Header -->
+  <div class="mb-4">
+    <div class="flex items-center gap-2 mb-1">
+      <p class="text-xl font-bold text-foreground">
+        {{ selected() ? selected()!.title : 'Índice' }}
+      </p>
+      <lib-apolo-icons [icon]="infoIcon" class="flex items-center text-muted-foreground" />
+    </div>
+    <p class="text-sm text-muted-foreground">
+      Recursos y guías para sacarle el máximo partido a la plataforma.
+    </p>
+  </div>
+
+  <!-- Content viewer (shown when a topic is selected) -->
+  @if (selected()) {
+    <div class="relative mb-6 rounded-lg overflow-hidden border border-border bg-black aspect-video">
+      <iframe
+        [src]="safeUrl(selected()!.url!)"
+        class="w-full h-full"
+        frameborder="0"
+        scrolling="no"
+        allowfullscreen
+        [title]="selected()!.title"
+      ></iframe>
+      <button
+        type="button"
+        class="absolute top-3 right-3 p-1.5 rounded-md bg-black/60 hover:bg-black/80 text-white transition-colors"
+        (click)="close()">
+        <lib-apolo-icons [icon]="closeIcon" class="flex items-center" />
+      </button>
+    </div>
+  }
+
+  <!-- Topic list -->
+  <ul>
+    @for (topic of topics; track topic.title; let last = $last) {
+      @if (selected()?.title !== topic.title) {
+        <li class="flex items-center justify-between py-4 gap-4"
+            [class.border-b]="!last"
+            [class.border-border]="!last">
+
+          <div class="flex flex-col gap-1.5 min-w-0">
+            <span class="font-semibold text-sm text-foreground">{{ topic.title }}</span>
+            <span class="inline-flex self-start items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium"
+                  [class]="topic.tagCls">
+              <span class="w-1.5 h-1.5 rounded-full shrink-0" [class]="topic.dotCls"></span>
+              {{ topic.tag }}
+            </span>
+          </div>
+
+          @if (topic.available) {
+            <ui-button
+              label="Ver Contenido"
+              variant="secondary"
+              size="md"
+              [trailingIcon]="arrowIcon"
+              (click)="open(topic)"
+            />
+          }
+
+        </li>
+      }
+    }
+  </ul>
+
+</div>

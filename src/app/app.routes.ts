@@ -21,5 +21,5 @@ export const routes: Routes = [
   },
 
   { path: 'forgot-password', component: ForgotPasswordComponent },
-  { path: 'reset-password',  component: ResetPasswordComponent  },
+  { path: 'SetPassword',  component: ResetPasswordComponent  },
 ];

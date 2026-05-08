@@ -17,6 +17,7 @@
   "private": true,
   "packageManager": "npm@11.6.2",
   "dependencies": {
+    "@angular/cdk": "^21.2.10",
     "@angular/common": "^21.2.7",
     "@angular/compiler": "^21.2.7",
     "@angular/core": "^21.2.7",
@@ -29,7 +30,7 @@
     "@apolo-energies/icons": "^0.0.4",
     "@apolo-energies/sidebar": "^0.0.1",
     "@apolo-energies/sips": "^0.0.1",
-    "@apolo-energies/table": "^0.0.1",
+    "@apolo-energies/table": "^0.0.2",
     "@apolo-energies/ui": "^0.0.7",
     "@primeuix/themes": "^2.0.3",
     "date-fns": "^4.1.0",

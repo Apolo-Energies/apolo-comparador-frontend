@@ -8,7 +8,7 @@ import { AlertComponent, ButtonComponent, InputFieldComponent, SelectFieldCompon
 import { DownloadIcon, filterIcon, SearchIcon, StarIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
 import { UserService } from '../../../../services/user.service';
 import { AddUserModalComponent } from './add-user-modal/add-user-modal';
-import { UserActionsMenuComponent, UserRow } from './user-actions-menu/user-actions-menu.component';
+import { UserActionsMenuComponent, UserRow, SubUserSummary } from './user-actions-menu/user-actions-menu.component';
 import { getRoleLabel } from '../../../../entities/user-role';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
 import { environment } from '../../../../../environments/environment';
@@ -83,7 +83,7 @@ export class UsersPageComponent implements AfterViewInit {
             return c.personType === 'Individual' ? (c.dni ?? '-') : (c.cif ?? '-');
           }
         },
-        { key: 'email',                   label: 'Usuario' },
+        { key: 'email',                   label: 'Email' },
         { key: 'phone',                   label: 'Teléfono',        format: row => row.phone || '-' },
         { key: 'role',                    label: 'Rol',             align: 'center', format: row => getRoleLabel(row.role) },
         { key: 'contractSignatureStatus', label: 'Estado Contrato', align: 'center', cellTemplate: this.contractStatusTpl },
@@ -177,6 +177,25 @@ export class UsersPageComponent implements AfterViewInit {
     this.pageSize.set(size);
     this.currentPage.set(1);
     this.load();
+  }
+
+  readonly rowIsExpandable = (row: UserRow) => (row.subUsers?.length ?? 0) > 0;
+  readonly rowBadge        = (row: UserRow) => row.subUsers?.length ?? null;
+
+  toSubUserRow(sub: SubUserSummary): UserRow {
+    return {
+      id:             sub.id,
+      fullName:       sub.fullName,
+      email:          sub.email,
+      phone:          null,
+      role:           sub.role,
+      isActive:       sub.isActive,
+      isEnergyExpert: false,
+      commissions:    [],
+      providerId:     sub.providerId,
+      provider:       null,
+      isSubUser:      true,
+    };
   }
 
   readonly roleOptions: SelectOption[] = [

@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, PLATFORM_ID, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
+import { RouterOutlet, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { filter, map } from 'rxjs';
+import { map } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { ApoloSidebar, SidebarChildItem, SidebarSection } from '@apolo-energies/sidebar';
 import { ApoloHeader, HeaderWelcomeContent, HeaderActionLink, UserMenuItem } from '@apolo-energies/header';
@@ -50,10 +50,9 @@ export class Layout {
 
   constructor() {
     if (!isPlatformBrowser(this.platformId)) return;
-    this.refreshOpportunitiesCount();
-    this.router.events
-      .pipe(filter(e => e instanceof NavigationEnd))
-      .subscribe(() => this.refreshOpportunitiesCount());
+    if (environment.features.opportunities) {
+      this.refreshOpportunitiesCount();
+    }
     effect(() => {
       const count = this.opportunitiesCount();
       if (count > 0) {
@@ -106,8 +105,8 @@ export class Layout {
 
     const ajustesChildren: SidebarChildItem[] = isColaborador && isApolo
       ? [
-          { title: 'Mis Colaboradores', url: '/dashboard/settings/mis-colaboradores',      access: ['settings.colaborador:view'] },
-          { title: 'Comisiones',         url: '/dashboard/settings/comisiones-colaborador', access: ['settings.colaborador:view'] },
+          { title: 'My Commercials', url: '/dashboard/settings/my-comercials',       access: ['settings.colaborador:view'] },
+          { title: 'Commissions',    url: '/dashboard/settings/sub-user-commissions', access: ['settings.colaborador:view'] },
         ]
       : [
           { title: 'Usuarios', url: '/dashboard/settings/users',      access: ['settings.users:view'] },

@@ -40,21 +40,65 @@
     </div>
   </div>
 
-  <!-- Contract status badge template -->
+  <!-- Cell templates used by lib-data-table columns -->
   <ng-template #contractStatusTpl let-row>
     <span class="text-sm">{{ contractStatusLabel(row.contractSignatureStatus) }}</span>
   </ng-template>
 
-  <!-- Actions cell template: gear icon per row -->
   <ng-template #actionsTpl let-row>
     <app-user-actions-menu [user]="row" (updated)="load()" />
   </ng-template>
 
-  <!-- Table -->
+  <!-- Expanded sub-user rows (12 cols: expand + 11 data; colspans keep count correct) -->
+  <ng-template #subRowsTpl let-row>
+    @for (sub of row.subUsers; track sub.id) {
+      <tr class="border-b border-border bg-muted/20 hover:bg-muted/30 transition-colors">
+        <!-- expand slot -->
+        <td class="px-3 py-2.5"></td>
+        <!-- Razón Social -->
+        <td class="px-4 py-2.5">
+          <div class="flex items-center gap-2">
+            <span class="w-0.5 h-4 rounded-full bg-border shrink-0"></span>
+            <span class="font-medium text-foreground text-sm">{{ sub.fullName }}</span>
+          </div>
+        </td>
+        <!-- CIF/DNI vacío -->
+        <td class="px-4 py-2.5"></td>
+        <!-- Email (columna Usuario) -->
+        <td class="px-4 py-2.5 text-sm text-muted-foreground">{{ sub.email }}</td>
+        <!-- Teléfono vacío -->
+        <td class="px-4 py-2.5"></td>
+        <!-- Rol -->
+        <td class="px-4 py-2.5 text-center text-sm text-muted-foreground">{{ sub.role }}</td>
+        <!-- Contrato vacío -->
+        <td class="px-4 py-2.5"></td>
+        <!-- Expert vacío -->
+        <td class="px-4 py-2.5"></td>
+        <!-- Comisión -->
+        <td class="px-4 py-2.5 text-center text-sm text-muted-foreground">
+          {{ sub.commissionPercentage !== null ? (sub.commissionPercentage + '%') : '' }}
+        </td>
+        <!-- Proveedor vacío -->
+        <td class="px-4 py-2.5"></td>
+        <!-- Estado Usuario -->
+        <td class="px-4 py-2.5 text-center text-sm">
+          {{ sub.isActive ? 'Activo' : 'Inactivo' }}
+        </td>
+        <!-- Actions -->
+        <td class="px-4 py-2.5">
+          <app-user-actions-menu [user]="toSubUserRow(sub)" (updated)="load()" />
+        </td>
+      </tr>
+    }
+  </ng-template>
+
   <lib-data-table
     [data]="data()"
     [columns]="columns()"
     rowKey="id"
+    [expandRowTemplate]="subRowsTpl"
+    [isExpandable]="rowIsExpandable"
+    [expandBadge]="rowBadge"
     [borderTop]="false"
     [borderBottom]="true"
     [borderLeft]="false"

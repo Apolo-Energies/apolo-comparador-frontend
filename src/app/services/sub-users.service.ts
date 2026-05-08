@@ -13,18 +13,8 @@ export interface SubUser {
 }
 
 export interface CreateSubUserRequest {
-  email: string;
-  name: string;
-  surnames: string;
-  role: 'Colaborador';
-  personType: 'Individual' | 'Company';
-  companyName?: string | null;
-  phone?: string | null;
-  dni?: string | null;
-  cif?: string | null;
-  legalAddress?: string | null;
-  notificationAddress?: string | null;
-  bankAccount?: string | null;
+  email:    string;
+  fullName: string;
 }
 
 export interface AssignCommissionRequest {
@@ -45,15 +35,12 @@ export class SubUsersService {
     return this.http.get<SubUser[]>(`${environment.apiUrl}/sub-users/${parentUserId}`);
   }
 
-  create(data: CreateSubUserRequest): Observable<{ id: string; email: string; fullName: string; role: string }> {
-    return this.http.post<{ id: string; email: string; fullName: string; role: string }>(
-      `${environment.apiUrl}/user`,
-      data,
-    );
+  create(data: CreateSubUserRequest): Observable<void> {
+    return this.http.post<void>(`${environment.apiUrl}/sub-users/create`, data);
   }
 
   assignCommission(data: AssignCommissionRequest): Observable<void> {
-    return this.http.post<void>(`${environment.apiUrl}/sub-users`, data);
+    return this.http.post<void>(`${environment.apiUrl}/sub-users/assign-commission`, data);
   }
 
   deleteCommission(subUserId: string, parentUserId?: string): Observable<void> {
