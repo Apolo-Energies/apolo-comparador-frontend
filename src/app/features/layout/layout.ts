@@ -12,6 +12,7 @@ import { getUserRoles } from '../../utils/auth.utils';
 import { environment } from '../../../environments/environment';
 import { RefreshTokenService } from '../../services/refresh-token.service';
 import { OpportunityService } from '../../services/opportunity.service';
+import { OpportunityStatus } from '../../entities/opportunity.model';
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   'Colaborador': [
@@ -45,7 +46,7 @@ export class Layout {
 
   readonly mobileOpen = signal(false);
 
-  /** Total opportunities — refreshed on init and on every route change. */
+  /** Pending opportunities — refreshed on init and on every route change. */
   readonly opportunitiesCount = signal<number>(0);
 
   constructor() {
@@ -64,7 +65,7 @@ export class Layout {
   }
 
   private refreshOpportunitiesCount(): void {
-    this.oppService.list({ pageSize: 1 }).subscribe({
+    this.oppService.list({ pageSize: 1, status: OpportunityStatus.Pending }).subscribe({
       next: res => this.opportunitiesCount.set(res.totalCount),
       error: () => { },
     });

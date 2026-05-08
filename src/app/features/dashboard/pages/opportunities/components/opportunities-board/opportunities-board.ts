@@ -13,6 +13,7 @@ import {
 } from '../../../../../../entities/opportunity.model';
 import { OpportunityService } from '../../../../../../services/opportunity.service';
 import { OpportunityCardComponent } from '../opportunity-card/opportunity-card';
+import { EsNumberPipe } from '../../../../../../shared/pipes/es-number.pipe';
 
 interface BoardColumn {
   status:     OpportunityStatus;
@@ -37,13 +38,14 @@ const PAGE_SIZE_PER_COLUMN = 100;
 @Component({
   selector: 'app-opportunities-board',
   standalone: true,
-  imports: [DragDropModule, OpportunityCardComponent, ApoloIcons],
+  imports: [DragDropModule, OpportunityCardComponent, ApoloIcons, EsNumberPipe],
   templateUrl: './opportunities-board.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OpportunitiesBoardComponent implements OnInit, OnChanges {
   @Input() filters: OpportunityFilters = {};
   @Output() countsChange = new EventEmitter<Record<OpportunityStatus, number>>();
+  @Output() volumesChange = new EventEmitter<Record<OpportunityStatus, number>>();
   @Output() errorMessage = new EventEmitter<string>();
   @Output() cardOpen     = new EventEmitter<OpportunitySummary>();
 
@@ -116,8 +118,18 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
       [OpportunityStatus.Won]:         0,
       [OpportunityStatus.Lost]:        0,
     };
-    for (const col of this.columns()) totals[col.status] = col.totalCount;
+    const volumes: Record<OpportunityStatus, number> = {
+      [OpportunityStatus.Pending]:     0,
+      [OpportunityStatus.Negotiation]: 0,
+      [OpportunityStatus.Won]:         0,
+      [OpportunityStatus.Lost]:        0,
+    };
+    for (const col of this.columns()) {
+      totals[col.status]  = col.totalCount;
+      volumes[col.status] = col.items.reduce((sum, o) => sum + (o.lastAnnualConsumption ?? 0), 0);
+    }
     this.countsChange.emit(totals);
+    this.volumesChange.emit(volumes);
   }
 
   paletteFor(status: OpportunityStatus): StatusPalette {

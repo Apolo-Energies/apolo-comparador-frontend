@@ -2,7 +2,7 @@ import {
   AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef,
   Component, computed, inject, signal, TemplateRef, ViewChild, PLATFORM_ID,
 } from '@angular/core';
-import { DecimalPipe, isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
@@ -20,6 +20,7 @@ import { OpportunityService } from '../../../../services/opportunity.service';
 import { OpportunityStatusBadgeComponent } from './components/opportunity-status-badge/opportunity-status-badge';
 import { OpportunitiesBoardComponent } from './components/opportunities-board/opportunities-board';
 import { OpportunityDetailDrawerComponent } from './components/opportunity-detail-drawer/opportunity-detail-drawer';
+import { EsNumberPipe } from '../../../../shared/pipes/es-number.pipe';
 
 type ViewMode = 'board' | 'table';
 
@@ -32,6 +33,13 @@ interface KpiTotals {
   conversion:  number;
 }
 
+interface KpiVolumes {
+  pending:     number;
+  negotiation: number;
+  won:         number;
+  lost:        number;
+}
+
 @Component({
   selector: 'app-opportunities-page',
   standalone: true,
@@ -42,7 +50,7 @@ interface KpiTotals {
     OpportunitiesBoardComponent,
     OpportunityDetailDrawerComponent,
     ApoloIcons,
-    DecimalPipe,
+    EsNumberPipe,
   ],
   templateUrl: './opportunities-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -64,10 +72,10 @@ export class OpportunitiesPageComponent implements AfterViewInit {
   readonly listIcon:   UiIconSource = { type: 'apolo', icon: ListIcon,   size: 16 };
 
   // KPI tile icons
-  readonly kpiIconTotal:      UiIconSource = { type: 'apolo', icon: NoteIcon,        size: 28 };
-  readonly kpiIconWon:        UiIconSource = { type: 'apolo', icon: ShieldCheckIcon, size: 28 };
-  readonly kpiIconConversion: UiIconSource = { type: 'apolo', icon: TradingUpIcon,   size: 28 };
-  readonly kpiIconLost:       UiIconSource = { type: 'apolo', icon: XIcon,           size: 28 };
+  readonly kpiIconTotal:      UiIconSource = { type: 'apolo', icon: NoteIcon,        size: 36 };
+  readonly kpiIconWon:        UiIconSource = { type: 'apolo', icon: ShieldCheckIcon, size: 36 };
+  readonly kpiIconConversion: UiIconSource = { type: 'apolo', icon: TradingUpIcon,   size: 36 };
+  readonly kpiIconLost:       UiIconSource = { type: 'apolo', icon: XIcon,           size: 36 };
 
   // segmented control icons
   readonly tableroIcon: UiIconSource = { type: 'apolo', icon: NoteIcon, size: 14 };
@@ -91,6 +99,10 @@ export class OpportunitiesPageComponent implements AfterViewInit {
 
   readonly kpis = signal<KpiTotals>({
     total: 0, pending: 0, negotiation: 0, won: 0, lost: 0, conversion: 0,
+  });
+
+  readonly volumes = signal<KpiVolumes>({
+    pending: 0, negotiation: 0, won: 0, lost: 0,
   });
 
 
@@ -170,15 +182,19 @@ export class OpportunitiesPageComponent implements AfterViewInit {
            || f.startDate || f.endDate || f.createdByFullName || f.createdByEmail);
   });
 
-  readonly kpiTotal       = computed(() => this.kpis().total);
+  readonly kpiPending     = computed(() => this.kpis().pending);
   readonly kpiWon         = computed(() => this.kpis().won);
   readonly kpiConversion  = computed(() => this.kpis().conversion);
   readonly kpiLost        = computed(() => this.kpis().lost);
 
+  readonly volPending = computed(() => this.volumes().pending);
+  readonly volWon     = computed(() => this.volumes().won);
+  readonly volLost    = computed(() => this.volumes().lost);
+
   readonly subtitleText = computed(() => {
     const total = this.kpis().total;
     if (total === 0) return 'Pipeline de ventas';
-    return `Pipeline de ventas · ${total} oportunidades`;
+    return `Pipeline de ventas · ${total.toLocaleString('es-ES')} oportunidades`;
   });
 
   // handlers 
@@ -223,9 +239,19 @@ export class OpportunitiesPageComponent implements AfterViewInit {
     const won         = totals[OpportunityStatus.Won];
     const lost        = totals[OpportunityStatus.Lost];
     const total       = pending + negotiation + won + lost;
-    const conversion  = (won + lost) > 0 ? (won / (won + lost)) * 100 : 0;
+    const conversion  = total > 0 ? (won / total) * 100 : 0;
     this.kpis.set({ total, pending, negotiation, won, lost, conversion });
   }
+
+  onBoardVolumes(volumes: Record<OpportunityStatus, number>) {
+    this.volumes.set({
+      pending:     volumes[OpportunityStatus.Pending],
+      negotiation: volumes[OpportunityStatus.Negotiation],
+      won:         volumes[OpportunityStatus.Won],
+      lost:        volumes[OpportunityStatus.Lost],
+    });
+  }
+
 
   onBoardError(message: string) {
     this.toast.add({
