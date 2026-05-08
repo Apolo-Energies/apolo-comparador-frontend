@@ -83,21 +83,25 @@
 
   <!-- ============ KPI CARDS ============ -->
   <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-    <!-- Total -->
+    <!-- Pendientes -->
     <div class="group relative overflow-hidden rounded-2xl border border-border
                 bg-card hover:bg-card/80
                 shadow-lg shadow-black/10
                 transition-all duration-300 ease-out hover:-translate-y-0.5 p-5">
       <div class="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-blue-500/5 blur-3xl
                   group-hover:bg-blue-500/10 transition-colors duration-300"></div>
-      <div class="relative flex items-center gap-4">
-        <div class="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center
+      <div class="relative flex items-start gap-4">
+        <div class="shrink-0 w-14 h-14 rounded-xl grid place-items-center
                     bg-blue-500/10 ring-1 ring-blue-500/20 text-blue-400">
-          <lib-apolo-icons [icon]="kpiIconTotal" class="flex items-center" />
+          <lib-apolo-icons [icon]="kpiIconTotal" style="display:inline-block" />
         </div>
-        <div class="min-w-0">
-          <p class="text-3xl font-bold text-blue-400 leading-none">{{ kpiTotal() }}</p>
-          <p class="text-[11px] uppercase tracking-widest text-zinc-500 mt-1.5 font-semibold">Total</p>
+        <div class="min-w-0 flex-1">
+          <p class="text-3xl font-bold text-blue-400 leading-none">{{ kpiPending() | esNumber:0 }}</p>
+          <p class="text-[11px] uppercase tracking-widest text-zinc-500 mt-1.5 font-semibold">Pendientes</p>
+          <p class="text-xs text-zinc-400 mt-2 tabular-nums">
+            <span class="text-blue-400/80 font-semibold">{{ volPending() | esNumber }} kWh</span>
+            <span class="text-zinc-500"> · volumen</span>
+          </p>
         </div>
       </div>
     </div>
@@ -109,14 +113,18 @@
                 transition-all duration-300 ease-out hover:-translate-y-0.5 p-5">
       <div class="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-emerald-500/5 blur-3xl
                   group-hover:bg-emerald-500/10 transition-colors duration-300"></div>
-      <div class="relative flex items-center gap-4">
-        <div class="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center
+      <div class="relative flex items-start gap-4">
+        <div class="shrink-0 w-14 h-14 rounded-xl grid place-items-center
                     bg-emerald-500/10 ring-1 ring-emerald-500/20 text-emerald-400">
-          <lib-apolo-icons [icon]="kpiIconWon" class="flex items-center" />
+          <lib-apolo-icons [icon]="kpiIconWon" style="display:inline-block" />
         </div>
-        <div class="min-w-0">
-          <p class="text-3xl font-bold text-emerald-400 leading-none">{{ kpiWon() }}</p>
+        <div class="min-w-0 flex-1">
+          <p class="text-3xl font-bold text-emerald-400 leading-none">{{ kpiWon() | esNumber:0 }}</p>
           <p class="text-[11px] uppercase tracking-widest text-zinc-500 mt-1.5 font-semibold">Ganadas</p>
+          <p class="text-xs text-zinc-400 mt-2 tabular-nums">
+            <span class="text-emerald-400/80 font-semibold">{{ volWon() | esNumber }} kWh</span>
+            <span class="text-zinc-500"> · volumen</span>
+          </p>
         </div>
       </div>
     </div>
@@ -128,14 +136,18 @@
                 transition-all duration-300 ease-out hover:-translate-y-0.5 p-5">
       <div class="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-amber-500/5 blur-3xl
                   group-hover:bg-amber-500/10 transition-colors duration-300"></div>
-      <div class="relative flex items-center gap-4">
-        <div class="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center
+      <div class="relative flex items-start gap-4">
+        <div class="shrink-0 w-14 h-14 rounded-xl grid place-items-center
                     bg-amber-500/10 ring-1 ring-amber-500/20 text-amber-400">
-          <lib-apolo-icons [icon]="kpiIconConversion" class="flex items-center" />
+          <lib-apolo-icons [icon]="kpiIconConversion" style="display:inline-block" />
         </div>
-        <div class="min-w-0">
-          <p class="text-3xl font-bold text-amber-400 leading-none">{{ kpiConversion() | number:'1.0-1' }}%</p>
+        <div class="min-w-0 flex-1">
+          <p class="text-3xl font-bold text-amber-400 leading-none">{{ kpiConversion() | esNumber }}%</p>
           <p class="text-[11px] uppercase tracking-widest text-zinc-500 mt-1.5 font-semibold">Conversión</p>
+          <p class="text-xs text-zinc-400 mt-2 tabular-nums">
+            <span class="text-amber-400/80 font-semibold">{{ volWon() | esNumber }} kWh</span>
+            <span class="text-zinc-500"> · convertido</span>
+          </p>
         </div>
       </div>
     </div>
@@ -147,14 +159,18 @@
                 transition-all duration-300 ease-out hover:-translate-y-0.5 p-5">
       <div class="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-rose-500/5 blur-3xl
                   group-hover:bg-rose-500/10 transition-colors duration-300"></div>
-      <div class="relative flex items-center gap-4">
-        <div class="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center
+      <div class="relative flex items-start gap-4">
+        <div class="shrink-0 w-14 h-14 rounded-xl grid place-items-center
                     bg-rose-500/10 ring-1 ring-rose-500/20 text-rose-400">
-          <lib-apolo-icons [icon]="kpiIconLost" class="flex items-center" />
+          <lib-apolo-icons [icon]="kpiIconLost" style="display:inline-block" />
         </div>
-        <div class="min-w-0">
-          <p class="text-3xl font-bold text-rose-400 leading-none">{{ kpiLost() }}</p>
+        <div class="min-w-0 flex-1">
+          <p class="text-3xl font-bold text-rose-400 leading-none">{{ kpiLost() | esNumber:0 }}</p>
           <p class="text-[11px] uppercase tracking-widest text-zinc-500 mt-1.5 font-semibold">Perdidas</p>
+          <p class="text-xs text-zinc-400 mt-2 tabular-nums">
+            <span class="text-rose-400/80 font-semibold">{{ volLost() | esNumber }} kWh</span>
+            <span class="text-zinc-500"> · volumen</span>
+          </p>
         </div>
       </div>
     </div>
@@ -212,6 +228,7 @@
       #board
       [filters]="appliedFilters()"
       (countsChange)="onBoardCounts($event)"
+      (volumesChange)="onBoardVolumes($event)"
       (errorMessage)="onBoardError($event)"
       (cardOpen)="openDetail($event)"
     />
