@@ -35,12 +35,12 @@
       >
         {{ opportunity().cups }}
       </span>
-      @if (consumptionText()) {
+      @if (consumption() !== null && consumption() !== undefined) {
         <span
           class="inline-flex items-center gap-1 text-[10.5px] font-medium text-amber-400/80 bg-amber-500/10 ring-1 ring-amber-500/20 rounded-md px-2 py-0.5"
         >
           <lib-apolo-icons [icon]="flashIcon" class="flex items-center shrink-0" />
-          {{ consumptionText() }}
+          {{ consumption() | esNumber }} kWh
         </span>
       }
     </div>
