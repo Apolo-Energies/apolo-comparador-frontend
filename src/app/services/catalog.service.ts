@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable, shareReplay } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface CatalogProvider {
@@ -20,8 +21,14 @@ export interface Catalog {
 @Injectable({ providedIn: 'root' })
 export class CatalogService {
   private readonly http = inject(HttpClient);
+  private catalog$?: Observable<Catalog>;
 
-  get() {
-    return this.http.get<Catalog>(`${environment.apiUrl}/catalog`);
+  get(): Observable<Catalog> {
+    if (!this.catalog$) {
+      this.catalog$ = this.http
+        .get<Catalog>(`${environment.apiUrl}/catalog`)
+        .pipe(shareReplay(1));
+    }
+    return this.catalog$;
   }
 }

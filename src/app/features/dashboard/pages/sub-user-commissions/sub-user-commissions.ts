@@ -17,13 +17,13 @@ interface SubUserRow extends SubUser {
 }
 
 @Component({
-  selector: 'app-comisiones-colaborador',
+  selector: 'app-sub-user-commissions',
   standalone: true,
   imports: [DataTableComponent, AlertComponent, FormsModule, ApoloIcons, BrandLoaderComponent],
-  templateUrl: './comisiones-colaborador.html',
+  templateUrl: './sub-user-commissions.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ComisionesColaboradorPage implements AfterViewInit {
+export class SubUserCommissionsPage implements AfterViewInit {
   private subUsersService      = inject(SubUsersService);
   private alertService         = inject(AlertService);
   private refreshTokenService  = inject(RefreshTokenService);

@@ -9,15 +9,19 @@ import { AlertComponent, AlertService, ButtonComponent, DialogComponent } from '
 import { BrandLoaderComponent } from '../../../../shared/components/brand-loader/brand-loader.component';
 import { StarIcon, UiIconSource } from '@apolo-energies/icons';
 import { SubUsersService, SubUser } from '../../../../services/sub-users.service';
+import { UserActionsMenuComponent, UserRow } from '../users/user-actions-menu/user-actions-menu.component';
 
 @Component({
-  selector: 'app-mis-colaboradores',
+  selector: 'app-my-commercials',
   standalone: true,
-  imports: [DataTableComponent, ButtonComponent, AlertComponent, DialogComponent, ReactiveFormsModule, BrandLoaderComponent],
-  templateUrl: './mis-colaboradores.html',
+  imports: [
+    DataTableComponent, ButtonComponent, AlertComponent, DialogComponent,
+    ReactiveFormsModule, BrandLoaderComponent, UserActionsMenuComponent,
+  ],
+  templateUrl: './my-commercials.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MisColaboradoresPage implements AfterViewInit {
+export class MyComercialsPage implements AfterViewInit {
   private subUsersService = inject(SubUsersService);
   private alertService    = inject(AlertService);
   private fb              = inject(FormBuilder);
@@ -39,12 +43,14 @@ export class MisColaboradoresPage implements AfterViewInit {
 
   @ViewChild('statusTpl') statusTpl!: TemplateRef<{ $implicit: SubUser }>;
   @ViewChild('commTpl')   commTpl!:   TemplateRef<{ $implicit: SubUser }>;
+  @ViewChild('actionsTpl') actionsTpl!: TemplateRef<{ $implicit: SubUser }>;
 
   columns: TableColumn<SubUser>[] = [
-    { key: 'fullName', label: 'Nombre' },
+    { key: 'fullName', label: 'Name' },
     { key: 'email',    label: 'Email' },
-    { key: 'status',   label: 'Estado',    align: 'center' },
-    { key: 'comm',     label: 'Comisión',  align: 'center' },
+    { key: 'status',   label: 'Status',     align: 'center' },
+    { key: 'comm',     label: 'Commission',  align: 'center' },
+    { key: 'actions',  label: '',            align: 'center' },
   ];
 
   constructor() {
@@ -54,19 +60,37 @@ export class MisColaboradoresPage implements AfterViewInit {
   }
 
   ngAfterViewInit() {
-    const statusCol = this.columns.find(c => c.key === 'status');
-    const commCol   = this.columns.find(c => c.key === 'comm');
-    if (statusCol) statusCol.cellTemplate = this.statusTpl;
-    if (commCol)   commCol.cellTemplate   = this.commTpl;
+    const statusCol  = this.columns.find(c => c.key === 'status');
+    const commCol    = this.columns.find(c => c.key === 'comm');
+    const actionsCol = this.columns.find(c => c.key === 'actions');
+    if (statusCol)  statusCol.cellTemplate  = this.statusTpl;
+    if (commCol)    commCol.cellTemplate    = this.commTpl;
+    if (actionsCol) actionsCol.cellTemplate = this.actionsTpl;
     this.cdr.markForCheck();
   }
 
-  private load() {
+  load() {
     this.loading.set(true);
     this.subUsersService.getMySubUsers().subscribe({
       next: rows => { this.data.set(rows); this.loading.set(false); },
       error: ()  => { this.loading.set(false); },
     });
+  }
+
+  toSubUserRow(sub: SubUser): UserRow {
+    return {
+      id:             sub.userId,
+      fullName:       sub.fullName,
+      email:          sub.email,
+      phone:          null,
+      role:           sub.role,
+      isActive:       sub.isActive,
+      isEnergyExpert: false,
+      commissions:    [],
+      providerId:     null,
+      provider:       null,
+      isSubUser:      true,
+    };
   }
 
   hasErr(field: string): boolean {
@@ -77,10 +101,10 @@ export class MisColaboradoresPage implements AfterViewInit {
   errMsg(field: string): string {
     const errors = this.form.get(field)?.errors;
     if (!errors) return '';
-    if (errors['required'])  return 'Este campo es obligatorio';
-    if (errors['email'])     return 'Email inválido';
-    if (errors['maxlength']) return `Máximo ${errors['maxlength'].requiredLength} caracteres`;
-    return 'Campo inválido';
+    if (errors['required'])  return 'This field is required';
+    if (errors['email'])     return 'Invalid email';
+    if (errors['maxlength']) return `Max ${errors['maxlength'].requiredLength} characters`;
+    return 'Invalid field';
   }
 
   onOpenModal() {
@@ -101,14 +125,11 @@ export class MisColaboradoresPage implements AfterViewInit {
 
     const raw = this.form.getRawValue();
     this.subUsersService.create({
-      email:     raw.email.toLowerCase().trim(),
-      name:      raw.name,
-      surnames:  raw.surnames,
-      role:      'Colaborador',
-      personType: 'Individual',
+      email:    raw.email.toLowerCase().trim(),
+      fullName: `${raw.name.trim()} ${raw.surnames.trim()}`,
     }).subscribe({
       next: () => {
-        this.alertService.show('Colaborador creado correctamente', 'success');
+        this.alertService.show('Commercial created successfully', 'success');
         this.modalOpen.set(false);
         this.form.reset();
         this.submitted.set(false);
@@ -116,11 +137,11 @@ export class MisColaboradoresPage implements AfterViewInit {
       },
       error: err => {
         if (err.status === 409 || err.status === 400) {
-          this.alertService.show('Ya existe un usuario con ese email', 'error');
+          this.alertService.show('A user with that email already exists', 'error');
         } else if (err.status === 403) {
-          this.alertService.show('No tienes permisos para crear este tipo de usuario', 'error');
+          this.alertService.show('You do not have permission to create this type of user', 'error');
         } else {
-          this.alertService.show('Error al crear el colaborador', 'error');
+          this.alertService.show('Error creating the commercial', 'error');
         }
       },
     });
