@@ -1,5 +1,5 @@
 import {
-  ChangeDetectionStrategy, Component, ElementRef, HostListener,
+  ChangeDetectionStrategy, Component, computed, ElementRef, HostListener,
   ViewChild, effect, inject, input, output, signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -12,6 +12,16 @@ import { RestorePasswordModalComponent } from '../restore-password-modal/restore
 import { SendContractModalComponent } from '../send-contract-modal/send-contract-modal.component';
 import { UserRole, UserRoleLabel, normalizeRoleToOptionValue } from '../../../../../entities/user-role';
 import { environment } from '../../../../../../environments/environment';
+
+export interface SubUserSummary {
+  id:                   string;
+  fullName:             string;
+  email:                string;
+  role:                 string;
+  isActive:             boolean;
+  providerId:           number;
+  commissionPercentage: number | null;
+}
 
 export interface UserRow {
   id:             string;
@@ -28,12 +38,14 @@ export interface UserRow {
   identifier?:                string | null;
   contractSignatureStatus?:   string | null;
   hasActiveContract?:         boolean;
+  isSubUser?:                 boolean;
   customer?: {
     personType:  string;
     dni:         string | null;
     cif:         string | null;
     companyName: string | null;
   } | null;
+  subUsers?: SubUserSummary[];
 }
 
 const PANEL_H = 260;
@@ -86,16 +98,18 @@ const SELECT_CLS = [
           [style.top.px]="panelTop()"
           [style.left.px]="panelLeft()">
 
-          <!-- 5 selects in 2-column grid -->
+          <!-- selects grid -->
           <div class="grid grid-cols-2 gap-3 p-3">
 
-            <select [class]="selectCls"
-              [ngModel]="selectedRole()"
-              (ngModelChange)="onRoleChange($event)">
-              @for (opt of roleOptions; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-              }
-            </select>
+            @if (!isSubUser()) {
+              <select [class]="selectCls"
+                [ngModel]="selectedRole()"
+                (ngModelChange)="onRoleChange($event)">
+                @for (opt of roleOptions; track opt.value) {
+                  <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
+            }
 
             <select [class]="selectCls"
               [ngModel]="selectedStatus()"
@@ -105,22 +119,24 @@ const SELECT_CLS = [
               }
             </select>
 
-            <select [class]="selectCls"
-              [ngModel]="selectedExpert()"
-              (ngModelChange)="onExpertChange($event)">
-              @for (opt of expertOptions; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-              }
-            </select>
+            @if (!isSubUser()) {
+              <select [class]="selectCls"
+                [ngModel]="selectedExpert()"
+                (ngModelChange)="onExpertChange($event)">
+                @for (opt of expertOptions; track opt.value) {
+                  <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
 
-            <select [class]="selectCls"
-              [ngModel]="selectedCommission()"
-              (ngModelChange)="onCommissionChange($event)">
-              <option value="">— Comisión —</option>
-              @for (opt of commissionOptions(); track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-              }
-            </select>
+              <select [class]="selectCls"
+                [ngModel]="selectedCommission()"
+                (ngModelChange)="onCommissionChange($event)">
+                <option value="">— Comisión —</option>
+                @for (opt of commissionOptions(); track opt.value) {
+                  <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
+            }
 
             <select [class]="selectCls"
               [ngModel]="selectedProvider()"
@@ -134,8 +150,8 @@ const SELECT_CLS = [
           </div>
 
           <!-- Footer -->
-          <div class="border-t border-border" [class]="showContracts ? 'grid grid-cols-2' : 'flex'">
-            @if (showContracts) {
+          <div class="border-t border-border" [class]="showContracts && !isSubUser() ? 'grid grid-cols-2' : 'flex'">
+            @if (showContracts && !isSubUser()) {
               <button
                 type="button"
                 class="px-3 py-2 text-left text-xs sm:text-sm hover:bg-muted text-primary border-r border-border"
@@ -188,6 +204,7 @@ export class UserActionsMenuComponent {
   readonly selectCls       = SELECT_CLS;
   readonly showUserDetail  = environment.features.userDetail;
   readonly showContracts   = environment.features.contracts;
+  readonly isSubUser       = computed(() => !!this.user().isSubUser);
 
   readonly isOpen                = signal(false);
   readonly panelTop              = signal(0);

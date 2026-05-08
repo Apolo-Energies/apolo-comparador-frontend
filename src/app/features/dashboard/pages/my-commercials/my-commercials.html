@@ -4,11 +4,7 @@
 
 <!-- Status cell -->
 <ng-template #statusTpl let-row>
-  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-    [class.bg-green-100]="row.isActive" [class.text-green-700]="row.isActive" [class.bg-red-100]="!row.isActive"
-    [class.text-red-700]="!row.isActive">
-    {{ row.isActive ? 'Activo' : 'Inactivo' }}
-  </span>
+  <span class="text-sm">{{ row.isActive ? 'Active' : 'Inactive' }}</span>
 </ng-template>
 
 <!-- Commission cell -->
@@ -18,15 +14,19 @@
   </span>
 </ng-template>
 
+<!-- Actions cell -->
+<ng-template #actionsTpl let-row>
+  <app-user-actions-menu [user]="toSubUserRow(row)" (updated)="load()" />
+</ng-template>
+
 <div class="border border-border rounded-lg overflow-hidden shadow-sm">
 
   <!-- Header -->
   <div class="bg-card px-6 py-4 flex items-center justify-between">
     <div>
-      <p class="text-base font-semibold text-foreground">Mis Colaboradores</p>
-      <p class="text-sm text-muted-foreground">Gestiona los colaboradores bajo tu cuenta</p>
+      <p class="text-base font-semibold text-foreground">Commerciales</p>
     </div>
-    <ui-button label="Nuevo Colaborador" variant="default" size="md" [leadingIcon]="addIcon" (click)="onOpenModal()" />
+    <ui-button label="New Commercial" variant="default" size="md" [leadingIcon]="addIcon" (click)="onOpenModal()" />
   </div>
 
   <!-- Table -->
@@ -36,7 +36,7 @@
 
   @if (!loading() && data().length === 0) {
   <div class="py-12 text-center text-sm text-muted-foreground">
-    No tienes colaboradores aún. Crea el primero con el botón "Nuevo Colaborador".
+    No commercials yet. Create the first one with the "New Commercial" button.
   </div>
   }
 
@@ -46,15 +46,15 @@
 <ui-dialog [open]="modalOpen()" [closeable]="true" maxWidth="max-w-md" (openChange)="$event ? null : onCancel()">
 
   <div class="px-6 pt-5 pb-2 space-y-1">
-    <p class="text-base font-semibold text-foreground">Nuevo Colaborador</p>
-    <p class="text-sm text-muted-foreground">Se creará como Colaborador bajo tu cuenta</p>
+    <p class="text-base font-semibold text-foreground">New Commercial</p>
+    <p class="text-sm text-muted-foreground">Will be created as a Commercial under your account</p>
   </div>
 
   <form [formGroup]="form" class="px-6 pb-6 pt-4 space-y-4">
 
     <div class="space-y-1">
       <label class="text-sm font-medium text-muted-foreground">Email *</label>
-      <input formControlName="email" type="email" placeholder="colaborador@email.com"
+      <input formControlName="email" type="email" placeholder="commercial@email.com"
         class="w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
         [class.border-red-500]="hasErr('email')" />
       @if (hasErr('email')) {
@@ -63,8 +63,8 @@
     </div>
 
     <div class="space-y-1">
-      <label class="text-sm font-medium text-muted-foreground">Nombre *</label>
-      <input formControlName="name" placeholder="Juan"
+      <label class="text-sm font-medium text-muted-foreground">First name *</label>
+      <input formControlName="name" placeholder="John"
         class="w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
         [class.border-red-500]="hasErr('name')" />
       @if (hasErr('name')) {
@@ -73,8 +73,8 @@
     </div>
 
     <div class="space-y-1">
-      <label class="text-sm font-medium text-muted-foreground">Apellidos *</label>
-      <input formControlName="surnames" placeholder="García López"
+      <label class="text-sm font-medium text-muted-foreground">Last name *</label>
+      <input formControlName="surnames" placeholder="Smith"
         class="w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
         [class.border-red-500]="hasErr('surnames')" />
       @if (hasErr('surnames')) {
@@ -83,8 +83,8 @@
     </div>
 
     <div class="flex items-center justify-between pt-2 border-t border-border">
-      <ui-button label="Cancelar" variant="outline" size="md" (click)="onCancel()" />
-      <ui-button label="Crear Colaborador" variant="default" size="md" (click)="onSubmit()" />
+      <ui-button label="Cancel" variant="outline" size="md" (click)="onCancel()" />
+      <ui-button label="Create Commercial" variant="default" size="md" (click)="onSubmit()" />
     </div>
 
   </form>

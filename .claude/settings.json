@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/erwinmarioleonramos/Desktop/2025/apolo/proyectos/libraries/apolo-workspace/projects/apolo-table -type f -name \"*.ts\" | grep -E \"\\(public-api|index|table-column|model\\)\" | head -20)",
+      "Read(//Users/erwinmarioleonramos/Desktop/2025/apolo/proyectos/libraries/apolo-workspace/projects/apolo-table/**)",
+      "Bash(npm install *)"
+    ]
+  }
+}

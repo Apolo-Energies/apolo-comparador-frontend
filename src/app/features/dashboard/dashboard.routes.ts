@@ -13,9 +13,10 @@ import { ForbiddenComponent } from '../../pages/forbidden/forbidden';
 import { SipsPageComponent } from './pages/sips/sips-page';
 import { FastDischarge } from './pages/fast-discharge/fast-discharge';
 import { FAST_DISCHARGE_ROUTES } from './pages/fast-discharge/fast-discharge.routes';
-import { RatesPageComponent } from './pages/rates/rates-page';
-import { MisColaboradoresPage } from './pages/mis-colaboradores/mis-colaboradores';
-import { ComisionesColaboradorPage } from './pages/comisiones-colaborador/comisiones-colaborador';
+import { SubUserCommissionsPage } from './pages/sub-user-commissions/sub-user-commissions';
+import { MyComercialsPage } from './pages/my-commercials/my-commercials';
+import { SupportPageComponent } from './pages/support/support-page';
+import { SubUser } from '../../services/sub-users.service';
 
 export const DASHBOARD_ROUTES: Routes = [
   {
@@ -64,20 +65,20 @@ export const DASHBOARD_ROUTES: Routes = [
 
       // Colaborador only — Apolo exclusivo
       {
-        path: 'settings/mis-colaboradores',
-        component: MisColaboradoresPage,
+        path: 'settings/my-comercials',
+        component: MyComercialsPage,
         canActivate: [featureGuard, permissionGuard],
         data: { feature: 'userDetail', roles: ['Colaborador'] },
       },
       {
-        path: 'settings/comisiones-colaborador',
-        component: ComisionesColaboradorPage,
+        path: 'settings/sub-user-commissions',
+        component: SubUserCommissionsPage,
         canActivate: [featureGuard, permissionGuard],
         data: { feature: 'userDetail', roles: ['Colaborador'] },
       },
 
       // Master only
-      { path: 'support', canActivate: [permissionGuard], data: { roles: ['Master'] }, component: ForbiddenComponent },
+      { path: 'support', component: SupportPageComponent },
 
       { path: 'forbidden', component: ForbiddenComponent },
     ],

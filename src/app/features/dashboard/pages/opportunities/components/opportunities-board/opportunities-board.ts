@@ -1,9 +1,10 @@
 import {
-  ChangeDetectionStrategy, Component, computed, EventEmitter, inject,
-  Output, Input, OnChanges, signal, SimpleChanges,
+  ChangeDetectionStrategy, Component, computed, DestroyRef, EventEmitter, inject,
+  Input, OnChanges, OnInit, Output, signal, SimpleChanges,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
-import { forkJoin } from 'rxjs';
+import { debounceTime, forkJoin, Subject, switchMap } from 'rxjs';
 import { ApoloIcons, ShieldCheckIcon, UiIconSource, UserCircleIcon, XIcon } from '@apolo-energies/icons';
 import {
   OpportunitySummary, OpportunityStatus, OpportunityFilters,
@@ -40,13 +41,14 @@ const PAGE_SIZE_PER_COLUMN = 100;
   templateUrl: './opportunities-board.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class OpportunitiesBoardComponent implements OnChanges {
+export class OpportunitiesBoardComponent implements OnInit, OnChanges {
   @Input() filters: OpportunityFilters = {};
   @Output() countsChange = new EventEmitter<Record<OpportunityStatus, number>>();
   @Output() errorMessage = new EventEmitter<string>();
   @Output() cardOpen     = new EventEmitter<OpportunitySummary>();
 
-  private oppService = inject(OpportunityService);
+  private oppService  = inject(OpportunityService);
+  private destroyRef  = inject(DestroyRef);
 
   private readonly userCircleIcon: UiIconSource = { type: 'apolo', icon: UserCircleIcon, size: 28 };
   private readonly checkIcon:      UiIconSource = { type: 'apolo', icon: ShieldCheckIcon, size: 28 };
@@ -64,42 +66,47 @@ export class OpportunitiesBoardComponent implements OnChanges {
 
   readonly globalLoading = computed(() => this.columns().some(c => c.loading));
 
-  ngOnChanges(_: SimpleChanges) {
-    this.load();
-  }
+  private readonly loadTrigger$ = new Subject<void>();
 
-  private load() {
-    this.columns.update(cols => cols.map(c => ({ ...c, loading: true })));
-
-    const requests = STATUS_ORDER.reduce((acc, status) => {
-      acc[status] = this.oppService.list({
-        ...this.filters,
-        status,
-        page: 1,
-        pageSize: PAGE_SIZE_PER_COLUMN,
-      });
-      return acc;
-    }, {} as Record<OpportunityStatus, ReturnType<OpportunityService['list']>>);
-
-    forkJoin(requests).subscribe({
+  constructor() {
+    this.loadTrigger$.pipe(
+      debounceTime(0),
+      switchMap(() => {
+        this.columns.update(cols => cols.map(c => ({ ...c, loading: true })));
+        const requests = STATUS_ORDER.reduce((acc, status) => {
+          acc[status] = this.oppService.list({
+            ...this.filters, status, page: 1, pageSize: PAGE_SIZE_PER_COLUMN,
+          });
+          return acc;
+        }, {} as Record<OpportunityStatus, ReturnType<OpportunityService['list']>>);
+        return forkJoin(requests);
+      }),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
       next: results => {
-        const next = STATUS_ORDER.map(status => {
-          const r = results[status];
-          return {
-            status,
-            label:      OPPORTUNITY_STATUS_LABEL[status],
-            loading:    false,
-            items:      r.items,
-            totalCount: r.totalCount,
-          } as BoardColumn;
-        });
-        this.columns.set(next);
+        this.columns.set(STATUS_ORDER.map(status => ({
+          status,
+          label:      OPPORTUNITY_STATUS_LABEL[status],
+          loading:    false,
+          items:      results[status].items,
+          totalCount: results[status].totalCount,
+        })));
         this.emitCounts();
       },
       error: () => {
         this.columns.update(cols => cols.map(c => ({ ...c, loading: false })));
       },
     });
+  }
+
+  ngOnInit(): void {
+    this.loadTrigger$.next();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['filters'] && !changes['filters'].isFirstChange()) {
+      this.loadTrigger$.next();
+    }
   }
 
   private emitCounts() {
@@ -225,5 +232,5 @@ export class OpportunitiesBoardComponent implements OnChanges {
     this.cardOpen.emit(opportunity);
   }
 
-  reload() { this.load(); }
+  reload() { this.loadTrigger$.next(); }
 }
