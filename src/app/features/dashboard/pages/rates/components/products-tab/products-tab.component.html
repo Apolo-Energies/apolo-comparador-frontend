@@ -1,0 +1,300 @@
+<!-- Cell templates (referenced via ViewChild) -->
+<ng-template #commTpl let-row>
+  @if (row.commissionPercentage !== null) {
+    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-medium">
+      <lucide-icon [img]="PercentIcon" [size]="11" />
+      {{ row.commissionPercentage }}%
+    </span>
+  } @else {
+    <span class="text-xs text-muted-foreground">—</span>
+  }
+</ng-template>
+
+<ng-template #availabilityTpl let-row>
+  <div class="flex items-center justify-center gap-2">
+    <span class="text-xs text-muted-foreground w-14 text-right select-none">
+      {{ row.isAvailable ? 'Activo' : 'Inactivo' }}
+    </span>
+    <button
+      type="button"
+      class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed"
+      [class]="row.isAvailable ? 'bg-green-500' : 'bg-muted-foreground/30'"
+      [disabled]="savingIds().has(row.id)"
+      (click)="requestToggle(row)"
+      [title]="row.isAvailable ? 'Desactivar' : 'Activar'"
+    >
+      <span
+        class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200"
+        [class]="row.isAvailable ? 'translate-x-4' : 'translate-x-0'"
+      ></span>
+    </button>
+  </div>
+</ng-template>
+
+<ng-template #actionsTpl let-row>
+  <div class="flex items-center justify-center gap-2">
+    <ui-button label="Editar"   variant="ghost" size="sm" (click)="openEdit(row)" />
+    <ui-button label="Eliminar" variant="ghost" size="sm" (click)="requestDelete(row)" />
+  </div>
+</ng-template>
+
+<!-- ── Main content ──────────────────────────────────────────── -->
+<ui-alert />
+
+<div class="space-y-4">
+
+  <!-- Filter + Add button -->
+  <div class="bg-card rounded-lg border border-border p-4">
+    <div class="flex items-center justify-between gap-4 flex-wrap">
+      <div class="flex items-center gap-2 flex-wrap">
+        <button
+          class="px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
+          [class]="filterTariffId() === null
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-muted-foreground hover:text-foreground'"
+          (click)="filterTariffId.set(null)"
+        >
+          Todas
+        </button>
+        @for (t of tariffs(); track t.id) {
+          <button
+            class="px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
+            [class]="filterTariffId() === t.id
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-muted-foreground hover:text-foreground'"
+            (click)="filterTariffId.set(t.id)"
+          >
+            {{ t.code }}
+          </button>
+        }
+      </div>
+      <ui-button label="Agregar producto" size="sm" (click)="openCreate()" />
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="rounded-lg border border-border overflow-hidden">
+    @if (filteredRows().length === 0) {
+      <div class="flex flex-col items-center justify-center py-12 text-center bg-card">
+        <lucide-icon [img]="PackageOpenIcon" [size]="30" class="text-muted-foreground mb-2" />
+        <p class="text-sm text-muted-foreground">Sin productos</p>
+        <p class="text-xs text-muted-foreground mt-0.5">
+          Haz clic en "Agregar producto" para empezar
+        </p>
+      </div>
+    } @else {
+      <lib-data-table
+        [data]="filteredRows()"
+        [columns]="columns"
+        rowKey="id"
+        [borderTop]="false"
+        [borderBottom]="false"
+        [borderLeft]="false"
+        [borderRight]="false"
+        [roundedTopLeft]="false"
+        [roundedTopRight]="false"
+        [roundedBottomLeft]="false"
+        [roundedBottomRight]="false"
+      />
+    }
+  </div>
+
+</div>
+
+<!-- ── Create dialog ──────────────────────────────────────────── -->
+<ui-dialog
+  [open]="createDialog()"
+  [closeable]="true"
+  maxWidth="max-w-lg"
+  (openChange)="createDialog.set($event)"
+>
+  <div class="p-6 space-y-6">
+    <div>
+      <h2 class="text-lg font-semibold text-foreground">Nuevo Producto</h2>
+      <p class="text-sm text-muted-foreground mt-0.5">
+        Selecciona la tarifa y configura el producto.
+      </p>
+    </div>
+    <div class="flex flex-col gap-6">
+      <div>
+        <ui-select
+          label="Tarifa"
+          placeholder="Seleccionar tarifa..."
+          [value]="createTariffId()"
+          [options]="tariffOptions()"
+          (valueChange)="onCreateTariffChange($event)"
+        />
+      </div>
+      <div>
+        <ui-input
+          label="Nombre del producto"
+          placeholder="Ej. Producto Luz Estable"
+          [value]="createName()"
+          (valueChange)="createName.set($event)"
+        />
+      </div>
+      <div>
+        <p class="text-sm font-medium text-foreground mb-3">Precios por período (€/kWh)</p>
+        <div class="grid grid-cols-3 gap-3">
+          @for (i of periodIndexes(); track i) {
+            <div>
+              <ui-input
+                [label]="'P' + (i + 1)"
+                type="number"
+                placeholder="0.000000"
+                [value]="createPeriods()[i]"
+                (valueChange)="updateCreatePeriod(i, $event)"
+              />
+            </div>
+          }
+        </div>
+      </div>
+      <div>
+        <ui-input
+          label="Comisión (%)"
+          placeholder="Sin override — dejar vacío si no aplica"
+          type="number"
+          [value]="createComm()"
+          (valueChange)="createComm.set($event)"
+        />
+      </div>
+    </div>
+    <div class="flex items-center gap-3 pt-2">
+      <ui-button
+        label="Crear producto"
+        size="md"
+        [disabled]="creating() || !createName().trim() || !createTariffId()"
+        (click)="submitCreate()"
+      />
+      <ui-button label="Cancelar" variant="outline" size="md" (click)="createDialog.set(false)" />
+    </div>
+  </div>
+</ui-dialog>
+
+<!-- ── Edit dialog ────────────────────────────────────────────── -->
+<ui-dialog
+  [open]="editDialog()"
+  [closeable]="true"
+  maxWidth="max-w-lg"
+  (openChange)="editDialog.set($event)"
+>
+  @if (editRow(); as row) {
+    <div class="p-6 space-y-6">
+      <div>
+        <h2 class="text-lg font-semibold text-foreground">Editar producto</h2>
+        <p class="text-sm text-muted-foreground mt-0.5">Modifica el nombre, los períodos o la comisión.</p>
+      </div>
+      <div class="flex flex-col gap-6">
+        <div>
+          <ui-input
+            label="Nombre del producto"
+            [value]="editName()"
+            (valueChange)="editName.set($event)"
+          />
+        </div>
+        <div>
+          <p class="text-sm font-medium text-foreground mb-3">Precios por período (€/kWh)</p>
+          <div class="grid grid-cols-3 gap-3">
+            @for (i of editPeriodIndexes(); track i) {
+              <div>
+                <ui-input
+                  [label]="'P' + (i + 1)"
+                  type="number"
+                  placeholder="0.000000"
+                  [value]="editPeriods()[i]"
+                  (valueChange)="updateEditPeriod(i, $event)"
+                />
+              </div>
+            }
+          </div>
+        </div>
+        <div>
+          <ui-input
+            label="Comisión (%)"
+            placeholder="Sin override — dejar vacío para quitarla"
+            type="number"
+            [value]="editComm()"
+            (valueChange)="editComm.set($event)"
+          />
+        </div>
+      </div>
+      <div class="flex items-center gap-3 pt-2">
+        <ui-button
+          label="Guardar"
+          size="md"
+          [disabled]="savingIds().has(row.id) || !editName().trim()"
+          (click)="submitEdit(row)"
+        />
+        <ui-button label="Cancelar" variant="outline" size="md" (click)="editDialog.set(false)" />
+      </div>
+    </div>
+  }
+</ui-dialog>
+
+<!-- ── Delete confirmation dialog ──────────────────────────────── -->
+<ui-dialog
+  [open]="deleteDialog()"
+  [closeable]="true"
+  maxWidth="max-w-sm"
+  (openChange)="deleteDialog.set($event)"
+>
+  @if (deleteRow(); as row) {
+    <div class="p-6 space-y-4">
+      <div>
+        <h2 class="text-lg font-semibold text-foreground">Eliminar producto</h2>
+        <p class="text-sm text-muted-foreground mt-2 leading-relaxed">
+          Vas a eliminar <strong class="text-foreground">{{ row.name }}</strong>.
+          Se eliminarán también todos sus registros asociados (períodos, precios, etc.).
+          Esta acción no se puede deshacer.
+        </p>
+      </div>
+      <div class="flex items-center gap-3">
+        <ui-button
+          label="Sí, eliminar"
+          variant="destructive"
+          size="md"
+          [disabled]="savingIds().has(row.id)"
+          (click)="deleteProduct(row)"
+        />
+        <ui-button label="Cancelar" variant="outline" size="md" (click)="deleteDialog.set(false)" />
+      </div>
+    </div>
+  }
+</ui-dialog>
+
+<!-- ── Confirm toggle dialog ──────────────────────────────────── -->
+<ui-dialog
+  [open]="confirmDialog()"
+  [closeable]="true"
+  maxWidth="max-w-sm"
+  (openChange)="confirmDialog.set($event)"
+>
+  @if (pendingToggleRow(); as row) {
+    <div class="p-6 space-y-4">
+      <div>
+        <h2 class="text-lg font-semibold text-foreground">
+          {{ row.isAvailable ? 'Desactivar producto' : 'Activar producto' }}
+        </h2>
+        <p class="text-sm text-muted-foreground mt-2 leading-relaxed">
+          @if (row.isAvailable) {
+            Al desactivar <strong class="text-foreground">{{ row.name }}</strong>,
+            este producto no estará visible para realizar comparativas.
+          } @else {
+            Al activar <strong class="text-foreground">{{ row.name }}</strong>,
+            este producto será visible para realizar comparativas.
+          }
+        </p>
+      </div>
+      <div class="flex items-center gap-3 pt-1">
+        <ui-button
+          [label]="row.isAvailable ? 'Sí, desactivar' : 'Sí, activar'"
+          [variant]="row.isAvailable ? 'destructive' : 'default'"
+          size="md"
+          [disabled]="savingIds().has(row.id)"
+          (click)="confirmToggle(row)"
+        />
+        <ui-button label="Cancelar" variant="outline" size="md" (click)="confirmDialog.set(false)" />
+      </div>
+    </div>
+  }
+</ui-dialog>

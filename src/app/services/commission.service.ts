@@ -72,4 +72,10 @@ export class CommissionService {
         })
       ).subscribe();
   }
+
+  loadForUser(userId: string) {
+    this.http.get<{ result: UserCommission }>(`${environment.apiUrl}/user-commission/${userId}`)
+      .pipe(tap(res => this.commission.set(res.result?.commissionType?.percentage ?? 0)))
+      .subscribe();
+  }
 }

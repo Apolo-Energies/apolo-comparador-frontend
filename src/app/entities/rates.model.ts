@@ -2,7 +2,7 @@
  * Types and utilities for Rates Management
  */
 
-export type TabType = 'provider' | 'tariffs' | 'omie' | 'boe';
+export type TabType = 'provider' | 'products' | 'tariffs' | 'omie' | 'boe';
 
 export interface TariffSummary {
   code: string;

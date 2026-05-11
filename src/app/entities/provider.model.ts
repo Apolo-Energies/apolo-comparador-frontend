@@ -49,11 +49,13 @@ export interface OmieDistributionPeriod {
 }
 
 export interface Product {
-  id:       number;
-  name:     string;
-  tariffId: number;
-  tariff:   Tariff | null;
-  periods:  ProductPeriod[];
+  id:                   number;
+  name:                 string;
+  tariffId:             number;
+  tariff:               Tariff | null;
+  periods:              ProductPeriod[];
+  isAvailable?:         boolean;
+  commissionPercentage?: number | null;
 }
 
 export interface ProductPeriod {
