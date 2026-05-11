@@ -69,11 +69,14 @@ export class Comparator {
 
   // ── static config ──────────────────────────────────────────────────────────
 
-  readonly productsByTariff: ComparatorProductsByTariff = {
-    '2.0TD': ['Index Base', 'Index Coste', 'Index Promo', 'Fijo Snap', 'Fijo Snap Mini', 'Passpool'],
-    '3.0TD': ['Index Base', 'Index Coste', 'Index Promo', 'Fijo Fácil', 'Fijo Estable', 'Fijo Dyn', 'Promo 3M Pro'],
-    '6.1TD': ['Index Base', 'Index Coste', 'Index Promo', 'Fijo Fácil', 'Fijo Estable', 'Fijo Dyn', 'Promo 3M Pro'],
-  };
+  readonly productsByTariff = computed<ComparatorProductsByTariff>(() =>
+    Object.fromEntries(
+      this.comparatorService.tariffs().map(t => [
+        t.code,
+        t.products.filter(p => p.isAvailable).map(p => p.name),
+      ])
+    )
+  );
 
   readonly feeLockedProducts = [
     'Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi',
@@ -91,6 +94,10 @@ export class Comparator {
     this.selectedUserId.set(selectedId);
     const userId = selectedId || this.auth.currentUser()?.id || '';
 
+    if (this.isMaster()) {
+      this.commissionService.loadForUser(String(userId));
+    }
+
     this.comparatorService.upload(event.file, String(userId)).subscribe({
       next: (res) => {
         this.fileId.set(res.fileId);
@@ -106,7 +113,7 @@ export class Comparator {
     const ocr = this.ocrResult();
     if (!ocr) return;
 
-    const base = this.comparatorService.getComisionBase(form.producto);
+    const base = this.comparatorService.getComisionBase(form.producto, form.tariff);
     this.comisionBase.set(base);
 
     // For non-referrers always override comisionEnergia with the fresh base

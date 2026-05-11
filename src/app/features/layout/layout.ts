@@ -106,12 +106,13 @@ export class Layout {
 
     const ajustesChildren: SidebarChildItem[] = isColaborador && isApolo
       ? [
-          { title: 'My Commercials', url: '/dashboard/settings/my-comercials',       access: ['settings.colaborador:view'] },
+          { title: 'Comerciales', url: '/dashboard/settings/my-comercials',       access: ['settings.colaborador:view'] },
           { title: 'Commissions',    url: '/dashboard/settings/sub-user-commissions', access: ['settings.colaborador:view'] },
         ]
       : [
           { title: 'Usuarios', url: '/dashboard/settings/users',      access: ['settings.users:view'] },
           { title: 'Comisión', url: '/dashboard/settings/commission', access: ['settings.commission:view'] },
+          { title: 'Tarifas', url: '/dashboard/tariffs', access: ['support:view'] },
         ];
 
     return [
@@ -161,7 +162,7 @@ export class Layout {
             icon: { type: 'apolo', icon: SupportIcon, size: 20 },
             url: '/dashboard/support',
             access: ['support:view'],
-          },
+          }
         ],
       },
     ];

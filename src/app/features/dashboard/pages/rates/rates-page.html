@@ -34,6 +34,18 @@
 
     <button
       class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all rounded-md"
+      [class.bg-primary]="activeTab() === 'products'"
+      [class.text-primary-foreground]="activeTab() === 'products'"
+      [class.text-muted-foreground]="activeTab() !== 'products'"
+      [class.hover:text-foreground]="activeTab() !== 'products'"
+      (click)="setActiveTab('products')"
+    >
+      <lucide-icon [img]="CalculatorIcon" [size]="16" />
+      <span>Productos</span>
+    </button>
+
+    <button
+      class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all rounded-md"
       [class.bg-primary]="activeTab() === 'tariffs'"
       [class.text-primary-foreground]="activeTab() === 'tariffs'"
       [class.text-muted-foreground]="activeTab() !== 'tariffs'"
@@ -93,6 +105,9 @@
     @switch (activeTab()) {
       @case ('provider') {
         <app-provider-tab [provider]="providerData()!" />
+      }
+      @case ('products') {
+        <app-products-tab [tariffs]="providerData()!.tariffs" />
       }
       @case ('tariffs') {
         <app-tariffs-tab [tariffs]="providerData()!.tariffs" />

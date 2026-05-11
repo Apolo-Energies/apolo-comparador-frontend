@@ -6,10 +6,11 @@ import { TabType } from '../../../../entities/rates.model';
 import { LucideAngularModule, Building, Calculator, TrendingUp, Zap, Download } from 'lucide-angular';
 
 // Tab components
-import { ProviderTabComponent } from './components/provider-tab.component';
-import { TariffsTabComponent } from './components/tariffs-tab.component';
-import { OmieDistributionTabComponent } from './components/omie-distribution-tab.component';
-import { BoePowerTabComponent } from './components/boe-power-tab.component';
+import { ProviderTabComponent } from './components/provider-tab/provider-tab.component';
+import { ProductsTabComponent } from './components/products-tab/products-tab.component';
+import { TariffsTabComponent } from './components/tariffs-tab/tariffs-tab.component';
+import { OmieDistributionTabComponent } from './components/omie-distribution-tab/omie-distribution-tab.component';
+import { BoePowerTabComponent } from './components/boe-power-tab/boe-power-tab.component';
 
 @Component({
   selector: 'app-rates-page',
@@ -17,6 +18,7 @@ import { BoePowerTabComponent } from './components/boe-power-tab.component';
   imports: [
     LucideAngularModule,
     ProviderTabComponent,
+    ProductsTabComponent,
     TariffsTabComponent,
     OmieDistributionTabComponent,
     BoePowerTabComponent,

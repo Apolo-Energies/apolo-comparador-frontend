@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ButtonComponent } from '@apolo-energies/ui';
 import { ApoloIcons, chevronRightIcon, InfoIcon, XIcon, UiIconSource } from '@apolo-energies/icons';
+import { environment } from '../../../../../environments/environment';
 
 interface SupportTopic {
   title:     string;
@@ -68,6 +69,12 @@ const TOPICS: SupportTopic[] = [
   },
 ];
 
+// TODO: reemplazar con los números reales (formato: código país + número, sin + ni espacios)
+const WHATSAPP_NUMBERS: Record<string, string> = {
+  renova:  'PENDIENTE_RENOVAE',
+  coexpal: 'PENDIENTE_COEXPAL',
+};
+
 @Component({
   selector: 'app-support-page',
   standalone: true,
@@ -83,7 +90,10 @@ export class SupportPageComponent {
   readonly arrowIcon: UiIconSource = { type: 'apolo', icon: chevronRightIcon, size: 14 };
   readonly closeIcon: UiIconSource = { type: 'apolo', icon: XIcon,            size: 14 };
 
-readonly selected = signal<SupportTopic | null>(null);
+  readonly isApolo     = environment.clientName === 'apolo';
+  readonly whatsappUrl = `https://wa.me/${WHATSAPP_NUMBERS[environment.clientName] ?? ''}`;
+
+  readonly selected = signal<SupportTopic | null>(null);
 
   safeUrl(url: string): SafeResourceUrl {
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);

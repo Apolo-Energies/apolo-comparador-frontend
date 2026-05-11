@@ -16,6 +16,7 @@ import { FAST_DISCHARGE_ROUTES } from './pages/fast-discharge/fast-discharge.rou
 import { SubUserCommissionsPage } from './pages/sub-user-commissions/sub-user-commissions';
 import { MyComercialsPage } from './pages/my-commercials/my-commercials';
 import { SupportPageComponent } from './pages/support/support-page';
+import { RatesPageComponent } from './pages/rates/rates-page';
 import { SubUser } from '../../services/sub-users.service';
 
 export const DASHBOARD_ROUTES: Routes = [
@@ -78,7 +79,8 @@ export const DASHBOARD_ROUTES: Routes = [
       },
 
       // Master only
-      { path: 'support', component: SupportPageComponent },
+      { path: 'support',  component: SupportPageComponent },
+      { path: 'tariffs',  component: RatesPageComponent, canActivate: [permissionGuard], data: { roles: ['Master'] } },
 
       { path: 'forbidden', component: ForbiddenComponent },
     ],
