@@ -59,7 +59,17 @@ export class ComparatorService {
     ).subscribe();
   }
 
-  getComisionBase(producto: string): number {
+  getComisionBase(producto: string, tariffCode?: string): number {
+    // Product-level commission override: if the product has a specific commission set, use it
+    if (tariffCode) {
+      const tariff  = this.tariffs().find(t => t.code === tariffCode);
+      const product = tariff?.products.find(p => p.name === producto);
+      if (product?.commissionPercentage != null) {
+        return product.commissionPercentage / 100;
+      }
+    }
+
+    // Existing logic when no product commission is set
     if (SNAP_PRODUCTS.includes(producto)) {
       return SNAP_ENERGIA[producto] ?? 0;
     }

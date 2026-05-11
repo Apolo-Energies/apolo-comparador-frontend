@@ -2,8 +2,25 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs';
+import { Product } from '../entities/provider.model';
 
 // Request types
+export interface CreateProductPeriod {
+  period: string;
+  value:  number;
+}
+
+export interface CreateProductRequest {
+  name:     string;
+  tariffId: number;
+  periods:  CreateProductPeriod[];
+}
+
+export interface UpdateProductRequest {
+  name?:    string;
+  periods?: CreateProductPeriod[];
+}
+
 export interface UpdateProductPeriodRequest {
   period: string;  // "P1", "P2", etc.
   value: number;
@@ -25,6 +42,26 @@ export interface UpdateBoePowerPeriodRequest {
 @Injectable({ providedIn: 'root' })
 export class RatesService {
   private http = inject(HttpClient);
+
+  createProduct(data: CreateProductRequest): Observable<Product> {
+    return this.http.post<Product>(`${environment.apiUrl}/products`, data);
+  }
+
+  updateProduct(id: number, data: UpdateProductRequest): Observable<void> {
+    return this.http.put<void>(`${environment.apiUrl}/products/${id}`, data);
+  }
+
+  patchAvailability(id: number, isAvailable: boolean): Observable<void> {
+    return this.http.patch<void>(`${environment.apiUrl}/products/availability/${id}`, { isAvailable });
+  }
+
+  patchCommission(id: number, percentage: number | null): Observable<void> {
+    return this.http.patch<void>(`${environment.apiUrl}/products/commission/${id}`, { percentage });
+  }
+
+  deleteProduct(id: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/products/${id}`);
+  }
 
   /**
    * Actualizar un período individual de producto

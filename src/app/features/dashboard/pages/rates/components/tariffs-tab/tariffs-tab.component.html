@@ -1,0 +1,89 @@
+<div class="space-y-4">
+  <!-- Selectores de Tarifa y Producto -->
+  <div class="bg-card rounded-lg border border-border p-5">
+    <div class="grid grid-cols-1 gap-4" [class.md:grid-cols-2]="selectedTariffId() !== null">
+      <!-- Selector de Tarifa -->
+      <div>
+        <label class="block text-sm font-medium text-foreground mb-3">Seleccionar Tarifa</label>
+        <select
+          class="w-full px-4 py-2 bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          [ngModel]="selectedTariffId()"
+          (ngModelChange)="onTariffChange($event)"
+        >
+          <option [value]="null">Mostrar todos</option>
+          @for (tariff of tariffs(); track tariff.id) {
+            <option [value]="tariff.id">{{ tariff.code }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Selector de Producto (solo visible cuando hay tarifa seleccionada) -->
+      @if (selectedTariffId() !== null) {
+        <div>
+          <label class="block text-sm font-medium text-foreground mb-3">Seleccionar Producto</label>
+          <select
+            class="w-full px-4 py-2 bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            [ngModel]="selectedProductId()"
+            (ngModelChange)="onProductChange($event)"
+          >
+            <option [value]="null">Mostrar todos los productos</option>
+            @for (product of availableProducts(); track product.id) {
+              <option [value]="product.id">{{ product.name }}</option>
+            }
+          </select>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Lista de productos -->
+  <div class="space-y-4">
+    @for (tariff of filteredTariffs(); track tariff.id) {
+      @for (product of getFilteredProducts(tariff); track product.id) {
+        <div class="bg-card rounded-lg border border-border p-5">
+          <!-- Header del producto -->
+          <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 bg-card rounded">
+              <lucide-icon [img]="CalculatorIcon" [size]="20" class="text-white" />
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-foreground">{{ tariff.code }}</h3>
+              <p class="text-sm text-muted-foreground">{{ product.name }}</p>
+            </div>
+          </div>
+
+          <!-- Períodos -->
+          <div>
+            <p class="text-sm text-muted-foreground mb-3">Periods (€/kWh)</p>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              @for (period of sortedPeriods(product.periods); track period.id) {
+                <app-period-editor
+                  [period]="period.period"
+                  [value]="period.value"
+                  [isEditing]="editingPeriod() === period.id"
+                  [isSaving]="isSaving()"
+                  [decimals]="6"
+                  step="0.000001"
+                  (edit)="startEdit(period)"
+                  (save)="saveEdit(product, period, $event)"
+                  (cancel)="cancelEdit()"
+                  (delete)="deleteValue(product, period)"
+                />
+              }
+            </div>
+          </div>
+        </div>
+      }
+    }
+  </div>
+
+  @if (filteredTariffs().length === 0) {
+    <div class="text-center py-12 bg-card rounded-lg border border-border">
+      <p class="text-muted-foreground">No hay tarifas para mostrar</p>
+    </div>
+  } @else if (availableProducts().length === 0) {
+    <div class="text-center py-12 bg-card rounded-lg border border-border">
+      <p class="text-muted-foreground">No hay productos disponibles para la tarifa seleccionada</p>
+    </div>
+  }
+</div>
