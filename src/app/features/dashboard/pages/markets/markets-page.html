@@ -1,0 +1,56 @@
+<div class="space-y-6">
+  <header class="space-y-1">
+    <h1 class="text-2xl font-semibold text-foreground">Mercados</h1>
+    <p class="text-sm text-muted-foreground">Cotizaciones spot y evolución reciente del mercado energético.</p>
+  </header>
+
+  @if (error()) {
+    <div class="rounded-lg border border-red-500/30 bg-red-500/5 text-red-700 px-4 py-3 text-sm">
+      {{ error() }}
+    </div>
+  }
+
+  <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+    <app-market-kpi-card
+      label="Gas"
+      subtitle="Precio Mibgas Spot"
+      currentLabel="Último precio - Hoy"
+      [loading]="kpisLoading()"
+      [spot]="gasSpot()" />
+    <app-market-kpi-card
+      label="Electricidad"
+      subtitle="Precio OMIE"
+      currentLabel="Media del último día - Hoy"
+      [loading]="kpisLoading()"
+      [spot]="electricitySpot()" />
+    <app-market-kpi-card
+      label="CO2"
+      subtitle="Precio EU ETS"
+      currentLabel="Último precio - Ayer"
+      [loading]="kpisLoading()"
+      [spot]="co2Spot()" />
+    <app-market-kpi-card
+      label="Petróleo"
+      subtitle="Precio Brent"
+      currentLabel="Último precio - Ayer"
+      [loading]="kpisLoading()"
+      [spot]="brentSpot()" />
+  </section>
+
+  <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <app-market-line-chart
+      title="Electricidad Futuros"
+      subtitle="Últimos 90 días"
+      legend="OMIE Spot"
+      color="#10b981"
+      [loading]="electricityLoading()"
+      [series]="electricitySeries()" />
+    <app-market-line-chart
+      title="Mibgas Futuros"
+      subtitle="Últimos 90 días"
+      legend="MIBGAS Spot"
+      color="#f59e0b"
+      [loading]="gasLoading()"
+      [series]="gasSeries()" />
+  </section>
+</div>

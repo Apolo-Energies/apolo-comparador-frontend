@@ -26,6 +26,7 @@ export const environment = {
     contracts: true,
     userDetail: true,
     opportunities: true,
+    markets: true,
     support: false,
   },
 };
