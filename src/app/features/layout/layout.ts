@@ -18,11 +18,12 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   'Colaborador': [
     'comparator:view',
     'sips:view',
+    'markets:view',
     'settings:view',
     'settings.colaborador:view',
   ],
-  'Referenciador': ['comparator:view', 'sips:view'],
-  'Tester':        ['comparator:view', 'sips:view'],
+  'Referenciador': ['comparator:view', 'sips:view', 'markets:view'],
+  'Tester':        ['comparator:view', 'sips:view', 'markets:view'],
 };
 
 @Component({
@@ -146,6 +147,12 @@ export class Layout {
             url: '/dashboard/sips',
             access: ['sips:view'],
           },
+          ...(environment.features.markets ? [{
+            title: 'Mercados',
+            icon: { type: 'apolo' as const, icon: PieIcon, size: 20 },
+            url: '/dashboard/markets',
+            access: ['markets:view'],
+          }] : []),
         ],
       },
       {
