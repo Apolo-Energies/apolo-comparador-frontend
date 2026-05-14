@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
+import { ButtonComponent } from '@apolo-energies/ui';
 import { SipsInfoCardComponent } from './components/sips-info-card.component';
 import { DownloadIcon, UiIconSource } from '@apolo-energies/icons';
 import { SipsService } from '../../../../services/sips.service';
@@ -66,7 +66,6 @@ function buildPowerData(ps: SipsPs): PowerBarDatum[] {
   standalone: true,
   imports: [
     ButtonComponent,
-    InputFieldComponent,
     SipsInfoCardComponent,
     SipsDonutChartComponent,
     SipsPowerChartComponent,
@@ -85,7 +84,36 @@ export class SipsPageComponent {
 
   readonly cups = signal('');
   readonly loading = signal(false);
+  readonly exporting = signal(false);
   readonly error = signal<string | null>(null);
+
+  // Format español: ES + 16 dígitos + 2 alfanuméricos (con sufijo opcional de control).
+  // Lo dejamos amplio para no rechazar CUPS válidos atípicos; el backend valida realmente.
+  private static readonly CUPS_PATTERN = /^ES[0-9]{16}[A-Z0-9]{2}[A-Z0-9]{0,2}$/i;
+
+  readonly parsedCups = computed(() => {
+    const raw = this.cups();
+    if (!raw.trim()) return { valid: [] as string[], invalid: 0 };
+    const tokens = raw
+      .split(/[\n,;]+/)
+      .map(t => t.trim().toUpperCase())
+      .filter(t => t.length > 0);
+    const seen = new Set<string>();
+    const valid: string[] = [];
+    let invalid = 0;
+    for (const t of tokens) {
+      if (!SipsPageComponent.CUPS_PATTERN.test(t)) { invalid++; continue; }
+      if (seen.has(t)) continue;
+      seen.add(t);
+      valid.push(t);
+    }
+    return { valid, invalid };
+  });
+
+  readonly validCount = computed(() => this.parsedCups().valid.length);
+  readonly invalidCount = computed(() => this.parsedCups().invalid);
+  readonly isSingle = computed(() => this.validCount() === 1);
+  readonly isMulti = computed(() => this.validCount() > 1);
 
   private readonly rawPs = signal<SipsPs | null>(null);
   private readonly rawConsumos = signal<SipsConsumo[]>([]);
@@ -111,9 +139,17 @@ export class SipsPageComponent {
   readonly showCharts = computed(() => !!this.rawPs() && this.donutData().length > 0);
   readonly hasData = computed(() => !!this.rawPs());
 
+  onCupsInput(el: HTMLTextAreaElement): void {
+    this.cups.set(el.value);
+    // Auto-grow: shrink first to let scrollHeight recalc, then size to content.
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 240)}px`;
+  }
+
   onConsultar(): void {
-    const cups = this.cups().trim();
-    if (!cups) return;
+    const valid = this.parsedCups().valid;
+    if (valid.length !== 1) return;
+    const cups = valid[0];
 
     this.loading.set(true);
     this.error.set(null);
@@ -133,20 +169,60 @@ export class SipsPageComponent {
     });
   }
 
-  onExport(): void {
-    const cups = this.cups().trim();
-    if (!cups) return;
+  onExportClick(): void {
+    const valid = this.parsedCups().valid;
+    if (valid.length === 0) return;
+    if (valid.length === 1) {
+      this.exportSingle(valid[0]);
+    } else {
+      this.exportMulti(valid);
+    }
+  }
 
+  onExport(): void {
+    // Invocado desde la info-card de un CUPS ya consultado.
+    const ps = this.rawPs();
+    if (ps?.cups) this.exportSingle(ps.cups);
+  }
+
+  private exportSingle(cups: string): void {
+    this.exporting.set(true);
+    this.error.set(null);
     this.sipsService.downloadExcel(cups).subscribe({
       next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `sips-${cups}.xlsx`;
-        link.click();
-        URL.revokeObjectURL(url);
+        this.triggerDownload(blob, `sips-${cups}.xlsx`);
+        this.exporting.set(false);
+      },
+      error: () => {
+        this.error.set('No se pudo generar el Excel');
+        this.exporting.set(false);
       },
     });
+  }
+
+  private exportMulti(cups: string[]): void {
+    this.exporting.set(true);
+    this.error.set(null);
+    this.sipsService.downloadMultiExcel(cups).subscribe({
+      next: (blob) => {
+        const stamp = new Date().toISOString().slice(0, 10);
+        this.triggerDownload(blob, `multicups-${stamp}.xlsx`);
+        this.exporting.set(false);
+      },
+      error: () => {
+        this.error.set('No se pudo generar el Excel multi-CUPS');
+        this.exporting.set(false);
+      },
+    });
+  }
+
+  private triggerDownload(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   onComparativa(): void {
