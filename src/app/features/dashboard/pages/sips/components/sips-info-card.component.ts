@@ -3,17 +3,6 @@ import { ButtonComponent } from '@apolo-energies/ui';
 import { DownloadIcon, XIcon, filterIcon, UiIconSource } from '@apolo-energies/icons';
 import { SipsPs } from '../../../../../entities/sips.model';
 
-const TARIFF_LABELS: Record<string, string> = {
-  "018": "2.0TD",
-  "019": "3.0TD",
-  "020": "6.1TD",
-};
-
-function getTarifaLabel(code?: string): string {
-  if (!code) return '-';
-  return TARIFF_LABELS[code] ?? code;
-}
-
 function wToKw(w?: number): string {
   if (!w) return '0';
   return (w / 1000).toFixed(2);
@@ -98,6 +87,6 @@ export class SipsInfoCardComponent {
   readonly downloadIconSrc: UiIconSource = { type: 'apolo', icon: DownloadIcon, size: 14 };
   readonly filterIconSrc:   UiIconSource = { type: 'apolo', icon: filterIcon,   size: 14 };
 
-  readonly tarifa = computed(() => getTarifaLabel(this.psData().codigoTarifaATREnVigor));
+  readonly tarifa = computed(() => this.psData().codigoTarifaATREnVigor ?? '-');
   readonly potMax = computed(() => wToKw(this.psData().potenciaMaximaBIEW));
 }

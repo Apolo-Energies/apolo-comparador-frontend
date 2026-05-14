@@ -16,4 +16,8 @@ export class SipsService {
   downloadExcel(cups: string): Observable<Blob> {
     return this.http.post(`${environment.apiUrl}/sips/sips-excel`, { cups }, { responseType: 'blob' });
   }
+
+  downloadMultiExcel(cups: string[]): Observable<Blob> {
+    return this.http.post(`${environment.apiUrl}/sips/multi-excel`, { cups }, { responseType: 'blob' });
+  }
 }
