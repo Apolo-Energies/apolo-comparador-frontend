@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { AuthService } from '@apolo-energies/auth';
@@ -16,6 +17,17 @@ import {
 } from '../../../comparator/comparator.models';
 
 interface TramiteOption { value: TramiteType; label: string; }
+interface PriceRow {
+  periodo:        number | string;
+  energiaBase:    number;
+  energiaOferta:  number;
+  potenciaOferta: number;
+}
+interface CalcFull {
+  ref:            ComparadorResult;
+  result:         ComparadorResult;
+  referenceTotal: number;
+}
 
 const TRAMITE_OPTIONS: TramiteOption[] = [
   { value: 'ALTA_NUEVA',      label: 'Alta nueva'      },
@@ -36,14 +48,13 @@ const fmt2 = (n: number) =>
 
 @Component({
   selector: 'app-fd-select-product',
-  imports: [ButtonComponent, InputFieldComponent, SelectFieldComponent, SliderComponent],
+  imports: [DecimalPipe, ButtonComponent, InputFieldComponent, SelectFieldComponent, SliderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex items-center justify-center min-h-full px-4 py-8">
       <div class="w-full max-w-2xl bg-card border border-border rounded-lg shadow-xl px-8 py-8 space-y-6"
            style="max-height: 90vh; overflow-y: auto;">
 
-        <!-- Header -->
         <div>
           <p class="text-xl font-bold text-foreground">Selecciona el Producto</p>
           <p class="text-sm text-muted-foreground">Elige el tipo de trámite y configura las condiciones del contrato.</p>
@@ -51,7 +62,7 @@ const fmt2 = (n: number) =>
 
         <form (submit)="$event.preventDefault(); onSubmit()" class="space-y-6">
 
-          <!-- Tramite type multi-select pills -->
+          <!-- Tramite type pills -->
           <div class="grid grid-cols-2 gap-3">
             @for (opt of tramiteOptions; track opt.value) {
               <button
@@ -76,26 +87,31 @@ const fmt2 = (n: number) =>
               </button>
             }
           </div>
-
           @if (submitted() && tramites().length === 0) {
             <span class="text-red-500 text-xs -mt-2 block">Selecciona al menos un tipo de trámite</span>
           }
 
-          <!-- Tipo de producto + OMIE -->
-          <div class="flex gap-3 items-end">
-            <div class="flex-1">
+          <!-- Tarifa + Tipo de producto + OMIE -->
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <ui-select
+                label="Tarifa"
+                placeholder="Seleccionar..."
+                [options]="tariffOptions()"
+                [value]="localTariffCode()"
+                (valueChange)="onTariffChange($event)"
+              />
+            </div>
+            <div>
               <ui-select
                 label="Tipo de producto"
-                placeholder="Seleccionar producto..."
+                placeholder="Seleccionar..."
                 [options]="productOptions()"
                 [value]="selectedProduct()"
                 (valueChange)="selectedProduct.set($event)"
               />
-              @if (tariffCode()) {
-                <p class="text-xs text-muted-foreground mt-1">Tarifa: <span class="font-medium">{{ tariffCode() }}</span></p>
-              }
             </div>
-            <div class="w-36 shrink-0">
+            <div>
               <ui-input
                 label="OMIE (€/MWh)"
                 type="number"
@@ -126,7 +142,35 @@ const fmt2 = (n: number) =>
             <div class="flex justify-between text-xs text-muted-foreground"><span>0</span><span>100</span></div>
           </div>
 
-          <!-- Result cards — shown when SIPS data + product selected -->
+          <!-- Price table -->
+          @if (priceTable().length > 0) {
+            <div class="rounded-xl border border-border overflow-hidden">
+              <table class="w-full text-xs">
+                <thead>
+                  <tr class="bg-muted/50 text-muted-foreground">
+                    <th class="px-3 py-2 text-left font-semibold">Período</th>
+                    <th class="px-3 py-2 text-right font-semibold">E. Base<br><span class="font-normal">(€/kWh)</span></th>
+                    <th class="px-3 py-2 text-right font-semibold text-primary-button">+ Incr.<br><span class="font-normal">(€/kWh)</span></th>
+                    <th class="px-3 py-2 text-right font-semibold">E. Oferta<br><span class="font-normal">(€/kWh)</span></th>
+                    <th class="px-3 py-2 text-right font-semibold">Potencia<br><span class="font-normal">(€/kW/día)</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of priceTable(); track row.periodo) {
+                    <tr class="border-t border-border">
+                      <td class="px-3 py-2 font-semibold text-foreground">P{{ row.periodo }}</td>
+                      <td class="px-3 py-2 text-right text-muted-foreground">{{ row.energiaBase | number:'1.4-4' }}</td>
+                      <td class="px-3 py-2 text-right text-primary-button font-medium">+{{ (row.energiaOferta - row.energiaBase) | number:'1.4-4' }}</td>
+                      <td class="px-3 py-2 text-right font-semibold text-foreground">{{ row.energiaOferta | number:'1.4-4' }}</td>
+                      <td class="px-3 py-2 text-right text-foreground">{{ row.potenciaOferta | number:'1.4-4' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          <!-- Result cards -->
           @if (showCards()) {
             <div class="grid grid-cols-2 gap-3">
 
@@ -167,7 +211,7 @@ const fmt2 = (n: number) =>
                 @if (hasConsumptionData()) {
                   <p class="font-semibold text-foreground">{{ annualKwhFmt() }} kWh</p>
                 } @else {
-                  <p class="text-muted-foreground italic">Sin datos SIPS</p>
+                  <p class="text-muted-foreground italic text-xs">Sin datos SIPS</p>
                 }
               </div>
               <div class="flex-1 rounded-lg border border-border bg-card/50 px-3 py-2 text-sm">
@@ -190,7 +234,7 @@ const fmt2 = (n: number) =>
 })
 export class SelectProductPage {
   private readonly router            = inject(Router);
-  private readonly store             = inject(FastDischargeStore);
+  readonly store                     = inject(FastDischargeStore);
   private readonly providerService   = inject(ProviderService);
   private readonly commissionService = inject(CommissionService);
   private readonly auth              = inject(AuthService);
@@ -201,6 +245,7 @@ export class SelectProductPage {
   readonly feeEnergia      = signal(50);
   readonly feePotencia     = signal(50);
   readonly omiePrice       = signal(50);
+  readonly localTariffCode = signal('');
 
   readonly tramiteOptions = TRAMITE_OPTIONS;
 
@@ -209,26 +254,38 @@ export class SelectProductPage {
   constructor() {
     const userId = this.auth.currentUser()?.id;
     if (userId) this.commissionService.load(String(userId));
+
+    // Initialise from store (may have been pre-filled by SIPS in supply-point)
+    const sp = this.store.supplyPoint();
+    if (sp?.tariffType) this.localTariffCode.set(sp.tariffType);
+
+    // Restore saved product selection
+    const saved = this.store.product();
+    if (saved) {
+      this.tramites.set(saved.tramiteTypes);
+      this.selectedProduct.set(saved.tipoProducto);
+      this.feeEnergia.set(saved.feeEnergia);
+      this.feePotencia.set(saved.feePotencia);
+      this.omiePrice.set(saved.omiePrice);
+      if (saved.tariffCode) this.localTariffCode.set(saved.tariffCode);
+    }
   }
 
-  // ── tariff / product ───────────────────────────────────────────────────────
+  // ── tariff / product options ───────────────────────────────────────────────
 
-  readonly tariffCode = computed(() => this.store.supplyPoint()?.tariffType ?? '');
+  readonly tariffOptions = computed(() =>
+    (this.provider()?.tariffs ?? []).map(t => ({ value: t.code, label: t.code }))
+  );
 
-  /** Filter products to those matching the CUPS tariff type (e.g. 2.0TD) */
   readonly productOptions = computed(() => {
-    const p = this.provider();
-    const code = this.tariffCode();
+    const p    = this.provider();
+    const code = this.localTariffCode();
     if (!p) return [];
-    const tariffs = code
-      ? p.tariffs.filter(t => t.code === code)
-      : p.tariffs;
-    const filtered = tariffs.flatMap(t =>
-      t.products.filter(prod => prod.isAvailable !== false)
-        .map(prod => ({ value: prod.id.toString(), label: prod.name }))
-    );
-    return filtered.length ? filtered : p.tariffs.flatMap(t =>
-      t.products.filter(prod => prod.isAvailable !== false)
+    const tariff = code ? p.tariffs.find(t => t.code === code) : null;
+    const source = tariff ? [tariff] : p.tariffs;
+    return source.flatMap(t =>
+      t.products
+        .filter(prod => prod.isAvailable !== false)
         .map(prod => ({ value: prod.id.toString(), label: prod.name }))
     );
   });
@@ -243,17 +300,21 @@ export class SelectProductPage {
     return '';
   });
 
-  // ── SIPS data ──────────────────────────────────────────────────────────────
+  onTariffChange(code: string): void {
+    this.localTariffCode.set(code);
+    this.selectedProduct.set('');
+  }
+
+  // ── SIPS consumption ───────────────────────────────────────────────────────
+
+  readonly hasConsumptionData = computed(() => this.store.consumos().length > 0);
 
   private readonly last12 = computed<SipsConsumo[]>(() =>
     this.store.consumos().slice(0, 12)
   );
 
-  readonly hasConsumptionData = computed(() => this.store.consumos().length > 0);
-
   readonly periodosUsados = computed(() => this.last12().length);
 
-  /** Annual kWh per period P1–P6 from last 12 consumos (Wh → kWh) */
   readonly annualKwhByPeriod = computed<number[]>(() => {
     const consumos = this.last12();
     return [1, 2, 3, 4, 5, 6].map(p => {
@@ -262,29 +323,23 @@ export class SelectProductPage {
     });
   });
 
-  /** Contracted kW per period P1–P6 from supply point (already in kW) */
   readonly contractedKwByPeriod = computed<number[]>(() => {
     const sp = this.store.supplyPoint();
     if (!sp) return [0, 0, 0, 0, 0, 0];
     return [sp.p1, sp.p2, sp.p3, sp.p4, sp.p5, sp.p6].map(kw => kw ?? 0);
   });
 
-  readonly annualKwh = computed(() =>
-    this.annualKwhByPeriod().reduce((s, v) => s + v, 0)
-  );
+  readonly annualKwh = computed(() => this.annualKwhByPeriod().reduce((s, v) => s + v, 0));
+  readonly totalKw   = computed(() => this.contractedKwByPeriod().reduce((s, v) => s + v, 0));
 
-  readonly totalKw = computed(() =>
-    this.contractedKwByPeriod().reduce((s, v) => s + v, 0)
-  );
+  readonly annualKwhFmt = computed(() => Math.round(this.annualKwh()).toLocaleString('es-ES'));
+  readonly totalKwFmt   = computed(() => fmt2(this.totalKw()));
 
-  readonly annualKwhFmt  = computed(() => Math.round(this.annualKwh()).toLocaleString('es-ES'));
-  readonly totalKwFmt    = computed(() => fmt2(this.totalKw()));
-
-  // ── commission base (mirrors ComparatorService.getComisionBase) ────────────
+  // ── commission base ────────────────────────────────────────────────────────
 
   private commissionBase(): number {
     const name = this.selectedProductName();
-    const code = this.tariffCode();
+    const code = this.localTariffCode();
     const tariff  = this.provider()?.tariffs.find(t => t.code === code);
     const product = tariff?.products.find(p => p.name === name);
     if (product?.commissionPercentage != null) return product.commissionPercentage / 100;
@@ -293,46 +348,37 @@ export class SelectProductPage {
     return (this.commissionService.commission() || 0) / 100;
   }
 
-  /**
-   * Build OcrResult from SIPS annual data.
-   * dias = 365 so calcularFactura computes annual power cost correctly.
-   */
   private buildOcr(referenceTotal: number): OcrResult {
     return {
-      total:  referenceTotal,
+      total:    referenceTotal,
       energia:  this.annualKwhByPeriod().map((kwh, i) => ({ p: i + 1, activa: { kwh } })),
-      potencia: this.contractedKwByPeriod().map(kw   => ({ contratada: { kw } })),
-      periodo_facturacion:   { numero_dias: 365 },
-      totales_electricidad:  { energia: { activa: 0 }, potencia: { contratada: 0 } },
+      potencia: this.contractedKwByPeriod().map(kw => ({ contratada: { kw } })),
+      periodo_facturacion:  { numero_dias: 365 },
+      totales_electricidad: { energia: { activa: 0 }, potencia: { contratada: 0 } },
     };
   }
 
   // ── calculation ────────────────────────────────────────────────────────────
 
-  /** Show cards when product + tariff are selected; energy part = 0 if no SIPS consumos */
   readonly showCards = computed(() =>
-    !!this.selectedProductName() && !!this.tariffCode()
+    !!this.selectedProductName() && !!this.localTariffCode()
   );
 
-  readonly calcResult = computed<ComparadorResult | null>(() => {
+  private readonly calcFull = computed<CalcFull | null>(() => {
     const tariffs = this.provider()?.tariffs ?? [];
-    const code    = this.tariffCode();
+    const code    = this.localTariffCode();
     const name    = this.selectedProductName();
-
     if (!tariffs.length || !code || !name) return null;
 
     const commBase = this.commissionBase();
 
-    // Pass 1 — fee=0 → reference cost (base BOE price without any margin)
     const formRef: ComparadorFormValue = {
       tariff: code, producto: name,
       precioMedio: this.omiePrice(), feeEnergia: 0, feePotencia: 0, comisionEnergia: 0,
     };
     const ref = calcularFactura(formRef, this.buildOcr(0), tariffs);
-    // ahorroEstudio = (ocr.total=0) - proposedRef  → proposedRef = -ahorroEstudio
     const referenceTotal = -ref.ahorroEstudio;
 
-    // Pass 2 — actual fees → savings vs. reference
     const formActual: ComparadorFormValue = {
       tariff: code, producto: name,
       precioMedio: this.omiePrice(),
@@ -340,21 +386,33 @@ export class SelectProductPage {
       feePotencia: this.feePotencia(),
       comisionEnergia: commBase,
     };
-    return calcularFactura(formActual, this.buildOcr(referenceTotal), tariffs);
+    const result = calcularFactura(formActual, this.buildOcr(referenceTotal), tariffs);
+    return { ref, result, referenceTotal };
   });
 
-  readonly commission   = computed(() => this.calcResult()?.comision      ?? 0);
+  readonly calcResult    = computed(() => this.calcFull()?.result ?? null);
+
+  readonly priceTable = computed<PriceRow[]>(() => {
+    const full = this.calcFull();
+    if (!full) return [];
+    return full.result.periodos.map(p => ({
+      periodo:        p.periodo,
+      energiaBase:    full.ref.periodos.find(r => r.periodo === p.periodo)?.precioEnergiaOferta ?? 0,
+      energiaOferta:  p.precioEnergiaOferta,
+      potenciaOferta: p.precioPotenciaOferta,
+    }));
+  });
+
+  readonly commission    = computed(() => this.calcResult()?.comision      ?? 0);
   readonly annualSavings = computed(() => this.calcResult()?.ahorroEstudio ?? 0);
-  readonly monthlySavings = computed(() =>
-    Math.round((this.annualSavings() / 12) * 100) / 100
-  );
-  readonly savingsPct   = computed(() => this.calcResult()?.ahorro_porcent ?? 0);
+  readonly monthlySavings = computed(() => Math.round((this.annualSavings() / 12) * 100) / 100);
+  readonly savingsPct    = computed(() => this.calcResult()?.ahorro_porcent ?? 0);
   readonly commissionPct = computed(() => this.commissionService.commission());
 
-  readonly commissionFmt    = computed(() => fmt2(this.commission()));
-  readonly annualSavingsFmt = computed(() => fmt2(this.annualSavings()));
+  readonly commissionFmt     = computed(() => fmt2(this.commission()));
+  readonly annualSavingsFmt  = computed(() => fmt2(this.annualSavings()));
   readonly monthlySavingsFmt = computed(() => fmt2(this.monthlySavings()));
-  readonly savingsPctFmt    = computed(() =>
+  readonly savingsPctFmt     = computed(() =>
     this.savingsPct().toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   );
 
@@ -376,10 +434,15 @@ export class SelectProductPage {
     if (this.tramites().length === 0) return;
 
     this.store.setProduct({
-      tramiteTypes: this.tramites(),
-      tipoProducto: this.selectedProduct(),
-      feeEnergia:   this.feeEnergia(),
-      feePotencia:  this.feePotencia(),
+      tramiteTypes:  this.tramites(),
+      tipoProducto:  this.selectedProduct(),
+      productName:   this.selectedProductName(),
+      tariffCode:    this.localTariffCode(),
+      feeEnergia:    this.feeEnergia(),
+      feePotencia:   this.feePotencia(),
+      omiePrice:     this.omiePrice(),
+      commission:    this.commission(),
+      annualSavings: this.annualSavings(),
     });
 
     this.router.navigate(['/dashboard/fast-discharge/documents']);

@@ -40,13 +40,9 @@ import { FormDocumentComponent } from './forms/form-document';
         </div>
 
         <!-- Footer fijo -->
-        <div class="shrink-0 border-t border-border pt-4 mt-4 flex justify-center">
-          <ui-button
-            label="Siguiente"
-            size="sm"
-            [disabled]="loading()"
-            (click)="onSubmit()"
-          />
+        <div class="shrink-0 border-t border-border pt-4 mt-4 flex items-center justify-between">
+          <ui-button label="Volver"    variant="secondary" size="sm" type="button" (click)="onBack()" />
+          <ui-button label="Siguiente" size="sm"           [disabled]="loading()" (click)="onSubmit()" />
         </div>
 
       </div>
@@ -78,11 +74,20 @@ export class DocumentsPage {
   });
 
   constructor() {
+    // Restore previously uploaded files from the store when navigating back
+    const saved = this.store.documents();
+    if (Object.keys(saved).length) this.documents.set({ ...saved });
+
     effect(() => {
       if (!this.store.person()) {
         this.router.navigate(['/dashboard/fast-discharge']);
       }
     });
+  }
+
+  onBack(): void {
+    this.store.setDocuments(this.documents());
+    this.router.navigate(['/dashboard/fast-discharge/select-product']);
   }
 
   onFileSelect(event: { key: DocumentKey; file: File }): void {
@@ -105,6 +110,6 @@ export class DocumentsPage {
     this.loading.set(true);
     this.store.setDocuments(docs);
     this.loading.set(false);
-    this.router.navigate(['/dashboard/fast-discharge/signature']);
+    this.router.navigate(['/dashboard/fast-discharge/review']);
   }
 }
