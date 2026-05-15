@@ -18,7 +18,7 @@
 
 <div class="h-full flex flex-col">
 
-  <app-comparador-upload
+  <app-comparator-upload
     [showUserSelector]="isMaster()"
     [users]="users()"
     [selectedUserId]="selectedUserId()"
@@ -27,7 +27,7 @@
     (userChange)="selectedUserId.set($event)"
   />
 
-  <app-comparador-modal
+  <app-comparator-modal
     [open]="modalOpen()"
     [ocrResult]="ocrResult()"
     [productsByTariff]="productsByTariff()"

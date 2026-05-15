@@ -80,7 +80,7 @@ export class DocumentsPage {
   constructor() {
     effect(() => {
       if (!this.store.person()) {
-        this.router.navigate(['/dashboard/altaRapida']);
+        this.router.navigate(['/dashboard/fast-discharge']);
       }
     });
   }
@@ -105,6 +105,6 @@ export class DocumentsPage {
     this.loading.set(true);
     this.store.setDocuments(docs);
     this.loading.set(false);
-    this.router.navigate(['/dashboard/altaRapida/signature']);
+    this.router.navigate(['/dashboard/fast-discharge/signature']);
   }
 }

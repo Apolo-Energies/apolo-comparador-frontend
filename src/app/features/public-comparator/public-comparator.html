@@ -2,14 +2,14 @@
 
 <div #root class="bg-transparent p-4">
   <div class="mx-auto max-w-2xl">
-    <app-comparador-upload
+    <app-comparator-upload
       [showUserSelector]="false"
       [loading]="loading()"
       (compare)="onCompare($event)"
     />
   </div>
 
-  <app-comparador-modal
+  <app-comparator-modal
     [open]="modalOpen()"
     [ocrResult]="ocrResult()"
     [productsByTariff]="productsByTariff"

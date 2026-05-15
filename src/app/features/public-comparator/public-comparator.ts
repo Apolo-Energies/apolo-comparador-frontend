@@ -12,8 +12,8 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { ComparatorService } from '../../services/comparator.service';
 import { PublicComparatorService } from '../../services/public-comparator.service';
-import { ComparadorUploadComponent } from '../dashboard/pages/comparator/components/comparador-upload/comparador-upload';
-import { ComparadorModalComponent } from '../dashboard/pages/comparator/components/comparador-modal/comparador-modal';
+import { ComparatorUploadComponent } from '../dashboard/pages/comparator/components/comparator-upload/comparator-upload';
+import { ComparatorModalComponent } from '../dashboard/pages/comparator/components/comparator-modal/comparator-modal';
 import { BrandLoaderComponent } from '../../shared/components/brand-loader/brand-loader.component';
 import {
   ComparadorCompareEvent,
@@ -26,7 +26,7 @@ import {
 @Component({
   selector: 'app-public-comparator',
   standalone: true,
-  imports: [ComparadorUploadComponent, ComparadorModalComponent, BrandLoaderComponent],
+  imports: [ComparatorUploadComponent, ComparatorModalComponent, BrandLoaderComponent],
   templateUrl: './public-comparator.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -17,7 +17,6 @@ import { SubUserCommissionsPage } from './pages/sub-user-commissions/sub-user-co
 import { MyComercialsPage } from './pages/my-commercials/my-commercials';
 import { SupportPageComponent } from './pages/support/support-page';
 import { RatesPageComponent } from './pages/rates/rates-page';
-import { SubUser } from '../../services/sub-users.service';
 
 export const DASHBOARD_ROUTES: Routes = [
   {
@@ -30,7 +29,7 @@ export const DASHBOARD_ROUTES: Routes = [
       // All roles
       { path: 'comparator', component: Comparator },
       { path: 'sips', component: SipsPageComponent },
-      { path: 'altaRapida', component: FastDischarge, children: FAST_DISCHARGE_ROUTES },
+      { path: 'fast-discharge', component: FastDischarge, children: FAST_DISCHARGE_ROUTES },
 
       // Master only
       {
@@ -79,8 +78,8 @@ export const DASHBOARD_ROUTES: Routes = [
       },
 
       // Master only
-      { path: 'support',  component: SupportPageComponent },
-      { path: 'tariffs',  component: RatesPageComponent, canActivate: [permissionGuard], data: { roles: ['Master'] } },
+      { path: 'support',   component: SupportPageComponent },
+      { path: 'tariffs',   component: RatesPageComponent,   canActivate: [permissionGuard], data: { roles: ['Master'] } },
 
       { path: 'forbidden', component: ForbiddenComponent },
     ],
