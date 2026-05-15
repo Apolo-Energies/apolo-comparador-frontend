@@ -19,4 +19,10 @@ export class ProviderService {
   getByUser() {
     return this.http.get<Provider>(`${environment.apiUrl}/provider/tariffs`);
   }
+
+  downloadExcel(providerId: number) {
+    return this.http.post(
+      `${environment.apiUrl}/provider/excel/${providerId}`, {}, { responseType: 'blob' }
+    );
+  }
 }

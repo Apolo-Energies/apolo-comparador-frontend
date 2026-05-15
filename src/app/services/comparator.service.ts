@@ -287,7 +287,7 @@ export class ComparatorService {
     const payload = this.buildReportPayload(form, result, ocr, fileId);
 
     return this.http.post(
-      `${environment.apiUrl}/reports/excel-report`, payload, { responseType: 'blob' }
+      `${environment.apiUrl}/provider/excel`, payload, { responseType: 'blob' }
     ).subscribe(blob => this.triggerBlobDownload(blob, 'comparador.xlsx'));
   }
 

@@ -20,13 +20,13 @@ import {
 import { PERIOD_NUMBERS } from '../../../../../../shared/constants/period';
 
 @Component({
-  selector: 'app-comparador-modal',
+  selector: 'app-comparator-modal',
   standalone: true,
   imports: [DialogComponent, SelectFieldComponent, InputFieldComponent, SliderComponent, ButtonComponent, ApoloIcons],
-  templateUrl: './comparador-modal.html',
+  templateUrl: './comparator-modal.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ComparadorModalComponent {
+export class ComparatorModalComponent {
   // ── inputs ─────────────────────────────────────────────────────────────────
   readonly open               = input(false);
   readonly ocrResult          = input<OcrResult | null>(null);
@@ -40,12 +40,12 @@ export class ComparadorModalComponent {
   readonly result             = input<ComparadorResult | null>(null);
 
   // ── visibility flags (default = current private behavior) ──────────────────
-  readonly showPrecioMedio     = input(true);
-  readonly showFeeEnergia      = input(true);
-  readonly showFeePotencia     = input(true);
-  readonly showComisionCard    = input(true);
-  readonly showExcelButton     = input(true);
-  readonly showContratarButton = input(false);
+  readonly showPrecioMedio      = input(true);
+  readonly showFeeEnergia       = input(true);
+  readonly showFeePotencia      = input(true);
+  readonly showComisionCard     = input(true);
+  readonly showExcelButton      = input(true);
+  readonly showContratarButton  = input(false);
   readonly showProductoSelector = input(true);
 
   // ── button labels / variants ───────────────────────────────────────────────
@@ -61,9 +61,9 @@ export class ComparadorModalComponent {
   readonly contratar  = output<ComparadorFormValue>();
 
   // ── icons ──────────────────────────────────────────────────────────────────
-  readonly excelIcon:    UiIconSource = { type: 'apolo', icon: FileSpreadsheetIcon, size: 16 };
-  readonly pdfIcon:      UiIconSource = { type: 'apolo', icon: FileDownIcon,        size: 16 };
-  readonly lightningIcon: UiIconSource = { type: 'apolo', icon: LightningIcon, size: 36 };
+  readonly excelIcon:     UiIconSource = { type: 'apolo', icon: FileSpreadsheetIcon, size: 16 };
+  readonly pdfIcon:       UiIconSource = { type: 'apolo', icon: FileDownIcon,        size: 16 };
+  readonly lightningIcon: UiIconSource = { type: 'apolo', icon: LightningIcon,       size: 36 };
 
   // ── UI state ───────────────────────────────────────────────────────────────
   readonly periodosOpen = signal(false);
@@ -94,15 +94,14 @@ export class ComparadorModalComponent {
   );
 
   constructor() {
-    // Initialize form when ocrResult first arrives
     effect(() => {
       const ocr = this.ocrResult();
       if (!ocr) return;
       untracked(() => {
-        const tarifas    = Object.keys(this.productsByTariff());
-        const ocrTarifa  = ocr.contrato?.tarifa ?? '';
-        const tariff     = tarifas.includes(ocrTarifa) ? ocrTarifa : (tarifas[0] ?? '');
-        const producto   = this.productsByTariff()[tariff]?.[0] ?? '';
+        const tarifas  = Object.keys(this.productsByTariff());
+        const ocrTarifa = ocr.contrato?.tarifa ?? '';
+        const tariff   = tarifas.includes(ocrTarifa) ? ocrTarifa : (tarifas[0] ?? '');
+        const producto = this.productsByTariff()[tariff]?.[0] ?? '';
         this.tariff.set(tariff);
         this.producto.set(producto);
         this.precioMedio.set(0);
@@ -113,7 +112,6 @@ export class ComparadorModalComponent {
       });
     });
 
-    // Sync comisionEnergia with comisionBase for non-referrers
     effect(() => {
       const base = this.comisionBase();
       untracked(() => {

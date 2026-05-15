@@ -3,13 +3,13 @@ import { ButtonComponent, ComboboxComponent, ComboboxOption, DropzoneComponent }
 import { ComparadorCompareEvent, ComparadorUser } from '../../comparator.models';
 
 @Component({
-  selector: 'app-comparador-upload',
+  selector: 'app-comparator-upload',
   standalone: true,
   imports: [ComboboxComponent, DropzoneComponent, ButtonComponent],
-  templateUrl: './comparador-upload.html',
+  templateUrl: './comparator-upload.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ComparadorUploadComponent {
+export class ComparatorUploadComponent {
   // ── inputs ─────────────────────────────────────────────────────────────────
   readonly loading          = input(false);
   readonly showUserSelector = input(false);

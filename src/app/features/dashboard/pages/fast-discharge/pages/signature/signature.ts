@@ -45,7 +45,7 @@ export class SignaturePage {
   constructor() {
     effect(() => {
       if (!this.signingUrl()) {
-        this.router.navigate(['/dashboard/altaRapida']);
+        this.router.navigate(['/dashboard/fast-discharge']);
       }
     });
   }
