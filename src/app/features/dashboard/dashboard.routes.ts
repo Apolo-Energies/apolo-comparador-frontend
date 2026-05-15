@@ -30,6 +30,15 @@ export const DASHBOARD_ROUTES: Routes = [
       { path: 'comparator', component: Comparator },
       { path: 'sips', component: SipsPageComponent },
       { path: 'fast-discharge', component: FastDischarge, children: FAST_DISCHARGE_ROUTES },
+      { path: 'altaRapida', component: FastDischarge, children: FAST_DISCHARGE_ROUTES },
+      {
+        path: 'markets',
+        canActivate: [featureGuard],
+        data: { feature: 'markets' },
+        loadComponent: () =>
+          import('./pages/markets/markets-page')
+            .then(m => m.MarketsPageComponent),
+      },
 
       // Master only
       {

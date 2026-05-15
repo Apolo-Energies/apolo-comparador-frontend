@@ -17,7 +17,7 @@
         <span class="inline-flex items-center justify-center min-w-7 rounded-md px-1.5 py-0.5
                      text-[11px] font-semibold ring-1 ring-inset"
               [class]="palette.badge">
-          {{ col.totalCount }}
+          {{ col.totalCount | esNumber:0 }}
         </span>
       </header>
 
@@ -74,7 +74,7 @@
         <!-- "More" hint -->
         @if (!col.loading && col.totalCount > col.items.length) {
           <div class="text-[11px] text-center text-zinc-500 py-2 mt-2 border-t border-dashed border-border">
-            Mostrando {{ col.items.length }} de {{ col.totalCount }} —
+            Mostrando {{ col.items.length | esNumber:0 }} de {{ col.totalCount | esNumber:0 }} —
             <span class="text-blue-400">usa los filtros para refinar</span>
           </div>
         }

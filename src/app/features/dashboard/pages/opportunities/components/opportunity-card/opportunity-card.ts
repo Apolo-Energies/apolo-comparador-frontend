@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { ApoloIcons, DateIcon, LightningIcon, UiIconSource, UserSimpleIcon } from '@apolo-energies/icons';
 import { OpportunitySummary } from '../../../../../../entities/opportunity.model';
+import { EsNumberPipe } from '../../../../../../shared/pipes/es-number.pipe';
 
 @Component({
   selector: 'app-opportunity-card',
   standalone: true,
-  imports: [ApoloIcons],
+  imports: [ApoloIcons, EsNumberPipe],
   templateUrl: './opportunity-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -34,9 +35,5 @@ export class OpportunityCardComponent {
     return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }).replace('.', '');
   });
 
-  readonly consumptionText = computed(() => {
-    const v = this.opportunity().lastAnnualConsumption;
-    if (v === null || v === undefined) return null;
-    return v.toLocaleString('es-ES', { maximumFractionDigits: 0 }) + ' kWh';
-  });
+  readonly consumption = computed(() => this.opportunity().lastAnnualConsumption);
 }

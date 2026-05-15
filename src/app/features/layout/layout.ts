@@ -12,16 +12,18 @@ import { getUserRoles } from '../../utils/auth.utils';
 import { environment } from '../../../environments/environment';
 import { RefreshTokenService } from '../../services/refresh-token.service';
 import { OpportunityService } from '../../services/opportunity.service';
+import { OpportunityStatus } from '../../entities/opportunity.model';
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   'Colaborador': [
     'comparator:view',
     'sips:view',
+    'markets:view',
     'settings:view',
     'settings.colaborador:view',
   ],
-  'Referenciador': ['comparator:view', 'sips:view'],
-  'Tester':        ['comparator:view', 'sips:view'],
+  'Referenciador': ['comparator:view', 'sips:view', 'markets:view'],
+  'Tester':        ['comparator:view', 'sips:view', 'markets:view'],
 };
 
 @Component({
@@ -45,7 +47,7 @@ export class Layout {
 
   readonly mobileOpen = signal(false);
 
-  /** Total opportunities — refreshed on init and on every route change. */
+  /** Pending opportunities — refreshed on init and on every route change. */
   readonly opportunitiesCount = signal<number>(0);
 
   constructor() {
@@ -64,7 +66,7 @@ export class Layout {
   }
 
   private refreshOpportunitiesCount(): void {
-    this.oppService.list({ pageSize: 1 }).subscribe({
+    this.oppService.list({ pageSize: 1, status: OpportunityStatus.Pending }).subscribe({
       next: res => this.opportunitiesCount.set(res.totalCount),
       error: () => { },
     });
@@ -145,6 +147,12 @@ export class Layout {
             url: '/dashboard/sips',
             access: ['sips:view'],
           },
+          ...(environment.features.markets ? [{
+            title: 'Mercados',
+            icon: { type: 'apolo' as const, icon: PieIcon, size: 20 },
+            url: '/dashboard/markets',
+            access: ['markets:view'],
+          }] : []),
         ],
       },
       {

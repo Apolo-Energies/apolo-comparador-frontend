@@ -1,38 +1,64 @@
-<app-brand-loader [visible]="loading()" [showBar]="false" [showPercent]="false" [showTitle]="false" [showWordmark]="false" [description]="null" [microcopy]="null" />
+<app-brand-loader
+  [visible]="loading() || exporting()"
+  [showBar]="false"
+  [showPercent]="false"
+  [showWordmark]="false"
+  [showMicrocopy]="false"
+  [size]="100"
+  [showTitle]="exporting()"
+  title="Generando Excel multi-CUPS"
+  [description]="exporting() ? 'Estamos consultando SIPS para cada CUPS, esto puede tardar unos segundos.' : null"
+/>
 
 <!-- Search card (solo cuando no hay datos) / Info card (cuando hay datos) -->
 @if (!mappedPs()) {
   <div class="mb-6 bg-card rounded-lg border border-border p-6">
     <p class="text-lg font-semibold mb-2">Consultas SIPS</p>
-    <div class="flex flex-col md:flex-row md:items-end gap-4">
+    <div class="flex flex-col md:flex-row md:items-start gap-4">
 
       <div class="w-full max-w-xl">
-        <ui-input
-          label="CUPS"
-          placeholder="Ingrese CUPS"
+        <label class="block text-xs font-medium text-muted-foreground mb-1.5" for="cups-textarea">CUPS</label>
+        <textarea
+          id="cups-textarea"
+          rows="1"
           [value]="cups()"
-          (valueChange)="cups.set($event)"
-        />
+          (input)="onCupsInput($any($event.target))"
+          placeholder="Ingrese uno o varios CUPS (uno por línea para exportar varios)"
+          class="w-full resize-none overflow-hidden rounded-md border border-input bg-background px-3 py-2 text-sm leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-input"
+          style="min-height: 38px; max-height: 240px;"
+        ></textarea>
+
+        @if (validCount() > 0 || invalidCount() > 0) {
+          <p class="text-xs text-muted-foreground mt-1.5 flex items-center gap-3">
+            @if (validCount() > 0) {
+              <span class="text-emerald-500">✓ {{ validCount() }} CUPS válido{{ validCount() === 1 ? '' : 's' }}</span>
+            }
+            @if (invalidCount() > 0) {
+              <span class="text-amber-500">⚠ {{ invalidCount() }} inválido{{ invalidCount() === 1 ? '' : 's' }}</span>
+            }
+          </p>
+        }
+
         @if (error()) {
           <p class="text-xs text-red-500 mt-1">{{ error() }}</p>
         }
       </div>
 
-      <div class="flex gap-2 mt-4 md:mt-0">
+      <div class="flex gap-2 mt-4 md:mt-6">
         <ui-button
-          [label]="loading() ? 'Consultando...' : 'Consultar'"
+          [label]="loading() ? 'Consultando…' : 'Consultar'"
           variant="default"
           size="sm"
-          [disabled]="!cups().trim() || loading()"
+          [disabled]="!isSingle() || loading() || exporting()"
           (click)="onConsultar()"
         />
         <ui-button
-          label="Exportar"
+          [label]="exporting() ? 'Generando…' : 'Exportar'"
           variant="secondary"
           size="sm"
           [leadingIcon]="downloadIcon"
-          [disabled]="!hasData()"
-          (click)="onExport()"
+          [disabled]="validCount() === 0 || loading() || exporting()"
+          (click)="onExportClick()"
         />
       </div>
 
