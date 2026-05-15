@@ -191,7 +191,7 @@ export class Layout {
     environment.features.quickAction ? {
       label: 'Alta Rápida',
       type: 'internal',
-      url: '/dashboard/altaRapida',
+      url: '/dashboard/fast-discharge',
       icon: { type: 'apolo', icon: StarIcon, className: 'text-current', size: 14, strokeWidth: 0.2 },
     } : null
   );

@@ -35,6 +35,6 @@ export class WelcomePage {
   private readonly router = inject(Router);
 
   onStart(): void {
-    this.router.navigate(['/dashboard/altaRapida/data']);
+    this.router.navigate(['/dashboard/fast-discharge/data']);
   }
 }

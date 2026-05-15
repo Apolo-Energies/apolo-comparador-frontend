@@ -5,8 +5,8 @@ import { getUserRoles } from '../../../../utils/auth.utils';
 import { ComparatorService } from '../../../../services/comparator.service';
 import { CommissionService } from '../../../../services/commission.service';
 import { UserService } from '../../../../services/user.service';
-import { ComparadorUploadComponent } from './components/comparador-upload/comparador-upload';
-import { ComparadorModalComponent } from './components/comparador-modal/comparador-modal';
+import { ComparatorUploadComponent } from './components/comparator-upload/comparator-upload';
+import { ComparatorModalComponent } from './components/comparator-modal/comparator-modal';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
 import {
   ComparadorCompareEvent,
@@ -23,7 +23,7 @@ import { environment } from '../../../../../environments/environment';
 @Component({
   selector: 'app-comparator',
   standalone: true,
-  imports: [ComparadorUploadComponent, ComparadorModalComponent, BrandLoaderComponent, LoadingOverlayComponent],
+  imports: [ComparatorUploadComponent, ComparatorModalComponent, BrandLoaderComponent, LoadingOverlayComponent],
   templateUrl: './comparator.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

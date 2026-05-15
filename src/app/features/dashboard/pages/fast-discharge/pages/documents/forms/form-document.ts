@@ -53,7 +53,7 @@ const DOC_LABELS: Record<DocumentKey, string> = {
             <input
               type="file"
               class="hidden"
-              accept=".pdf,.jpg,.jpeg,.png"
+              accept=".pdf,.jpg,.jpeg,.png,.webp"
               (change)="onFileChange(doc.key, $event)"
             />
           </label>

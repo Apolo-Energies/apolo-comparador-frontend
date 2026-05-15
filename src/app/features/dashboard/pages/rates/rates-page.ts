@@ -76,7 +76,16 @@ export class RatesPageComponent {
   }
 
   onExportExcel(): void {
-    // TODO: Implementar exportación a Excel
-    console.log('Exportando a Excel...');
+    const providerId = this.providerData()?.id;
+    if (!providerId) return;
+
+    this.providerService.downloadExcel(providerId).subscribe(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'comparado.xlsx';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
   }
 }

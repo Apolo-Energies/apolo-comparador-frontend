@@ -17,22 +17,104 @@
 
     <!-- Content viewer (shown when a topic is selected) -->
     @if (selected()) {
-      <div class="relative mb-6 rounded-lg overflow-hidden border border-border bg-black aspect-video">
-        <iframe
-          [src]="safeUrl(selected()!.url!)"
-          class="w-full h-full"
-          frameborder="0"
-          scrolling="no"
-          allowfullscreen
-          [title]="selected()!.title"
-        ></iframe>
-        <button
-          type="button"
-          class="absolute top-3 right-3 p-1.5 rounded-md bg-black/60 hover:bg-black/80 text-white transition-colors"
-          (click)="close()">
-          <lib-apolo-icons [icon]="closeIcon" class="flex items-center" />
-        </button>
-      </div>
+
+      @if (selected()!.videos) {
+        <!-- Slider view for multi-video topics (CRM) -->
+        <div class="mb-6 space-y-3">
+
+          <!-- Video description header -->
+          @if (currentVideo(); as video) {
+            <div class="space-y-0.5">
+              <p class="text-sm font-semibold text-foreground">{{ video.title }}</p>
+              <p class="text-xs text-muted-foreground">{{ video.description }}</p>
+            </div>
+          }
+
+          <!-- iframe -->
+          <div class="relative rounded-lg overflow-hidden border border-border bg-black aspect-video">
+            @if (currentVideo(); as video) {
+              <iframe
+                [src]="safeUrl(video.url)"
+                class="w-full h-full"
+                frameborder="0"
+                allowfullscreen
+                [title]="video.title"
+              ></iframe>
+            }
+            <button
+              type="button"
+              class="absolute top-3 right-3 p-1.5 rounded-md bg-black/60 hover:bg-black/80 text-white transition-colors"
+              (click)="close()">
+              <lib-apolo-icons [icon]="closeIcon" class="flex items-center" />
+            </button>
+          </div>
+
+          <!-- Prev / Next + dots -->
+          <div class="flex items-center justify-between">
+            <button
+              type="button"
+              class="p-1.5 rounded-md transition-colors"
+              [class.text-foreground]="hasPrev()"
+              [class.hover:bg-muted]="hasPrev()"
+              [class.text-muted-foreground]="!hasPrev()"
+              [class.opacity-30]="!hasPrev()"
+              [disabled]="!hasPrev()"
+              (click)="prev()"
+              style="transform: rotate(180deg)">
+              <lib-apolo-icons [icon]="chevronIcon" class="flex items-center" />
+            </button>
+
+            <div class="flex items-center gap-1.5">
+              @for (i of videoIndices(); track i) {
+                <button
+                  type="button"
+                  class="rounded-full transition-all duration-200"
+                  [class.w-2]="currentVideoIndex() !== i"
+                  [class.h-2]="currentVideoIndex() !== i"
+                  [class.bg-muted-foreground]="currentVideoIndex() !== i"
+                  [class.opacity-40]="currentVideoIndex() !== i"
+                  [class.w-4]="currentVideoIndex() === i"
+                  [class.h-2]="currentVideoIndex() === i"
+                  [class.bg-primary-button]="currentVideoIndex() === i"
+                  (click)="goTo(i)"
+                ></button>
+              }
+            </div>
+
+            <button
+              type="button"
+              class="p-1.5 rounded-md transition-colors"
+              [class.text-foreground]="hasNext()"
+              [class.hover:bg-muted]="hasNext()"
+              [class.text-muted-foreground]="!hasNext()"
+              [class.opacity-30]="!hasNext()"
+              [disabled]="!hasNext()"
+              (click)="next()">
+              <lib-apolo-icons [icon]="chevronIcon" class="flex items-center" />
+            </button>
+          </div>
+
+        </div>
+      } @else {
+        <!-- Single video view -->
+        <div class="relative mb-6 rounded-lg overflow-hidden border border-border bg-black aspect-video">
+          <iframe
+            [src]="safeUrl(selected()!.url!)"
+            class="w-full h-full"
+            frameborder="0"
+            scrolling="no"
+            allowfullscreen
+            [title]="selected()!.title"
+          ></iframe>
+          <button
+            type="button"
+            class="absolute top-3 right-3 p-1.5 rounded-md bg-black/60 hover:bg-black/80 text-white transition-colors"
+            (click)="close()">
+            <lib-apolo-icons [icon]="closeIcon" class="flex items-center" />
+          </button>
+        </div>
+      }
+
     }
 
     <!-- Topic list -->

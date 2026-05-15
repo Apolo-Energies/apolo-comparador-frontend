@@ -29,6 +29,34 @@ export interface ArtificialPerson {
 
 export type Person = NaturalPerson | ArtificialPerson;
 
+export interface SupplyPoint {
+  cups:       string;
+  address:    string;
+  cnae:       string;
+  province:   string;
+  city:       string;
+  zipCode:    string;
+  tariffType: string;
+  p1: number;
+  p2: number;
+  p3: number;
+  p4: number;
+  p5: number;
+  p6: number;
+}
+
+export interface Product {
+  tramiteTypes:  TramiteType[];
+  tipoProducto:  string;
+  productName:   string;
+  tariffCode:    string;
+  feeEnergia:    number;
+  feePotencia:   number;
+  omiePrice:     number;
+  commission:    number;
+  annualSavings: number;
+}
+
 export type DocumentKey =
   | 'dni_front'
   | 'dni_back'
