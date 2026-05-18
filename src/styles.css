@@ -10,7 +10,7 @@
 @layer theme, base, components, utilities;
 
 @theme {
-  --font-poppins: var(--font-poppins);
+  --font-sans: 'Space Grotesk', system-ui, sans-serif;
 
   /* — Surfaces — */
   --color-background:        #25272A;
@@ -54,6 +54,7 @@
   html, body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: 'Space Grotesk', system-ui, sans-serif;
   }
 
   /* Date input: color scheme oscuro para el picker del sistema */

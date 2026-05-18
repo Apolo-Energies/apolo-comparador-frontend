@@ -1,13 +1,15 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, computed, inject, signal, PLATFORM_ID, TemplateRef, ViewChild } from '@angular/core';
-import { isPlatformBrowser, NgIf } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
 import { ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
 import { filterIcon, SearchIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
 import { DashboardStatsService } from '../../../../services/dashboard-stats.service';
 import { StatisticsRow } from '../../../../services/statistics.service';
+import { environment } from '../../../../../environments/environment';
+import { GlobalLoadingService } from '../../../../services/global-loading.service';
+import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
 import { StatisticsDashboardComponent } from './components/statistics-dashboard/statistics-dashboard';
 import { UserDetailDialogComponent } from './components/user-detail-dialog/user-detail-dialog';
-import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
 import { DailySummaryApiItem, SummaryApiResult, MonthlySummaryApiItem, FiltersData, FilterProduct } from './models/dashboard-api.models';
 import { DateRange } from './models/dashboard-ui.models';
 
@@ -17,7 +19,7 @@ type SortDirection = 'Asc' | 'Desc';
 @Component({
   selector: 'app-statistics-page',
   standalone: true,
-  imports: [DataTableComponent, PaginatorComponent, InputFieldComponent, ButtonComponent, StatisticsDashboardComponent, UserDetailDialogComponent, LoadingOverlayComponent, NgIf],
+  imports: [DataTableComponent, PaginatorComponent, InputFieldComponent, ButtonComponent, StatisticsDashboardComponent, UserDetailDialogComponent, TableSkeletonComponent],
   templateUrl: './statistics-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -27,6 +29,9 @@ export class StatisticsPageComponent implements AfterViewInit {
   @ViewChild('actionsTpl') private actionsTpl!: TemplateRef<{ $implicit: StatisticsRow }>;
   private dashboardService = inject(DashboardStatsService);
   private platformId       = inject(PLATFORM_ID);
+  private globalLoading    = inject(GlobalLoadingService);
+
+  readonly isApolo = environment.features.userDetail;
 
   // icons
   readonly searchIcon:   UiIconSource = { type: 'apolo', icon: SearchIcon,   size: 16 };
@@ -122,6 +127,7 @@ export class StatisticsPageComponent implements AfterViewInit {
 
   private load(includeOnlyHistory = false) {
     this.loading.set(true);
+    this.globalLoading.start();
 
     const tariffIds = this.selectedTariffId() !== null ? [this.selectedTariffId()!] : undefined;
     const productIds = this.selectedProductId() !== null ? [this.selectedProductId()!] : undefined;
@@ -162,8 +168,9 @@ export class StatisticsPageComponent implements AfterViewInit {
         this.totalPages.set(data.history?.totalPages ?? 1);
 
         this.loading.set(false);
+        this.globalLoading.stop();
       },
-      error: () => this.loading.set(false),
+      error: () => { this.loading.set(false); this.globalLoading.stop(); },
     });
   }
 

@@ -8,11 +8,14 @@ import { AlertComponent, ButtonComponent } from '@apolo-energies/ui';
 import { ApoloIcons, NoteIcon, StarIcon, UiIconSource } from '@apolo-energies/icons';
 import { CommissionService, CommissionRow } from '../../../../services/commission.service';
 import { AddCommissionModalComponent } from './add-commission-modal/add-commission-modal';
+import { GlobalLoadingService } from '../../../../services/global-loading.service';
+import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
+import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-commissions-page',
   standalone: true,
-  imports: [DataTableComponent, PaginatorComponent, ButtonComponent, AlertComponent, AddCommissionModalComponent, ApoloIcons],
+  imports: [DataTableComponent, PaginatorComponent, ButtonComponent, AlertComponent, AddCommissionModalComponent, ApoloIcons, TableSkeletonComponent],
   templateUrl: './commissions-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -20,15 +23,19 @@ export class CommissionsPageComponent implements AfterViewInit {
   private commissionService = inject(CommissionService);
   private platformId        = inject(PLATFORM_ID);
   private cdr               = inject(ChangeDetectorRef);
+  private globalLoading     = inject(GlobalLoadingService);
 
   readonly modalOpen   = signal(false);
   readonly editData    = signal<CommissionRow | null>(null);
+  readonly loading     = signal(false);
   readonly data        = signal<CommissionRow[]>([]);
   readonly currentPage = signal(1);
   readonly pageSize    = signal(20);
   readonly totalCount  = signal(0);
 
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.pageSize())));
+
+  readonly isApolo = environment.features.userDetail;
 
   readonly starIcon: UiIconSource = { type: 'apolo', icon: StarIcon, size: 16 };
   readonly editIcon: UiIconSource = { type: 'apolo', icon: NoteIcon, size: 15 };
@@ -55,10 +62,12 @@ export class CommissionsPageComponent implements AfterViewInit {
   }
 
   private load() {
+    this.loading.set(true);
+    this.globalLoading.start();
     this.commissionService.getAll({ page: this.currentPage(), pageSize: this.pageSize() })
-      .subscribe(res => {
-        this.data.set(res.items);
-        this.totalCount.set(res.totalCount);
+      .subscribe({
+        next: res => { this.data.set(res.items); this.totalCount.set(res.totalCount); this.loading.set(false); this.globalLoading.stop(); },
+        error: () => { this.loading.set(false); this.globalLoading.stop(); },
       });
   }
 

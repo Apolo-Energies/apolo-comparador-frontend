@@ -4,7 +4,8 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
-import { debounceTime, forkJoin, Subject, switchMap } from 'rxjs';
+import { debounceTime, finalize, forkJoin, Subject, switchMap } from 'rxjs';
+import { GlobalLoadingService } from '../../../../../../services/global-loading.service';
 import { ApoloIcons, ShieldCheckIcon, UiIconSource, UserCircleIcon, XIcon } from '@apolo-energies/icons';
 import {
   OpportunitySummary, OpportunityStatus, OpportunityFilters,
@@ -49,8 +50,9 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
   @Output() errorMessage = new EventEmitter<string>();
   @Output() cardOpen     = new EventEmitter<OpportunitySummary>();
 
-  private oppService  = inject(OpportunityService);
-  private destroyRef  = inject(DestroyRef);
+  private oppService     = inject(OpportunityService);
+  private destroyRef     = inject(DestroyRef);
+  private globalLoadingSvc = inject(GlobalLoadingService);
 
   private readonly userCircleIcon: UiIconSource = { type: 'apolo', icon: UserCircleIcon, size: 28 };
   private readonly checkIcon:      UiIconSource = { type: 'apolo', icon: ShieldCheckIcon, size: 28 };
@@ -75,13 +77,16 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
       debounceTime(0),
       switchMap(() => {
         this.columns.update(cols => cols.map(c => ({ ...c, loading: true })));
+        this.globalLoadingSvc.start();
         const requests = STATUS_ORDER.reduce((acc, status) => {
           acc[status] = this.oppService.list({
             ...this.filters, status, page: 1, pageSize: PAGE_SIZE_PER_COLUMN,
           });
           return acc;
         }, {} as Record<OpportunityStatus, ReturnType<OpportunityService['list']>>);
-        return forkJoin(requests);
+        return forkJoin(requests).pipe(
+          finalize(() => this.globalLoadingSvc.stop()),
+        );
       }),
       takeUntilDestroyed(this.destroyRef),
     ).subscribe({

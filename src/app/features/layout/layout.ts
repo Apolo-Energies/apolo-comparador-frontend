@@ -13,6 +13,8 @@ import { environment } from '../../../environments/environment';
 import { RefreshTokenService } from '../../services/refresh-token.service';
 import { OpportunityService } from '../../services/opportunity.service';
 import { OpportunityStatus } from '../../entities/opportunity.model';
+import { GlobalLoadingService } from '../../services/global-loading.service';
+import { BrandLoaderComponent } from '../../shared/components/brand-loader/brand-loader.component';
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   'Colaborador': [
@@ -28,7 +30,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
 
 @Component({
   selector: 'app-layout',
-  imports: [RouterOutlet, ApoloSidebar, ApoloHeader],
+  imports: [RouterOutlet, ApoloSidebar, ApoloHeader, BrandLoaderComponent],
   templateUrl: './layout.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -39,13 +41,17 @@ export class Layout {
   private refreshTokenService = inject(RefreshTokenService);
   private oppService = inject(OpportunityService);
   private platformId = inject(PLATFORM_ID);
+  readonly globalLoading = inject(GlobalLoadingService);
+
+  readonly isApolo = environment.features.userDetail;
 
   readonly currentUrl = toSignal(
     this.router.events.pipe(map(() => this.router.url)),
     { initialValue: this.router.url }
   );
 
-  readonly mobileOpen = signal(false);
+  readonly mobileOpen    = signal(false);
+  readonly loggingOut    = signal(false);
 
   /** Pending opportunities — refreshed on init and on every route change. */
   readonly opportunitiesCount = signal<number>(0);
@@ -110,7 +116,7 @@ export class Layout {
     const ajustesChildren: SidebarChildItem[] = isColaborador && isApolo
       ? [
           { title: 'Comerciales', url: '/dashboard/settings/my-comercials',       access: ['settings.colaborador:view'] },
-          { title: 'Commissions',    url: '/dashboard/settings/sub-user-commissions', access: ['settings.colaborador:view'] },
+          { title: 'Comisiones',    url: '/dashboard/settings/sub-user-commissions', access: ['settings.colaborador:view'] },
         ]
       : [
           { title: 'Usuarios', url: '/dashboard/settings/users',      access: ['settings.users:view'] },
@@ -254,7 +260,9 @@ export class Layout {
   };
 
   onLogout() {
-    const userId = this.refreshTokenService.getUserIdFromToken();
+    this.loggingOut.set(true);
+
+    const userId       = this.refreshTokenService.getUserIdFromToken();
     const refreshToken = this.refreshTokenService.getRefreshToken();
 
     const finish = () => {

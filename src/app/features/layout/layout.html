@@ -13,8 +13,9 @@
     [logoutIcon]="logoutSidebarIcon"
     [logoutLabel]="'Cerrar sesión'"
   />
-  <div class="flex-1 flex flex-col overflow-hidden">
+  <div class="flex-1 flex flex-col overflow-hidden relative">
     <lib-apolo-header
+      class="relative z-10"
       [welcome]="welcome"
       [quickAction]="quickAction()"
       [userButtonIcon]="userMenuIcon"
@@ -25,5 +26,38 @@
     <main class="flex-1 overflow-hidden bg-body overflow-y-auto px-6 py-6">
       <router-outlet />
     </main>
+    @if (globalLoading.loading() && !loggingOut()) {
+      <div class="absolute inset-0 z-5 flex items-center justify-center bg-background/70 backdrop-blur-sm">
+        @if (isApolo) {
+          <div class="relative w-30 h-30">
+            <app-brand-loader [visible]="true" [fullscreen]="false"
+              [showLogo]="true" [showWordmark]="false" [showTitle]="false"
+              [showDescription]="false" [showBar]="false" [showPercent]="false"
+              [showMicrocopy]="false" [showBackdrop]="false" [size]="120" />
+          </div>
+        } @else {
+          <div class="h-14 w-14 rounded-full border-4 border-muted border-t-primary animate-spin"></div>
+        }
+      </div>
+    }
   </div>
 </div>
+
+<!-- Logout full-screen overlay -->
+@if (loggingOut()) {
+  <div class="fixed inset-0 z-9999 flex flex-col items-center justify-center gap-6 bg-background/90 backdrop-blur-md">
+    @if (isApolo) {
+      <div class="relative w-30 h-30">
+        <app-brand-loader [visible]="true" [fullscreen]="false"
+          [showLogo]="true" [showWordmark]="false" [showTitle]="false"
+          [showDescription]="false" [showBar]="false" [showPercent]="false"
+          [showMicrocopy]="false" [showBackdrop]="false" [size]="120" />
+      </div>
+    } @else {
+      <div class="h-14 w-14 rounded-full border-4 border-muted border-t-primary animate-spin"></div>
+    }
+    <p class="text-sm font-medium text-muted-foreground tracking-widest uppercase animate-pulse">
+      Cerrando sesión...
+    </p>
+  </div>
+}

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DialogComponent, ButtonComponent, InputFieldComponent, SliderComponent, AlertService } from '@apolo-energies/ui';
@@ -23,6 +23,7 @@ export class AddCommissionModalComponent {
   private alertService      = inject(AlertService);
 
   readonly isEditMode = computed(() => this.editData() !== null);
+  readonly saving     = signal(false);
 
   readonly form = this.fb.group({
     name:       ['', [Validators.required]],
@@ -57,6 +58,7 @@ export class AddCommissionModalComponent {
   onSubmit() {
     if (this.form.invalid) return;
 
+    this.saving.set(true);
     const { name, percentage } = this.form.getRawValue();
     const payload = { name: name!, percentage: percentage! };
     const edit    = this.editData();
@@ -69,10 +71,13 @@ export class AddCommissionModalComponent {
       next: () => {
         const msg = edit ? 'Comisión actualizada correctamente' : 'Comisión creada correctamente';
         this.alertService.show(msg, 'success');
+        this.saving.set(false);
         this.form.reset({ name: '', percentage: 0 });
         this.saved.emit();
+        this.cancelled.emit();
       },
       error: () => {
+        this.saving.set(false);
         const msg = edit ? 'Error al actualizar la comisión' : 'Error al crear la comisión';
         this.alertService.show(msg, 'error');
       },

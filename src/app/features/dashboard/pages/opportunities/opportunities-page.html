@@ -238,42 +238,50 @@
     </p>
   } @else {
     <div class="border border-border rounded-2xl overflow-hidden shadow-lg shadow-black/10 bg-card">
-      <lib-data-table
-        [data]="tableData()"
-        [columns]="columns"
-        rowKey="id"
-        [borderTop]="false"
-        [borderBottom]="true"
-        [borderLeft]="false"
-        [borderRight]="false"
-        [roundedTopLeft]="false"
-        [roundedTopRight]="false"
-        [roundedBottomLeft]="false"
-        [roundedBottomRight]="false"
-      />
+      <div class="relative min-h-50">
 
-      @if (!loadingTable() && tableData().length === 0) {
-        <div class="text-center py-12 px-6 text-sm text-zinc-500 border-t border-border">
-          No hay oportunidades que coincidan con los filtros.
-        </div>
-      }
+        @if (loadingTable()) {
+          <app-table-skeleton [cols]="8" [rows]="8" />
+        } @else {
+          <lib-data-table
+            [data]="tableData()"
+            [columns]="columns"
+            rowKey="id"
+            [borderTop]="false"
+            [borderBottom]="true"
+            [borderLeft]="false"
+            [borderRight]="false"
+            [roundedTopLeft]="false"
+            [roundedTopRight]="false"
+            [roundedBottomLeft]="false"
+            [roundedBottomRight]="false"
+          />
+        }
 
-      <lib-paginator
-        [currentPage]="currentPage()"
-        [totalPages]="totalPages()"
-        [totalCount]="totalCount()"
-        [pageSize]="pageSize()"
-        [borderTop]="false"
-        [borderBottom]="false"
-        [borderLeft]="false"
-        [borderRight]="false"
-        [roundedTopLeft]="false"
-        [roundedTopRight]="false"
-        [roundedBottomLeft]="false"
-        [roundedBottomRight]="false"
-        (pageChange)="onPageChange($event)"
-        (pageSizeChange)="onPageSizeChange($event)"
-      />
+        @if (!loadingTable() && tableData().length === 0) {
+          <div class="text-center py-12 px-6 text-sm text-zinc-500 border-t border-border">
+            No hay oportunidades que coincidan con los filtros.
+          </div>
+        }
+
+        <lib-paginator
+          [currentPage]="currentPage()"
+          [totalPages]="totalPages()"
+          [totalCount]="totalCount()"
+          [pageSize]="pageSize()"
+          [borderTop]="false"
+          [borderBottom]="false"
+          [borderLeft]="false"
+          [borderRight]="false"
+          [roundedTopLeft]="false"
+          [roundedTopRight]="false"
+          [roundedBottomLeft]="false"
+          [roundedBottomRight]="false"
+          (pageChange)="onPageChange($event)"
+          (pageSizeChange)="onPageSizeChange($event)"
+        />
+
+      </div><!-- /relative min-h-50 -->
     </div>
   }
 </div>

@@ -4,13 +4,14 @@ import { ButtonComponent } from '@apolo-energies/ui';
 import { SipsInfoCardComponent } from './components/sips-info-card.component';
 import { DownloadIcon, UiIconSource } from '@apolo-energies/icons';
 import { SipsService } from '../../../../services/sips.service';
+import { environment } from '../../../../../environments/environment';
+import { GlobalLoadingService } from '../../../../services/global-loading.service';
 import { SipsDonutChartComponent, DonutDatum, TrendData } from './components/donut-chart/donut-chart.component';
 import { SipsPowerChartComponent, PowerBarDatum } from './components/power-chart/power-chart.component';
 import { SipsMonthlyChartComponent } from './components/montly-chart/monthly-chart.component';
 import { SipsConsumo, SipsPs } from '../../../../entities/sips.model';
 import { getMonthlyStackedChartData, MonthlyRowDatum } from '../../../../shared/utils/chart.utils';
 import { PERIODS } from '../../../../shared/constants/period';
-import { BrandLoaderComponent } from '../../../../shared/components/brand-loader/brand-loader.component';
 
 function wToKwh(wh: number): number {
   return wh / 1000;
@@ -70,14 +71,16 @@ function buildPowerData(ps: SipsPs): PowerBarDatum[] {
     SipsDonutChartComponent,
     SipsPowerChartComponent,
     SipsMonthlyChartComponent,
-    BrandLoaderComponent,
   ],
   templateUrl: './sips-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SipsPageComponent {
-  private readonly sipsService = inject(SipsService);
-  private readonly router = inject(Router);
+  private readonly sipsService  = inject(SipsService);
+  private readonly router       = inject(Router);
+  private readonly globalLoading = inject(GlobalLoadingService);
+
+  readonly isApolo = environment.features.userDetail;
 
   //readonly searchIcon: UiIconSource = { type: 'apolo', icon: SearchIcon, size: 16 };
   readonly downloadIcon: UiIconSource = { type: 'apolo', icon: DownloadIcon, size: 16 };
@@ -152,6 +155,7 @@ export class SipsPageComponent {
     const cups = valid[0];
 
     this.loading.set(true);
+    this.globalLoading.start();
     this.error.set(null);
 
     this.sipsService.getByCups(cups).subscribe({
@@ -159,12 +163,14 @@ export class SipsPageComponent {
         this.rawPs.set(ps);
         this.rawConsumos.set(consumos);
         this.loading.set(false);
+        this.globalLoading.stop();
       },
       error: () => {
         this.error.set('No se encontraron datos para el CUPS indicado');
         this.rawPs.set(null);
         this.rawConsumos.set([]);
         this.loading.set(false);
+        this.globalLoading.stop();
       },
     });
   }
@@ -187,31 +193,37 @@ export class SipsPageComponent {
 
   private exportSingle(cups: string): void {
     this.exporting.set(true);
+    this.globalLoading.start();
     this.error.set(null);
     this.sipsService.downloadExcel(cups).subscribe({
       next: (blob) => {
         this.triggerDownload(blob, `sips-${cups}.xlsx`);
         this.exporting.set(false);
+        this.globalLoading.stop();
       },
       error: () => {
         this.error.set('No se pudo generar el Excel');
         this.exporting.set(false);
+        this.globalLoading.stop();
       },
     });
   }
 
   private exportMulti(cups: string[]): void {
     this.exporting.set(true);
+    this.globalLoading.start();
     this.error.set(null);
     this.sipsService.downloadMultiExcel(cups).subscribe({
       next: (blob) => {
         const stamp = new Date().toISOString().slice(0, 10);
         this.triggerDownload(blob, `multicups-${stamp}.xlsx`);
         this.exporting.set(false);
+        this.globalLoading.stop();
       },
       error: () => {
         this.error.set('No se pudo generar el Excel multi-CUPS');
         this.exporting.set(false);
+        this.globalLoading.stop();
       },
     });
   }
