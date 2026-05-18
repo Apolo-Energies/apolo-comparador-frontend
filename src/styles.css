@@ -26,7 +26,7 @@
   /* — Accent (azul eléctrico) — */
   --color-primary:           #3b82f6;  /* blue-500 */
   --color-primary-foreground:#ffffff;
-  --color-primary-button:    #3b82f6;
+  --color-primary-button:    #12AFF0;
 
   /* — Secondary / accent surfaces — */
   --color-secondary:         #27272a;  /* zinc-800 */
@@ -143,9 +143,32 @@
   --p-border-radius-md:          0.5rem;
   --p-border-radius-lg:          0.75rem;
 }
+
+lib-apolo-header .text-primary-foreground {
+  color: #17181A;
+  font-weight: 400;
+}
+
 lib-apolo-sidebar > div > aside,
 lib-apolo-sidebar aside {
   background-color: #17181A;
+}
+
+lib-apolo-sidebar lib-sidebar-section {
+  flex: 1;
+  min-height: 0;
+}
+
+lib-apolo-sidebar lib-sidebar-section nav {
+  display: flex !important;
+  flex-direction: column;
+  height: 100%;
+}
+
+lib-apolo-sidebar lib-sidebar-section nav > div:last-child {
+  margin-top: auto;
+  border-bottom: none !important;
+  padding-bottom: 0;
 }
 
 lib-apolo-sidebar a[href*="/analytics/opportunities"] lib-sidebar-item button {

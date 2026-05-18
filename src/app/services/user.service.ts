@@ -77,4 +77,8 @@ export class UserService {
   downloadExcel(): Observable<Blob> {
     return this.http.post(`${environment.apiUrl}/reports/excel-users-report`, {}, { responseType: 'blob' });
   }
+
+  delete(userId: string): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/user/${userId}`);
+  }
 }

@@ -104,6 +104,8 @@ export class Layout {
     const roles         = getUserRoles(this.auth.currentUser());
     const isColaborador = roles.includes('Colaborador') && !roles.includes('Master');
     const isApolo       = environment.features.userDetail;
+    const userId        = this.refreshTokenService.getUserIdFromToken();
+    const isSubUser     = !!this.refreshTokenService.getParentUserIdFromToken();
 
     const ajustesChildren: SidebarChildItem[] = isColaborador && isApolo
       ? [
@@ -116,7 +118,7 @@ export class Layout {
           { title: 'Tarifas', url: '/dashboard/tariffs', access: ['support:view'] },
         ];
 
-    return [
+    const sections: SidebarSection[] = [
       {
         section: 'GENERAL',
         items: [
@@ -173,6 +175,19 @@ export class Layout {
         ],
       },
     ];
+
+    if (isApolo && userId && !isSubUser) {
+      sections.push({
+        section: '',
+        items: [{
+          title: 'Mi Perfil',
+          icon: { type: 'apolo', icon: UserIcon, size: 20 },
+          url: `/dashboard/settings/users/${userId}`,
+        }],
+      });
+    }
+
+    return sections;
   }
 
   readonly welcome: HeaderWelcomeContent = {

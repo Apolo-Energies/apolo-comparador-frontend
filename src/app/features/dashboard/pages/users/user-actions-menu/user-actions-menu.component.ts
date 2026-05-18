@@ -5,6 +5,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AlertService, SelectOption } from '@apolo-energies/ui';
+import { DeleteUserModalComponent } from '../delete-user-modal/delete-user-modal.component';
 import { SvgIcon, SettingsIcon } from '@apolo-energies/icons';
 import { UserService } from '../../../../../services/user.service';
 import { CatalogService } from '../../../../../services/catalog.service';
@@ -60,7 +61,7 @@ const SELECT_CLS = [
 @Component({
   selector: 'app-user-actions-menu',
   standalone: true,
-  imports: [FormsModule, SvgIcon, RestorePasswordModalComponent, SendContractModalComponent],
+  imports: [FormsModule, SvgIcon, RestorePasswordModalComponent, SendContractModalComponent, DeleteUserModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex items-center gap-0.5">
@@ -79,6 +80,20 @@ const SELECT_CLS = [
           </svg>
         </button>
       }
+
+      <!-- Trash: delete user -->
+      <button
+        type="button"
+        class="p-2 rounded-md hover:bg-red-500/10 cursor-pointer text-red-500 hover:text-red-400 transition-colors"
+        title="Eliminar usuario"
+        (click)="openDeleteConfirm()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 6h18"/>
+          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+        </svg>
+      </button>
 
       <div #container>
 
@@ -172,6 +187,14 @@ const SELECT_CLS = [
 
     </div><!-- /.flex -->
 
+    <app-delete-user-modal
+      [open]="deleteConfirmOpen()"
+      [userId]="user().id"
+      [userName]="user().fullName"
+      (closed)="deleteConfirmOpen.set(false)"
+      (deleted)="updated.emit()"
+    />
+
     <app-restore-password-modal
       [open]="passwordModalOpen()"
       [userEmail]="user().email"
@@ -211,6 +234,7 @@ export class UserActionsMenuComponent {
   readonly panelLeft             = signal(0);
   readonly passwordModalOpen     = signal(false);
   readonly sendContractModalOpen = signal(false);
+  readonly deleteConfirmOpen     = signal(false);
 
   readonly selectedRole       = signal('');
   readonly selectedStatus     = signal('');
@@ -331,6 +355,10 @@ export class UserActionsMenuComponent {
       next:  () => { this.alertService.show('Proveedor actualizado', 'success'); this.updated.emit(); },
       error: () => this.alertService.show('Error al actualizar el proveedor', 'error'),
     });
+  }
+
+  openDeleteConfirm(): void {
+    this.deleteConfirmOpen.set(true);
   }
 
   openPasswordModal(): void {
