@@ -84,7 +84,7 @@ const SELECT_CLS = [
       <!-- Trash: delete user -->
       <button
         type="button"
-        class="p-2 rounded-md hover:bg-red-500/10 cursor-pointer text-red-500 hover:text-red-400 transition-colors"
+        class="p-2 rounded-md hover:bg-muted cursor-pointer text-muted-foreground hover:text-white transition-colors"
         title="Eliminar usuario"
         (click)="openDeleteConfirm()">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"

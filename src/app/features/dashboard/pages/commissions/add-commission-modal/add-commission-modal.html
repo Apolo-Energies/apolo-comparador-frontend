@@ -46,14 +46,23 @@
 
   <!-- Footer -->
   <div class="px-6 pb-5 border-t border-border pt-4 flex items-center justify-between">
-    <ui-button label="Cancelar" variant="outline" size="md" (click)="onCancel()" />
-    <ui-button
-      [label]="isEditMode() ? 'Guardar Cambios' : 'Crear Comisión'"
-      variant="default"
-      size="md"
-      [disabled]="form.invalid"
-      (click)="onSubmit()"
-    />
+    <ui-button label="Cancelar" variant="outline" size="md" [disabled]="saving()" (click)="onCancel()" />
+    @if (saving()) {
+      <button disabled class="inline-flex items-center justify-center min-w-32 rounded-md px-4 py-2 bg-primary-button text-white text-sm font-semibold cursor-not-allowed opacity-80">
+        <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+          <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="white"/>
+        </svg>
+      </button>
+    } @else {
+      <ui-button
+        [label]="isEditMode() ? 'Guardar Cambios' : 'Crear Comisión'"
+        variant="default"
+        size="md"
+        [disabled]="form.invalid"
+        (click)="onSubmit()"
+      />
+    }
   </div>
 
 </ui-dialog>

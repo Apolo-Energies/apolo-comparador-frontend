@@ -16,8 +16,8 @@ import { REQUIRED_DOCS_BY_PERSON_TYPE } from './configs/doc-by-person-type.confi
 import { EditUserModalComponent } from './edit-user-modal/edit-user-modal';
 import { CustomerModalComponent } from './customer-modal/customer-modal';
 import { DocumentsSectionComponent } from './documents-section/documents-section';
-import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
 import { ContractActionButtonComponent } from '../../../../../shared/components/contract-action-button/contract-action-button.component';
+import { GlobalLoadingService } from '../../../../../services/global-loading.service';
 
 @Component({
   selector: 'app-user-detail',
@@ -29,7 +29,6 @@ import { ContractActionButtonComponent } from '../../../../../shared/components/
     EditUserModalComponent,
     CustomerModalComponent,
     DocumentsSectionComponent,
-    LoadingOverlayComponent,
     ContractActionButtonComponent,
   ],
   templateUrl: './user-detail.html',
@@ -44,6 +43,7 @@ export class UserDetailPageComponent implements OnInit {
   private readonly alertService    = inject(AlertService);
   private readonly sanitizer       = inject(DomSanitizer);
   private readonly platformId      = inject(PLATFORM_ID);
+  private readonly globalLoading   = inject(GlobalLoadingService);
 
   readonly loading                 = signal(false);
   readonly user                    = signal<UserDetail | null>(null);
@@ -184,10 +184,12 @@ export class UserDetailPageComponent implements OnInit {
 
   load(): void {
     this.loading.set(true);
+    this.globalLoading.start();
     this.userService.getById(this.userId).subscribe({
-      next: u => { this.user.set(u); this.loading.set(false); },
+      next: u => { this.user.set(u); this.loading.set(false); this.globalLoading.stop(); },
       error: () => {
         this.loading.set(false);
+        this.globalLoading.stop();
         this.alertService.show('Error al cargar el usuario', 'error');
         this.router.navigate(['/dashboard/settings/users']);
       },

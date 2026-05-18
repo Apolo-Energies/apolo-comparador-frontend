@@ -11,6 +11,8 @@ import { ProductsTabComponent } from './components/products-tab/products-tab.com
 import { TariffsTabComponent } from './components/tariffs-tab/tariffs-tab.component';
 import { OmieDistributionTabComponent } from './components/omie-distribution-tab/omie-distribution-tab.component';
 import { BoePowerTabComponent } from './components/boe-power-tab/boe-power-tab.component';
+import { environment } from '../../../../../environments/environment';
+import { GlobalLoadingService } from '../../../../services/global-loading.service';
 
 @Component({
   selector: 'app-rates-page',
@@ -29,6 +31,9 @@ import { BoePowerTabComponent } from './components/boe-power-tab/boe-power-tab.c
 export class RatesPageComponent {
   private readonly providerService = inject(ProviderService);
   private readonly platformId      = inject(PLATFORM_ID);
+  private readonly globalLoading   = inject(GlobalLoadingService);
+
+  readonly isApolo = environment.features.userDetail;
 
   // Tab icons
   readonly BuildingIcon = Building;
@@ -49,6 +54,7 @@ export class RatesPageComponent {
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
+      this.globalLoading.start();
       this.loadData();
     }
   }
@@ -62,10 +68,12 @@ export class RatesPageComponent {
         console.log('Provider data received:', response);
         this.providerData.set(response);
         this.loading.set(false);
+        this.globalLoading.stop();
       },
       error: (err) => {
         this.error.set('Error al cargar los datos del proveedor');
         this.loading.set(false);
+        this.globalLoading.stop();
         console.error('Error loading provider data:', err);
       },
     });

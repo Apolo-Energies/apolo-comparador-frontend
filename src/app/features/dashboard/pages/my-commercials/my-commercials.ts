@@ -6,17 +6,18 @@ import { isPlatformBrowser } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DataTableComponent, TableColumn } from '@apolo-energies/table';
 import { AlertComponent, AlertService, ButtonComponent, DialogComponent } from '@apolo-energies/ui';
-import { BrandLoaderComponent } from '../../../../shared/components/brand-loader/brand-loader.component';
 import { StarIcon, UiIconSource } from '@apolo-energies/icons';
 import { SubUsersService, SubUser } from '../../../../services/sub-users.service';
 import { UserActionsMenuComponent, UserRow } from '../users/user-actions-menu/user-actions-menu.component';
+import { GlobalLoadingService } from '../../../../services/global-loading.service';
+import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
 
 @Component({
   selector: 'app-my-commercials',
   standalone: true,
   imports: [
     DataTableComponent, ButtonComponent, AlertComponent, DialogComponent,
-    ReactiveFormsModule, BrandLoaderComponent, UserActionsMenuComponent,
+    ReactiveFormsModule, UserActionsMenuComponent, TableSkeletonComponent,
   ],
   templateUrl: './my-commercials.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,11 +28,13 @@ export class MyComercialsPage implements AfterViewInit {
   private fb              = inject(FormBuilder);
   private platformId      = inject(PLATFORM_ID);
   private cdr             = inject(ChangeDetectorRef);
+  private globalLoading   = inject(GlobalLoadingService);
 
   readonly data      = signal<SubUser[]>([]);
   readonly loading   = signal(false);
   readonly modalOpen = signal(false);
   readonly submitted = signal(false);
+  readonly saving    = signal(false);
 
   readonly addIcon: UiIconSource = { type: 'apolo', icon: StarIcon, size: 16 };
 
@@ -71,9 +74,10 @@ export class MyComercialsPage implements AfterViewInit {
 
   load() {
     this.loading.set(true);
+    this.globalLoading.start();
     this.subUsersService.getMySubUsers().subscribe({
-      next: rows => { this.data.set(rows); this.loading.set(false); },
-      error: ()  => { this.loading.set(false); },
+      next: rows => { this.data.set(rows); this.loading.set(false); this.globalLoading.stop(); },
+      error: ()  => { this.loading.set(false); this.globalLoading.stop(); },
     });
   }
 
@@ -123,25 +127,28 @@ export class MyComercialsPage implements AfterViewInit {
     this.submitted.set(true);
     if (this.form.invalid) return;
 
+    this.saving.set(true);
     const raw = this.form.getRawValue();
     this.subUsersService.create({
       email:    raw.email.toLowerCase().trim(),
       fullName: `${raw.name.trim()} ${raw.surnames.trim()}`,
     }).subscribe({
       next: () => {
-        this.alertService.show('Commercial created successfully', 'success');
+        this.alertService.show('Comercial creado correctamente', 'success');
         this.modalOpen.set(false);
         this.form.reset();
         this.submitted.set(false);
+        this.saving.set(false);
         this.load();
       },
       error: err => {
+        this.saving.set(false);
         if (err.status === 409 || err.status === 400) {
-          this.alertService.show('A user with that email already exists', 'error');
+          this.alertService.show('Ya existe un usuario con ese email', 'error');
         } else if (err.status === 403) {
-          this.alertService.show('You do not have permission to create this type of user', 'error');
+          this.alertService.show('No tienes permiso para crear este tipo de usuario', 'error');
         } else {
-          this.alertService.show('Error creating the commercial', 'error');
+          this.alertService.show('Error al crear el comercial', 'error');
         }
       },
     });

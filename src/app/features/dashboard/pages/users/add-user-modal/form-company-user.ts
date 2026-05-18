@@ -13,7 +13,7 @@ const SELECT_CLS = 'w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-
 
       <!-- Email -->
       <div class="space-y-1">
-        <label class="text-sm font-medium text-muted-foreground">Email *</label>
+        <label class="text-sm font-normal text-foreground">Email <span class="text-red-500">*</span></label>
         <input formControlName="email" type="email" placeholder="empresa@email.com"
           [class]="inputCls" [class.border-red-500]="err('email')" />
         @if (err('email')) { <p class="text-xs text-red-500">{{ errMsg('email') }}</p> }
@@ -21,7 +21,7 @@ const SELECT_CLS = 'w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-
 
       <!-- Rol -->
       <div class="space-y-1">
-        <label class="text-sm font-medium text-muted-foreground">Rol *</label>
+        <label class="text-sm font-normal text-foreground">Rol <span class="text-red-500">*</span></label>
         <select formControlName="role" [class]="selectCls" [class.border-red-500]="err('role')">
           <option value="" disabled>Seleccionar rol</option>
           @for (opt of roleOptions; track opt.value) {
@@ -33,7 +33,7 @@ const SELECT_CLS = 'w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-
 
       <!-- Razón Social -->
       <div class="space-y-1">
-        <label class="text-sm font-medium text-muted-foreground">Razón Social *</label>
+        <label class="text-sm font-normal text-foreground">Razón Social <span class="text-red-500">*</span></label>
         <input formControlName="companyName" placeholder="Empresa S.L."
           [class]="inputCls" [class.border-red-500]="err('companyName')" />
         @if (err('companyName')) { <p class="text-xs text-red-500">{{ errMsg('companyName') }}</p> }
@@ -41,7 +41,7 @@ const SELECT_CLS = 'w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-
 
       <!-- CIF -->
       <div class="space-y-1">
-        <label class="text-sm font-medium text-muted-foreground">CIF *</label>
+        <label class="text-sm font-normal text-foreground">CIF <span class="text-red-500">*</span></label>
         <input formControlName="cif" placeholder="B56263304"
           [class]="inputCls" [class.border-red-500]="err('cif')" />
         @if (err('cif')) { <p class="text-xs text-red-500">CIF inválido. Ej: B56263304</p> }
@@ -49,7 +49,7 @@ const SELECT_CLS = 'w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-
 
       <!-- Nombre Representante -->
       <div class="space-y-1">
-        <label class="text-sm font-medium text-muted-foreground">Nombre Representante *</label>
+        <label class="text-sm font-normal text-foreground">Nombre Representante <span class="text-red-500">*</span></label>
         <input formControlName="name" placeholder="Juan"
           [class]="inputCls" [class.border-red-500]="err('name')" />
         @if (err('name')) { <p class="text-xs text-red-500">{{ errMsg('name') }}</p> }
@@ -57,7 +57,7 @@ const SELECT_CLS = 'w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-
 
       <!-- Apellidos -->
       <div class="space-y-1">
-        <label class="text-sm font-medium text-muted-foreground">Apellidos *</label>
+        <label class="text-sm font-normal text-foreground">Apellidos <span class="text-red-500">*</span></label>
         <input formControlName="surnames" placeholder="García López"
           [class]="inputCls" [class.border-red-500]="err('surnames')" />
         @if (err('surnames')) { <p class="text-xs text-red-500">{{ errMsg('surnames') }}</p> }
@@ -65,7 +65,7 @@ const SELECT_CLS = 'w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-
 
       <!-- DNI Representante (opcional) -->
       <div class="space-y-1">
-        <label class="text-sm font-medium text-muted-foreground">DNI Representante (opcional)</label>
+        <label class="text-sm font-normal text-foreground">DNI Representante (opcional)</label>
         <input formControlName="dni" placeholder="12345678A"
           [class]="inputCls" [class.border-red-500]="err('dni')" />
         @if (err('dni')) { <p class="text-xs text-red-500">Formato inválido. Ej: 12345678A</p> }
@@ -73,7 +73,7 @@ const SELECT_CLS = 'w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-
 
       <!-- Teléfono (opcional) -->
       <div class="space-y-1">
-        <label class="text-sm font-medium text-muted-foreground">Teléfono (opcional)</label>
+        <label class="text-sm font-normal text-foreground">Teléfono (opcional)</label>
         <input formControlName="phone" placeholder="+34612345678"
           [class]="inputCls" [class.border-red-500]="err('phone')" />
         @if (err('phone')) { <p class="text-xs text-red-500">Debe empezar con +34 y tener 9 dígitos</p> }
@@ -81,7 +81,7 @@ const SELECT_CLS = 'w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-
 
       <!-- Domicilio Legal (opcional) -->
       <div class="space-y-1">
-        <label class="text-sm font-medium text-muted-foreground">Domicilio Legal (opcional)</label>
+        <label class="text-sm font-normal text-foreground">Domicilio Legal (opcional)</label>
         <input formControlName="legalAddress" placeholder="Calle Mayor 1, 28001 Madrid"
           [class]="inputCls" [class.border-red-500]="err('legalAddress')" />
         @if (err('legalAddress')) { <p class="text-xs text-red-500">Mínimo 5 caracteres</p> }
@@ -89,7 +89,7 @@ const SELECT_CLS = 'w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-
 
       <!-- Domicilio Notificaciones (opcional) -->
       <div class="space-y-1">
-        <label class="text-sm font-medium text-muted-foreground">Domicilio Notificaciones (opcional)</label>
+        <label class="text-sm font-normal text-foreground">Domicilio Notificaciones (opcional)</label>
         <input formControlName="notificationAddress" placeholder="Calle Mayor 1, 28001 Madrid"
           [class]="inputCls" [class.border-red-500]="err('notificationAddress')" />
         @if (err('notificationAddress')) { <p class="text-xs text-red-500">Mínimo 5 caracteres</p> }
@@ -97,7 +97,7 @@ const SELECT_CLS = 'w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-
 
       <!-- Cuenta Bancaria (opcional) -->
       <div class="space-y-1">
-        <label class="text-sm font-medium text-muted-foreground">Cuenta Bancaria (opcional)</label>
+        <label class="text-sm font-normal text-foreground">Cuenta Bancaria (opcional)</label>
         <input formControlName="bankAccount" placeholder="ES83 0182 6517 7302 0197 5760"
           (input)="onIban($event)"
           [class]="inputCls" [class.border-red-500]="err('bankAccount')" />

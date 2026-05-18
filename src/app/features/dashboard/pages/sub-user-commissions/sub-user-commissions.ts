@@ -9,7 +9,8 @@ import { AlertComponent, AlertService } from '@apolo-energies/ui';
 import { ApoloIcons, XIcon, UiIconSource } from '@apolo-energies/icons';
 import { SubUsersService, SubUser } from '../../../../services/sub-users.service';
 import { RefreshTokenService } from '../../../../services/refresh-token.service';
-import { BrandLoaderComponent } from '../../../../shared/components/brand-loader/brand-loader.component';
+import { GlobalLoadingService } from '../../../../services/global-loading.service';
+import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
 
 interface SubUserRow extends SubUser {
   draftPercentage: string;
@@ -19,7 +20,7 @@ interface SubUserRow extends SubUser {
 @Component({
   selector: 'app-sub-user-commissions',
   standalone: true,
-  imports: [DataTableComponent, AlertComponent, FormsModule, ApoloIcons, BrandLoaderComponent],
+  imports: [DataTableComponent, AlertComponent, FormsModule, ApoloIcons, TableSkeletonComponent],
   templateUrl: './sub-user-commissions.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -29,6 +30,7 @@ export class SubUserCommissionsPage implements AfterViewInit {
   private refreshTokenService  = inject(RefreshTokenService);
   private platformId           = inject(PLATFORM_ID);
   private cdr                  = inject(ChangeDetectorRef);
+  private globalLoading        = inject(GlobalLoadingService);
 
   readonly data    = signal<SubUserRow[]>([]);
   readonly loading = signal(false);
@@ -65,6 +67,7 @@ export class SubUserCommissionsPage implements AfterViewInit {
 
   private load() {
     this.loading.set(true);
+    this.globalLoading.start();
     this.subUsersService.getMySubUsers().subscribe({
       next: rows => {
         this.data.set(rows.map(r => ({
@@ -73,8 +76,9 @@ export class SubUserCommissionsPage implements AfterViewInit {
           saving: false,
         })));
         this.loading.set(false);
+        this.globalLoading.stop();
       },
-      error: () => this.loading.set(false),
+      error: () => { this.loading.set(false); this.globalLoading.stop(); },
     });
   }
 

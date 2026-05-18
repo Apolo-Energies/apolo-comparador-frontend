@@ -21,6 +21,9 @@ import { OpportunityStatusBadgeComponent } from './components/opportunity-status
 import { OpportunitiesBoardComponent } from './components/opportunities-board/opportunities-board';
 import { OpportunityDetailDrawerComponent } from './components/opportunity-detail-drawer/opportunity-detail-drawer';
 import { EsNumberPipe } from '../../../../shared/pipes/es-number.pipe';
+import { environment } from '../../../../../environments/environment';
+import { GlobalLoadingService } from '../../../../services/global-loading.service';
+import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
 
 type ViewMode = 'board' | 'table';
 
@@ -51,16 +54,20 @@ interface KpiVolumes {
     OpportunityDetailDrawerComponent,
     ApoloIcons,
     EsNumberPipe,
+    TableSkeletonComponent,
   ],
   templateUrl: './opportunities-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OpportunitiesPageComponent implements AfterViewInit {
-  private oppService = inject(OpportunityService);
-  private platformId = inject(PLATFORM_ID);
-  private cdr        = inject(ChangeDetectorRef);
-  private router     = inject(Router);
-  private toast      = inject(MessageService);
+  private oppService    = inject(OpportunityService);
+  private platformId    = inject(PLATFORM_ID);
+  private cdr           = inject(ChangeDetectorRef);
+  private router        = inject(Router);
+  private toast         = inject(MessageService);
+  private globalLoading = inject(GlobalLoadingService);
+
+  readonly isApolo = environment.features.userDetail;
 
   // icons
   readonly searchIcon: UiIconSource = { type: 'apolo', icon: SearchIcon, size: 16 };
@@ -272,6 +279,7 @@ export class OpportunitiesPageComponent implements AfterViewInit {
 
   private loadTable() {
     this.loadingTable.set(true);
+    this.globalLoading.start();
     this.oppService.list({
       ...this.appliedFilters(),
       page:     this.currentPage(),
@@ -281,9 +289,10 @@ export class OpportunitiesPageComponent implements AfterViewInit {
         this.tableData.set(res.items);
         this.totalCount.set(res.totalCount);
         this.loadingTable.set(false);
+        this.globalLoading.stop();
         this.cdr.markForCheck();
       },
-      error: () => this.loadingTable.set(false),
+      error: () => { this.loadingTable.set(false); this.globalLoading.stop(); },
     });
   }
 

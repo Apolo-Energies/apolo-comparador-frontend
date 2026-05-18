@@ -64,20 +64,28 @@
     </div>
   </div>
 
-  <!-- Table -->
-  <lib-data-table
-    [data]="data()"
-    [columns]="columns"
-    rowKey="id"
-    [borderTop]="false"
-    [borderBottom]="true"
-    [borderLeft]="false"
-    [borderRight]="false"
-    [roundedTopLeft]="false"
-    [roundedTopRight]="false"
-    [roundedBottomLeft]="false"
-    [roundedBottomRight]="false"
-  />
+  <!-- Table + overlay loader -->
+  <div class="relative min-h-50">
+
+    @if (loading()) {
+      <app-table-skeleton [cols]="5" [rows]="8" />
+    } @else {
+      <lib-data-table
+        [data]="data()"
+        [columns]="columns"
+        rowKey="id"
+        [borderTop]="false"
+        [borderBottom]="true"
+        [borderLeft]="false"
+        [borderRight]="false"
+        [roundedTopLeft]="false"
+        [roundedTopRight]="false"
+        [roundedBottomLeft]="false"
+        [roundedBottomRight]="false"
+      />
+    }
+
+  </div>
 
   <!-- Paginator -->
   <lib-paginator
