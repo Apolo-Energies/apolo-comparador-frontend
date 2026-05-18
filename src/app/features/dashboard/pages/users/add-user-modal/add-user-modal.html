@@ -3,7 +3,7 @@
   <!-- ═══════════════ APOLO: modal completo ═══════════════ -->
   <ui-dialog [open]="open()" [closeable]="true" maxWidth="max-w-2xl" (openChange)="$event ? null : onCancel()">
 
-    <div class="flex flex-col" style="min-height: 80vh; max-height: 92vh">
+    <div class="flex flex-col overflow-hidden" style="height: 88vh">
 
       <!-- Header fijo -->
       <div class="shrink-0 px-6 pt-5 space-y-4">
@@ -29,7 +29,7 @@
               type="button"
               (click)="setView(opt.value)"
               class="flex-1 text-sm py-1.5 rounded-md transition-all font-medium"
-              [class.bg-card]="view() === opt.value"
+              [class.bg-primary-button]="view() === opt.value"
               [class.text-foreground]="view() === opt.value"
               [class.shadow-sm]="view() === opt.value"
               [class.text-muted-foreground]="view() !== opt.value"
@@ -47,10 +47,10 @@
 
       </div>
 
-      <!-- Body con scroll -->
+      <!-- Body -->
       <form class="flex flex-col flex-1 min-h-0">
 
-        <div class="flex-1 overflow-y-auto px-6 py-4">
+        <div class="flex-1 px-6 py-4 overflow-y-auto">
           @if (view() === 'Individual') {
             <app-form-individual-user [form]="individualForm" [submitted]="submitted()" />
           } @else {
@@ -60,8 +60,17 @@
 
         <!-- Footer fijo -->
         <div class="shrink-0 border-t border-border px-6 py-4 flex items-center justify-between">
-          <ui-button label="Cancelar"      variant="outline" size="md" (click)="onCancel()" />
-          <ui-button label="Crear Usuario" variant="default" size="md" (click)="onSubmit()" />
+          <ui-button label="Cancelar" variant="outline" size="md" [disabled]="saving()" (click)="onCancel()" />
+          @if (saving()) {
+            <button disabled class="inline-flex items-center justify-center min-w-32 rounded-md px-4 py-2 bg-primary-button text-white text-sm font-semibold cursor-not-allowed opacity-80">
+              <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+                <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="white"/>
+              </svg>
+            </button>
+          } @else {
+            <ui-button label="Crear Usuario" variant="default" size="md" (click)="onSubmit()" />
+          }
         </div>
 
       </form>
@@ -128,8 +137,17 @@
       </div>
 
       <div class="flex items-center justify-between pt-2 border-t border-border">
-        <ui-button label="Cancelar"      variant="outline" size="md" (click)="onCancel()" />
-        <ui-button label="Crear Usuario" variant="default" size="md" (click)="onSubmit()" />
+        <ui-button label="Cancelar" variant="outline" size="md" [disabled]="saving()" (click)="onCancel()" />
+        @if (saving()) {
+          <button disabled class="inline-flex items-center justify-center rounded-md px-4 py-2 bg-primary-button text-white text-sm font-semibold cursor-not-allowed opacity-80">
+            <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+              <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="white"/>
+            </svg>
+          </button>
+        } @else {
+          <ui-button label="Crear Usuario" variant="default" size="md" (click)="onSubmit()" />
+        }
       </div>
 
     </form>

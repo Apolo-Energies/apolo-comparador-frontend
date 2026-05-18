@@ -1,5 +1,3 @@
-<app-brand-loader [visible]="loading()" [showBar]="false" [showPercent]="false" [showTitle]="false" [showWordmark]="false" [description]="null" [microcopy]="null" />
-
 <ui-alert />
 
 <!-- Commission input cell -->
@@ -42,29 +40,34 @@
 
   <!-- Header -->
   <div class="bg-card px-6 py-4">
-    <p class="text-base font-semibold text-foreground">Comisiones de Colaboradores</p>
-    <p class="text-sm text-muted-foreground">Asigna o modifica el porcentaje de comisión de cada colaborador</p>
+    <p class="text-base font-semibold text-foreground">Comisiones de Comerciales</p>
+    <p class="text-sm text-muted-foreground">Asigna o modifica el porcentaje de comisión de cada comercial</p>
   </div>
 
   <!-- Table -->
-  <lib-data-table
-    [data]="data()"
-    [columns]="columns"
-    rowKey="userId"
-    [borderTop]="false"
-    [borderBottom]="false"
-    [borderLeft]="false"
-    [borderRight]="false"
-    [roundedTopLeft]="false"
-    [roundedTopRight]="false"
-    [roundedBottomLeft]="false"
-    [roundedBottomRight]="false"
-  />
-
-  @if (!loading() && data().length === 0) {
-    <div class="py-12 text-center text-sm text-muted-foreground">
-      No tienes colaboradores. Ve a "Mis Colaboradores" para crear el primero.
-    </div>
-  }
+  <div class="relative">
+    @if (loading()) {
+      <app-table-skeleton [cols]="4" [rows]="6" />
+    } @else {
+      <lib-data-table
+        [data]="data()"
+        [columns]="columns"
+        rowKey="userId"
+        [borderTop]="false"
+        [borderBottom]="false"
+        [borderLeft]="false"
+        [borderRight]="false"
+        [roundedTopLeft]="false"
+        [roundedTopRight]="false"
+        [roundedBottomLeft]="false"
+        [roundedBottomRight]="false"
+      />
+      @if (data().length === 0) {
+        <div class="py-12 text-center text-sm text-muted-foreground">
+          No tienes comerciales. Ve a "Comerciales" para crear el primero.
+        </div>
+      }
+    }
+  </div>
 
 </div>

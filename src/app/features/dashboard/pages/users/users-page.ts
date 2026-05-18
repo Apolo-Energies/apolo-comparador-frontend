@@ -10,7 +10,8 @@ import { UserService } from '../../../../services/user.service';
 import { AddUserModalComponent } from './add-user-modal/add-user-modal';
 import { UserActionsMenuComponent, UserRow, SubUserSummary } from './user-actions-menu/user-actions-menu.component';
 import { getRoleLabel } from '../../../../entities/user-role';
-import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
+import { GlobalLoadingService } from '../../../../services/global-loading.service';
+import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
 import { environment } from '../../../../../environments/environment';
 
 @Component({
@@ -19,7 +20,7 @@ import { environment } from '../../../../../environments/environment';
   imports: [
     DataTableComponent, PaginatorComponent, InputFieldComponent,
     SelectFieldComponent, ButtonComponent, AlertComponent,
-    AddUserModalComponent, UserActionsMenuComponent, LoadingOverlayComponent,
+    AddUserModalComponent, UserActionsMenuComponent, TableSkeletonComponent,
   ],
   templateUrl: './users-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -28,8 +29,9 @@ export class UsersPageComponent implements AfterViewInit {
   @ViewChild('actionsTpl')         private actionsTpl!: TemplateRef<{ $implicit: UserRow }>;
   @ViewChild('contractStatusTpl') private contractStatusTpl!: TemplateRef<{ $implicit: UserRow }>;
 
-  private userService = inject(UserService);
-  private platformId  = inject(PLATFORM_ID);
+  private userService   = inject(UserService);
+  private platformId    = inject(PLATFORM_ID);
+  private globalLoading = inject(GlobalLoadingService);
 
   // icons
   readonly searchIcon:   UiIconSource = { type: 'apolo', icon: SearchIcon,   size: 16 };
@@ -54,7 +56,7 @@ export class UsersPageComponent implements AfterViewInit {
 
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.pageSize())));
 
-  private readonly isApolo = environment.features.userDetail;
+  readonly isApolo = environment.features.userDetail;
 
   readonly columns = signal<TableColumn<UserRow>[]>(
     this.isApolo ? [] : [
@@ -121,6 +123,7 @@ export class UsersPageComponent implements AfterViewInit {
 
   load() {
     this.loading.set(true);
+    this.globalLoading.start();
     this.userService.getByFilters({
       fullName: this.filterName()  || undefined,
       email:    this.filterEmail() || undefined,
@@ -132,8 +135,9 @@ export class UsersPageComponent implements AfterViewInit {
         this.data.set(res.items as unknown as UserRow[]);
         this.totalCount.set(res.totalCount);
         this.loading.set(false);
+        this.globalLoading.stop();
       },
-      error: () => this.loading.set(false),
+      error: () => { this.loading.set(false); this.globalLoading.stop(); },
     });
   }
 

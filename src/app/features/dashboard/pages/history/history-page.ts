@@ -7,11 +7,14 @@ import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-ener
 import { ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
 import { ApoloIcons, DateIcon, DownloadIcon, EmailIcon, filterIcon, SearchIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
 import { HistoryService, HistoryItem } from '../../../../services/history.service';
+import { GlobalLoadingService } from '../../../../services/global-loading.service';
+import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
+import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-history-page',
   standalone: true,
-  imports: [DataTableComponent, PaginatorComponent, InputFieldComponent, ButtonComponent, ApoloIcons],
+  imports: [DataTableComponent, PaginatorComponent, InputFieldComponent, ButtonComponent, ApoloIcons, TableSkeletonComponent],
   templateUrl: './history-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -19,6 +22,7 @@ export class HistoryPageComponent implements AfterViewInit {
   private historyService = inject(HistoryService);
   private platformId     = inject(PLATFORM_ID);
   private cdr            = inject(ChangeDetectorRef);
+  private globalLoading  = inject(GlobalLoadingService);
 
   // icons
   readonly searchIcon:   UiIconSource = { type: 'apolo', icon: SearchIcon,   size: 16 };
@@ -40,7 +44,9 @@ export class HistoryPageComponent implements AfterViewInit {
   readonly pageSize    = signal(10);
   readonly totalCount  = signal(0);
 
-  readonly data = signal<HistoryItem[]>([]);
+  readonly loading = signal(false);
+  readonly data    = signal<HistoryItem[]>([]);
+  readonly isApolo = environment.features.userDetail;
 
   @ViewChild('emailCellTpl') emailCellTpl!: TemplateRef<{ $implicit: HistoryItem }>;
   @ViewChild('dateCellTpl')  dateCellTpl!:  TemplateRef<{ $implicit: HistoryItem }>;
@@ -76,6 +82,8 @@ export class HistoryPageComponent implements AfterViewInit {
   private load() {
     const start = this.filterStartDate() || undefined;
     const end   = this.filterEndDate()   || undefined;
+    this.loading.set(true);
+    this.globalLoading.start();
     this.historyService.getByFilters({
       fullName:  this.filterUser()  || undefined,
       email:     this.filterEmail() || undefined,
@@ -84,9 +92,14 @@ export class HistoryPageComponent implements AfterViewInit {
       cups:      this.filterCups()  || undefined,
       page:      this.currentPage(),
       pageSize:  this.pageSize(),
-    }).subscribe(res => {
-      this.data.set(res.items);
-      this.totalCount.set(res.totalCount);
+    }).subscribe({
+      next: res => {
+        this.data.set(res.items);
+        this.totalCount.set(res.totalCount);
+        this.loading.set(false);
+        this.globalLoading.stop();
+      },
+      error: () => { this.loading.set(false); this.globalLoading.stop(); },
     });
   }
 

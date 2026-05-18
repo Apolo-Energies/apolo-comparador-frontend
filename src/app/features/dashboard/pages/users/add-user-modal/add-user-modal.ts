@@ -31,6 +31,7 @@ export class AddUserModalComponent {
   readonly isApolo   = environment.features.userDetail;
   readonly view      = signal<PersonView>('Individual');
   readonly submitted = signal(false);
+  readonly saving    = signal(false);
 
   readonly viewOptions = [
     { value: 'Individual' as PersonView, label: 'Persona Física' },
@@ -106,6 +107,7 @@ export class AddUserModalComponent {
     const form = this.isApolo ? this.activeForm() : this.simpleForm;
     if (form.invalid) return;
 
+    this.saving.set(true);
     const raw = form.getRawValue() as Record<string, string>;
 
     this.userService.create({
@@ -128,9 +130,11 @@ export class AddUserModalComponent {
         this.individualForm.reset();
         this.companyForm.reset();
         this.submitted.set(false);
+        this.saving.set(false);
         this.saved.emit();
       },
       error: (err) => {
+        this.saving.set(false);
         if (err.status === 409) {
           this.alertService.show('Ya existe un usuario con ese email', 'error');
         } else {

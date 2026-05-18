@@ -71,7 +71,7 @@ export class UserService {
   }
 
   updateProfile(id: string, data: { fullName: string; email: string; phone?: string }) {
-    return this.http.put(`${environment.apiUrl}/user/${id}`, data);
+    return this.http.patch(`${environment.apiUrl}/user/${id}`, data);
   }
 
   downloadExcel(): Observable<Blob> {

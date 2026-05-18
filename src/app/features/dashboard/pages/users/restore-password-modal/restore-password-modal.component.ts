@@ -36,14 +36,16 @@ import { PasswordService } from '../../../../../services/password.service';
           Cancelar
         </ui-button>
 
-        <ui-button
-          label="Enviar correo"
-          variant="default"
-          (click)="onConfirm()"
-          [disabled]="loading()"
-        >
-          {{ loading() ? 'Enviando...' : 'Enviar correo' }}
-        </ui-button>
+        @if (loading()) {
+          <button disabled class="inline-flex items-center justify-center min-w-32 rounded-md px-4 py-2 bg-primary-button text-white text-sm font-semibold cursor-not-allowed opacity-80">
+            <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+              <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="white"/>
+            </svg>
+          </button>
+        } @else {
+          <ui-button label="Enviar correo" variant="default" (click)="onConfirm()" />
+        }
 
       </div>
     </div>

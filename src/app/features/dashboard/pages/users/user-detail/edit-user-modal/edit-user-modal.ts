@@ -75,8 +75,16 @@ const NUMBER_CLS = 'flex-1 min-w-0 px-4 py-2.5 text-sm rounded-r-lg border bg-ca
 
           <div class="shrink-0 border-t border-border px-6 py-4 flex justify-end gap-2">
             <ui-button label="Cancelar" variant="outline" size="md" (click)="onClose()" />
-            <ui-button label="Guardar cambios" variant="default" size="md"
-              [disabled]="saving()" (click)="onSubmit()" />
+            @if (saving()) {
+              <button disabled class="inline-flex items-center justify-center min-w-32 rounded-md px-4 py-2 bg-primary-button text-white text-sm font-semibold cursor-not-allowed opacity-80">
+                <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+                  <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="white"/>
+                </svg>
+              </button>
+            } @else {
+              <ui-button label="Guardar cambios" variant="default" size="md" (click)="onSubmit()" />
+            }
           </div>
         </form>
 

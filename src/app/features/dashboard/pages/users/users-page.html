@@ -1,5 +1,3 @@
-<app-loading-overlay [loading]="loading()" />
-
 <ui-alert />
 
 <div class="border border-border rounded-lg overflow-hidden shadow-sm">
@@ -92,22 +90,31 @@
     }
   </ng-template>
 
-  <lib-data-table
-    [data]="data()"
-    [columns]="columns()"
-    rowKey="id"
-    [expandRowTemplate]="subRowsTpl"
-    [isExpandable]="rowIsExpandable"
-    [expandBadge]="rowBadge"
-    [borderTop]="false"
-    [borderBottom]="true"
-    [borderLeft]="false"
-    [borderRight]="false"
-    [roundedTopLeft]="false"
-    [roundedTopRight]="false"
-    [roundedBottomLeft]="false"
-    [roundedBottomRight]="false"
-  />
+  <!-- Table + overlay loader -->
+  <div class="relative min-h-50">
+
+    @if (loading()) {
+      <app-table-skeleton [cols]="11" [rows]="8" />
+    } @else {
+      <lib-data-table
+        [data]="data()"
+        [columns]="columns()"
+        rowKey="id"
+        [expandRowTemplate]="subRowsTpl"
+        [isExpandable]="rowIsExpandable"
+        [expandBadge]="rowBadge"
+        [borderTop]="false"
+        [borderBottom]="true"
+        [borderLeft]="false"
+        [borderRight]="false"
+        [roundedTopLeft]="false"
+        [roundedTopRight]="false"
+        [roundedBottomLeft]="false"
+        [roundedBottomRight]="false"
+      />
+    }
+
+  </div>
 
   <!-- Paginator -->
   <lib-paginator
