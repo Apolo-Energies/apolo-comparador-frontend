@@ -4,6 +4,7 @@ import { ButtonComponent } from '@apolo-energies/ui';
 import { ApoloIcons, chevronRightIcon, InfoIcon, XIcon, UiIconSource } from '@apolo-energies/icons';
 import { environment } from '../../../../../environments/environment';
 import { ProviderService } from '../../../../services/provider.service';
+import { BrandLoaderComponent } from '../../../../shared/components/brand-loader/brand-loader.component';
 
 interface CrmVideo {
   title:       string;
@@ -134,7 +135,7 @@ const TARIFF_PROVIDER_ID = 1;
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './support-page.html',
-  imports: [ApoloIcons, ButtonComponent],
+  imports: [ApoloIcons, ButtonComponent, BrandLoaderComponent],
 })
 export class SupportPageComponent {
   private sanitizer       = inject(DomSanitizer);
@@ -248,7 +249,7 @@ export class SupportPageComponent {
       },
     });
 
-    // Excel blob in parallel for the download button
+    // Excel blob in parallel for the download button (doesn't gate the loader)
     this.providerService.downloadExcel(TARIFF_PROVIDER_ID).subscribe({
       next: blob => { this.excelBlob = blob; },
       error: err => { console.warn('Excel prefetch failed:', err); },

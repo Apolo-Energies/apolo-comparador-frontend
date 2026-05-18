@@ -79,8 +79,19 @@
              [class.flex-1]="expanded()">
 
           @if (previewLoading()) {
-            <div class="absolute inset-0 flex items-center justify-center text-sm text-gray-300 z-10">
-              Generando vista previa…
+            <div class="absolute inset-0 flex items-center justify-center z-10">
+              <app-brand-loader
+                [visible]="true"
+                [size]="100"
+                [fullscreen]="false"
+                [showBackdrop]="false"
+                [showDescription]="false"
+                [showWordmark]="false"
+                [showBar]="true"
+                [showPercent]="false"
+                [showMicrocopy]="false"
+                title="Generando vista previa"
+              />
             </div>
           } @else if (previewError(); as err) {
             <div class="absolute inset-0 flex items-center justify-center text-sm text-red-400 z-10">
