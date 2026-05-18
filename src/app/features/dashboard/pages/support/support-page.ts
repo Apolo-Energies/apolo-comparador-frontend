@@ -3,6 +3,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ButtonComponent } from '@apolo-energies/ui';
 import { ApoloIcons, chevronRightIcon, InfoIcon, XIcon, UiIconSource } from '@apolo-energies/icons';
 import { environment } from '../../../../../environments/environment';
+import { ProviderService } from '../../../../services/provider.service';
 
 interface CrmVideo {
   title:       string;
@@ -11,13 +12,13 @@ interface CrmVideo {
 }
 
 interface SupportTopic {
-  title:     string;
-  tag:       string;
-  tagCls:    string;
-  dotCls:    string;
-  available: boolean;
-  url?:      string;
-  videos?:   CrmVideo[];
+  title:         string;
+  tag:           string;
+  tagCls:        string;
+  dotCls:        string;
+  available:     boolean;
+  videos?:       CrmVideo[];
+  excelPreview?: true;
 }
 
 const CRM_VIDEOS: CrmVideo[] = [
@@ -63,12 +64,12 @@ const TOPICS: SupportTopic[] = [
     videos:    CRM_VIDEOS,
   },
   {
-    title:     'Tarifas De Luz',
-    tag:       'Guía de tarifas eléctricas',
-    tagCls:    'bg-indigo-500/15 text-indigo-400 ring-1 ring-indigo-500/20',
-    dotCls:    'bg-indigo-400',
-    available: true,
-    url:       'https://www.youtube.com/embed/',
+    title:        'Tarifas De Luz',
+    tag:          'Guía de tarifas eléctricas',
+    tagCls:       'bg-indigo-500/15 text-indigo-400 ring-1 ring-indigo-500/20',
+    dotCls:       'bg-indigo-400',
+    available:    true,
+    excelPreview: true,
   },
   {
     title:     'Tarifas De Gas',
@@ -76,7 +77,13 @@ const TOPICS: SupportTopic[] = [
     tagCls:    'bg-pink-500/15 text-pink-400 ring-1 ring-pink-500/20',
     dotCls:    'bg-pink-400',
     available: true,
-    url:       'https://www.youtube.com/embed/',
+    videos: [
+      {
+        title:       'Tarifas De Gas',
+        description: 'Guía de tarifas de gas.',
+        url:         'https://www.youtube.com/embed/',
+      },
+    ],
   },
   {
     title:     'Comparador',
@@ -84,7 +91,13 @@ const TOPICS: SupportTopic[] = [
     tagCls:    'bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/20',
     dotCls:    'bg-purple-400',
     available: true,
-    url:       'https://www.youtube.com/embed/',
+    videos: [
+      {
+        title:       'Comparador',
+        description: 'Cómo usar el comparador.',
+        url:         'https://www.youtube.com/embed/',
+      },
+    ],
   },
   {
     title:     'Proceso de Firma',
@@ -109,11 +122,12 @@ const TOPICS: SupportTopic[] = [
   },
 ];
 
-// TODO: reemplazar con los números reales (formato: código país + número, sin + ni espacios)
 const WHATSAPP_NUMBERS: Record<string, string> = {
   renova:  'PENDIENTE_RENOVAE',
   coexpal: 'PENDIENTE_COEXPAL',
 };
+
+const TARIFF_PROVIDER_ID = 1;
 
 @Component({
   selector: 'app-support-page',
@@ -123,19 +137,27 @@ const WHATSAPP_NUMBERS: Record<string, string> = {
   imports: [ApoloIcons, ButtonComponent],
 })
 export class SupportPageComponent {
-  private sanitizer = inject(DomSanitizer);
+  private sanitizer       = inject(DomSanitizer);
+  private providerService = inject(ProviderService);
 
   readonly topics     = TOPICS;
   readonly infoIcon:  UiIconSource = { type: 'apolo', icon: InfoIcon,        size: 12 };
   readonly arrowIcon: UiIconSource = { type: 'apolo', icon: chevronRightIcon, size: 14 };
   readonly closeIcon: UiIconSource = { type: 'apolo', icon: XIcon,            size: 14 };
-  readonly chevronIcon: UiIconSource = { type: 'apolo', icon: chevronRightIcon, size: 18 };
 
   readonly isApolo     = environment.clientName === 'apolo';
   readonly whatsappUrl = `https://wa.me/${WHATSAPP_NUMBERS[environment.clientName] ?? ''}`;
 
   readonly selected          = signal<SupportTopic | null>(null);
   readonly currentVideoIndex = signal(0);
+  readonly expanded          = signal(false);
+
+  readonly previewLoading = signal(false);
+  readonly previewError   = signal<string | null>(null);
+  readonly pdfUrl         = signal<SafeResourceUrl | null>(null);
+
+  private excelBlob: Blob | null = null;
+  private pdfObjectUrl: string | null = null;
 
   readonly currentVideo = computed(() => {
     const topic = this.selected();
@@ -143,36 +165,101 @@ export class SupportPageComponent {
     return topic.videos[this.currentVideoIndex()] ?? null;
   });
 
-  readonly totalVideos   = computed(() => this.selected()?.videos?.length ?? 0);
-  readonly videoIndices  = computed(() => Array.from({ length: this.totalVideos() }, (_, i) => i));
-  readonly hasPrev     = computed(() => this.currentVideoIndex() > 0);
-  readonly hasNext     = computed(() => this.currentVideoIndex() < this.totalVideos() - 1);
+  readonly totalVideos = computed(() => this.selected()?.videos?.length ?? 0);
 
   safeUrl(url: string): SafeResourceUrl {
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 
+  thumbnail(url: string): string {
+    const id = url.split('/').pop()?.split('?')[0] ?? '';
+    return `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
+  }
+
   open(topic: SupportTopic): void {
+    this.revokePdfUrl();
+    this.previewError.set(null);
     this.selected.set(topic);
     this.currentVideoIndex.set(0);
+    this.expanded.set(false);
+    if (topic.excelPreview) {
+      this.loadTariffPreview();
+    }
     const main = document.querySelector('main');
     if (main) main.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   close(): void {
+    this.revokePdfUrl();
     this.selected.set(null);
     this.currentVideoIndex.set(0);
+    this.expanded.set(false);
+    this.previewError.set(null);
+    this.excelBlob = null;
   }
 
-  prev(): void {
-    if (this.hasPrev()) this.currentVideoIndex.update(i => i - 1);
+  toggleExpand(): void {
+    this.expanded.update(v => !v);
   }
 
-  next(): void {
-    if (this.hasNext()) this.currentVideoIndex.update(i => i + 1);
+  toggle(topic: SupportTopic): void {
+    if (this.selected()?.title === topic.title) {
+      this.close();
+    } else {
+      this.open(topic);
+    }
   }
 
-  goTo(index: number): void {
+  isOpen(topic: SupportTopic): boolean {
+    return this.selected()?.title === topic.title;
+  }
+
+  selectVideo(index: number): void {
     this.currentVideoIndex.set(index);
+  }
+
+  downloadExcel(): void {
+    if (!this.excelBlob) return;
+    const url = URL.createObjectURL(this.excelBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'tarifarios-luz.xlsx';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  private loadTariffPreview(): void {
+    this.previewLoading.set(true);
+    this.previewError.set(null);
+    this.excelBlob = null;
+
+    // PDF for inline preview
+    this.providerService.downloadTariffPdf(TARIFF_PROVIDER_ID).subscribe({
+      next: pdfBlob => {
+        const url = URL.createObjectURL(pdfBlob);
+        this.pdfObjectUrl = url;
+        this.pdfUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
+        this.previewLoading.set(false);
+      },
+      error: err => {
+        console.error('Tariff PDF preview error:', err);
+        this.previewError.set('No se pudo cargar la vista previa.');
+        this.previewLoading.set(false);
+      },
+    });
+
+    // Excel blob in parallel for the download button
+    this.providerService.downloadExcel(TARIFF_PROVIDER_ID).subscribe({
+      next: blob => { this.excelBlob = blob; },
+      error: err => { console.warn('Excel prefetch failed:', err); },
+    });
+  }
+
+  private revokePdfUrl(): void {
+    if (this.pdfObjectUrl) {
+      URL.revokeObjectURL(this.pdfObjectUrl);
+      this.pdfObjectUrl = null;
+    }
+    this.pdfUrl.set(null);
   }
 }

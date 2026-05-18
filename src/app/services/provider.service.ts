@@ -25,4 +25,10 @@ export class ProviderService {
       `${environment.apiUrl}/provider/excel/${providerId}`, {}, { responseType: 'blob' }
     );
   }
+
+  downloadTariffPdf(providerId: number) {
+    return this.http.post(
+      `${environment.apiUrl}/provider/pdf/${providerId}`, {}, { responseType: 'blob' }
+    );
+  }
 }

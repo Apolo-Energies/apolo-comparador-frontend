@@ -15,14 +15,154 @@
       </p>
     </div>
 
+    <!-- Excel preview (e.g. Tarifas De Luz → vista tipo PDF del exportador) -->
+    @if (selected()?.excelPreview) {
+      <div class="mb-6 rounded-lg border border-border overflow-hidden"
+           [class.fixed]="expanded()"
+           [class.inset-4]="expanded()"
+           [class.z-50]="expanded()"
+           [class.bg-card]="expanded()"
+           [class.flex]="expanded()"
+           [class.flex-col]="expanded()">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between px-4 py-2 bg-muted/30 border-b border-border shrink-0">
+          <p class="text-xs text-muted-foreground">Vista previa: {{ selected()!.title }}</p>
+          <div class="flex items-center gap-1">
+            <button
+              type="button"
+              class="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-green-600 hover:bg-green-700 text-white text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Descargar Excel"
+              [disabled]="!pdfUrl()"
+              (click)="downloadExcel()">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <span>Descargar Excel</span>
+            </button>
+            <button
+              type="button"
+              class="p-1.5 rounded-md hover:bg-muted transition-colors text-foreground"
+              [title]="expanded() ? 'Contraer' : 'Expandir'"
+              (click)="toggleExpand()">
+              @if (expanded()) {
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="4 14 10 14 10 20"/>
+                  <polyline points="20 10 14 10 14 4"/>
+                  <line x1="14" y1="10" x2="21" y2="3"/>
+                  <line x1="3" y1="21" x2="10" y2="14"/>
+                </svg>
+              } @else {
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="15 3 21 3 21 9"/>
+                  <polyline points="9 21 3 21 3 15"/>
+                  <line x1="21" y1="3" x2="14" y2="10"/>
+                  <line x1="3" y1="21" x2="10" y2="14"/>
+                </svg>
+              }
+            </button>
+            <button
+              type="button"
+              class="p-1.5 rounded-md hover:bg-muted transition-colors text-foreground"
+              title="Cerrar"
+              (click)="close()">
+              <lib-apolo-icons [icon]="closeIcon" class="flex items-center" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Body: native browser PDF viewer (backend QuestPDF endpoint) -->
+        <div class="relative bg-neutral-800"
+             [style.height]="expanded() ? 'auto' : '70vh'"
+             [class.flex-1]="expanded()">
+
+          @if (previewLoading()) {
+            <div class="absolute inset-0 flex items-center justify-center text-sm text-gray-300 z-10">
+              Generando vista previa…
+            </div>
+          } @else if (previewError(); as err) {
+            <div class="absolute inset-0 flex items-center justify-center text-sm text-red-400 z-10">
+              {{ err }}
+            </div>
+          } @else if (pdfUrl(); as url) {
+            <iframe
+              [src]="url"
+              class="w-full h-full border-0"
+              title="Vista previa tarifario"
+            ></iframe>
+          }
+        </div>
+      </div>
+    }
+
     <!-- Content viewer (shown when a topic is selected) -->
-    @if (selected()) {
+    @if (selected()?.videos) {
+      <div class="mb-6 grid grid-cols-1 gap-4"
+           [class.lg:grid-cols-3]="!expanded()">
 
-      @if (selected()!.videos) {
-        <!-- Slider view for multi-video topics (CRM) -->
-        <div class="mb-6 space-y-3">
+        <!-- Playlist column (left) -->
+        @if (!expanded()) {
+          <div class="lg:col-span-1">
+            <div class="rounded-lg border border-border overflow-hidden flex flex-col h-full">
 
-          <!-- Video description header -->
+              <div class="px-3 py-2.5 border-b border-border bg-muted/30 flex items-center justify-between">
+                <p class="text-sm font-semibold text-foreground">Lista de reproducción</p>
+                <p class="text-xs text-muted-foreground">{{ currentVideoIndex() + 1 }} / {{ totalVideos() }}</p>
+              </div>
+
+              <ul class="flex-1 overflow-y-auto max-h-[420px] lg:max-h-none">
+                @for (video of selected()!.videos!; track video.url; let i = $index) {
+                  <li class="border-b border-border last:border-b-0">
+                    <button
+                      type="button"
+                      class="w-full flex gap-3 p-2.5 text-left transition-colors hover:bg-muted/50"
+                      [class.bg-muted]="currentVideoIndex() === i"
+                      (click)="selectVideo(i)">
+
+                      <div class="relative w-28 shrink-0 aspect-video rounded overflow-hidden bg-black">
+                        <img
+                          [src]="thumbnail(video.url)"
+                          [alt]="video.title"
+                          class="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        @if (currentVideoIndex() === i) {
+                          <div class="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                          </div>
+                        } @else {
+                          <span class="absolute bottom-1 right-1 text-[10px] font-medium text-white bg-black/70 px-1.5 py-0.5 rounded">
+                            {{ i + 1 }}
+                          </span>
+                        }
+                      </div>
+
+                      <div class="min-w-0 flex-1">
+                        <p class="text-xs font-semibold text-foreground line-clamp-2"
+                           [class.text-primary-button]="currentVideoIndex() === i">
+                          {{ video.title }}
+                        </p>
+                        <p class="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">
+                          {{ video.description }}
+                        </p>
+                      </div>
+                    </button>
+                  </li>
+                }
+              </ul>
+
+            </div>
+          </div>
+        }
+
+        <!-- Player column (right) -->
+        <div class="space-y-3"
+             [class.lg:col-span-2]="!expanded()">
+
           @if (currentVideo(); as video) {
             <div class="space-y-0.5">
               <p class="text-sm font-semibold text-foreground">{{ video.title }}</p>
@@ -30,7 +170,6 @@
             </div>
           }
 
-          <!-- iframe -->
           <div class="relative rounded-lg overflow-hidden border border-border bg-black aspect-video">
             @if (currentVideo(); as video) {
               <iframe
@@ -41,111 +180,74 @@
                 [title]="video.title"
               ></iframe>
             }
-            <button
-              type="button"
-              class="absolute top-3 right-3 p-1.5 rounded-md bg-black/60 hover:bg-black/80 text-white transition-colors"
-              (click)="close()">
-              <lib-apolo-icons [icon]="closeIcon" class="flex items-center" />
-            </button>
-          </div>
 
-          <!-- Prev / Next + dots -->
-          <div class="flex items-center justify-between">
-            <button
-              type="button"
-              class="p-1.5 rounded-md transition-colors"
-              [class.text-foreground]="hasPrev()"
-              [class.hover:bg-muted]="hasPrev()"
-              [class.text-muted-foreground]="!hasPrev()"
-              [class.opacity-30]="!hasPrev()"
-              [disabled]="!hasPrev()"
-              (click)="prev()"
-              style="transform: rotate(180deg)">
-              <lib-apolo-icons [icon]="chevronIcon" class="flex items-center" />
-            </button>
-
-            <div class="flex items-center gap-1.5">
-              @for (i of videoIndices(); track i) {
-                <button
-                  type="button"
-                  class="rounded-full transition-all duration-200"
-                  [class.w-2]="currentVideoIndex() !== i"
-                  [class.h-2]="currentVideoIndex() !== i"
-                  [class.bg-muted-foreground]="currentVideoIndex() !== i"
-                  [class.opacity-40]="currentVideoIndex() !== i"
-                  [class.w-4]="currentVideoIndex() === i"
-                  [class.h-2]="currentVideoIndex() === i"
-                  [class.bg-primary-button]="currentVideoIndex() === i"
-                  (click)="goTo(i)"
-                ></button>
-              }
+            <div class="absolute top-3 right-3 flex items-center gap-2">
+              <button
+                type="button"
+                class="p-1.5 rounded-md bg-black/60 hover:bg-black/80 text-white transition-colors"
+                [title]="expanded() ? 'Contraer' : 'Expandir'"
+                (click)="toggleExpand()">
+                @if (expanded()) {
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="4 14 10 14 10 20"/>
+                    <polyline points="20 10 14 10 14 4"/>
+                    <line x1="14" y1="10" x2="21" y2="3"/>
+                    <line x1="3" y1="21" x2="10" y2="14"/>
+                  </svg>
+                } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 3 21 3 21 9"/>
+                    <polyline points="9 21 3 21 3 15"/>
+                    <line x1="21" y1="3" x2="14" y2="10"/>
+                    <line x1="3" y1="21" x2="10" y2="14"/>
+                  </svg>
+                }
+              </button>
+              <button
+                type="button"
+                class="p-1.5 rounded-md bg-black/60 hover:bg-black/80 text-white transition-colors"
+                title="Cerrar"
+                (click)="close()">
+                <lib-apolo-icons [icon]="closeIcon" class="flex items-center" />
+              </button>
             </div>
-
-            <button
-              type="button"
-              class="p-1.5 rounded-md transition-colors"
-              [class.text-foreground]="hasNext()"
-              [class.hover:bg-muted]="hasNext()"
-              [class.text-muted-foreground]="!hasNext()"
-              [class.opacity-30]="!hasNext()"
-              [disabled]="!hasNext()"
-              (click)="next()">
-              <lib-apolo-icons [icon]="chevronIcon" class="flex items-center" />
-            </button>
           </div>
-
         </div>
-      } @else {
-        <!-- Single video view -->
-        <div class="relative mb-6 rounded-lg overflow-hidden border border-border bg-black aspect-video">
-          <iframe
-            [src]="safeUrl(selected()!.url!)"
-            class="w-full h-full"
-            frameborder="0"
-            scrolling="no"
-            allowfullscreen
-            [title]="selected()!.title"
-          ></iframe>
-          <button
-            type="button"
-            class="absolute top-3 right-3 p-1.5 rounded-md bg-black/60 hover:bg-black/80 text-white transition-colors"
-            (click)="close()">
-            <lib-apolo-icons [icon]="closeIcon" class="flex items-center" />
-          </button>
-        </div>
-      }
 
+      </div>
     }
 
     <!-- Topic list -->
     <ul>
       @for (topic of topics; track topic.title; let last = $last) {
-        @if (selected()?.title !== topic.title) {
-          <li class="flex items-center justify-between py-4 gap-4"
-              [class.border-b]="!last"
-              [class.border-border]="!last">
+        <li class="flex items-center justify-between py-4 gap-4"
+            [class.border-b]="!last"
+            [class.border-border]="!last">
 
-            <div class="flex flex-col gap-1.5 min-w-0">
-              <span class="font-semibold text-sm text-foreground">{{ topic.title }}</span>
-              <span class="inline-flex self-start items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium"
-                    [class]="topic.tagCls">
-                <span class="w-1.5 h-1.5 rounded-full shrink-0" [class]="topic.dotCls"></span>
-                {{ topic.tag }}
-              </span>
-            </div>
+          <div class="flex flex-col gap-1.5 min-w-0">
+            <span class="font-semibold text-sm"
+                  [class.text-primary-button]="isOpen(topic)"
+                  [class.text-foreground]="!isOpen(topic)">
+              {{ topic.title }}
+            </span>
+            <span class="inline-flex self-start items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium"
+                  [class]="topic.tagCls">
+              <span class="w-1.5 h-1.5 rounded-full shrink-0" [class]="topic.dotCls"></span>
+              {{ topic.tag }}
+            </span>
+          </div>
 
-            @if (topic.available) {
-              <ui-button
-                label="Ver Contenido"
-                variant="secondary"
-                size="md"
-                [trailingIcon]="arrowIcon"
-                (click)="open(topic)"
-              />
-            }
+          @if (topic.available) {
+            <ui-button
+              [label]="isOpen(topic) ? 'Ocultar' : 'Ver Contenido'"
+              variant="secondary"
+              size="md"
+              [trailingIcon]="arrowIcon"
+              (click)="toggle(topic)"
+            />
+          }
 
-          </li>
-        }
+        </li>
       }
     </ul>
 
