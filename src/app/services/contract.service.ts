@@ -31,4 +31,8 @@ export class ContractService {
   rejectContract(contractId: string, reason: string): Observable<void> {
     return this.http.post<void>(`${environment.apiUrl}/contracts/${contractId}/reject`, { reason });
   }
+
+  sendContract(contractId: string): Observable<void> {
+    return this.http.post<void>(`${environment.apiUrl}/contracts/${contractId}/send`, {});
+  }
 }

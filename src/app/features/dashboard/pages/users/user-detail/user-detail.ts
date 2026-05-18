@@ -54,6 +54,7 @@ export class UserDetailPageComponent implements OnInit {
   readonly contractPreviewUrl      = signal<SafeResourceUrl | null>(null);
   readonly loadingPreview          = signal(false);
   readonly requestingSignature     = signal(false);
+  readonly requestingContract      = signal(false);
   readonly validatingContract      = signal(false);
   readonly rejectingContract       = signal(false);
   readonly showContractRejectInput = signal(false);
@@ -122,6 +123,23 @@ export class UserDetailPageComponent implements OnInit {
     const blocked = ['InProgress', 'SignedPending', 'SignedVerified'];
     return !blocked.includes(status ?? '');
   });
+
+  readonly allDocsVerified = computed(() => {
+    const contract = this.user()?.contract;
+    if (!contract) return false;
+    const required = contract.documents.required;
+    if (required.length === 0) return false;
+    const approvedTypes = new Set(
+      contract.documents.uploaded
+        .filter(d => d.status === 'Approved')
+        .map(d => d.documentType),
+    );
+    return required.every(type => approvedTypes.has(type));
+  });
+
+  readonly hasSignatureRequest = computed(() => !!this.user()?.contract?.signatureRequestId);
+
+  readonly isSigned = computed(() => this.isSignedPending() || this.isSignedVerified());
 
   readonly personalDataRows = computed<[string, string][]>(() => {
     const u = this.user();
@@ -226,6 +244,24 @@ export class UserDetailPageComponent implements OnInit {
       error: () => {
         this.alertService.show('Error al enviar la solicitud', 'error');
         this.requestingSignature.set(false);
+      },
+    });
+  }
+
+  handleRequestContract(): void {
+    const contractId = this.user()?.contract?.id;
+    if (!contractId) return;
+    this.requestingContract.set(true);
+    this.contractService.sendContract(contractId).subscribe({
+      next: () => {
+        this.alertService.show('Solicitud enviada correctamente', 'success');
+        this.requestingContract.set(false);
+        this.closeContractPreview();
+        this.load();
+      },
+      error: () => {
+        this.alertService.show('Error al solicitar el contrato', 'error');
+        this.requestingContract.set(false);
       },
     });
   }

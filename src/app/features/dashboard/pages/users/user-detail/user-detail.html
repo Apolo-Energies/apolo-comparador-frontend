@@ -342,19 +342,29 @@
     </div>
 
     <!-- Footer -->
-    @if (canRequestContract()) {
-      <div class="shrink-0 border-t border-border px-6 py-4 flex items-center justify-end gap-2">
-        <p class="flex-1 text-xs text-muted-foreground">
-          Al solicitar la firma confirmas que has revisado el contrato y estás de acuerdo con su contenido.
-        </p>
-        <ui-button
-          label="Solicitar firma"
-          variant="default"
-          size="sm"
-          [disabled]="requestingSignature()"
-          (click)="onRequestSignature()"
-        />
-      </div>
+    @if (!isMaster()) {
+      @if (isSigned()) {
+        <div class="shrink-0 border-t border-border px-6 py-4 flex items-center justify-end">
+          <p class="text-sm text-muted-foreground">Ya tienes un contrato firmado</p>
+        </div>
+      } @else if (hasSignatureRequest()) {
+        <div class="shrink-0 border-t border-border px-6 py-4 flex items-center justify-end">
+          <p class="text-sm text-muted-foreground">Ya has solicitado tu contrato</p>
+        </div>
+      } @else if (allDocsVerified()) {
+        <div class="shrink-0 border-t border-border px-6 py-4 flex items-center justify-end gap-2">
+          <p class="flex-1 text-xs text-muted-foreground">
+            Al solicitar el contrato confirmas que has revisado su contenido y estás de acuerdo.
+          </p>
+          <ui-button
+            label="Solicitar contrato"
+            variant="default"
+            size="sm"
+            [disabled]="requestingContract()"
+            (click)="handleRequestContract()"
+          />
+        </div>
+      }
     }
 
   </div>

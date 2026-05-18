@@ -25,7 +25,7 @@ import { PasswordService } from '../../../../../services/password.service';
         <strong>{{ userEmail() }}</strong>?
       </p>
 
-      <div class="flex justify-end gap-2 pt-4 border-t border-border">
+      <div class="flex justify-between gap-2 pt-4 border-t border-border">
 
         <ui-button
           label="Cancelar"
