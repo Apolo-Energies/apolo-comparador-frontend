@@ -11,6 +11,7 @@ export interface User {
   providerId:     number;
   provider:       Provider | null;
   commissions:    UserCommission[];
+  createdAt?:     string;
 }
 
 export interface UserPaged {

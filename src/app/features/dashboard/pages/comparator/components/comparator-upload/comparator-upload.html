@@ -5,16 +5,23 @@
 
   <!-- Selector de usuario (solo para rol Master) -->
   @if (showUserSelector()) {
-    <ui-combobox
-      placeholder="Seleccionar usuario"
-      [options]="usersAsOptions()"
-      [value]="selectedUserId() || internalUser()"
-      (valueChange)="onUserChange($event)"
-    />
-    @if (file() && !internalUser() && !selectedUserId()) {
-      <p class="text-xs text-amber-400 -mt-2">
-        Selecciona un usuario para continuar con la comparación.
-      </p>
+    @if (usersLoading()) {
+      <div class="flex items-center gap-2 h-10 px-3 rounded-md border border-border bg-muted/40 animate-pulse">
+        <div class="h-4 w-4 rounded-full bg-muted-foreground/20 shrink-0"></div>
+        <div class="h-3 w-40 rounded bg-muted-foreground/20"></div>
+      </div>
+    } @else {
+      <ui-combobox
+        placeholder="Seleccionar usuario"
+        [options]="usersAsOptions()"
+        [value]="selectedUserId() || internalUser()"
+        (valueChange)="onUserChange($event)"
+      />
+      @if (file() && !internalUser() && !selectedUserId()) {
+        <p class="text-xs text-amber-400 -mt-2">
+          Selecciona un usuario para continuar con la comparación.
+        </p>
+      }
     }
   }
 

@@ -142,6 +142,7 @@
                 [label]="'P' + (i + 1)"
                 type="number"
                 placeholder="0.000000"
+                step="0.000001"
                 [value]="createPeriods()[i]"
                 (valueChange)="updateCreatePeriod(i, $event)"
               />
@@ -160,13 +161,22 @@
       </div>
     </div>
     <div class="flex items-center gap-3 pt-2">
-      <ui-button
-        label="Crear producto"
-        size="md"
-        [disabled]="creating() || !createName().trim() || !createTariffId()"
-        (click)="submitCreate()"
-      />
-      <ui-button label="Cancelar" variant="outline" size="md" (click)="createDialog.set(false)" />
+      @if (creating()) {
+        <button disabled class="inline-flex items-center justify-center min-w-32 rounded-md px-4 py-2 bg-primary text-primary-foreground text-sm font-semibold cursor-not-allowed opacity-80">
+          <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+            <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="white"/>
+          </svg>
+        </button>
+      } @else {
+        <ui-button
+          label="Crear producto"
+          size="md"
+          [disabled]="!createName().trim() || !createTariffId()"
+          (click)="submitCreate()"
+        />
+      }
+      <ui-button label="Cancelar" variant="outline" size="md" [disabled]="creating()" (click)="createDialog.set(false)" />
     </div>
   </div>
 </ui-dialog>
@@ -201,6 +211,7 @@
                   [label]="'P' + (i + 1)"
                   type="number"
                   placeholder="0.000000"
+                  step="0.000001"
                   [value]="editPeriods()[i]"
                   (valueChange)="updateEditPeriod(i, $event)"
                 />
@@ -219,13 +230,22 @@
         </div>
       </div>
       <div class="flex items-center gap-3 pt-2">
-        <ui-button
-          label="Guardar"
-          size="md"
-          [disabled]="savingIds().has(row.id) || !editName().trim()"
-          (click)="submitEdit(row)"
-        />
-        <ui-button label="Cancelar" variant="outline" size="md" (click)="editDialog.set(false)" />
+        @if (savingIds().has(row.id)) {
+          <button disabled class="inline-flex items-center justify-center min-w-32 rounded-md px-4 py-2 bg-primary text-primary-foreground text-sm font-semibold cursor-not-allowed opacity-80">
+            <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+              <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="white"/>
+            </svg>
+          </button>
+        } @else {
+          <ui-button
+            label="Guardar"
+            size="md"
+            [disabled]="!editName().trim()"
+            (click)="submitEdit(row)"
+          />
+        }
+        <ui-button label="Cancelar" variant="outline" size="md" [disabled]="savingIds().has(row.id)" (click)="editDialog.set(false)" />
       </div>
     </div>
   }
