@@ -1,5 +1,13 @@
 <ui-alert />
 
+<!-- Cell templates -->
+<ng-template #createdAtCellTpl let-row>
+  <span class="inline-flex items-center gap-1.5">
+    <lib-apolo-icons [icon]="dateIconSrc" class="flex items-center shrink-0" />
+    <span class="text-muted-foreground">{{ formatDate(row.createdAt) }}</span>
+  </span>
+</ng-template>
+
 <div class="border border-border rounded-lg overflow-hidden shadow-sm">
 
   <!-- Header -->

@@ -5,6 +5,10 @@ import { PERIOD_NUMBERS, PeriodNumber, numberToPeriod } from '../shared/constant
 const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
 
+// Spanish electricity tax rates (legal/regulatory — update here if they ever change)
+const IE_RATE  = 0.0511269632; // Impuesto Eléctrico 5.11269632 %
+const IVA_RATE = 0.21;         // IVA 21 %
+
 const SNAP_PRODUCTS_SET = new Set(['Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi']);
 
 const calculateComision = (form: ComparadorFormValue, ocr: OcrResult): number => {
@@ -14,7 +18,6 @@ const calculateComision = (form: ComparadorFormValue, ocr: OcrResult): number =>
   const coeficientePotencia = 0.55;
 
   if (SNAP_PRODUCTS_SET.has(producto)) {
-    console.log('[calculateComision] SNAP → comision =', comisionEnergia);
     return comisionEnergia;
   }
 
@@ -26,17 +29,13 @@ const calculateComision = (form: ComparadorFormValue, ocr: OcrResult): number =>
     const consumoEnergia = (consumoPeriodo / 12) * 3;
     const energia        = (feeEnergia / 100) * consumoEnergia * comisionEnergia;
     const potencia       = feePotencia * coeficientePotencia * potenciaContratada;
-    const result         = round3(energia + potencia);
-    console.log('[calculateComision] PROMO', { consumoEnergia, feeEnergia, comisionEnergia, feePotencia, potenciaContratada, result });
-    return result;
+    return round3(energia + potencia);
   }
 
   const coeficienteEnergia = 10 * consumoPeriodo;
   const energia            = (feeEnergia * comisionEnergia * coeficienteEnergia) / 1000;
   const potencia           = feePotencia * coeficientePotencia * potenciaContratada;
-  const result             = round3(energia + potencia);
-  console.log('[calculateComision] NORMAL', { feeEnergia, comisionEnergia, coeficienteEnergia, feePotencia, potenciaContratada, result });
-  return result;
+  return round3(energia + potencia);
 };
 
 const POTENCIA_FIJA_SNAP: Record<string, number> = {
@@ -149,31 +148,117 @@ export const calcularFactura = (
     return { periodo, precioEnergiaOferta, precioPotenciaOferta, costeEnergia, costePotencia };
   }).filter(Boolean) as ComparadorPeriodo[];
 
-  const descuentoElectricidad = (ocr.descuentos ?? []).reduce((t, d) => t + (d.importe ?? 0), 0);
-  const totalEnergia  = round6(periodos.reduce((a, p) => a + p.costeEnergia, 0));
-  const totalPotencia = round6(periodos.reduce((a, p) => a + p.costePotencia, 0));
+  const descuentoElectricidad  = (ocr.descuentos ?? []).reduce((t, d) => t + (d.importe ?? 0), 0);
+  const totalEnergia           = round6(periodos.reduce((a, p) => a + p.costeEnergia, 0));
+  const totalPotencia          = round6(periodos.reduce((a, p) => a + p.costePotencia, 0));
 
-  const costesComunesConIE =
-    (ocr.totales_electricidad?.energia?.reactiva ?? 0) +
-    (ocr.totales_electricidad?.potencia?.exceso ?? 0) -
-    descuentoElectricidad;
+  const energiaReactiva      = ocr.totales_electricidad?.energia?.reactiva ?? 0;
+  const excesoPotencia       = ocr.totales_electricidad?.potencia?.exceso  ?? 0;
+  const costesComunesConIE   = energiaReactiva + excesoPotencia - descuentoElectricidad;
 
-  const impuestoElectrico = round6((totalEnergia + totalPotencia + costesComunesConIE) * 0.0511269632);
-  const subTotal   = totalEnergia + totalPotencia + costesComunesConIE + impuestoElectrico;
-  const iva        = subTotal * 0.21;
-  const total      = round6(subTotal + iva);
+  const baseIE             = totalEnergia + totalPotencia + costesComunesConIE;
+  const impuestoElectrico  = round6(baseIE * IE_RATE);
+
+  const costosComunesSinIE = ocr.bono_social?.importe ?? 0;
+  const alquilerEquipo     = ocr.equipos?.importe     ?? 0;
+
+  const subTotal = baseIE + impuestoElectrico + costosComunesSinIE + alquilerEquipo;
+  const iva      = subTotal * IVA_RATE;
+  const total    = round6(subTotal + iva);
   const ahorroEstudio  = round3((ocr.total ?? 0) - total);
   const ahorro_porcent = parseFloat(((ahorroEstudio / (ocr.total ?? 1)) * 100).toFixed(2));
 
-  const kwhTotal  = round6(periodos.reduce((a, p) => a + (ocr.energia?.find(e => e.p === p.periodo)?.activa?.kwh ?? 0), 0));
-  const diasFacturados = dias || 1;
-  const totalEnergiaActual  = ocr.totales_electricidad?.energia?.activa ?? 0;
+  // kwhTotal: sum directly from OCR (avoids nested find; same result as periodos sum)
+  const kwhTotal  = round6((ocr.energia ?? []).reduce((s, e) => s + (e.activa?.kwh ?? 0), 0));
+  const diasFacturados      = dias || 1;
+  const consumoAnual        = kwhTotal * 10;
+  const totalEnergiaActual  = ocr.totales_electricidad?.energia?.activa    ?? 0;
   const totalPotenciaActual = ocr.totales_electricidad?.potencia?.contratada ?? 0;
+  const otrosNoComunesActual = (ocr.otros_servicios ?? []).reduce((s, o) => s + (o.importe ?? 0), 0);
 
-  const ahorroAnio = (
-    ((totalEnergiaActual - totalEnergia) / (kwhTotal || 1) * (10 * kwhTotal)) +
-    ((totalPotenciaActual - totalPotencia) / diasFacturados * 365)
-  ) * (1 + 0.0511269632 + 0.21);
+  const deltaEnergia  = (kwhTotal > 0)
+    ? ((totalEnergiaActual  - totalEnergia)  / kwhTotal) * consumoAnual
+    : 0;
+  const deltaPotencia = (totalPotenciaActual - totalPotencia)  / diasFacturados * 365;
+  const deltaOtros    = otrosNoComunesActual / diasFacturados * 365;
+
+  const ahorroAnio = (deltaEnergia + deltaPotencia + deltaOtros) * (1 + IE_RATE + IVA_RATE);
+
+  console.group('%c[Total Factura Actual]', 'color:#6366f1;font-weight:bold');
+  console.log('Fuente  : OCR — importe total leído de la factura');
+  console.log(`%cValor   : ${ocr.total ?? 0} €`, 'color:#10b981;font-weight:bold');
+  console.groupEnd();
+
+  console.group('%c[Total Factura Oferta]', 'color:#6366f1;font-weight:bold');
+
+  console.group('1) Energía por período');
+  periodos.forEach(p => {
+    const kwh = ocr.energia?.find(e => e.p === p.periodo)?.activa?.kwh ?? 0;
+    console.log(`  P${p.periodo} : ${kwh} kWh × ${p.precioEnergiaOferta} €/kWh = ${p.costeEnergia} €`);
+  });
+  console.log(`%c  → Total energía : ${totalEnergia} €`, 'color:#10b981');
+  console.groupEnd();
+
+  console.group('2) Potencia por período');
+  periodos.forEach(p => {
+    const kw = ocr.potencia?.[(p.periodo as number) - 1]?.contratada?.kw ?? 0;
+    console.log(`  P${p.periodo} : ${kw} kW × ${p.precioPotenciaOferta} €/kW/día × ${dias} días = ${p.costePotencia} €`);
+  });
+  console.log(`%c  → Total potencia : ${totalPotencia} €`, 'color:#10b981');
+  console.groupEnd();
+
+  console.group('3) Costes comunes con IE (base IE)');
+  console.log(`  Energía reactiva    : ${energiaReactiva} €`);
+  console.log(`  Exceso potencia     : ${excesoPotencia} €`);
+  console.log(`  Descuentos          : -${descuentoElectricidad} €`);
+  console.log(`%c  → Total comunes con IE : ${costesComunesConIE} €`, 'color:#10b981');
+  console.groupEnd();
+
+  console.log(`4) Base IE            : ${totalEnergia} + ${totalPotencia} + ${costesComunesConIE} = ${baseIE} €`);
+  console.log(`5) IE (${(IE_RATE * 100).toFixed(8)}%)  : ${baseIE} × ${IE_RATE} = ${impuestoElectrico} €`);
+
+  console.log(`6) Costes comunes sin IE (bono social) : ${costosComunesSinIE} €`);
+  console.log(`7) Alquiler de equipo                  : ${alquilerEquipo} €`);
+  console.log(`8) Otros costes no comunes (oferta)    : 0 €`);
+
+  console.log(`9) Subtotal : ${totalEnergia} + ${totalPotencia} + ${costesComunesConIE} + ${impuestoElectrico} + ${costosComunesSinIE} + ${alquilerEquipo} = ${subTotal} €`);
+  console.log(`10) IVA (${IVA_RATE * 100}%)      : ${subTotal} × ${IVA_RATE} = ${iva.toFixed(6)} €`);
+  console.log(`%c→ TOTAL OFERTA : ${subTotal} + ${iva.toFixed(6)} = ${total} €`, 'color:#10b981;font-weight:bold');
+
+  console.groupEnd();
+
+  console.group('%c[Ahorro Cliente]', 'color:#3b82f6;font-weight:bold');
+
+  console.group('Ahorro estudio (mes)');
+  console.log('Fórmula : total_factura_actual - total_factura_oferta');
+  console.log(`        = ${ocr.total ?? 0} - ${total}`);
+  console.log(`%cResultado : ${ahorroEstudio} €`, 'color:#10b981;font-weight:bold');
+  console.groupEnd();
+
+  console.group('Porcentaje de ahorro');
+  console.log('Fórmula : (ahorroEstudio / total_factura_actual) × 100');
+  console.log(`        = (${ahorroEstudio} / ${ocr.total ?? 1}) × 100`);
+  console.log(`%cResultado : ${ahorro_porcent} %`, 'color:#10b981;font-weight:bold');
+  console.groupEnd();
+
+  console.group('Ahorro anual');
+  console.log('Fórmula : (Δenergía + Δpotencia + Δotros) × (1 + IE + IVA)');
+  console.log(`  consumoAnual  = kwhTotal × 10 = ${kwhTotal} × 10 = ${consumoAnual} kWh`);
+  console.log('  Δenergía  = (totalEnergíaActual - totalEnergíaOferta) / kWhTotal × consumoAnual');
+  console.log(`            = (${totalEnergiaActual} - ${totalEnergia}) / ${kwhTotal} × ${consumoAnual}`);
+  console.log(`            = ${deltaEnergia.toFixed(4)} €`);
+  console.log('  Δpotencia = (totalPotenciaActual - totalPotenciaOferta) / diasFacturados × 365');
+  console.log(`            = (${totalPotenciaActual} - ${totalPotencia}) / ${diasFacturados} × 365`);
+  console.log(`            = ${deltaPotencia.toFixed(4)} €`);
+  console.log('  Δotros    = otrosCostesNoComunesActual / diasFacturados × 365');
+  console.log(`            = ${otrosNoComunesActual} / ${diasFacturados} × 365`);
+  console.log(`            = ${deltaOtros.toFixed(4)} €`);
+  console.log(`  Base      : ${deltaEnergia.toFixed(4)} + ${deltaPotencia.toFixed(4)} + ${deltaOtros.toFixed(4)} = ${(deltaEnergia + deltaPotencia + deltaOtros).toFixed(4)} €`);
+  console.log(`  Factor    : × (1 + ${IE_RATE} + ${IVA_RATE}) = × ${1 + IE_RATE + IVA_RATE}`);
+  console.log(`%cResultado : ${Number(ahorroAnio.toFixed(2))} €/año`, 'color:#10b981;font-weight:bold');
+  console.groupEnd();
+
+  console.groupEnd(); // [Ahorro Cliente]
 
   return {
     comision:       calculateComision(form, ocr),

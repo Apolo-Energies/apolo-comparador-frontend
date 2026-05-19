@@ -46,7 +46,8 @@ export interface UserRow {
     cif:         string | null;
     companyName: string | null;
   } | null;
-  subUsers?: SubUserSummary[];
+  subUsers?:  SubUserSummary[];
+  createdAt?: string;
 }
 
 const PANEL_H = 260;
