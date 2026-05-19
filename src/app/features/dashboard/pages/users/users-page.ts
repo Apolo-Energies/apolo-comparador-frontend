@@ -5,7 +5,7 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
 import { AlertComponent, ButtonComponent, InputFieldComponent, SelectFieldComponent, SelectOption } from '@apolo-energies/ui';
-import { DownloadIcon, filterIcon, SearchIcon, StarIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
+import { ApoloIcons, DateIcon, DownloadIcon, filterIcon, SearchIcon, StarIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
 import { UserService } from '../../../../services/user.service';
 import { AddUserModalComponent } from './add-user-modal/add-user-modal';
 import { UserActionsMenuComponent, UserRow, SubUserSummary } from './user-actions-menu/user-actions-menu.component';
@@ -21,13 +21,15 @@ import { environment } from '../../../../../environments/environment';
     DataTableComponent, PaginatorComponent, InputFieldComponent,
     SelectFieldComponent, ButtonComponent, AlertComponent,
     AddUserModalComponent, UserActionsMenuComponent, TableSkeletonComponent,
+    ApoloIcons,
   ],
   templateUrl: './users-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UsersPageComponent implements AfterViewInit {
-  @ViewChild('actionsTpl')         private actionsTpl!: TemplateRef<{ $implicit: UserRow }>;
+  @ViewChild('actionsTpl')        private actionsTpl!:        TemplateRef<{ $implicit: UserRow }>;
   @ViewChild('contractStatusTpl') private contractStatusTpl!: TemplateRef<{ $implicit: UserRow }>;
+  @ViewChild('createdAtCellTpl')  private createdAtCellTpl!:  TemplateRef<{ $implicit: UserRow }>;
 
   private userService   = inject(UserService);
   private platformId    = inject(PLATFORM_ID);
@@ -39,6 +41,7 @@ export class UsersPageComponent implements AfterViewInit {
   readonly starIcon:     UiIconSource = { type: 'apolo', icon: StarIcon,     size: 16 };
   readonly downloadIcon: UiIconSource = { type: 'apolo', icon: DownloadIcon, size: 16 };
   readonly xIcon:        UiIconSource = { type: 'apolo', icon: XIcon,        size: 16 };
+  readonly dateIconSrc:  UiIconSource = { type: 'apolo', icon: DateIcon,     size: 16 };
 
   // filters
   readonly filterName  = signal('');
@@ -66,6 +69,7 @@ export class UsersPageComponent implements AfterViewInit {
       { key: 'isActive',       label: 'Estado',        align: 'center', format: row => row.isActive ? 'Activo' : 'Inactivo' },
       { key: 'isEnergyExpert', label: 'Energy Expert', align: 'center', format: row => row.isEnergyExpert ? 'Sí' : 'No' },
       { key: 'commissions',    label: 'Comisión',      align: 'center', format: row => row.commissions?.find(c => c.isActive)?.commissionType?.name ?? '-' },
+      { key: 'createdAt',      label: 'Fecha de alta' },
     ]
   );
 
@@ -93,14 +97,25 @@ export class UsersPageComponent implements AfterViewInit {
         { key: 'commissions',             label: 'Comisión',        align: 'center', format: row => row.commissions?.find(c => c.isActive)?.commissionType?.name ?? '-' },
         { key: 'provider',                label: 'Proveedor',       align: 'center', format: row => row.provider?.name ?? '-' },
         { key: 'isActive',                label: 'Estado Usuario',  align: 'center', format: row => row.isActive ? 'Activo' : 'Inactivo' },
+        { key: 'createdAt',               label: 'Fecha de alta',   cellTemplate: this.createdAtCellTpl },
         { key: 'actions',                 label: '',                align: 'center', cellTemplate: this.actionsTpl },
       ]);
     } else {
-      this.columns.update(cols => [
-        ...cols,
-        { key: 'actions', label: '', align: 'center', cellTemplate: this.actionsTpl },
-      ]);
+      this.columns.update(cols => cols.map(col =>
+        col.key === 'createdAt' ? { ...col, cellTemplate: this.createdAtCellTpl } : col
+      ).concat([{ key: 'actions', label: '', align: 'center', cellTemplate: this.actionsTpl }]));
     }
+  }
+
+  formatDate(iso: string | undefined): string {
+    if (!iso) return '-';
+    return new Date(iso).toLocaleString('es-ES', {
+      day:    '2-digit',
+      month:  'short',
+      year:   'numeric',
+      hour:   '2-digit',
+      minute: '2-digit',
+    });
   }
 
   private static readonly CONTRACT_STATUS_MAP: Record<string, { label: string; cls: string }> = {

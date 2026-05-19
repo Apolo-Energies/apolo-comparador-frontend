@@ -12,6 +12,7 @@ import { ComparadorCompareEvent, ComparadorUser } from '../../comparator.models'
 export class ComparatorUploadComponent {
   // ── inputs ─────────────────────────────────────────────────────────────────
   readonly loading          = input(false);
+  readonly usersLoading     = input(false);
   readonly showUserSelector = input(false);
   readonly users            = input<ComparadorUser[]>([]);
   readonly selectedUserId   = input('');

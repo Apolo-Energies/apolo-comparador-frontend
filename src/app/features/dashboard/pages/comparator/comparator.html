@@ -21,6 +21,7 @@
   <app-comparator-upload
     [showUserSelector]="isMaster()"
     [users]="users()"
+    [usersLoading]="usersLoading()"
     [selectedUserId]="selectedUserId()"
     [loading]="loading()"
     (compare)="onCompare($event)"

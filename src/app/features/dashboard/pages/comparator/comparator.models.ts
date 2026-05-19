@@ -50,8 +50,11 @@ export interface OcrResult {
     energia?:  { activa?: number; reactiva?: number };
     potencia?: { contratada?: number; exceso?: number };
   };
-  ie?:  { importe?: number };
-  iva?: { importe?: number };
+  bono_social?:    { importe?: number; en_base_ie?: boolean };
+  equipos?:        { importe?: number; en_base_ie?: boolean };
+  otros_servicios?: Array<{ concepto?: string; importe?: number; en_base_ie?: boolean }>;
+  ie?:  { base?: number; porcentaje?: number; importe?: number };
+  iva?: { base?: number; porcentaje?: number; importe?: number };
 }
 
 // ── Form value emitted on each change ─────────────────────────────────────────
@@ -88,8 +91,9 @@ export interface ComparadorResult {
 // ── Component-level types ──────────────────────────────────────────────────────
 
 export interface ComparadorUser {
-  id:   string;
-  name: string;
+  id:            string;
+  name:          string;
+  commissionPct: number | null;
 }
 
 export type ComparatorProductsByTariff = Record<string, string[]>;

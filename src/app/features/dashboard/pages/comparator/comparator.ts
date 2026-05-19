@@ -47,6 +47,7 @@ export class Comparator {
 
   readonly isApolo        = environment.clientName === 'apolo';
   readonly loading        = signal(false);
+  readonly usersLoading   = signal(false);
   readonly modalOpen      = signal(false);
   readonly result         = signal<ComparadorResult | null>(null);
   readonly ocrResult      = signal<OcrResult | null>(null);
@@ -94,10 +95,6 @@ export class Comparator {
     this.selectedUserId.set(selectedId);
     const userId = selectedId || this.auth.currentUser()?.id || '';
 
-    if (this.isMaster()) {
-      this.commissionService.loadForUser(String(userId));
-    }
-
     this.comparatorService.upload(event.file, String(userId)).subscribe({
       next: (res) => {
         this.fileId.set(res.fileId);
@@ -113,7 +110,9 @@ export class Comparator {
     const ocr = this.ocrResult();
     if (!ocr) return;
 
-    const base = this.comparatorService.getComisionBase(form.producto, form.tariff);
+    const selectedUser    = this.isMaster() ? this.users().find(u => u.id === this.selectedUserId()) : undefined;
+    const commissionPct   = selectedUser?.commissionPct ?? undefined;
+    const base            = this.comparatorService.getComisionBase(form.producto, form.tariff, commissionPct);
     this.comisionBase.set(base);
 
     // For non-referrers always override comisionEnergia with the fresh base
@@ -139,10 +138,19 @@ export class Comparator {
   // ── private ────────────────────────────────────────────────────────────────
 
   private loadUsers() {
-    this.userService.getByFilters({ pageSize: 200 }).subscribe(res => {
-      this.users.set(
-        res.items.map(u => ({ id: u.id, name: u.fullName }))
-      );
+    this.usersLoading.set(true);
+    this.userService.getByFilters({ pageSize: 200 }).subscribe({
+      next: res => {
+        this.users.set(
+          res.items.map(u => ({
+            id:            u.id,
+            name:          u.fullName,
+            commissionPct: u.commissions?.find(c => c.isActive)?.commissionType?.percentage ?? null,
+          }))
+        );
+        this.usersLoading.set(false);
+      },
+      error: () => this.usersLoading.set(false),
     });
   }
 }
