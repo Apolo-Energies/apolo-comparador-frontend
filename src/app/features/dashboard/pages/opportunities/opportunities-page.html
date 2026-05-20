@@ -203,12 +203,14 @@
 
     @if (filtersOpen()) {
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3 pt-3 border-t border-border">
-        <ui-select
-          label="Estado"
-          [options]="statusOptions"
-          [value]="filterStatus()"
-          (valueChange)="filterStatus.set($any($event))"
-        />
+        @if (viewMode() === 'table') {
+          <ui-select
+            label="Estado"
+            [options]="statusOptions"
+            [value]="filterStatus()"
+            (valueChange)="filterStatus.set($any($event))"
+          />
+        }
         <ui-input label="Fecha desde" type="date" [value]="filterDateFrom()" (valueChange)="filterDateFrom.set($event)" />
         <ui-input label="Fecha hasta" type="date" [value]="filterDateTo()"   (valueChange)="filterDateTo.set($event)"   />
         <ui-input

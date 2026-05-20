@@ -505,11 +505,11 @@
             </p>
           </div>
         </div>
-        @if (row.periods.length > 0) {
+        @if (row.energyPeriods.length > 0) {
           <div>
             <p class="text-xs font-medium text-foreground mb-2">Energía (€/kWh)</p>
             <div class="grid grid-cols-3 gap-2">
-              @for (p of row.periods; track p.period) {
+              @for (p of row.energyPeriods; track p.period) {
                 <div class="rounded-md bg-muted px-3 py-2">
                   <p class="text-xs text-muted-foreground">{{ p.period }}</p>
                   <p class="text-sm font-medium text-foreground mt-0.5">{{ p.value }}</p>

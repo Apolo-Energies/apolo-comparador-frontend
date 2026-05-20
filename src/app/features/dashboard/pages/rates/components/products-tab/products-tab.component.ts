@@ -111,11 +111,8 @@ export class ProductsTabComponent implements AfterViewInit {
   constructor() {
     effect(() => {
       this.rows.set(
-        this.tariffs().flatMap(t => {
-          const powerPeriods = t.boePowers?.flatMap(b =>
-            b.periods.map(pp => ({ period: pp.period, value: pp.value }))
-          ) ?? [];
-          return t.products.map(p => ({
+        this.tariffs().flatMap(t =>
+          t.products.map(p => ({
             id:                   p.id,
             name:                 p.name,
             tariffId:             p.tariffId,
@@ -125,8 +122,8 @@ export class ProductsTabComponent implements AfterViewInit {
             commissionPercentage: p.commissionPercentage ?? null,
             energyPeriods:        p.periods?.map(pp => ({ period: pp.period, value: pp.value })) ?? [],
             powerPeriods:         p.powerPeriods?.map(pp => ({ period: pp.period, value: pp.value })) ?? [],
-          }))
-        )
+          })),
+        ),
       );
     });
   }

@@ -22,6 +22,7 @@ import {
   ComparatorProductsByTariff,
   OcrResult,
 } from '../dashboard/pages/comparator/comparator.models';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-public-comparator',
@@ -51,11 +52,19 @@ export class PublicComparator implements AfterViewInit, OnDestroy {
   readonly fileId         = signal<string>('');
   readonly comparisonId   = signal<string>('');
 
-  readonly productsByTariff: ComparatorProductsByTariff = {
-    '2.0TD': ['Index Base', 'Index Coste', 'Index Promo', 'Fijo Snap', 'Fijo Snap Mini', 'Passpool'],
-    '3.0TD': ['Index Base', 'Index Coste', 'Index Promo', 'Fijo Fácil', 'Fijo Estable', 'Fijo Dyn', 'Promo 3M Pro'],
-    '6.1TD': ['Index Base', 'Index Coste', 'Index Promo', 'Fijo Fácil', 'Fijo Estable', 'Fijo Dyn', 'Promo 3M Pro'],
-  };
+  // En Coexpal el comparador público usa solo el producto 'Asociados' (con precios fijos cargados
+  // en admin). En otros entornos sigue la lista histórica por defecto.
+  readonly productsByTariff: ComparatorProductsByTariff = environment.clientName === 'coexpal'
+    ? {
+        '2.0TD': ['Asociados'],
+        '3.0TD': ['Asociados'],
+        '6.1TD': ['Asociados'],
+      }
+    : {
+        '2.0TD': ['Index Base', 'Index Coste', 'Index Promo', 'Fijo Snap', 'Fijo Snap Mini', 'Passpool'],
+        '3.0TD': ['Index Base', 'Index Coste', 'Index Promo', 'Fijo Fácil', 'Fijo Estable', 'Fijo Dyn', 'Promo 3M Pro'],
+        '6.1TD': ['Index Base', 'Index Coste', 'Index Promo', 'Fijo Fácil', 'Fijo Estable', 'Fijo Dyn', 'Promo 3M Pro'],
+      };
 
   readonly feeLockedProducts = [
     'Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi',
