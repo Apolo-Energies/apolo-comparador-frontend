@@ -3,7 +3,7 @@
   <!-- ═══════════════ APOLO: modal completo ═══════════════ -->
   <ui-dialog [open]="open()" [closeable]="true" maxWidth="max-w-2xl" (openChange)="$event ? null : onCancel()">
 
-    <div class="flex flex-col overflow-hidden" style="height: 88vh">
+    <div class="flex flex-col overflow-hidden" style="height: auto; max-height: 80vh">
 
       <!-- Header fijo -->
       <div class="shrink-0 px-6 pt-5 space-y-4">

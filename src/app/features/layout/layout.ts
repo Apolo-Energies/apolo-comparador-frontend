@@ -191,6 +191,13 @@ export class Layout {
           url: `/dashboard/settings/users/${userId}`,
         }],
       });
+    } else if (!isApolo) {
+      // Merge SOPORTE items into GENERAL so the sidebar library doesn't pin SOPORTE to the bottom
+      const soporteIdx = sections.findIndex(s => s.section === 'SOPORTE');
+      if (soporteIdx >= 0) {
+        sections[0].items = [...sections[0].items, ...sections[soporteIdx].items];
+        sections.splice(soporteIdx, 1);
+      }
     }
 
     return sections;

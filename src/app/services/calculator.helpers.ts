@@ -74,6 +74,18 @@ const getPotenciaBOE = (tariffs: Tariff[], tarifa: string, periodo: PeriodNumber
   return boe?.periods.find(p => p.period === periodoStr)?.value ?? 0;
 };
 
+// Si el producto trae powerPeriods configurados (ej. 'Asociados' en Coexpal), se usan en lugar
+// del BOE de la tarifa. Devuelve null si el producto no define powerPeriods.
+const getPotenciaProducto = (
+  tariffs: Tariff[], tarifa: string, producto: string, periodo: PeriodNumber,
+): number | null => {
+  const t    = getTariff(tariffs, tarifa);
+  const prod = t?.products.find(p => p.name === producto);
+  if (!prod?.powerPeriods?.length) return null;
+  const periodoStr = numberToPeriod(periodo);
+  return prod.powerPeriods.find(p => p.period === periodoStr)?.value ?? null;
+};
+
 const calcularPrecios = (
   tariffs: Tariff[],
   tarifa: string,
@@ -115,7 +127,8 @@ const calcularPotencia = (
   feePotencia: number,
   modalidad: string
 ): { base: number; oferta: number } => {
-  const potenciaBase = getPotenciaBOE(tariffs, tarifa, periodo);
+  const potenciaProducto = getPotenciaProducto(tariffs, tarifa, modalidad, periodo);
+  const potenciaBase     = potenciaProducto ?? getPotenciaBOE(tariffs, tarifa, periodo);
 
   if (modalidad in POTENCIA_FIJA_SNAP) {
     return { base: round6(potenciaBase), oferta: POTENCIA_FIJA_SNAP[modalidad] };

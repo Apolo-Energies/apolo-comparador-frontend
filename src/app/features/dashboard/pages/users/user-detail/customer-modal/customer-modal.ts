@@ -117,6 +117,24 @@ const NUMBER_CLS = 'flex-1 min-w-0 px-4 py-2.5 text-sm rounded-r-lg border bg-ca
                     [class]="inputCls" [class.border-red-500]="err('cif')" />
                   @if (err('cif')) { <p class="text-xs text-red-500">{{ errMsg('cif') }}</p> }
                 </div>
+
+                <div class="space-y-1">
+                  <label class="text-sm font-medium text-muted-foreground">Nombre representante legal</label>
+                  <input formControlName="firstName" placeholder="Juan"
+                    [class]="inputCls" />
+                </div>
+
+                <div class="space-y-1">
+                  <label class="text-sm font-medium text-muted-foreground">Apellidos representante legal</label>
+                  <input formControlName="lastName" placeholder="García López"
+                    [class]="inputCls" />
+                </div>
+
+                <div class="md:col-span-2 space-y-1">
+                  <label class="text-sm font-medium text-muted-foreground">DNI representante legal</label>
+                  <input formControlName="dni" placeholder="12345678A"
+                    [class]="inputCls" />
+                </div>
               }
 
               <!-- Common fields -->
@@ -237,7 +255,7 @@ export class CustomerModalComponent {
         firstName:           c?.firstName           ?? '',
         lastName:            c?.lastName            ?? '',
         dni:                 c?.dni                 ?? '',
-        companyName:         c?.companyName         ?? '',
+        companyName:         c?.companyName         ?? (this.mode() === 'create' ? (u.fullName ?? '') : ''),
         cif:                 c?.cif                 ?? '',
         email:               c?.email               ?? u.email ?? '',
         dialCode:            splitPhone(c?.phone ?? u.phone ?? '').dialCode,
@@ -298,9 +316,9 @@ export class CustomerModalComponent {
       userId:              u.id,
       kind:                1,
       personType:          pt,
-      firstName:           isIndividual ? raw.firstName    : '',
-      lastName:            isIndividual ? raw.lastName     : '',
-      dni:                 isIndividual ? raw.dni          : '',
+      firstName:           raw.firstName    || '',
+      lastName:            raw.lastName     || '',
+      dni:                 raw.dni          || '',
       companyName:         !isIndividual ? raw.companyName : '',
       cif:                 !isIndividual ? raw.cif         : '',
       email:               raw.email,

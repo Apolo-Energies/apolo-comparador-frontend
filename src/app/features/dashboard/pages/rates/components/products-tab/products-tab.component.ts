@@ -121,8 +121,8 @@ export class ProductsTabComponent implements AfterViewInit {
             commissionPercentage: p.commissionPercentage ?? null,
             energyPeriods:        p.periods?.map(pp => ({ period: pp.period, value: pp.value })) ?? [],
             powerPeriods:         p.powerPeriods?.map(pp => ({ period: pp.period, value: pp.value })) ?? [],
-          }))
-        )
+          })),
+        ),
       );
     });
   }
@@ -295,6 +295,7 @@ export class ProductsTabComponent implements AfterViewInit {
       powerPeriods:  power.periods.length ? power.periods : undefined,
     }).subscribe({
       next: product => {
+        const tariff = this.tariffs().find(t => t.id === product.tariffId);
         const newRow: ProductRow = {
           id:                   product.id,
           name:                 product.name,

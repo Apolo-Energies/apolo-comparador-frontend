@@ -16,6 +16,16 @@ function normalizeSummary<T extends { status: unknown }>(s: T): T & { status: Op
   return { ...s, status: parseOpportunityStatus(s.status as string | number) };
 }
 
+function localDateToIsoStart(date: string): string {
+  return new Date(`${date}T00:00:00`).toISOString();
+}
+
+function localDateToIsoEndExclusive(date: string): string {
+  const d = new Date(`${date}T00:00:00`);
+  d.setDate(d.getDate() + 1);
+  return d.toISOString();
+}
+
 @Injectable({ providedIn: 'root' })
 export class OpportunityService {
   private http = inject(HttpClient);
@@ -28,8 +38,8 @@ export class OpportunityService {
 
     if (filters.cups)                  params = params.set('cups',              filters.cups);
     if (filters.status !== undefined)  params = params.set('status',            String(filters.status));
-    if (filters.startDate)             params = params.set('startDate',         filters.startDate);
-    if (filters.endDate)               params = params.set('endDate',           filters.endDate);
+    if (filters.startDate)             params = params.set('startDate',         localDateToIsoStart(filters.startDate));
+    if (filters.endDate)               params = params.set('endDate',           localDateToIsoEndExclusive(filters.endDate));
     if (filters.clientName)            params = params.set('clientName',        filters.clientName);
     if (filters.clientNif)             params = params.set('clientNif',         filters.clientNif);
     if (filters.createdByFullName)     params = params.set('createdByFullName', filters.createdByFullName);
