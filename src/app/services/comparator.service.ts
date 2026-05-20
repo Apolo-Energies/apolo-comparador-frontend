@@ -48,6 +48,10 @@ export class ComparatorService {
     ).subscribe();
   }
 
+  invalidateTariffs(): void {
+    this.loaded = false;
+  }
+
   loadTariffsPublic() {
     this.publicService.getTariffs().pipe(
       tap(res => this.tariffs.set(res.tariffs))
