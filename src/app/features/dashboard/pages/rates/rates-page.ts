@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ProviderService } from '../../../../services/provider.service';
+import { ComparatorService } from '../../../../services/comparator.service';
 import { Provider } from '../../../../entities/provider.model';
 import { TabType } from '../../../../entities/rates.model';
 import { LucideAngularModule, Building, Calculator, TrendingUp, Zap, Download } from 'lucide-angular';
@@ -29,9 +30,10 @@ import { GlobalLoadingService } from '../../../../services/global-loading.servic
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RatesPageComponent {
-  private readonly providerService = inject(ProviderService);
-  private readonly platformId      = inject(PLATFORM_ID);
-  private readonly globalLoading   = inject(GlobalLoadingService);
+  private readonly providerService    = inject(ProviderService);
+  private readonly comparatorService  = inject(ComparatorService);
+  private readonly platformId         = inject(PLATFORM_ID);
+  private readonly globalLoading      = inject(GlobalLoadingService);
 
   readonly isApolo = environment.features.userDetail;
 
@@ -54,6 +56,7 @@ export class RatesPageComponent {
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
+      this.comparatorService.invalidateTariffs();
       this.globalLoading.start();
       this.loadData();
     }

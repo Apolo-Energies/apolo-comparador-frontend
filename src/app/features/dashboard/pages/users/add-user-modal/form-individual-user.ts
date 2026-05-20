@@ -43,42 +43,6 @@ const SELECT_CLS = 'w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-
         @if (err('surnames')) { <p class="text-xs text-red-500">{{ errMsg('surnames') }}</p> }
       </div>
 
-      <div class="space-y-1">
-        <label class="text-sm font-normal text-foreground">DNI (opcional)</label>
-        <input formControlName="dni" placeholder="12345678A"
-          [class]="inputCls" [class.border-red-500]="err('dni')" />
-        @if (err('dni')) { <p class="text-xs text-red-500">Formato inválido. Ej: 12345678A</p> }
-      </div>
-
-      <div class="space-y-1">
-        <label class="text-sm font-normal text-foreground">Teléfono (opcional)</label>
-        <input formControlName="phone" placeholder="+34612345678"
-          [class]="inputCls" [class.border-red-500]="err('phone')" />
-        @if (err('phone')) { <p class="text-xs text-red-500">Debe empezar con +34 y tener 9 dígitos</p> }
-      </div>
-
-      <div class="space-y-1">
-        <label class="text-sm font-normal text-foreground">Domicilio Legal (opcional)</label>
-        <input formControlName="legalAddress" placeholder="Calle Mayor 1, 28001 Madrid"
-          [class]="inputCls" [class.border-red-500]="err('legalAddress')" />
-        @if (err('legalAddress')) { <p class="text-xs text-red-500">Mínimo 5 caracteres</p> }
-      </div>
-
-      <div class="space-y-1">
-        <label class="text-sm font-normal text-foreground">Domicilio Notificaciones (opcional)</label>
-        <input formControlName="notificationAddress" placeholder="Calle Mayor 1, 28001 Madrid"
-          [class]="inputCls" [class.border-red-500]="err('notificationAddress')" />
-        @if (err('notificationAddress')) { <p class="text-xs text-red-500">Mínimo 5 caracteres</p> }
-      </div>
-
-      <div class="space-y-1">
-        <label class="text-sm font-normal text-foreground">Cuenta Bancaria (opcional)</label>
-        <input formControlName="bankAccount" placeholder="ES83 0182 6517 7302 0197 5760"
-          (input)="onIban($event)"
-          [class]="inputCls" [class.border-red-500]="err('bankAccount')" />
-        @if (err('bankAccount')) { <p class="text-xs text-red-500">IBAN inválido. Ej: ES83 0182 6517 7302 0197 5760</p> }
-      </div>
-
     </div>
   `,
 })
@@ -104,19 +68,9 @@ export class FormIndividualUserComponent {
   errMsg(field: string): string {
     const errors = this.form().get(field)?.errors;
     if (!errors) return '';
-    if (errors['required']) return 'Este campo es obligatorio';
-    if (errors['email']) return 'Email inválido';
+    if (errors['required'])  return 'Este campo es obligatorio';
+    if (errors['email'])     return 'Email inválido';
     if (errors['maxlength']) return `Máximo ${errors['maxlength'].requiredLength} caracteres`;
-    if (errors['minlength']) return `Mínimo ${errors['minlength'].requiredLength} caracteres`;
-    if (errors['pattern']) return 'Formato inválido';
     return 'Campo inválido';
-  }
-
-  onIban(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const clean = input.value.replace(/\s/g, '').toUpperCase();
-    const formatted = clean.match(/.{1,4}/g)?.join(' ') ?? clean;
-    input.value = formatted;
-    this.form().get('bankAccount')?.setValue(formatted, { emitEvent: true });
   }
 }
