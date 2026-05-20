@@ -1,5 +1,6 @@
 <div class="flex h-screen overflow-hidden">
   <lib-apolo-sidebar
+    [class.pin-last-section]="isApolo"
     [sections]="sections()"
     [currentUrl]="currentUrl()"
     [isMobileOpen]="mobileOpen()"

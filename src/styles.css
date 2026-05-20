@@ -166,7 +166,7 @@ lib-apolo-sidebar lib-sidebar-section nav {
   height: 100%;
 }
 
-lib-apolo-sidebar lib-sidebar-section nav > div:last-child {
+lib-apolo-sidebar.pin-last-section lib-sidebar-section nav > div:last-child {
   margin-top: auto;
   border-bottom: none !important;
   padding-bottom: 0;
