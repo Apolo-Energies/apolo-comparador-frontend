@@ -49,7 +49,7 @@ export class ComparatorService {
   }
 
   invalidateTariffs(): void {
-    this.loaded = false;
+    this.tariffs.set([]);
   }
 
   loadTariffsPublic() {
