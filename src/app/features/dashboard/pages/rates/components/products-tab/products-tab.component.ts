@@ -74,14 +74,13 @@ export class ProductsTabComponent implements AfterViewInit {
   @ViewChild('availabilityTpl') availabilityTpl!: TemplateRef<{ $implicit: ProductRow }>;
   @ViewChild('actionsTpl')      actionsTpl!:      TemplateRef<{ $implicit: ProductRow }>;
 
-  readonly columns = signal<TableColumn<ProductRow>[]>([
+  readonly columns   = signal<TableColumn<ProductRow>[]>([
     { key: 'tariffCode',           label: 'Tarifa' },
     { key: 'name',                 label: 'Nombre' },
     { key: 'commissionPercentage', label: 'Comisión',   align: 'center' },
     { key: 'isAvailable',          label: 'Disponible', align: 'center' },
     { key: 'actions',              label: '',           align: 'center' },
   ]);
-
   readonly viewReady = signal(false);
 
   ngAfterViewInit() {
@@ -471,7 +470,7 @@ export class ProductsTabComponent implements AfterViewInit {
   readonly viewDialog = signal(false);
   readonly viewRow    = signal<ProductRow | null>(null);
 
-  openView(row: ProductRow) {
+  openView(row: ProductRow): void {
     this.viewRow.set(row);
     this.viewDialog.set(true);
   }
