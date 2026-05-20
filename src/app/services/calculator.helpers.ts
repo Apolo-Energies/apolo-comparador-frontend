@@ -54,6 +54,12 @@ const getBaseValue = (tariffs: Tariff[], tarifa: string, producto: string, perio
   return prod?.periods.find(p => p.period === periodoStr)?.value ?? 0;
 };
 
+const getProductType = (tariffs: Tariff[], tarifa: string, producto: string): 'Fixed' | 'Indexed' => {
+  const t    = getTariff(tariffs, tarifa);
+  const prod = t?.products.find(p => p.name === producto);
+  return prod?.type ?? 'Fixed';
+};
+
 const getRepartoOmie = (tariffs: Tariff[], tarifa: string, periodo: PeriodNumber): number => {
   const t       = getTariff(tariffs, tarifa);
   const periodoStr = numberToPeriod(periodo);
@@ -76,25 +82,25 @@ const calcularPrecios = (
   precioMedioOmie: number,
   feeEnergia: number
 ): { base: number; oferta: number } => {
+  // Legacy mapping: Index Coste / Index Promo share the base prices stored under "Index Base".
+  // New custom products use their own stored prices.
   const modalidadBase = (modalidad === 'Index Coste' || modalidad === 'Index Promo')
     ? 'Index Base'
     : modalidad;
 
   const valorTarifa = getBaseValue(tariffs, tarifa, modalidadBase, periodo);
   const repartoOmie = getRepartoOmie(tariffs, tarifa, periodo);
+  const productType = getProductType(tariffs, tarifa, modalidad);
 
-  let precioBase = 0;
-  if (modalidad.startsWith('Fijo')) {
-    precioBase = valorTarifa;
-  } else if (modalidad === 'Index Coste' || modalidad === 'Passpool') {
-    precioBase = valorTarifa + (precioMedioOmie * repartoOmie * 1.15) / 1000;
-  } else if (modalidad === 'Index Base') {
-    precioBase = valorTarifa + ((precioMedioOmie + 5) * repartoOmie * 1.15) / 1000;
-  } else if (modalidad === 'Index Promo') {
-    precioBase = valorTarifa + ((precioMedioOmie + 8) * repartoOmie * 1.15) / 1000;
-  } else {
-    precioBase = valorTarifa + ((precioMedioOmie + 5) * repartoOmie * 1.15) / 1000;
-  }
+  // Legacy products keep their historical extra OMIE margin (Index Base + 5, Index Promo + 8).
+  // Every other Indexed product uses the plain OMIE formula.
+  let omieMargin = 0;
+  if (modalidad === 'Index Base')  omieMargin = 5;
+  if (modalidad === 'Index Promo') omieMargin = 8;
+
+  const precioBase = productType === 'Indexed'
+    ? valorTarifa + ((precioMedioOmie + omieMargin) * repartoOmie * 1.15) / 1000
+    : valorTarifa;
 
   return {
     base:   round6(precioBase),
