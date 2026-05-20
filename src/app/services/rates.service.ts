@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs';
-import { Product } from '../entities/provider.model';
+import { Product, ProductType } from '../entities/provider.model';
 
 // Request types
 export interface CreateProductPeriod {
@@ -11,14 +11,18 @@ export interface CreateProductPeriod {
 }
 
 export interface CreateProductRequest {
-  name:     string;
-  tariffId: number;
-  periods:  CreateProductPeriod[];
+  name:           string;
+  tariffId:       number;
+  type:           ProductType;
+  energyPeriods:  CreateProductPeriod[];
+  powerPeriods?:  CreateProductPeriod[];
 }
 
 export interface UpdateProductRequest {
-  name?:    string;
-  periods?: CreateProductPeriod[];
+  name?:          string;
+  type?:          ProductType;
+  energyPeriods?: CreateProductPeriod[];
+  powerPeriods?:  CreateProductPeriod[];
 }
 
 export interface UpdateProductPeriodRequest {
