@@ -53,6 +53,10 @@ export class ComparatorService {
     ).subscribe();
   }
 
+  invalidateTariffs(): void {
+    this.loaded = false;
+  }
+
   loadTariffsPublic() {
     if (this.loaded) return;
     this.publicService.getTariffs().pipe(

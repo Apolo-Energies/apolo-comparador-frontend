@@ -103,8 +103,7 @@ interface DocSlot {
       <div class="space-y-2">
         @for (slot of allSlots(); track slot.type) {
 
-          <!-- Non-master: only show uploaded docs. Master: show all (including pending slots) -->
-          @if (isMaster() || slot.doc) {
+          @if (slot.doc) {
             <div class="space-y-2">
 
               <div class="flex items-center gap-3 rounded-lg border border-border bg-background px-4 py-3">
@@ -216,14 +215,14 @@ interface DocSlot {
               </div>
 
               <!-- Rejection reason (visible to all) -->
-              @if (slot.doc?.reviewComment) {
+              @if (slot.doc.reviewComment) {
                 <div class="ml-12 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700 dark:bg-red-900/20 dark:border-red-900/40 dark:text-red-400">
                   <span class="font-medium">Motivo del rechazo: </span>{{ slot.doc!.reviewComment }}
                 </div>
               }
 
               <!-- Reject inline input (master only) -->
-              @if (rejectingDocId() === slot.doc?.id) {
+              @if (rejectingDocId() === slot.doc.id) {
                 <div class="ml-12 flex items-center gap-2">
                   <input
                     type="text"

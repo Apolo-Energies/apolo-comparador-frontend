@@ -33,6 +33,7 @@
 
 <ng-template #actionsTpl let-row>
   <div class="flex items-center justify-center gap-2">
+    <ui-button label="Ver"      variant="ghost" size="sm" (click)="openView(row)" />
     <ui-button label="Editar"   variant="ghost" size="sm" (click)="openEdit(row)" />
     <ui-button label="Eliminar" variant="ghost" size="sm" (click)="requestDelete(row)" />
   </div>
@@ -74,7 +75,7 @@
 
   <!-- Table -->
   <div class="rounded-lg border border-border overflow-hidden">
-    @if (filteredRows().length === 0) {
+    @if (viewReady() && filteredRows().length === 0) {
       <div class="flex flex-col items-center justify-center py-12 text-center bg-card">
         <lucide-icon [img]="PackageOpenIcon" [size]="30" class="text-muted-foreground mb-2" />
         <p class="text-sm text-muted-foreground">Sin productos</p>
@@ -82,10 +83,10 @@
           Haz clic en "Agregar producto" para empezar
         </p>
       </div>
-    } @else {
+    } @else if (viewReady()) {
       <lib-data-table
         [data]="filteredRows()"
-        [columns]="columns"
+        [columns]="columns()"
         rowKey="id"
         [borderTop]="false"
         [borderBottom]="false"
@@ -277,6 +278,76 @@
           (click)="deleteProduct(row)"
         />
         <ui-button label="Cancelar" variant="outline" size="md" (click)="deleteDialog.set(false)" />
+      </div>
+    </div>
+  }
+</ui-dialog>
+
+<!-- ── View dialog ────────────────────────────────────────────── -->
+<ui-dialog
+  [open]="viewDialog()"
+  [closeable]="true"
+  maxWidth="max-w-lg"
+  (openChange)="viewDialog.set($event)"
+>
+  @if (viewRow(); as row) {
+    <div class="p-6 space-y-6">
+      <div>
+        <h2 class="text-lg font-semibold text-foreground">Detalle del producto</h2>
+        <p class="text-sm text-muted-foreground mt-0.5">{{ row.tariffCode }} — {{ row.name }}</p>
+      </div>
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <p class="text-xs text-muted-foreground">Tarifa</p>
+            <p class="text-sm font-medium text-foreground mt-0.5">{{ row.tariffCode }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-muted-foreground">Comisión</p>
+            <p class="text-sm font-medium text-foreground mt-0.5">
+              @if (row.commissionPercentage !== null) {
+                {{ row.commissionPercentage }}%
+              } @else {
+                <span class="text-muted-foreground">—</span>
+              }
+            </p>
+          </div>
+          <div>
+            <p class="text-xs text-muted-foreground">Estado</p>
+            <p class="text-sm font-medium mt-0.5" [class]="row.isAvailable ? 'text-green-600' : 'text-muted-foreground'">
+              {{ row.isAvailable ? 'Activo' : 'Inactivo' }}
+            </p>
+          </div>
+        </div>
+        @if (row.periods.length > 0) {
+          <div>
+            <p class="text-xs font-medium text-foreground mb-2">Energía (€/kWh)</p>
+            <div class="grid grid-cols-3 gap-2">
+              @for (p of row.periods; track p.period) {
+                <div class="rounded-md bg-muted px-3 py-2">
+                  <p class="text-xs text-muted-foreground">{{ p.period }}</p>
+                  <p class="text-sm font-medium text-foreground mt-0.5">{{ p.value }}</p>
+                </div>
+              }
+            </div>
+          </div>
+        }
+        @if (row.powerPeriods.length > 0) {
+          <div>
+            <p class="text-xs font-medium text-foreground mb-2">Potencia (€/kW día)</p>
+            <div class="grid grid-cols-3 gap-2">
+              @for (p of row.powerPeriods; track p.period) {
+                <div class="rounded-md bg-muted px-3 py-2">
+                  <p class="text-xs text-muted-foreground">{{ p.period }}</p>
+                  <p class="text-sm font-medium text-foreground mt-0.5">{{ p.value }}</p>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+      <div class="pt-2">
+        <ui-button label="Cerrar" variant="outline" size="md" (click)="viewDialog.set(false)" />
       </div>
     </div>
   }

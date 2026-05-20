@@ -21,6 +21,7 @@ interface ProductRow {
   isAvailable:          boolean;
   commissionPercentage: number | null;
   periods:              { period: string; value: number }[];
+  powerPeriods:         { period: string; value: number }[];
 }
 
 @Component({
@@ -52,23 +53,24 @@ export class ProductsTabComponent implements AfterViewInit {
   @ViewChild('availabilityTpl') availabilityTpl!: TemplateRef<{ $implicit: ProductRow }>;
   @ViewChild('actionsTpl')      actionsTpl!:      TemplateRef<{ $implicit: ProductRow }>;
 
-  columns: TableColumn<ProductRow>[] = [
+  readonly columns = signal<TableColumn<ProductRow>[]>([
     { key: 'tariffCode',           label: 'Tarifa' },
     { key: 'name',                 label: 'Nombre' },
     { key: 'commissionPercentage', label: 'Comisión',   align: 'center' },
     { key: 'isAvailable',          label: 'Disponible', align: 'center' },
     { key: 'actions',              label: '',           align: 'center' },
-  ];
+  ]);
+
+  readonly viewReady = signal(false);
 
   ngAfterViewInit() {
-    const col = (key: string) => this.columns.find(c => c.key === key);
-    const commCol    = col('commissionPercentage');
-    const availCol   = col('isAvailable');
-    const actionsCol = col('actions');
-    if (commCol)    commCol.cellTemplate    = this.commTpl;
-    if (availCol)   availCol.cellTemplate   = this.availabilityTpl;
-    if (actionsCol) actionsCol.cellTemplate = this.actionsTpl;
-    this.cdr.markForCheck();
+    this.columns.set(this.columns().map(c => {
+      if (c.key === 'commissionPercentage') return { ...c, cellTemplate: this.commTpl };
+      if (c.key === 'isAvailable')          return { ...c, cellTemplate: this.availabilityTpl };
+      if (c.key === 'actions')              return { ...c, cellTemplate: this.actionsTpl };
+      return c;
+    }));
+    this.viewReady.set(true);
   }
 
   // ── Data ───────────────────────────────────────────────────────
@@ -88,8 +90,11 @@ export class ProductsTabComponent implements AfterViewInit {
   constructor() {
     effect(() => {
       this.rows.set(
-        this.tariffs().flatMap(t =>
-          t.products.map(p => ({
+        this.tariffs().flatMap(t => {
+          const powerPeriods = t.boePowers?.flatMap(b =>
+            b.periods.map(pp => ({ period: pp.period, value: pp.value }))
+          ) ?? [];
+          return t.products.map(p => ({
             id:                   p.id,
             name:                 p.name,
             tariffId:             p.tariffId,
@@ -97,8 +102,9 @@ export class ProductsTabComponent implements AfterViewInit {
             isAvailable:          p.isAvailable ?? true,
             commissionPercentage: p.commissionPercentage ?? null,
             periods:              p.periods?.map(pp => ({ period: pp.period, value: pp.value })) ?? [],
-          }))
-        )
+            powerPeriods,
+          }));
+        })
       );
     });
   }
@@ -169,14 +175,16 @@ export class ProductsTabComponent implements AfterViewInit {
     this.creating.set(true);
     this.ratesService.createProduct({ name, tariffId, periods }).subscribe({
       next: product => {
+        const tariff = this.tariffs().find(t => t.id === product.tariffId);
         const newRow: ProductRow = {
           id:                   product.id,
           name:                 product.name,
           tariffId:             product.tariffId,
-          tariffCode:           this.tariffs().find(t => t.id === product.tariffId)?.code ?? '',
+          tariffCode:           tariff?.code ?? '',
           isAvailable:          product.isAvailable ?? true,
           commissionPercentage: product.commissionPercentage ?? null,
           periods,
+          powerPeriods:         tariff?.boePowers?.flatMap(b => b.periods.map(pp => ({ period: pp.period as string, value: pp.value }))) ?? [],
         };
         if (commission !== null) {
           this.ratesService.patchCommission(newRow.id, commission).subscribe({
@@ -283,6 +291,15 @@ export class ProductsTabComponent implements AfterViewInit {
       },
       error: () => { removeSaving(); this.alertService.show('Error al guardar el producto', 'error'); },
     });
+  }
+
+  // ── View ───────────────────────────────────────────────────────
+  readonly viewDialog = signal(false);
+  readonly viewRow    = signal<ProductRow | null>(null);
+
+  openView(row: ProductRow) {
+    this.viewRow.set(row);
+    this.viewDialog.set(true);
   }
 
   // ── Delete ─────────────────────────────────────────────────────

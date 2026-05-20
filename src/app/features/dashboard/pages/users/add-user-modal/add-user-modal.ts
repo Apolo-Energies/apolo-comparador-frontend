@@ -9,7 +9,7 @@ import { environment } from '../../../../../../environments/environment';
 type PersonView = 'Individual' | 'Company';
 
 const INDIVIDUAL_REQUIRED = ['email', 'role', 'name', 'surnames'] as const;
-const COMPANY_REQUIRED    = ['email', 'role', 'name', 'surnames', 'companyName', 'cif'] as const;
+const COMPANY_REQUIRED    = ['email', 'role', 'companyName'] as const;
 
 @Component({
   selector: 'app-add-user-modal',
@@ -38,18 +38,6 @@ export class AddUserModalComponent {
     { value: 'Company'    as PersonView, label: 'Persona Jurídica' },
   ];
 
-  private readonly sharedControls = {
-    email:               ['', [Validators.required, Validators.email]],
-    role:                ['', Validators.required],
-    name:                ['', [Validators.required, Validators.maxLength(50)]],
-    surnames:            ['', [Validators.required, Validators.maxLength(50)]],
-    dni:                 ['', [Validators.pattern(/^[0-9]{8}[A-Za-z]$/)]],
-    phone:               ['', [Validators.pattern(/^\+34[0-9]{9}$/)]],
-    legalAddress:        ['', [Validators.minLength(5)]],
-    notificationAddress: ['', [Validators.minLength(5)]],
-    bankAccount:         ['', [Validators.pattern(/^ES\d{2}(?:\s?\d{4}){5}$/)]],
-  };
-
   readonly simpleForm = this.fb.nonNullable.group({
     email:    ['', [Validators.required, Validators.email]],
     role:     ['', Validators.required],
@@ -57,12 +45,17 @@ export class AddUserModalComponent {
     surnames: ['', [Validators.required, Validators.maxLength(50)]],
   });
 
-  readonly individualForm = this.fb.nonNullable.group({ ...this.sharedControls });
+  readonly individualForm = this.fb.nonNullable.group({
+    email:    ['', [Validators.required, Validators.email]],
+    role:     ['', Validators.required],
+    name:     ['', [Validators.required, Validators.maxLength(50)]],
+    surnames: ['', [Validators.required, Validators.maxLength(50)]],
+  });
 
   readonly companyForm = this.fb.nonNullable.group({
-    ...this.sharedControls,
+    email:       ['', [Validators.required, Validators.email]],
+    role:        ['', Validators.required],
     companyName: ['', [Validators.required, Validators.maxLength(100)]],
-    cif:         ['', [Validators.required, Validators.pattern(/^[A-Z]\d{7}[A-Z0-9]$/)]],
   });
 
   readonly simpleRoleOptions = [
@@ -108,21 +101,16 @@ export class AddUserModalComponent {
     if (form.invalid) return;
 
     this.saving.set(true);
-    const raw = form.getRawValue() as Record<string, string>;
+    const raw        = form.getRawValue() as Record<string, string>;
+    const isCompany  = this.isApolo && this.view() === 'Company';
 
     this.userService.create({
-      personType:           this.isApolo ? (this.view() === 'Individual' ? 0 : 1) : 0,
-      email:               raw['email'].toLowerCase().trim(),
-      role:                Number(raw['role']),
-      name:                raw['name'],
-      surnames:            raw['surnames'],
-      dni:                 raw['dni']                 || undefined,
-      phone:               raw['phone']               || undefined,
-      legalAddress:        raw['legalAddress']        || undefined,
-      notificationAddress: raw['notificationAddress'] || undefined,
-      bankAccount:         raw['bankAccount']         || undefined,
-      cif:                 raw['cif']                 || undefined,
-      companyName:         raw['companyName']         || undefined,
+      personType:  this.isApolo ? (isCompany ? 1 : 0) : 0,
+      email:       raw['email'].toLowerCase().trim(),
+      role:        Number(raw['role']),
+      name:        isCompany ? raw['companyName'] : raw['name'],
+      surnames:    isCompany ? ''                 : raw['surnames'],
+      companyName: isCompany ? raw['companyName'] : undefined,
     }).subscribe({
       next: () => {
         this.alertService.show('Usuario creado correctamente', 'success');

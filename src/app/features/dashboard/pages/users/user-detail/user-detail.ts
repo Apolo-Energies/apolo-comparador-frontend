@@ -146,20 +146,37 @@ export class UserDetailPageComponent implements OnInit {
     const c = u?.customer;
     const contract = u?.contract;
 
-    const displayName = (c?.companyName
-      ?? `${c?.firstName ?? ''} ${c?.lastName ?? ''}`.trim())
-      || '-';
+    const estadoContrato: [string, string] = ['Estado contrato', contract?.isActive ? 'Activo' : 'Inactivo'];
+    const vigencia:       [string, string] = ['Vigencia',        this.vigencia(contract?.endDate ?? null)];
 
+    if (c?.personType === 'Company') {
+      const representante = `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() || '-';
+      return [
+        ['Razón social',             c.companyName             ?? '-'],
+        ['CIF',                      c.cif                     ?? '-'],
+        ['Tipo de cliente',          'Empresa'],
+        ['Correo',                   c.email                   ?? '-'],
+        ['Representante legal',      representante],
+        ['DNI representante legal',  c.dni                     ?? '-'],
+        ['Teléfono',                 c.phone                   ?? '-'],
+        ['Dirección legal',          c.legalAddress            ?? '-'],
+        ['Dirección notificación',   c.notificationAddress     ?? '-'],
+        estadoContrato,
+        vigencia,
+      ];
+    }
+
+    const fullName = `${c?.firstName ?? ''} ${c?.lastName ?? ''}`.trim() || '-';
     return [
-      ['Nombre / Razón social',   displayName],
-      ['DNI / CIF',               c?.dni ?? c?.cif ?? '-'],
-      ['Tipo de cliente',         c?.personType === 'Individual' ? 'Individual' : 'Empresa'],
-      ['Correo',                  c?.email ?? '-'],
-      ['Teléfono',                c?.phone ?? '-'],
-      ['Dirección legal',         c?.legalAddress ?? '-'],
-      ['Dirección notificación',  c?.notificationAddress ?? '-'],
-      ['Estado contrato',         contract?.isActive ? 'Activo' : 'Inactivo'],
-      ['Vigencia',                this.vigencia(contract?.endDate ?? null)],
+      ['Nombre',                 fullName],
+      ['DNI',                    c?.dni                ?? '-'],
+      ['Tipo de cliente',        'Individual'],
+      ['Correo',                 c?.email              ?? '-'],
+      ['Teléfono',               c?.phone              ?? '-'],
+      ['Dirección legal',        c?.legalAddress       ?? '-'],
+      ['Dirección notificación', c?.notificationAddress ?? '-'],
+      estadoContrato,
+      vigencia,
     ];
   });
 
