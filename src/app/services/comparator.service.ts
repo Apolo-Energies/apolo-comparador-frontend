@@ -41,15 +41,10 @@ export class ComparatorService {
   private publicService = inject(PublicComparatorService);
 
   readonly tariffs = signal<Tariff[]>([]);
-  private loaded = false;
 
   loadTariffs() {
-    if (this.loaded) return;
     this.providerService.getByUser().pipe(
-      tap(res => {
-        this.tariffs.set(res.tariffs);
-        this.loaded = true;
-      })
+      tap(res => this.tariffs.set(res.tariffs))
     ).subscribe();
   }
 
@@ -58,12 +53,8 @@ export class ComparatorService {
   }
 
   loadTariffsPublic() {
-    if (this.loaded) return;
     this.publicService.getTariffs().pipe(
-      tap(res => {
-        this.tariffs.set(res.tariffs);
-        this.loaded = true;
-      })
+      tap(res => this.tariffs.set(res.tariffs))
     ).subscribe();
   }
 

@@ -1,5 +1,9 @@
 import { Period } from '../shared/constants/period';
 
+export type ProductType = 'Fixed' | 'Indexed';
+
+export const PRODUCT_TYPES: ProductType[] = ['Fixed', 'Indexed'];
+
 export interface Provider {
   id:      number;
   name:    string;
@@ -49,16 +53,26 @@ export interface OmieDistributionPeriod {
 }
 
 export interface Product {
-  id:                   number;
-  name:                 string;
-  tariffId:             number;
-  tariff:               Tariff | null;
-  periods:              ProductPeriod[];
-  isAvailable?:         boolean;
+  id:                    number;
+  name:                  string;
+  tariffId:              number;
+  tariff:                Tariff | null;
+  type:                  ProductType;
+  periods:               ProductPeriod[];
+  powerPeriods?:         ProductPowerPeriod[];
+  isAvailable?:          boolean;
   commissionPercentage?: number | null;
 }
 
 export interface ProductPeriod {
+  id:        number;
+  period:    Period;
+  value:     number;
+  productId: number;
+  product:   Product | null;
+}
+
+export interface ProductPowerPeriod {
   id:        number;
   period:    Period;
   value:     number;

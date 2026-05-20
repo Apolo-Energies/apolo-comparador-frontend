@@ -68,16 +68,14 @@ export class RatesPageComponent {
 
     this.providerService.getByUser().subscribe({
       next: (response) => {
-        console.log('Provider data received:', response);
         this.providerData.set(response);
         this.loading.set(false);
         this.globalLoading.stop();
       },
-      error: (err) => {
+      error: () => {
         this.error.set('Error al cargar los datos del proveedor');
         this.loading.set(false);
         this.globalLoading.stop();
-        console.error('Error loading provider data:', err);
       },
     });
   }
