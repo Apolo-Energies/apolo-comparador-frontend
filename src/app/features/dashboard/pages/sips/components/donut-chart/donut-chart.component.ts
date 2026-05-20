@@ -11,6 +11,8 @@ interface Slice {
   fill: string;
   label: string;
   percent: number;
+  value: number;
+  valueFormatted: string;
   lx: number;
   ly: number;
 }
@@ -105,6 +107,8 @@ export class SipsDonutChartComponent implements AfterViewInit, OnDestroy {
         fill: COLORS[i % COLORS.length],
         label: item.label,
         percent: Math.round((item.value / total) * 100),
+        value: item.value,
+        valueFormatted: `${item.value.toLocaleString('es-ES')} kWh`,
         lx, ly,
       };
     });

@@ -31,13 +31,14 @@
 
   <!-- Legend left + pie right -->
   <div class="flex items-center h-80">
-    <div class="flex flex-col gap-4 min-w-25">
+    <div class="flex flex-col gap-3 min-w-25">
       @for (s of slices(); track s.label) {
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 whitespace-nowrap">
         <span [style.width.px]="12" [style.height.px]="12" [style.border-radius]="'50%'"
           [style.display]="'inline-block'" [style.flex-shrink]="0" [style.border]="'3px solid ' + s.fill"
           [style.background]="'transparent'"></span>
         <span class="text-sm text-muted-foreground">{{ s.label }}</span>
+        <span class="text-sm text-foreground font-medium">{{ s.valueFormatted }}</span>
       </div>
       }
     </div>
