@@ -15,20 +15,10 @@ import { PERIODS } from '../shared/constants/period';
 
 export type { ReportPayload, SaveComparisonRequest, SaveComparisonResponse };
 
-// Spanish electricity tax rates — keep in sync with calculator.helpers.ts
-const IE_RATE  = 0.0511269632;
-const IVA_RATE = 0.21;
-
 const SNAP_ENERGIA: Record<string, number> = {
   'Fijo Snap Mini': 50,
   'Fijo Snap': 75,
   'Fijo Snap Maxi': 100,
-};
-
-const INDEX_ENERGIA: Record<string, number> = {
-  'Index Coste': 0.5,
-  'Index Base': 0.55,
-  'Index Promo': 0.85,
 };
 
 const SNAP_PRODUCTS = ['Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi'];
@@ -71,9 +61,6 @@ export class ComparatorService {
     if (SNAP_PRODUCTS.includes(producto)) {
       return SNAP_ENERGIA[producto] ?? 0;
     }
-    const indexValue = INDEX_ENERGIA[producto];
-    if (indexValue !== undefined) return indexValue;
-
     // Use explicit commission (from selected user) or fall back to own commission signal
     const pct = commissionPct ?? this.commissionService.commission();
     return pct ? pct / 100 : 0;
@@ -103,38 +90,14 @@ export class ComparatorService {
     fileId: string,
   ): ReportPayload {
     const dias = result.dias ?? ocr.periodo_facturacion?.numero_dias ?? 0;
-    const totalActual = ocr.total ?? 0;
-
-    // OCR already provides the IE base (energia + potencia + reactiva + exceso)
-    const baseActual = ocr.ie?.base    ?? (ocr.totales_electricidad?.energia?.activa ?? 0) + (ocr.totales_electricidad?.potencia?.contratada ?? 0);
-    const ieActual   = ocr.ie?.importe ?? 0;
-    const ivaActual  = ocr.iva?.importe ?? 0;
-
-    const otrosComunesConIeActual =
-      (ocr.totales_electricidad?.energia?.reactiva ?? 0) +
-      (ocr.totales_electricidad?.potencia?.exceso   ?? 0);
-
-    const otrosComunesSinIeActual = ocr.bono_social?.importe ?? 0;
-
     const alquilerEquipo = ocr.equipos?.importe ?? 0;
 
-    const otrosNoComunesActual =
-      (ocr.otros_servicios ?? []).reduce((sum, s) => sum + (s.importe ?? 0), 0);
-
-    // Offer totals built forward from periodos (not reverse-engineered from totalActual)
-    const totalEnergiaOferta  = result.periodos.reduce((s, p) => s + p.costeEnergia,  0);
-    const totalPotenciaOferta = result.periodos.reduce((s, p) => s + p.costePotencia, 0);
-
-    // IE base for offer = energy + power (otros comunes con IE = 0 for offer)
-    const baseOferta              = Number((totalEnergiaOferta + totalPotenciaOferta).toFixed(2));
-    const impuestoElectricoOferta = Number((baseOferta * IE_RATE).toFixed(2));
-
-    // subTotal = all components before IVA
-    // otros comunes con IE / sin IE / no comunes = 0 for offer (Apolo does not charge them)
-    const subTotalOferta = baseOferta + impuestoElectricoOferta + alquilerEquipo;
-
-    const ivaOferta   = Number((subTotalOferta * IVA_RATE).toFixed(2));
-    const totalOferta = Number((subTotalOferta + ivaOferta).toFixed(2));
+    // All totals come from the calculator (same numbers shown on screen)
+    const {
+      totalActual, ieActual, ivaActual, subTotalActual,
+      extraSinIE, costesComunesConIEActual, otrosNoComunesActual,
+      totalOferta, ieOferta, ivaOferta, subTotalOferta,
+    } = result;
 
     const lineas = [
       ...PERIODS.map((label, idx) => {
@@ -171,7 +134,7 @@ export class ComparatorService {
 
     const consumoAnual = (ocr.energia?.reduce((a, e) => a + (e.activa?.kwh ?? 0), 0) ?? 0) * 10;
 
-    return {
+    const payload = {
       fileId,
       cups:       ocr.cliente?.cups ?? '',
       providerId: 1,
@@ -203,10 +166,10 @@ export class ComparatorService {
         provincia: ocr.cliente?.direccion?.provincia ?? '',
       },
       totales: {
-        baseActual,
-        baseOferta,
+        baseActual:              subTotalActual,
+        baseOferta:              subTotalOferta,
         impuestoElectricoActual: ieActual,
-        impuestoElectricoOferta,
+        impuestoElectricoOferta: ieOferta,
         alquilerEquipo,
         ivaActual,
         ivaOferta,
@@ -214,13 +177,15 @@ export class ComparatorService {
         totalOferta,
         otrosNoComunesActual,
         otrosNoComunesOferta:    0,
-        otrosComunesSinIeActual,
-        otrosComunesSinIeOferta: 0,
-        otrosComunesConIeActual,
-        otrosComunesConIeOferta: 0,
+        otrosComunesSinIeActual: extraSinIE,
+        otrosComunesSinIeOferta: extraSinIE,
+        otrosComunesConIeActual: costesComunesConIEActual,
+        otrosComunesConIeOferta: costesComunesConIEActual,
       },
       lineas,
     };
+
+    return payload;
   }
 
   /**
