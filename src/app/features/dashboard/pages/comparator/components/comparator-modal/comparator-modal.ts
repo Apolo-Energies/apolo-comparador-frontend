@@ -35,8 +35,8 @@ export class ComparatorModalComponent {
   readonly isReferrer         = input(false);
   readonly comisionBase       = input(0);
   readonly referrerDefaultFee = input(0.3);
-  readonly maxFeeEnergia      = input(50);
-  readonly maxFeePotencia     = input(25);
+  readonly maxFeeEnergia      = input(30);
+  readonly maxFeePotencia     = input(5);
   readonly result             = input<ComparadorResult | null>(null);
 
   // ── visibility flags (default = current private behavior) ──────────────────
