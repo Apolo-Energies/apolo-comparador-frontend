@@ -54,6 +54,14 @@ export const DASHBOARD_ROUTES: Routes = [
               import('./pages/opportunities/opportunities-page')
                 .then(m => m.OpportunitiesPageComponent),
           },
+          {
+            path: 'reports',
+            canActivate: [featureGuard],
+            data: { feature: 'reports' },
+            loadComponent: () =>
+              import('./pages/reports/reports-page')
+                .then(m => m.ReportsPageComponent),
+          },
         ],
       },
 

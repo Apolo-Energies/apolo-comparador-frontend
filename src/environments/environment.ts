@@ -28,6 +28,7 @@ export const environment = {
     userDetail: true,
     opportunities: true,
     markets: true,
+    reports: true,
     support: false,
   },
 };

@@ -1,0 +1,163 @@
+@if (loading()) {
+
+  <!-- Skeleton -->
+  <div class="space-y-4 animate-pulse">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+      <!-- Pipeline skeleton -->
+      <div class="bg-card border border-border rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-border">
+          <div class="h-3 bg-accent/60 rounded w-1/3"></div>
+        </div>
+        <div class="p-4 space-y-3">
+          @for (i of [1,2,3,4]; track i) {
+            <div class="rounded-md px-4 py-3 bg-accent/40 flex items-center justify-between">
+              <div class="space-y-1.5">
+                <div class="h-3 bg-accent/60 rounded w-24"></div>
+                <div class="h-2.5 bg-accent/60 rounded w-16"></div>
+              </div>
+              <div class="h-7 bg-accent/60 rounded w-8"></div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Donut skeleton -->
+      <div class="bg-card border border-border rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-border">
+          <div class="h-3 bg-accent/60 rounded w-1/3"></div>
+        </div>
+        <div class="p-5 flex flex-col items-center gap-4">
+          <div class="w-44 h-44 rounded-full bg-accent/40 ring-[28px] ring-card"></div>
+          <div class="flex flex-wrap gap-3 justify-center">
+            @for (i of [1,2,3,4,5]; track i) {
+              <div class="h-2.5 bg-accent/60 rounded w-16"></div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table skeleton -->
+    <div class="bg-card border border-border rounded-lg overflow-hidden">
+      <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+        <div class="h-3 bg-accent/60 rounded w-1/4"></div>
+        <div class="h-8 bg-accent/60 rounded w-36"></div>
+      </div>
+      <div class="p-5 space-y-3">
+        @for (i of [1,2,3,4,5,6,7]; track i) {
+          <div class="flex items-center gap-4">
+            <div class="h-3 bg-accent/60 rounded flex-1"></div>
+            <div class="h-3 bg-accent/60 rounded w-28 shrink-0"></div>
+            <div class="h-5 bg-accent/60 rounded w-16 shrink-0"></div>
+            <div class="h-3 bg-accent/60 rounded w-24 shrink-0"></div>
+            <div class="h-5 bg-accent/60 rounded-full w-20 shrink-0"></div>
+            <div class="h-3 bg-accent/60 rounded w-20 shrink-0"></div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+} @else {
+
+  <div class="space-y-4">
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+      <!-- Estado del Pipeline -->
+      <div class="bg-card border border-border rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-border">
+          <h3 class="font-semibold text-sm text-foreground">Estado del Pipeline</h3>
+        </div>
+        <div class="p-4 space-y-3">
+          @let counts = oppCounts();
+          @let total  = counts.total || 1;
+          @for (stage of [
+            { key: 'pending',     label: 'Pendiente',      color: 'bg-yellow-500/20 border border-yellow-500/30',  n: counts.pending     },
+            { key: 'negotiation', label: 'En Negociación', color: 'bg-blue-500/20 border border-blue-500/30',      n: counts.negotiation },
+            { key: 'won',         label: 'Ganada',         color: 'bg-[#1AD598]/20 border border-[#1AD598]/30',    n: counts.won         },
+            { key: 'lost',        label: 'Perdida',        color: 'bg-[#ef4444]/20 border border-[#ef4444]/30',    n: counts.lost        }
+          ]; track stage.key) {
+            <div class="rounded-md px-4 py-3 text-white flex items-center justify-between" [class]="stage.color">
+              <div>
+                <p class="font-semibold text-sm">{{ stage.label }}</p>
+                <p class="text-xs opacity-75">{{ ((stage.n / total) * 100).toFixed(0) }}% del total</p>
+              </div>
+              <span class="text-2xl font-extrabold">{{ stage.n }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Distribución por Tarifa -->
+      <div class="bg-card border border-border rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-border">
+          <h3 class="font-semibold text-sm text-foreground">Distribución por Tarifa</h3>
+        </div>
+        <div class="p-5">
+          <div class="h-52">
+            <canvas #donutCanvas></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Listado de Oportunidades -->
+    <div class="bg-card border border-border rounded-lg overflow-hidden">
+      <div class="px-6 py-4 border-b border-border flex items-center justify-between gap-4">
+        <h3 class="font-semibold text-sm text-foreground">Listado de Oportunidades</h3>
+        <select
+          class="bg-input border border-border rounded-lg px-3 py-1.5 text-sm text-foreground outline-none focus:border-ring cursor-pointer"
+          [value]="statusFilter()"
+          (change)="statusFilter.set($any($event.target).value)">
+          <option value="">Todos los estados</option>
+          <option value="pending">Pendiente</option>
+          <option value="negotiation">En Negociación</option>
+          <option value="won">Ganada</option>
+          <option value="lost">Perdida</option>
+        </select>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-border">
+              <th class="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cliente</th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">CUPS</th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tarifa</th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Comercial</th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Estado</th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actualización</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (opp of filteredOpps().slice(0, 100); track opp.id) {
+              <tr class="border-b border-border/50 hover:bg-accent/30 transition-colors">
+                <td class="px-5 py-3 font-medium text-foreground">{{ opp.client.name || '—' }}</td>
+                <td class="px-5 py-3 font-mono text-xs text-muted-foreground">{{ opp.cups }}</td>
+                <td class="px-5 py-3">
+                  <span class="px-2 py-0.5 rounded text-xs font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                    {{ opp.tariff || '—' }}
+                  </span>
+                </td>
+                <td class="px-5 py-3 text-muted-foreground">{{ opp.createdBy?.fullName || '—' }}</td>
+                <td class="px-5 py-3">
+                  <span class="px-2 py-0.5 rounded-full text-xs font-semibold" [class]="statusClass(opp.status)">
+                    {{ statusLabel(opp.status) }}
+                  </span>
+                </td>
+                <td class="px-5 py-3 text-muted-foreground">{{ fmtDate(opp.updatedAt) }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="px-5 py-10 text-center text-muted-foreground">Sin oportunidades</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+}
