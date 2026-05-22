@@ -7,7 +7,7 @@ import { HttpClient } from '@angular/common/http';
 import { ApoloSidebar, SidebarChildItem, SidebarSection } from '@apolo-energies/sidebar';
 import { ApoloHeader, HeaderWelcomeContent, HeaderActionLink, UserMenuItem } from '@apolo-energies/header';
 import { AuthService } from '@apolo-energies/auth';
-import { ArrowDownBoxIcon, chevronDownIcon, chevronRightIcon, CircleIcon, CompassIcon, InfoIcon, LogoutIcon, PieIcon, SettingsIcon, StarIcon, SupportIcon, UiIconSource, UserIcon } from '@apolo-energies/icons';
+import { ArrowDownBoxIcon, chevronDownIcon, chevronRightIcon, CircleIcon, InfoIcon, LogoutIcon, PieIcon, SettingsIcon, StarIcon, SupportIcon, UiIconSource, UserIcon } from '@apolo-energies/icons';
 import { getUserRoles } from '../../utils/auth.utils';
 import { environment } from '../../../environments/environment';
 import { RefreshTokenService } from '../../services/refresh-token.service';
@@ -135,6 +135,7 @@ export class Layout {
             children: [
               { title: 'Historial',    url: '/dashboard/analytics/history',    access: ['analytics.history:view'] },
               { title: 'Estadísticas', url: '/dashboard/analytics/statistics', access: ['analytics.statistics:view'] },
+              { title: 'Reportes',     url: '/dashboard/analytics/reports',    access: ['analytics.statistics:view'] },
             ],
           },
           ...(environment.features.opportunities ? [{
@@ -148,12 +149,6 @@ export class Layout {
             icon: { type: 'apolo', icon: ArrowDownBoxIcon, size: 20 },
             url: '/dashboard/comparator',
             access: ['comparator:view'],
-          },
-          {
-            title: 'Consultas SIPS',
-            icon: { type: 'apolo', icon: CompassIcon, size: 20 },
-            url: '/dashboard/sips',
-            access: ['sips:view'],
           },
           ...(environment.features.markets ? [{
             title: 'Mercados',

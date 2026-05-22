@@ -6,26 +6,25 @@
   </div>
 
   <div class="flex items-center gap-3">
-    <button
-      class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+    <ui-button
+      label="Exportar Excel"
+      variant="secondary"
+      size="md"
+      [leadingIcon]="downloadIcon"
       [disabled]="loading() || !providerData()"
       (click)="onExportExcel()"
-    >
-      <lucide-icon [img]="DownloadIcon" [size]="16" />
-      <span>Exportar Excel</span>
-    </button>
+    />
   </div>
 </div>
 
 <!-- Tabs -->
 <div class="mb-6">
-  <div class="flex gap-1 bg-card rounded-lg p-1">
+  <div class="grid grid-cols-6 md:grid-cols-5 gap-1 bg-card border border-border rounded-lg p-1">
     <button
-      class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all rounded-md"
-      [class.bg-primary]="activeTab() === 'provider'"
-      [class.text-primary-foreground]="activeTab() === 'provider'"
+      class="col-span-2 md:col-span-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium transition-all rounded-md w-full"
+      [class.bg-accent]="activeTab() === 'provider'"
+      [class.text-foreground]="activeTab() === 'provider'"
       [class.text-muted-foreground]="activeTab() !== 'provider'"
-      [class.hover:text-foreground]="activeTab() !== 'provider'"
       (click)="setActiveTab('provider')"
     >
       <lucide-icon [img]="BuildingIcon" [size]="16" />
@@ -33,11 +32,10 @@
     </button>
 
     <button
-      class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all rounded-md"
-      [class.bg-primary]="activeTab() === 'products'"
-      [class.text-primary-foreground]="activeTab() === 'products'"
+      class="col-span-2 md:col-span-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium transition-all rounded-md w-full"
+      [class.bg-accent]="activeTab() === 'products'"
+      [class.text-foreground]="activeTab() === 'products'"
       [class.text-muted-foreground]="activeTab() !== 'products'"
-      [class.hover:text-foreground]="activeTab() !== 'products'"
       (click)="setActiveTab('products')"
     >
       <lucide-icon [img]="CalculatorIcon" [size]="16" />
@@ -45,11 +43,10 @@
     </button>
 
     <button
-      class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all rounded-md"
-      [class.bg-primary]="activeTab() === 'tariffs'"
-      [class.text-primary-foreground]="activeTab() === 'tariffs'"
+      class="col-span-2 md:col-span-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium transition-all rounded-md w-full"
+      [class.bg-accent]="activeTab() === 'tariffs'"
+      [class.text-foreground]="activeTab() === 'tariffs'"
       [class.text-muted-foreground]="activeTab() !== 'tariffs'"
-      [class.hover:text-foreground]="activeTab() !== 'tariffs'"
       (click)="setActiveTab('tariffs')"
     >
       <lucide-icon [img]="CalculatorIcon" [size]="16" />
@@ -57,11 +54,10 @@
     </button>
 
     <button
-      class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all rounded-md"
-      [class.bg-primary]="activeTab() === 'omie'"
-      [class.text-primary-foreground]="activeTab() === 'omie'"
+      class="col-span-3 md:col-span-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium transition-all rounded-md w-full"
+      [class.bg-accent]="activeTab() === 'omie'"
+      [class.text-foreground]="activeTab() === 'omie'"
       [class.text-muted-foreground]="activeTab() !== 'omie'"
-      [class.hover:text-foreground]="activeTab() !== 'omie'"
       (click)="setActiveTab('omie')"
     >
       <lucide-icon [img]="TrendingUpIcon" [size]="16" />
@@ -69,11 +65,10 @@
     </button>
 
     <button
-      class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all rounded-md"
-      [class.bg-primary]="activeTab() === 'boe'"
-      [class.text-primary-foreground]="activeTab() === 'boe'"
+      class="col-span-3 md:col-span-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium transition-all rounded-md w-full"
+      [class.bg-accent]="activeTab() === 'boe'"
+      [class.text-foreground]="activeTab() === 'boe'"
       [class.text-muted-foreground]="activeTab() !== 'boe'"
-      [class.hover:text-foreground]="activeTab() !== 'boe'"
       (click)="setActiveTab('boe')"
     >
       <lucide-icon [img]="ZapIcon" [size]="16" />

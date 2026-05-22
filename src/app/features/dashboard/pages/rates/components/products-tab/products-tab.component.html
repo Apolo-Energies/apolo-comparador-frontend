@@ -51,7 +51,7 @@
         <button
           class="px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
           [class]="filterTariffId() === null
-            ? 'bg-primary text-primary-foreground'
+            ? 'bg-accent text-foreground'
             : 'bg-muted text-muted-foreground hover:text-foreground'"
           (click)="filterTariffId.set(null)"
         >
@@ -61,7 +61,7 @@
           <button
             class="px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
             [class]="filterTariffId() === t.id
-              ? 'bg-primary text-primary-foreground'
+              ? 'bg-accent text-foreground'
               : 'bg-muted text-muted-foreground hover:text-foreground'"
             (click)="filterTariffId.set(t.id)"
           >

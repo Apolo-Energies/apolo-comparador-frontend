@@ -1,0 +1,74 @@
+<div class="min-h-full bg-body -mx-6 -my-6 px-6 py-6 lg:-mx-8 lg:-my-8 lg:px-8 lg:py-8">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-xl mb-0 pb-0 font-bold text-foreground">Reportes</h1>
+      <p class="text-sm text-muted-foreground mt-0.5">Analítica y oportunidades en tiempo real</p>
+    </div>
+    @if (loading()) {
+      <app-brand-loader
+        [inline]="true"
+        [size]="32"
+        [showTitle]="false"
+        [showDescription]="false"
+        [showBar]="false"
+        [showPercent]="false"
+        [showMicrocopy]="false"
+        [showWordmark]="false"
+        [showBackdrop]="false" />
+    } @else {
+      <button
+        class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-card border border-border text-muted-foreground text-xs font-semibold hover:bg-body hover:text-foreground transition-colors cursor-pointer"
+        (click)="load()">
+        ↺ Actualizar
+      </button>
+    }
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex gap-1 bg-card border border-border rounded-lg p-1 mb-6 w-fit">
+    @for (tab of tabs; track tab.id) {
+      <button
+        class="relative px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer"
+        [class.bg-accent]="activeTab() === tab.id"
+        [class.text-foreground]="activeTab() === tab.id"
+        [class.text-muted-foreground]="activeTab() !== tab.id"
+        (click)="setTab(tab.id)">
+        {{ tab.label }}
+        @if (tab.id === 'alertas' && alertBadge() > 0) {
+          <span class="absolute -top-1 -right-1 bg-[#B79DF5] text-[#17181A] text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+            {{ alertBadge() > 9 ? '9+' : alertBadge() }}
+          </span>
+        }
+      </button>
+    }
+  </div>
+
+  <!-- Tab content -->
+  @if (activeTab() === 'analitica') {
+    <app-reports-analytics-tab
+      [loading]="loading()"
+      [summary]="summary()"
+      [daily]="daily()"
+      [totalComparativas]="totalComparativas()"
+      [rows]="historyItems()" />
+  }
+
+  @if (activeTab() === 'oportunidades') {
+    <app-reports-opportunities-tab
+      [loading]="loading()"
+      [opps]="opps()" />
+  }
+
+  @if (activeTab() === 'alertas') {
+    <app-reports-alerts-tab
+      [loading]="loading()"
+      [criticalCount]="criticalCount()"
+      [warningCount]="warningCount()"
+      [activeOppCount]="activeOppCount()"
+      [alertBadge]="alertBadge()"
+      [stagnant]="stagnant()" />
+  }
+
+</div>

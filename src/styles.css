@@ -24,9 +24,10 @@
   --color-popover-foreground:#fafafa;
 
   /* — Accent (azul eléctrico) — */
-  --color-primary:           #3b82f6;  /* blue-500 */
-  --color-primary-foreground:#ffffff;
-  --color-primary-button:    #12AFF0;
+  --color-primary:                  #3b82f6;  /* blue-500 */
+  --color-primary-foreground:       #ffffff;
+  --color-primary-button:           #12AFF0;
+  --color-primary-button-foreground:#17181A;  /* texto sobre bg-primary-button */
 
   /* — Secondary / accent surfaces — */
   --color-secondary:         #27272a;  /* zinc-800 */
@@ -146,7 +147,7 @@
 }
 
 lib-apolo-header .text-primary-foreground {
-  color: #17181A;
+  color: var(--color-primary-button-foreground);
   font-weight: 400;
 }
 
@@ -188,9 +189,9 @@ lib-apolo-sidebar a[href*="/analytics/opportunities"] lib-sidebar-item button::a
   height: 1.25rem;
   padding: 0 0.4rem;
   border-radius: 9999px;
-  background: rgb(59 130 246 / 0.12);
-  color: rgb(96 165 250);
-  border: 1px solid rgb(59 130 246 / 0.30);
+  background: #1AD5981A;
+  color: #1AD598;
+  border: none;
   font-size: 0.6875rem;
   font-weight: 600;
   line-height: 1;
