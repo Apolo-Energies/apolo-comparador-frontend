@@ -45,7 +45,16 @@ export interface OcrResult {
     numero_orden_comercializadora?: string;
     fecha_fin?:                     string;
   };
-  descuentos?: Array<{ importe?: number; descripcion?: string }>;
+  descuentos?: Array<{
+    importe?:       number;
+    concepto?:      string;
+    descripcion?:   string;
+    base?:          number;
+    porcentaje?:    number;
+    afecta_a?:      string;
+    en_base_ie?:    boolean;
+    porcentaje_iva?: number;
+  }>;
   totales_electricidad?: {
     energia?:  { activa?: number; reactiva?: number };
     potencia?: { contratada?: number; exceso?: number };
@@ -86,6 +95,22 @@ export interface ComparadorResult {
   ahorro_porcent: number;
   periodos:       ComparadorPeriodo[];
   dias?:          number;
+
+  // Calculated totals — used by buildReportPayload to keep PDF in sync with displayed numbers
+  totalActual:              number;
+  baseIEActual:             number;
+  ieActual:                 number;
+  extraSinIE:               number;
+  costesComunesConIEActual: number;
+  otrosNoComunesActual:     number;
+  subTotalActual:           number;
+  ivaActual:                number;
+
+  totalOferta:              number;
+  baseIEOferta:             number;
+  ieOferta:                 number;
+  subTotalOferta:           number;
+  ivaOferta:                number;
 }
 
 // ── Component-level types ──────────────────────────────────────────────────────

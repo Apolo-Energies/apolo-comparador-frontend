@@ -18,7 +18,7 @@ interface Slice {
 }
 
 const COLORS = ['#7C67F2', '#8FDBFF', '#FFB86B', '#F691A6', '#C4C4C4', '#999DF8'];
-const GAP = 0.05;
+const GAP = 0.00511269632;
 
 function polar(cx: number, cy: number, r: number, a: number): [number, number] {
   return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
