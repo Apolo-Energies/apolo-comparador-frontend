@@ -4,7 +4,9 @@ import { ProviderService } from '../../../../services/provider.service';
 import { ComparatorService } from '../../../../services/comparator.service';
 import { Provider } from '../../../../entities/provider.model';
 import { TabType } from '../../../../entities/rates.model';
-import { LucideAngularModule, Building, Calculator, TrendingUp, Zap, Download } from 'lucide-angular';
+import { LucideAngularModule, Building, Calculator, TrendingUp, Zap } from 'lucide-angular';
+import { ButtonComponent } from '@apolo-energies/ui';
+import { DownloadIcon, UiIconSource } from '@apolo-energies/icons';
 
 // Tab components
 import { ProviderTabComponent } from './components/provider-tab/provider-tab.component';
@@ -20,6 +22,7 @@ import { GlobalLoadingService } from '../../../../services/global-loading.servic
   standalone: true,
   imports: [
     LucideAngularModule,
+    ButtonComponent,
     ProviderTabComponent,
     ProductsTabComponent,
     TariffsTabComponent,
@@ -42,7 +45,7 @@ export class RatesPageComponent {
   readonly CalculatorIcon = Calculator;
   readonly TrendingUpIcon = TrendingUp;
   readonly ZapIcon = Zap;
-  readonly DownloadIcon = Download;
+  readonly downloadIcon: UiIconSource = { type: 'apolo', icon: DownloadIcon, size: 16 };
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);

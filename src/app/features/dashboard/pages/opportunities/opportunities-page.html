@@ -56,10 +56,10 @@
     <div class="inline-flex rounded-xl border border-border bg-card p-1 self-start lg:self-auto shadow-inner shadow-black/20">
       <button
         type="button"
-        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-normal
                transition-all duration-300"
         [class]="viewMode() === 'board'
-          ? 'bg-blue-500 text-white shadow-md shadow-blue-500/20'
+          ? 'bg-primary-button text-primary-button-foreground shadow-md shadow-blue-500/20'
           : 'text-zinc-300 hover:bg-accent'"
         (click)="setViewMode('board')"
       >
@@ -68,10 +68,10 @@
       </button>
       <button
         type="button"
-        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-normal
                transition-all duration-300"
         [class]="viewMode() === 'table'
-          ? 'bg-blue-500 text-white shadow-md shadow-blue-500/20'
+          ? 'bg-primary-button text-primary-button-foreground shadow-md shadow-blue-500/20'
           : 'text-zinc-300 hover:bg-accent'"
         (click)="setViewMode('table')"
       >
