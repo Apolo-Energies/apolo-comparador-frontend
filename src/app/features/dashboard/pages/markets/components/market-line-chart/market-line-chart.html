@@ -5,7 +5,7 @@
   </div>
 
   @if (loading()) {
-    <div class="flex-1 min-h-[260px] flex flex-col gap-2 justify-end pb-4">
+    <div class="flex-1 min-h-65 flex flex-col gap-2 justify-end pb-4">
       <div class="flex items-end gap-1.5 h-44">
         @for (h of skeletonBars; track $index) {
           <div class="flex-1 rounded-sm bg-muted/40 animate-pulse" [style.height.%]="h"></div>
@@ -17,7 +17,7 @@
       </div>
     </div>
   } @else if (hasPoints()) {
-    <div class="flex-1 min-h-[260px] relative">
+    <div class="flex-1 min-h-65 relative">
       <canvas #chartCanvas></canvas>
     </div>
     <div class="flex items-center gap-2 text-xs text-muted-foreground pt-3">
@@ -25,7 +25,7 @@
       <span>{{ legend() }}</span>
     </div>
   } @else {
-    <div class="flex-1 min-h-[260px] flex items-center justify-center text-muted-foreground/60 text-sm">
+    <div class="flex-1 min-h-65 flex items-center justify-center text-muted-foreground/60 text-sm">
       Sin datos disponibles
     </div>
   }
