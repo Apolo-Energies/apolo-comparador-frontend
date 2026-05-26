@@ -25,6 +25,24 @@ import { environment } from '../../../../../environments/environment';
   ],
   templateUrl: './users-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [`
+    :host ::ng-deep lib-data-table th:first-child,
+    :host ::ng-deep lib-data-table td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      box-shadow: 4px 0 8px -4px rgba(0, 0, 0, 0.4);
+    }
+    :host ::ng-deep lib-data-table th:first-child {
+      background: var(--color-card);
+    }
+    :host ::ng-deep lib-data-table td:first-child {
+      background: var(--color-card);
+    }
+    :host ::ng-deep lib-data-table tr:hover td:first-child {
+      background: var(--color-body);
+    }
+  `],
 })
 export class UsersPageComponent implements AfterViewInit {
   @ViewChild('actionsTpl')        private actionsTpl!:        TemplateRef<{ $implicit: UserRow }>;

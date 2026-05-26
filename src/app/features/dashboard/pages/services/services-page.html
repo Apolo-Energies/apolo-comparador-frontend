@@ -1,0 +1,130 @@
+<!-- Cell templates -->
+<ng-template #clienteTpl let-row>
+  <div>
+    <p class="font-medium text-foreground">{{ row.RazonSocialCliente || row.NombreCliente || '—' }}</p>
+    <p class="text-xs text-muted-foreground mt-0.5">{{ row.NIFCliente }}</p>
+  </div>
+</ng-template>
+
+<ng-template #cupsTpl let-row>
+  <div class="flex items-center gap-2 group">
+    <span class="font-mono text-xs text-muted-foreground">{{ row.CUPS || '—' }}</span>
+    @if (row.CUPS) {
+      <button
+        class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-muted-foreground hover:text-foreground"
+        [title]="copiedId() === row.Id ? 'Copiado' : 'Copiar CUPS'"
+        (click)="copyCups(row)">
+        @if (copiedId() === row.Id) {
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-[#1AD598]">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        } @else {
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+        }
+      </button>
+    }
+  </div>
+</ng-template>
+
+<ng-template #tarifaTpl let-row>
+  <div>
+    <span class="px-2 py-0.5 rounded-md text-xs font-semibold bg-violet-500/10 text-violet-400">
+      {{ row.Tarifa || '—' }}
+    </span>
+    @if (row.NombreOfertaCTF) {
+      <p class="text-xs text-muted-foreground mt-1 truncate max-w-32">{{ row.NombreOfertaCTF }}</p>
+    }
+  </div>
+</ng-template>
+
+<ng-template #estadoTpl let-row>
+  <div class="flex flex-col items-center gap-1">
+    <span class="px-2 py-0.5 rounded-md text-xs font-semibold" [class]="estadoCls(row.Estado)">
+      {{ estadoLabel(row.Estado) }}
+    </span>
+    @if (row.Renovacion) {
+      <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/10 text-blue-400">
+        Renovación
+      </span>
+    }
+  </div>
+</ng-template>
+
+<ng-template #fechaTpl let-row>
+  <p class="text-sm text-muted-foreground">{{ fmtDate(row.FechaEstado) }}</p>
+  @if (row.FechaInicio || row.FechaFin) {
+    <p class="text-xs text-muted-foreground/60 mt-0.5">
+      {{ fmtDate(row.FechaInicio) }} – {{ fmtDate(row.FechaFin) }}
+    </p>
+  }
+</ng-template>
+
+<div class="border border-border rounded-lg overflow-hidden shadow-sm">
+
+  <!-- Header -->
+  <div class="bg-card px-6 py-5">
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-end gap-4">
+      <div class="flex-1 max-w-sm">
+        <ui-input
+          label="Buscar"
+          placeholder="Cliente, CUPS, NIF..."
+          [value]="filter()"
+          [leadingIcon]="searchIcon"
+          (valueChange)="filter.set($event)"
+          (keydown.enter)="onSearch()"
+        />
+      </div>
+      <div class="flex items-center gap-2">
+        <ui-button label="Limpiar" variant="secondary" size="md" [leadingIcon]="xIcon"      (click)="onClear()" />
+        <ui-button label="Buscar"  variant="secondary" size="md" [leadingIcon]="searchIcon" (click)="onSearch()" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="relative">
+    @if (loading()) {
+      <app-table-skeleton [cols]="9" [rows]="10" />
+    } @else if (data().length === 0) {
+      <div class="flex flex-col items-center justify-center py-16 text-muted-foreground">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-3 opacity-40"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <p class="text-sm">Sin resultados</p>
+      </div>
+    } @else {
+      <lib-data-table
+        [data]="data()"
+        [columns]="columns()"
+        rowKey="Id"
+        [borderTop]="false"
+        [borderBottom]="true"
+        [borderLeft]="false"
+        [borderRight]="false"
+        [roundedTopLeft]="false"
+        [roundedTopRight]="false"
+        [roundedBottomLeft]="false"
+        [roundedBottomRight]="false"
+      />
+    }
+  </div>
+
+  <!-- Paginator -->
+  <lib-paginator
+    [currentPage]="currentPage()"
+    [totalPages]="totalPages()"
+    [totalCount]="totalCount()"
+    [pageSize]="pageSize()"
+    [borderTop]="false"
+    [borderBottom]="false"
+    [borderLeft]="false"
+    [borderRight]="false"
+    [roundedTopLeft]="false"
+    [roundedTopRight]="false"
+    [roundedBottomLeft]="false"
+    [roundedBottomRight]="false"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+</div>
