@@ -74,7 +74,13 @@ export class Comparator {
     Object.fromEntries(
       this.comparatorService.tariffs().map(t => [
         t.code,
-        t.products.filter(p => p.isAvailable).map(p => p.name),
+        t.products
+          .filter(p => p.isAvailable)
+          .sort((a, b) => {
+            if (a.type === b.type) return 0;
+            return a.type === 'Indexed' ? -1 : 1;
+          })
+          .map(p => p.name),
       ])
     )
   );
