@@ -126,12 +126,14 @@ const calcularPotencia = (
   feePotencia: number,
   modalidad: string
 ): { base: number; oferta: number } => {
-  const potenciaProducto = getPotenciaProducto(tariffs, tarifa, modalidad, periodo);
+  // Index Coste / Index Promo share power base prices with Index Base (same as energy)
+  const modalidadPotencia = (modalidad === 'Index Coste' || modalidad === 'Index Promo')
+    ? 'Index Base'
+    : modalidad;
+  const potenciaProducto = getPotenciaProducto(tariffs, tarifa, modalidadPotencia, periodo);
   const potenciaBase     = potenciaProducto ?? getPotenciaBOE(tariffs, tarifa, periodo);
 
-  const potenciaOferta = modalidad === 'Index Promo'
-    ? potenciaBase
-    : potenciaBase + feePotencia / 365;
+  const potenciaOferta = potenciaBase + feePotencia / 365;
 
   return { base: round6(potenciaBase), oferta: round6(potenciaOferta) };
 };
