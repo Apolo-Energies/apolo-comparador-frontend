@@ -7,7 +7,7 @@ import { HttpClient } from '@angular/common/http';
 import { ApoloSidebar, SidebarChildItem, SidebarSection } from '@apolo-energies/sidebar';
 import { ApoloHeader, HeaderWelcomeContent, HeaderActionLink, UserMenuItem } from '@apolo-energies/header';
 import { AuthService } from '@apolo-energies/auth';
-import { ArrowDownBoxIcon, chevronDownIcon, chevronRightIcon, CircleIcon, InfoIcon, LogoutIcon, PieIcon, SettingsIcon, StarIcon, SupportIcon, UiIconSource, UserIcon } from '@apolo-energies/icons';
+import { ArrowDownBoxIcon, chevronDownIcon, chevronRightIcon, CircleIcon, CompassIcon, InfoIcon, LogoutIcon, NoteIcon, PieIcon, SettingsIcon, StarIcon, SupportIcon, UiIconSource, UserIcon } from '@apolo-energies/icons';
 import { getUserRoles } from '../../utils/auth.utils';
 import { environment } from '../../../environments/environment';
 import { RefreshTokenService } from '../../services/refresh-token.service';
@@ -138,6 +138,16 @@ export class Layout {
               { title: 'Reportes',     url: '/dashboard/analytics/reports',    access: ['analytics.statistics:view'] },
             ],
           },
+          // TODO: habilitar Contratos cuando esté listo (solo Apolo)
+          // ...(isApolo && environment.features.contracts ? [{
+          //   title: 'Contratos',
+          //   icon: { type: 'apolo' as const, icon: NoteIcon, size: 20 },
+          //   access: ['analytics:view'],
+          //   children: [
+          //     { title: 'Contratos', url: '/dashboard/contratos/contratos', access: ['analytics.history:view'] },
+          //     { title: 'Servicios', url: '/dashboard/contratos/servicios', access: ['analytics.history:view'] },
+          //   ],
+          // }] : []),
           ...(environment.features.opportunities ? [{
             title: 'Oportunidades',
             icon: { type: 'apolo' as const, icon: StarIcon, size: 20 },
@@ -149,6 +159,12 @@ export class Layout {
             icon: { type: 'apolo', icon: ArrowDownBoxIcon, size: 20 },
             url: '/dashboard/comparator',
             access: ['comparator:view'],
+          },
+          {
+            title: 'Consultas SIPS',
+            icon: { type: 'apolo', icon: CompassIcon, size: 20 },
+            url: '/dashboard/sips',
+            access: ['sips:view'],
           },
           ...(environment.features.markets ? [{
             title: 'Mercados',

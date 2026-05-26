@@ -65,6 +65,27 @@ export const DASHBOARD_ROUTES: Routes = [
         ],
       },
 
+      // Master only — Contratos section
+      {
+        path: 'contratos',
+        canActivate: [permissionGuard, featureGuard],
+        data: { roles: ['Master'], feature: 'contracts' },
+        children: [
+          {
+            path: 'contratos',
+            loadComponent: () =>
+              import('./pages/contracts/contracts-page')
+                .then(m => m.ContractsPageComponent),
+          },
+          {
+            path: 'servicios',
+            loadComponent: () =>
+              import('./pages/services/services-page')
+                .then(m => m.ServicesPageComponent),
+          },
+        ],
+      },
+
       // Master only
       {
         path: 'settings',
