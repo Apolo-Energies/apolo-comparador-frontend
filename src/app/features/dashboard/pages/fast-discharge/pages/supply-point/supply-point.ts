@@ -118,13 +118,18 @@ import { FastDischargeStore } from '../../store/fast-discharge.store';
             <p class="text-sm font-semibold text-primary-button">Potencias <span class="font-normal text-muted-foreground">(kW)</span>:</p>
             <div class="grid grid-cols-3 gap-4">
               @for (p of periods; track p) {
-                <ui-input
-                  [label]="p"
-                  type="number"
-                  placeholder="0"
-                  [value]="potencia(p)"
-                  (valueChange)="setPotencia(p, $event)"
-                />
+                <div class="flex flex-col gap-1">
+                  <label class="text-sm font-medium text-muted-foreground">{{ p }}</label>
+                  <input
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    placeholder="0"
+                    [value]="potencia(p)"
+                    (input)="setPotencia(p, $any($event.target).value)"
+                    class="px-3 py-2 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
+                  />
+                </div>
               }
             </div>
           </div>

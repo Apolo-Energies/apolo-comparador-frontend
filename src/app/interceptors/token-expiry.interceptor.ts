@@ -1,5 +1,4 @@
-import { inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { inject } from '@angular/core';
 import { HttpBackend, HttpClient, HttpInterceptorFn } from '@angular/common/http';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthService } from '@apolo-energies/auth';
@@ -16,20 +15,21 @@ interface RefreshResponse {
 /**
  * En un 401:
  * 1. Intenta renovar con POST /auth/refresh (userId + refreshToken)
- * 2. Si tiene éxito: actualiza el token en AuthService y reintenta la request original
+ * 2. Si tiene éxito: actualiza el token y reintenta la request original
  * 3. Si falla: limpia sesión y redirige al login
  *
- * Usa HttpBackend directamente para evitar el bucle infinito de interceptores.
+ * X-Auth-Retry previene bucles: una request ya reintentada no vuelve a entrar al ciclo.
+ * Usa HttpBackend directamente para evitar pasar de nuevo por el interceptor.
  */
 export const tokenExpiryInterceptor: HttpInterceptorFn = (req, next) => {
-  const auth = inject(AuthService);
+  const auth                = inject(AuthService);
   const refreshTokenService = inject(RefreshTokenService);
-  const httpBackend = inject(HttpBackend);
-  const platformId = inject(PLATFORM_ID);
+  const httpBackend         = inject(HttpBackend);
 
   return next(req).pipe(
     catchError(error => {
-      if (error.status !== 401) return throwError(() => error);
+      if (error.status !== 401)          return throwError(() => error);
+      if (req.headers.has('X-Auth-Retry')) return throwError(() => error);
 
       if (req.url.endsWith('/auth/refresh')) {
         signOutAndClear(auth, refreshTokenService);
@@ -37,7 +37,7 @@ export const tokenExpiryInterceptor: HttpInterceptorFn = (req, next) => {
       }
 
       const refreshToken = refreshTokenService.getRefreshToken();
-      const userId = refreshTokenService.getUserIdFromToken();
+      const userId       = refreshTokenService.getUserIdFromToken();
 
       if (!refreshToken || !userId) {
         signOutAndClear(auth, refreshTokenService);
@@ -58,7 +58,7 @@ export const tokenExpiryInterceptor: HttpInterceptorFn = (req, next) => {
             if (newRefresh) refreshTokenService.save(newRefresh);
 
             const retryReq = req.clone({
-              setHeaders: { Authorization: `Bearer ${newToken}` },
+              setHeaders: { Authorization: `Bearer ${newToken}`, 'X-Auth-Retry': '1' },
             });
             return next(retryReq);
           }),
