@@ -14,6 +14,7 @@ import { ComparatorService } from '../../services/comparator.service';
 import { PublicComparatorService } from '../../services/public-comparator.service';
 import { ComparatorUploadComponent } from '../dashboard/pages/comparator/components/comparator-upload/comparator-upload';
 import { ComparatorModalComponent } from '../dashboard/pages/comparator/components/comparator-modal/comparator-modal';
+import { OfferRequestWizardComponent } from '../dashboard/pages/comparator/components/offer-request-wizard/offer-request-wizard';
 import { BrandLoaderComponent } from '../../shared/components/brand-loader/brand-loader.component';
 import {
   ComparadorCompareEvent,
@@ -27,7 +28,7 @@ import { environment } from '../../../environments/environment';
 @Component({
   selector: 'app-public-comparator',
   standalone: true,
-  imports: [ComparatorUploadComponent, ComparatorModalComponent, BrandLoaderComponent],
+  imports: [ComparatorUploadComponent, ComparatorModalComponent, OfferRequestWizardComponent, BrandLoaderComponent],
   templateUrl: './public-comparator.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -51,6 +52,11 @@ export class PublicComparator implements AfterViewInit, OnDestroy {
   readonly ocrResult      = signal<OcrResult | null>(null);
   readonly fileId         = signal<string>('');
   readonly comparisonId   = signal<string>('');
+
+  // Offer-request wizard state
+  readonly wizardOpen    = signal(false);
+  readonly wizardTariff  = signal<string | null>(null);
+  readonly wizardProduct = signal<string | null>(null);
 
   // En Coexpal el comparador público usa solo el producto 'Asociados' (con precios fijos cargados
   // en admin). En otros entornos sigue la lista histórica por defecto.
@@ -134,15 +140,15 @@ export class PublicComparator implements AfterViewInit, OnDestroy {
     );
   }
 
-  onSolicitarOferta(): void {
+  onSolicitarOferta(form: ComparadorFormValue): void {
     const id = this.comparisonId();
     if (id) {
       this.publicComparatorService.markContratarClicked(id).subscribe();
     }
 
-    const url = id
-      ? `https://apolo-energies.com/contratar?comparisonId=${id}`
-      : 'https://apolo-energies.com/contratar';
-    window.parent?.postMessage({ type: 'apolo-comparador:contratar', url }, '*');
+    this.wizardTariff.set(form?.tariff || null);
+    this.wizardProduct.set(form?.producto || null);
+    this.modalOpen.set(false);
+    this.wizardOpen.set(true);
   }
 }

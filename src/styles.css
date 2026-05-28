@@ -231,3 +231,63 @@ body.apolo-light {
 }
 
 body.apolo-light * { font-family: 'Space Grotesk', system-ui, sans-serif; }
+
+/* ── Offer-request wizard: animación de éxito ─────────────────────────────── */
+
+@keyframes offer-success-pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  60%  { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+@keyframes offer-success-halo {
+  0%, 100% { transform: scale(1);    opacity: 0.45; }
+  50%      { transform: scale(1.15); opacity: 0.15; }
+}
+
+@keyframes offer-success-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes offer-success-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.offer-success__circle {
+  animation: offer-success-pop 480ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.offer-success__halo {
+  animation: offer-success-halo 2.4s ease-in-out infinite;
+}
+
+.offer-success__logo {
+  animation: offer-success-rise 420ms ease-out 280ms both;
+}
+
+.offer-success__badge {
+  animation: offer-success-pop 360ms cubic-bezier(0.34, 1.56, 0.64, 1) 480ms both;
+}
+
+.offer-success__check {
+  stroke-dasharray: 32;
+  stroke-dashoffset: 32;
+  animation: offer-success-draw 380ms ease-out 720ms forwards;
+}
+
+.offer-success__text {
+  animation: offer-success-rise 420ms ease-out 600ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .offer-success__circle,
+  .offer-success__halo,
+  .offer-success__logo,
+  .offer-success__badge,
+  .offer-success__check,
+  .offer-success__text {
+    animation: none;
+  }
+  .offer-success__check { stroke-dashoffset: 0; }
+}
