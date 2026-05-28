@@ -38,7 +38,7 @@ export class Comparator {
     if (isPlatformBrowser(this.platformId)) {
       this.comparatorService.loadTariffs();
       const userId = this.auth.currentUser()?.id;
-      if (userId) this.commissionService.load(String(userId));
+      if (userId) this.commissionService.loadForUser(String(userId));
       if (this.isMaster()) this.loadUsers();
     }
   }
@@ -116,8 +116,10 @@ export class Comparator {
     const ocr = this.ocrResult();
     if (!ocr) return;
 
-    const selectedUser    = this.isMaster() ? this.users().find(u => u.id === this.selectedUserId()) : undefined;
-    const commissionPct   = selectedUser?.commissionPct ?? undefined;
+    const selectedUser  = this.isMaster() ? this.users().find(u => u.id === this.selectedUserId()) : undefined;
+    const commissionPct = this.isMaster()
+      ? (selectedUser?.commissionPct ?? undefined)
+      : (this.commissionService.commission() || undefined);
     const base            = this.comparatorService.getComisionBase(form.producto, form.tariff, commissionPct);
     this.comisionBase.set(base);
 

@@ -64,18 +64,18 @@ export class CommissionService {
 
   load(userId: string) {
     if (this.loaded) return;
-    this.http.get<{ result: UserCommission }>(`${environment.apiUrl}/user-commission/${userId}`)
+    this.http.get<UserCommission>(`${environment.apiUrl}/user-commission/${userId}`)
       .pipe(
         tap(res => {
-          this.commission.set(res.result?.commissionType?.percentage ?? 0);
+          this.commission.set(res?.commissionType?.percentage ?? 0);
           this.loaded = true;
         })
       ).subscribe();
   }
 
   loadForUser(userId: string) {
-    this.http.get<{ result: UserCommission }>(`${environment.apiUrl}/user-commission/${userId}`)
-      .pipe(tap(res => this.commission.set(res.result?.commissionType?.percentage ?? 0)))
+    this.http.get<UserCommission>(`${environment.apiUrl}/user-commission/${userId}`)
+      .pipe(tap(res => this.commission.set(res?.commissionType?.percentage ?? 0)))
       .subscribe();
   }
 }
