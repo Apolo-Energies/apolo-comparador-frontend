@@ -4,9 +4,24 @@ import { ButtonComponent, AlertService } from '@apolo-energies/ui';
 import { AlertComponent } from '@apolo-energies/ui';
 import { FastDischargeStore } from '../../store/fast-discharge.store';
 import { ArtificialPerson, NaturalPerson } from '../../models/person.models';
+import { ContractService, EeTown } from '../../../../../../services/contract.service';
+import { SipsConsumo } from '../../../../../../entities/sips.model';
 
-const fmt2 = (n: number) =>
+// Static map: tariff ATR code → EE internal numeric ID
+const EE_TARIFF_IDS: Record<string, string> = {
+  '2.0TD': '47',
+  '3.0TD': '48',
+  '6.1TD': '49',
+  '6.2TD': '50',
+  '6.3TD': '51',
+  '6.4TD': '52',
+};
+
+const fmt2    = (n: number) =>
   n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const fmtPot     = (v: number): string => v > 0 ? String(v) : '';
+const fmtConsumo = (v: number): string => v > 0 ? String(Math.round(v)) : '';
 
 const TRAMITE_LABELS: Record<string, string> = {
   ALTA_NUEVA:      'Alta nueva',
@@ -208,9 +223,10 @@ const TRAMITE_LABELS: Record<string, string> = {
   `,
 })
 export class ReviewPage {
-  private readonly router       = inject(Router);
-  private readonly store        = inject(FastDischargeStore);
-  private readonly alertService = inject(AlertService);
+  private readonly router          = inject(Router);
+  private readonly store           = inject(FastDischargeStore);
+  private readonly alertService    = inject(AlertService);
+  private readonly contractService = inject(ContractService);
 
   readonly sending = signal(false);
 
@@ -252,10 +268,112 @@ export class ReviewPage {
   }
 
   onSend(): void {
+    const person      = this.store.person();
+    const supplyPoint = this.store.supplyPoint();
+    if (!person || !supplyPoint) return;
+
+    const cp          = supplyPoint.zipCode ?? '';
+    const idProvincia = cp.length >= 2 ? parseInt(cp.substring(0, 2), 10).toString() : '0';
+
     this.sending.set(true);
-    // Navigate first so the user sees a clean welcome, then wipe the store
-    this.router.navigate(['/dashboard/fast-discharge']).then(() => {
-      this.store.reset();
+
+    this.contractService.getTowns(idProvincia).subscribe({
+      next: towns => this.submitWithTowns(towns, idProvincia),
+      error: ()    => this.submitWithTowns([], idProvincia),
+    });
+  }
+
+  private submitWithTowns(towns: EeTown[], idProvincia: string): void {
+    const person      = this.store.person()!;
+    const supplyPoint = this.store.supplyPoint()!;
+
+    const surnames  = person.surnames ?? '';
+    const parts     = surnames.trim().split(/\s+/);
+    const apellido1 = parts[0] ?? '';
+    const apellido2 = parts.slice(1).join(' ');
+    const fullName  = `${person.name} ${surnames}`.trim();
+    const consumos  = this.annualKwhByPeriod(this.store.consumos());
+    const cp        = supplyPoint.zipCode ?? '';
+
+    const findTown = (name: string): string => {
+      const norm  = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const byName = towns.find(t => norm(t.nombre) === norm(name));
+      if (byName) return byName.id;
+      const byCp = towns.find(t => t.cp === cp);
+      return byCp?.id ?? '0';
+    };
+
+    const idPoblacionSuministro = findTown(supplyPoint.city);
+    const idPoblacionCliente    = idPoblacionSuministro;
+    const idTarifa              = EE_TARIFF_IDS[supplyPoint.tariffType ?? ''] ?? '0';
+
+    this.contractService.quickRegistration({
+      // Cliente
+      NombrePilaCliente:    person.name,
+      Apellido1Cliente:     apellido1,
+      Apellido2Cliente:     apellido2,
+      NIFCliente:           person.dni,
+      DireccionCliente:     person.address_1,
+      CPCliente:            cp,
+      IdProvinciaCliente:   idProvincia,
+      IdPoblacionCliente:   idPoblacionCliente,
+      Email:                person.email,
+      Telefono:             person.phone,
+      // Suministro
+      CUPS:                    supplyPoint.cups,
+      DireccionSuministro:     supplyPoint.address,
+      CPSuministro:            cp,
+      IdProvinciaSuministro:   idProvincia,
+      IdPoblacionSuministro:   idPoblacionSuministro,
+      IdTarifaSuministro:      idTarifa,
+      // Potencias
+      PotenciaP1: fmtPot(supplyPoint.p1), PotenciaP2: fmtPot(supplyPoint.p2),
+      PotenciaP3: fmtPot(supplyPoint.p3), PotenciaP4: fmtPot(supplyPoint.p4),
+      PotenciaP5: fmtPot(supplyPoint.p5), PotenciaP6: fmtPot(supplyPoint.p6),
+      // Consumos anuales
+      ConsumoAnualP1: fmtConsumo(consumos[0]), ConsumoAnualP2: fmtConsumo(consumos[1]),
+      ConsumoAnualP3: fmtConsumo(consumos[2]), ConsumoAnualP4: fmtConsumo(consumos[3]),
+      ConsumoAnualP5: fmtConsumo(consumos[4]), ConsumoAnualP6: fmtConsumo(consumos[5]),
+      // Titular
+      NombreTitular: fullName,
+      NIFTitular:    person.dni,
+      // Domiciliación
+      CodigoCuentaDomiciliacion: person.bank_account?.replace(/\s/g, '') ?? '',
+      CodigoSWIFTDomiciliacion:  '',
+      // Firmante
+      ChkOtroFirmante:    'false',
+      swFirmante:         'false',
+      NombrePilaFirmante: '',
+      Apellido1Firmante:  '',
+      Apellido2Firmante:  '',
+      NIFFirmante:        '',
+      EmailFirmante:      '',
+      TelefonoFirmante:   '',
+      // Otros
+      CNAE:      supplyPoint.cnae ?? '',
+      IdCli:     '0',
+      Callback:  '',
+      secondary: '',
+    }).subscribe({
+      next: () => {
+        this.sending.set(false);
+        this.alertService.show('Contrato enviado correctamente', 'success');
+        setTimeout(() => {
+          this.router.navigate(['/dashboard/fast-discharge']).then(() => this.store.reset());
+        }, 1500);
+      },
+      error: () => {
+        this.sending.set(false);
+        this.alertService.show('Error al enviar el contrato. Inténtalo de nuevo.', 'error');
+      },
+    });
+  }
+
+  private annualKwhByPeriod(consumos: SipsConsumo[]): number[] {
+    const last12 = consumos.slice(0, 12);
+    return [1, 2, 3, 4, 5, 6].map(p => {
+      const key = `energiaP${p}` as keyof SipsConsumo;
+      return last12.reduce((s, c) => s + (((c[key]) as number | null) ?? 0), 0) / 1000;
     });
   }
 }

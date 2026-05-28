@@ -131,7 +131,7 @@ export class UserDetailPageComponent implements OnInit {
     if (required.length === 0) return false;
     const approvedTypes = new Set(
       contract.documents.uploaded
-        .filter(d => d.status === 'Approved')
+        .filter(d => d.status === 'Validated')
         .map(d => d.documentType),
     );
     return required.every(type => approvedTypes.has(type));

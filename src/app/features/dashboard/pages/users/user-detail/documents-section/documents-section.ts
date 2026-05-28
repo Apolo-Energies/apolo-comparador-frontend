@@ -280,7 +280,7 @@ interface DocSlot {
               <select [ngModel]="selectedUploadType()"
                 (ngModelChange)="selectedUploadType.set($event)"
                 class="w-full px-3 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground
-                       focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all cursor-pointer">
+                       focus:border-primary-button focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all cursor-pointer">
                 <option [ngValue]="null" disabled>Seleccionar tipo...</option>
                 @for (t of uploadableTypes(); track t) {
                   <option [ngValue]="t">{{ docTypeLabel(t) }}</option>
@@ -293,16 +293,30 @@ interface DocSlot {
             <label class="text-sm font-medium text-muted-foreground">Archivo *</label>
             <input type="file" (change)="onFileSelected($event)"
               class="w-full text-sm text-muted-foreground file:mr-3 file:py-2 file:px-4 file:rounded-md
-                     file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground
+                     file:border-0 file:text-sm file:font-medium file:bg-primary-button file:text-background
                      hover:file:opacity-90 cursor-pointer" />
           </div>
         </div>
 
         <div class="shrink-0 border-t border-border px-6 py-4 flex justify-end gap-2">
           <ui-button label="Cancelar" variant="outline" size="md" (click)="closeUploadModal()" />
-          <ui-button label="Subir" variant="default" size="md"
+          <button
+            type="button"
             [disabled]="uploading() || selectedUploadType() === null || !selectedFile()"
-            (click)="onUpload()" />
+            (click)="onUpload()"
+            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg
+                   bg-primary-button text-background transition-opacity
+                   hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed">
+            @if (uploading()) {
+              <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+              </svg>
+              Subiendo...
+            } @else {
+              Subir
+            }
+          </button>
         </div>
       </div>
     </ui-dialog>
