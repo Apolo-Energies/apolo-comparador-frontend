@@ -30,7 +30,16 @@
     pdfButtonVariant="default"
     (openChange)="modalOpen.set($event)"
     (formChange)="onFormChange($event)"
-    (download)="onSolicitarOferta()"
+    (download)="onSolicitarOferta($event.formValue)"
     (contratar)="onVerComparativa($event)"
+  />
+
+  <app-offer-request-wizard
+    [open]="wizardOpen()"
+    [ocrResult]="ocrResult()"
+    [tariff]="wizardTariff()"
+    [product]="wizardProduct()"
+    [isPublic]="true"
+    (openChange)="wizardOpen.set($event)"
   />
 </div>

@@ -23,7 +23,12 @@ import { environment } from '../../../../../environments/environment';
 @Component({
   selector: 'app-comparator',
   standalone: true,
-  imports: [ComparatorUploadComponent, ComparatorModalComponent, BrandLoaderComponent, LoadingOverlayComponent],
+  imports: [
+    ComparatorUploadComponent,
+    ComparatorModalComponent,
+    BrandLoaderComponent,
+    LoadingOverlayComponent,
+  ],
   templateUrl: './comparator.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
