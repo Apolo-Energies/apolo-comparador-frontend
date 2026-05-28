@@ -1,0 +1,341 @@
+<ui-dialog
+  [open]="open()"
+  [closeable]="!submitting()"
+  maxWidth="max-w-2xl"
+  (openChange)="openChange.emit($event)"
+>
+  <div class="px-8 py-8 space-y-6"
+       style="max-height: 90vh; overflow-y: auto;">
+
+    <!-- ── Stepper (oculto en pantalla de éxito) ────────────────────────── -->
+    @if (step() !== 4) {
+      <div class="flex items-center justify-center gap-2">
+        @for (s of [1, 2, 3]; track s) {
+          <div class="flex items-center gap-2">
+            <div
+              class="h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold transition-colors"
+              [class.bg-blue-500]="step() >= s"
+              [class.text-white]="step() >= s"
+              [class.bg-card]="step() < s"
+              [class.text-muted-foreground]="step() < s"
+              [class.border]="step() < s"
+              [class.border-border]="step() < s"
+            >{{ s }}</div>
+            @if (s < 3) {
+              <div
+                class="h-px w-12 transition-colors"
+                [class.bg-blue-500]="step() > s"
+                [class.bg-border]="step() <= s"
+              ></div>
+            }
+          </div>
+        }
+      </div>
+      <p class="text-xs text-center text-muted-foreground -mt-3">Paso {{ step() }} de 3</p>
+    }
+
+    <!-- ── Step 1: Datos del cliente ───────────────────────────────────── -->
+    @if (step() === 1) {
+      <div>
+        <p class="text-xl font-bold text-foreground">Datos del cliente</p>
+        <p class="text-sm text-muted-foreground">Introduce los datos de contacto del cliente.</p>
+      </div>
+
+      <form (submit)="$event.preventDefault(); goNext()" class="space-y-5">
+
+        <div>
+          <ui-input
+            label="NIF Cliente / Titular"
+            placeholder="12345678A"
+            [value]="clientNif()"
+            (valueChange)="clientNif.set($event)"
+          />
+          @if (isTouched('clientNif') && clientErrors().clientNif) {
+            <span class="text-red-500 text-xs mt-1 block">Introduce un NIF/CIF válido</span>
+          }
+        </div>
+
+        <div>
+          <ui-input
+            label="Nombre / Razón Social"
+            placeholder="Juan García López"
+            [value]="clientName()"
+            (valueChange)="clientName.set($event)"
+          />
+          @if (isTouched('clientName') && clientErrors().clientName) {
+            <span class="text-red-500 text-xs mt-1 block">Este campo es obligatorio</span>
+          }
+        </div>
+
+        <div>
+          <ui-input
+            label="Email"
+            type="email"
+            placeholder="cliente@ejemplo.es"
+            [value]="email()"
+            (valueChange)="email.set($event)"
+          />
+          @if (isTouched('email') && clientErrors().email) {
+            <span class="text-red-500 text-xs mt-1 block">Email inválido</span>
+          }
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-sm font-medium text-muted-foreground">Teléfono</label>
+          <div class="flex">
+            <select
+              [class]="selectCls"
+              [value]="countryCode()"
+              (change)="countryCode.set($any($event.target).value)"
+            >
+              @for (c of phoneCountries; track c.code) {
+                <option [value]="c.code">{{ c.flag }} {{ c.code }}</option>
+              }
+            </select>
+            <input
+              type="tel"
+              placeholder="612 345 678"
+              [class]="numberCls"
+              [value]="phoneNumber()"
+              (input)="phoneNumber.set($any($event.target).value)"
+            />
+          </div>
+          @if (isTouched('phoneNumber') && clientErrors().phoneNumber) {
+            <span class="text-red-500 text-xs mt-1 block">Solo dígitos, entre 9 y 15 números</span>
+          }
+        </div>
+
+        <div class="border-t border-border pt-4 flex justify-center">
+          <ui-button label="Siguiente" size="sm" type="submit" />
+        </div>
+      </form>
+    }
+
+    <!-- ── Step 2: Datos del Punto de Suministro ───────────────────────── -->
+    @if (step() === 2) {
+      <div>
+        <p class="text-xl font-bold text-foreground">Datos del Punto de Suministro</p>
+        <p class="text-sm text-muted-foreground">Revisa o completa los datos del punto de suministro.</p>
+      </div>
+
+      <form (submit)="$event.preventDefault(); goNext()" class="space-y-5">
+
+        <div>
+          <ui-input
+            label="CUPS"
+            placeholder="ES0021000000000000AA0F"
+            [value]="cups()"
+            (valueChange)="cups.set($event)"
+          />
+          @if (isTouched('cups') && supplyErrors().cups) {
+            <span class="text-red-500 text-xs mt-1 block">CUPS no válido</span>
+          }
+        </div>
+
+        <div class="flex gap-4">
+          <div class="flex-1">
+            <ui-input
+              label="Dirección del punto de suministro"
+              placeholder="Calle Mayor 1"
+              [value]="supplyAddress()"
+              (valueChange)="supplyAddress.set($event)"
+            />
+            @if (isTouched('supplyAddress') && supplyErrors().supplyAddress) {
+              <span class="text-red-500 text-xs mt-1 block">Este campo es obligatorio</span>
+            }
+          </div>
+          <div class="w-36">
+            <ui-input
+              label="CNAE"
+              placeholder="4711"
+              [value]="cnae()"
+              (valueChange)="cnae.set($event)"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <ui-input
+              label="Provincia"
+              placeholder="Madrid"
+              [value]="province()"
+              (valueChange)="province.set($event)"
+            />
+            @if (isTouched('province') && supplyErrors().province) {
+              <span class="text-red-500 text-xs mt-1 block">Obligatorio</span>
+            }
+          </div>
+          <div>
+            <ui-input
+              label="Ciudad"
+              placeholder="Madrid"
+              [value]="city()"
+              (valueChange)="city.set($event)"
+            />
+            @if (isTouched('city') && supplyErrors().city) {
+              <span class="text-red-500 text-xs mt-1 block">Obligatorio</span>
+            }
+          </div>
+          <div>
+            <ui-input
+              label="CP"
+              placeholder="28001"
+              [value]="postalCode()"
+              (valueChange)="postalCode.set($event)"
+            />
+            @if (isTouched('postalCode') && supplyErrors().postalCode) {
+              <span class="text-red-500 text-xs mt-1 block">5 dígitos</span>
+            }
+          </div>
+        </div>
+
+        <div class="border-t border-border pt-4 flex items-center justify-between">
+          <ui-button label="Volver" variant="secondary" size="sm" type="button" (click)="goBack()" />
+          <ui-button label="Siguiente" size="sm" type="submit" />
+        </div>
+      </form>
+    }
+
+    <!-- ── Step 3: Documentación ───────────────────────────────────────── -->
+    @if (step() === 3) {
+      <div>
+        <p class="text-xl font-bold text-foreground">Documentación</p>
+        <p class="text-sm text-muted-foreground">Adjunta los documentos requeridos según el tipo de solicitante.</p>
+      </div>
+
+      <form (submit)="$event.preventDefault(); goNext()" class="space-y-5">
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-muted-foreground">Tipo de solicitante</label>
+          <div class="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              class="rounded-lg border px-4 py-3 text-sm font-medium text-left transition-colors"
+              [class.border-blue-500]="personType() === 'Individual'"
+              [class.bg-blue-500]="personType() === 'Individual'"
+              [class.text-white]="personType() === 'Individual'"
+              [class.border-border]="personType() !== 'Individual'"
+              [class.bg-card]="personType() !== 'Individual'"
+              [class.text-foreground]="personType() !== 'Individual'"
+              (click)="onPersonTypeChange('Individual')"
+            >
+              Persona física
+            </button>
+            <button
+              type="button"
+              class="rounded-lg border px-4 py-3 text-sm font-medium text-left transition-colors"
+              [class.border-blue-500]="personType() === 'Company'"
+              [class.bg-blue-500]="personType() === 'Company'"
+              [class.text-white]="personType() === 'Company'"
+              [class.border-border]="personType() !== 'Company'"
+              [class.bg-card]="personType() !== 'Company'"
+              [class.text-foreground]="personType() !== 'Company'"
+              (click)="onPersonTypeChange('Company')"
+            >
+              Persona jurídica
+            </button>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-3">
+          @for (slot of requiredDocs(); track slot.key) {
+            <div class="flex flex-col gap-1.5">
+              <span class="text-sm font-medium text-muted-foreground">{{ slot.label }}</span>
+
+              @if (documents()[slot.key]; as file) {
+                <div class="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-2.5">
+                  <div class="flex flex-col min-w-0">
+                    <span class="text-sm text-foreground truncate">{{ file.name }}</span>
+                    <span class="text-xs text-muted-foreground">{{ formatFileSize(file.size) }}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <label class="text-xs font-medium text-blue-500 hover:underline cursor-pointer">
+                      Reemplazar
+                      <input
+                        type="file"
+                        class="hidden"
+                        [accept]="acceptedTypes"
+                        (change)="onFileSelected(slot.key, $event)"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      class="text-xs text-red-500 hover:text-red-400"
+                      (click)="removeDocument(slot.key)"
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <label
+                  class="flex items-center justify-between rounded-lg border border-dashed border-border bg-card px-4 py-3 cursor-pointer hover:border-blue-500 transition-colors"
+                  [class.border-red-500]="isTouched(slot.key) && documentErrors()[slot.key]"
+                >
+                  <span class="text-sm text-muted-foreground">Selecciona un archivo (PDF o imagen)</span>
+                  <span class="text-xs font-semibold text-blue-500">Subir</span>
+                  <input
+                    type="file"
+                    class="hidden"
+                    [accept]="acceptedTypes"
+                    (change)="onFileSelected(slot.key, $event)"
+                  />
+                </label>
+                @if (isTouched(slot.key) && documentErrors()[slot.key]) {
+                  <span class="text-red-500 text-xs">Este documento es obligatorio</span>
+                }
+              }
+            </div>
+          }
+        </div>
+
+        <div class="border-t border-border pt-4 flex items-center justify-between">
+          <ui-button label="Volver" variant="secondary" size="sm" type="button" [disabled]="submitting()" (click)="goBack()" />
+          <ui-button
+            [label]="submitting() ? 'Enviando...' : 'Enviar solicitud'"
+            size="sm"
+            type="submit"
+            [disabled]="submitting()"
+          />
+        </div>
+      </form>
+    }
+
+    <!-- ── Step 4: Éxito ────────────────────────────────────────────────── -->
+    @if (step() === 4) {
+      <div class="flex flex-col items-center text-center gap-5 py-8 offer-success">
+
+        <!-- Logo de marca con halo animado -->
+        <div class="relative">
+          <span class="absolute inset-0 rounded-full bg-primary/15 animate-ping"></span>
+          <span class="absolute inset-0 rounded-full bg-primary/10 offer-success__halo"></span>
+          <div class="relative h-24 w-24 rounded-full bg-card border-2 border-primary/30 shadow-xl flex items-center justify-center offer-success__circle">
+            <img
+              [src]="brandLogoUrl"
+              [alt]="brandName"
+              class="h-12 w-12 object-contain offer-success__logo"
+            />
+          </div>
+          <!-- Badge de check superpuesto -->
+          <div class="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-green-500 border-2 border-card flex items-center justify-center shadow-md offer-success__badge">
+            <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round" stroke-width="3" viewBox="0 0 24 24">
+              <path class="offer-success__check" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="offer-success__text">
+          <h2 class="text-2xl font-bold text-foreground">¡Gracias! Tu oferta ya fue solicitada.</h2>
+          <p class="text-sm text-muted-foreground max-w-sm mx-auto mt-2">
+            En breve recibirás un SMS para la firma del contrato. Nuestro equipo se pondrá en contacto contigo si necesita más información.
+          </p>
+        </div>
+
+        <ui-button label="Cerrar" size="sm" (click)="close()" />
+      </div>
+    }
+
+  </div>
+</ui-dialog>
