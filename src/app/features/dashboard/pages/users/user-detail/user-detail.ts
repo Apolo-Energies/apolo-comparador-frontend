@@ -137,7 +137,10 @@ export class UserDetailPageComponent implements OnInit {
     return required.every(type => approvedTypes.has(type));
   });
 
-  readonly hasSignatureRequest = computed(() => !!this.user()?.contract?.signatureRequestId);
+  readonly hasSignatureRequest = computed(() => {
+    const id = this.user()?.contract?.signatureRequestId;
+    return !!id && id !== 'NULL';
+  });
 
   readonly isSigned = computed(() => this.isSignedPending() || this.isSignedVerified());
 
