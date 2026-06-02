@@ -36,6 +36,7 @@ export class BrandLoaderComponent {
   readonly microcopy = input<string | null>('Esto puede tardar unos segundos');
   readonly progress = input<number | null>(null);
   readonly brand = input<LoaderBrand | null>(null);
+  readonly customLogoUrl = input<string | null>(null);
   readonly size = input<number>(160);
 
   // ── section toggles (each part can be shown/hidden independently) ─────────

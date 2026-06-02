@@ -40,6 +40,7 @@
     [tariff]="wizardTariff()"
     [product]="wizardProduct()"
     [isPublic]="true"
-    (openChange)="wizardOpen.set($event)"
+    (openChange)="onWizardOpenChange($event)"
+    (submitted)="onWizardSubmitted()"
   />
 </div>

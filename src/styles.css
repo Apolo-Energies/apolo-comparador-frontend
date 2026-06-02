@@ -291,3 +291,54 @@ body.apolo-light * { font-family: 'Space Grotesk', system-ui, sans-serif; }
   }
   .offer-success__check { stroke-dashoffset: 0; }
 }
+
+/* ────────────────────────────────────────────────────────────────────────
+   Buttons del footer de comparator-modal — colores más fuertes.
+   El "Solicitar oferta" venía en sky-300 light que se veía pálido.
+   Los targeteamos por su contexto (.comparator-modal__footer en el HTML).
+   ──────────────────────────────────────────────────────────────────────── */
+.comparator-modal__footer ui-button button,
+.comparator-modal__footer button[ui-button] {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: background-color 150ms ease, box-shadow 150ms ease, transform 100ms ease;
+}
+
+/* Primary CTA "Solicitar oferta" (variant="default") — azul saturado oscuro */
+.comparator-modal__footer ui-button[variant="default"] button,
+.comparator-modal__footer button[variant="default"],
+.comparator-modal__footer [variant="default"] button {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 16px -6px rgba(37, 99, 235, 0.5);
+}
+.comparator-modal__footer ui-button[variant="default"] button:hover:not(:disabled),
+.comparator-modal__footer button[variant="default"]:hover:not(:disabled),
+.comparator-modal__footer [variant="default"] button:hover:not(:disabled) {
+  background-color: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 10px 20px -6px rgba(29, 78, 216, 0.55);
+  transform: translateY(-1px);
+}
+
+/* Secondary "Ver comparativa" — outline más definido */
+.comparator-modal__footer ui-button[variant="secondary"] button,
+.comparator-modal__footer button[variant="secondary"],
+.comparator-modal__footer [variant="secondary"] button {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+.comparator-modal__footer ui-button[variant="secondary"] button:hover:not(:disabled),
+.comparator-modal__footer button[variant="secondary"]:hover:not(:disabled),
+.comparator-modal__footer [variant="secondary"] button:hover:not(:disabled) {
+  background-color: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+}
+
+.comparator-modal__footer button:disabled {
+  opacity: 0.55;
+  box-shadow: none !important;
+  cursor: not-allowed;
+}
