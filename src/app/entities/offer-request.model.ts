@@ -34,6 +34,7 @@ export interface CreateOfferRequestPayload {
   opportunityId?: string;
   tariff?:        string;
   product?:       string;
+  landingSlug?:   string;
 }
 
 export enum OfferRequestStatus {

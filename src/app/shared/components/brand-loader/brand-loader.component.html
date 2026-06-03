@@ -42,7 +42,7 @@
           </svg>
 
           <img
-            [src]="theme().logoSrc"
+            [src]="customLogoUrl() ?? theme().logoSrc"
             [alt]="theme().wordmark"
             class="relative object-contain select-none pointer-events-none"
             [style.width.px]="size() * 0.55"
@@ -101,7 +101,7 @@
               aria-hidden="true"
             >
               <img
-                [src]="theme().logoSrc"
+                [src]="customLogoUrl() ?? theme().logoSrc"
                 [alt]=""
                 class="bl-bar-icon-img"
                 draggable="false"

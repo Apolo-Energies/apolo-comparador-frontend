@@ -85,12 +85,16 @@ const CUPS_REGEX  = /^ES[0-9]{16}[A-Za-z]{2}[0-9A-Za-z]{0,2}$/i;
 })
 export class OfferRequestWizardComponent {
   // ── inputs ─────────────────────────────────────────────────────────────────
-  readonly open          = input(false);
-  readonly ocrResult     = input<OcrResult | null>(null);
-  readonly opportunityId = input<string | null>(null);
-  readonly tariff        = input<string | null>(null);
-  readonly product       = input<string | null>(null);
-  readonly isPublic      = input(false);
+  readonly open              = input(false);
+  readonly ocrResult         = input<OcrResult | null>(null);
+  readonly opportunityId     = input<string | null>(null);
+  readonly tariff            = input<string | null>(null);
+  readonly product           = input<string | null>(null);
+  readonly isPublic          = input(false);
+  readonly documentsOptional = input(false);
+  readonly landingSlug       = input<string | null>(null);
+  readonly brandLogoUrl      = input<string>('/apolo/Isotipo_Oscuro.svg');
+  readonly brandName         = input<string>(environment.appTitle);
 
   // ── outputs ────────────────────────────────────────────────────────────────
   readonly openChange = output<boolean>();
@@ -128,8 +132,6 @@ export class OfferRequestWizardComponent {
   readonly selectCls      = SELECT_CLS;
   readonly numberCls      = NUMBER_CLS;
   readonly acceptedTypes  = ACCEPTED_TYPES;
-  readonly brandLogoUrl   = '/apolo/Isotipo_Oscuro.svg';
-  readonly brandName      = environment.appTitle;
 
   // ── computed ───────────────────────────────────────────────────────────────
   readonly requiredDocs = computed<DocSlot[]>(() =>
@@ -160,7 +162,10 @@ export class OfferRequestWizardComponent {
 
   readonly clientStepValid   = computed(() => Object.values(this.clientErrors()).every(v => !v));
   readonly supplyStepValid   = computed(() => Object.values(this.supplyErrors()).every(v => !v));
-  readonly documentStepValid = computed(() => Object.values(this.documentErrors()).every(v => !v));
+  readonly documentStepValid = computed(() => {
+    if (this.documentsOptional()) return true;
+    return Object.values(this.documentErrors()).every(v => !v);
+  });
 
   constructor() {
     effect(() => {
@@ -251,6 +256,7 @@ export class OfferRequestWizardComponent {
       opportunityId: this.opportunityId() || undefined,
       tariff:        this.tariff()        || undefined,
       product:       this.product()       || undefined,
+      landingSlug:   this.landingSlug()   || undefined,
     };
 
     this.submitting.set(true);
