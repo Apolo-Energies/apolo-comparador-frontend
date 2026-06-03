@@ -6,6 +6,7 @@ export const routes: Routes = [
 
   {
     path: '',
+    pathMatch: 'full',
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES),
   },
 
@@ -22,4 +23,12 @@ export const routes: Routes = [
 
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'SetPassword',  component: ResetPasswordComponent  },
+
+  { path: 'c/:slug', redirectTo: ':slug', pathMatch: 'full' },
+
+  {
+    path: ':slug',
+    loadComponent: () =>
+      import('./features/branded-landing/branded-landing.component').then(m => m.BrandedLandingComponent),
+  },
 ];

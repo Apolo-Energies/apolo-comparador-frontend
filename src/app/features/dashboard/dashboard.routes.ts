@@ -119,6 +119,16 @@ export const DASHBOARD_ROUTES: Routes = [
       { path: 'support',   component: SupportPageComponent },
       { path: 'tariffs',   component: RatesPageComponent,   canActivate: [permissionGuard], data: { roles: ['Master'] } },
 
+      // Master only — Landings personalizadas
+      {
+        path: 'landings',
+        canActivate: [permissionGuard],
+        data: { roles: ['Master'] },
+        loadComponent: () =>
+          import('./pages/landings/landings-page')
+            .then(m => m.LandingsPageComponent),
+      },
+
       { path: 'forbidden', component: ForbiddenComponent },
     ],
   },

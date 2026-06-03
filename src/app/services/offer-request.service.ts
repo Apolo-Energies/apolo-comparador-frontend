@@ -52,6 +52,7 @@ export class OfferRequestService {
     if (payload.opportunityId) form.append('OpportunityId', payload.opportunityId);
     if (payload.tariff)        form.append('Tariff',        payload.tariff);
     if (payload.product)       form.append('Product',       payload.product);
+    if (payload.landingSlug)   form.append('LandingSlug',   payload.landingSlug);
 
     for (const key of DOCUMENT_KEYS) {
       const file = payload.documents[key];
