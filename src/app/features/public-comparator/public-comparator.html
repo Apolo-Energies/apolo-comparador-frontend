@@ -1,4 +1,8 @@
-<app-brand-loader [visible]="loading()" />
+<app-brand-loader
+  [visible]="loading()"
+  [title]="loaderTitle"
+  [description]="loaderTip()"
+/>
 
 <div #root class="bg-transparent p-4">
   <div class="mx-auto max-w-2xl">
