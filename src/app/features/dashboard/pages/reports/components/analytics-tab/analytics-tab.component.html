@@ -90,8 +90,33 @@
 
       <!-- Top colaboradores -->
       <div class="bg-card border border-border rounded-lg p-6 flex flex-col">
-        <div class="flex items-center justify-between mb-5">
-          <h3 class="text-sm font-semibold text-foreground">Top Colaboradores</h3>
+        <div class="mb-5">
+          <div class="flex items-center justify-between gap-2 mb-1.5">
+            <h3 class="text-sm font-semibold text-foreground">Top Colaboradores</h3>
+
+            <!-- Period filter pills -->
+            <div class="flex items-center gap-2">
+              @if (colabLoading()) {
+                <svg class="w-3.5 h-3.5 animate-spin text-muted-foreground shrink-0" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"
+                          stroke-dasharray="31.4" stroke-dashoffset="10"/>
+                </svg>
+              }
+              <div class="flex rounded-md border border-border overflow-hidden text-xs font-medium">
+                @for (p of colabPeriods; track p.value) {
+                  <button
+                    class="px-3 py-1 transition-colors cursor-pointer"
+                    [class.bg-accent]="colabPeriod() === p.value"
+                    [class.text-foreground]="colabPeriod() === p.value"
+                    [class.text-muted-foreground]="colabPeriod() !== p.value"
+                    [class.hover:bg-muted]="colabPeriod() !== p.value"
+                    (click)="colabPeriodChange.emit(p.value)">
+                    {{ p.label }}
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
           <span class="text-xs text-muted-foreground">Score = comparativas + consumo</span>
         </div>
 
