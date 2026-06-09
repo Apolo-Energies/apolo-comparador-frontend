@@ -52,7 +52,11 @@
       [summary]="summary()"
       [daily]="daily()"
       [totalComparativas]="totalComparativas()"
-      [rows]="historyItems()" />
+      [rows]="historyItems()"
+      [colabRows]="colabRows()"
+      [colabPeriod]="colabPeriod()"
+      [colabLoading]="colabLoading()"
+      (colabPeriodChange)="onColabPeriodChange($event)" />
   }
 
   @if (activeTab() === 'oportunidades') {

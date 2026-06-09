@@ -12,7 +12,7 @@ import { DashboardStatsService } from '../../../../services/dashboard-stats.serv
 import { OpportunityService } from '../../../../services/opportunity.service';
 import { SummaryApiResult, DailySummaryApiItem, HistoryItem } from '../statistics/models/dashboard-api.models';
 import { OpportunitySummary, OpportunityStatus } from '../../../../entities/opportunity.model';
-import { ReportsAnalyticsTabComponent } from './components/analytics-tab/analytics-tab.component';
+import { ReportsAnalyticsTabComponent, ColabPeriod } from './components/analytics-tab/analytics-tab.component';
 import { ReportsOpportunitiesTabComponent } from './components/opportunities-tab/opportunities-tab.component';
 import { ReportsAlertsTabComponent } from './components/alerts-tab/alerts-tab.component';
 
@@ -47,6 +47,10 @@ export class ReportsPageComponent {
   readonly opps         = signal<OpportunitySummary[]>([]);
   readonly historyItems = signal<HistoryItem[]>([]);
 
+  readonly colabPeriod  = signal<ColabPeriod>('all');
+  readonly colabRows    = signal<HistoryItem[]>([]);
+  readonly colabLoading = signal(false);
+
   readonly totalComparativas = computed(() => this.summary()?.totalCups ?? 0);
 
   readonly stagnant = computed(() => {
@@ -79,6 +83,10 @@ export class ReportsPageComponent {
         this.summary.set(analytics.summary);
         this.daily.set(analytics.dailySummary ?? []);
         this.historyItems.set(analytics.history?.items ?? []);
+        // Sync colabRows if showing "all time" (no extra fetch needed)
+        if (this.colabPeriod() === 'all') {
+          this.colabRows.set(analytics.history?.items ?? []);
+        }
       }
       if (opps) this.opps.set(opps.items);
       this.loading.set(false);
@@ -87,4 +95,43 @@ export class ReportsPageComponent {
   }
 
   setTab(tab: ReportTab): void { this.activeTab.set(tab); }
+
+  onColabPeriodChange(period: ColabPeriod): void {
+    if (this.colabPeriod() === period) return;
+    this.colabPeriod.set(period);
+
+    if (period === 'all') {
+      this.colabRows.set(this.historyItems());
+      return;
+    }
+
+    const today = new Date();
+    let from: Date;
+    let to: Date;
+
+    if (period === 'week') {
+      // Previous calendar week: Monday–Sunday
+      const dow          = today.getDay(); // 0=Sun, 1=Mon … 6=Sat
+      const daysSinceMon = dow === 0 ? 6 : dow - 1;
+      const thisMonday   = new Date(today.getFullYear(), today.getMonth(), today.getDate() - daysSinceMon);
+      from = new Date(thisMonday.getFullYear(), thisMonday.getMonth(), thisMonday.getDate() - 7);
+      to   = new Date(thisMonday.getFullYear(), thisMonday.getMonth(), thisMonday.getDate() - 1);
+    } else {
+      // Last 30 days
+      from = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29);
+      to   = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    }
+
+    this.colabLoading.set(true);
+    this.stats.getConsolidatedData(
+      { from, to },
+      undefined, undefined, undefined, undefined, undefined, undefined,
+      true,
+    ).pipe(catchError(() => of(null)))
+     .subscribe(data => {
+       this.colabRows.set(data?.history?.items ?? []);
+       this.colabLoading.set(false);
+       this.cdr.markForCheck();
+     });
+  }
 }

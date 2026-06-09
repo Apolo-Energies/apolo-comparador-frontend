@@ -10,6 +10,7 @@ import {
   effect,
   inject,
   input,
+  output,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import type { Chart } from 'chart.js';
@@ -22,7 +23,14 @@ const BAR_ACTIVE = '#1AD598';
 
 const COLAB_COLORS = ['#8b5cf6', '#7dd3fc', '#fbbf24', '#f472b6', '#a3a3a3', '#818cf8'];
 
+export type ColabPeriod = 'all' | 'month' | 'week';
 type ColabWithScore = HistoryItem & { score: number };
+
+const COLAB_PERIODS: { value: ColabPeriod; label: string }[] = [
+  { value: 'all',   label: 'Todo'  },
+  { value: 'month', label: 'Mes'   },
+  { value: 'week',  label: 'Semana'},
+];
 
 @Component({
   selector: 'app-reports-analytics-tab',
@@ -40,8 +48,14 @@ export class ReportsAnalyticsTabComponent implements AfterViewInit, OnDestroy {
   readonly totalComparativas = input<number>(0);
   readonly rows              = input<HistoryItem[]>([]);
 
+  // Colabs filter inputs/outputs
+  readonly colabRows    = input<HistoryItem[]>([]);
+  readonly colabPeriod  = input<ColabPeriod>('all');
+  readonly colabLoading = input<boolean>(false);
+  readonly colabPeriodChange = output<ColabPeriod>();
+
   readonly topColabs = computed((): ColabWithScore[] => {
-    const all = this.rows();
+    const all = this.colabRows();
     if (!all.length) return [];
     const maxCups = Math.max(...all.map(r => r.totalCups), 1);
     const maxKwh  = Math.max(...all.map(r => r.totalAnnualConsumption), 1);
@@ -54,7 +68,8 @@ export class ReportsAnalyticsTabComponent implements AfterViewInit, OnDestroy {
       .slice(0, 6);
   });
 
-  readonly colabColors = COLAB_COLORS;
+  readonly colabColors  = COLAB_COLORS;
+  readonly colabPeriods = COLAB_PERIODS;
 
   private _barRef?: ElementRef<HTMLCanvasElement>;
 
