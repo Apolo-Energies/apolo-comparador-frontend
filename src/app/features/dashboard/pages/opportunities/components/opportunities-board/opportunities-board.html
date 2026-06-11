@@ -29,6 +29,7 @@
         [cdkDropListData]="col.items"
         [cdkDropListConnectedTo]="listIds"
         (cdkDropListDropped)="onDrop($event, col.status)"
+        (scroll)="onColumnScroll($event, col.status)"
       >
         @for (item of col.items; track trackById($index, item)) {
           <div cdkDrag [cdkDragData]="item">
@@ -71,11 +72,11 @@
           }
         }
 
-        <!-- "More" hint -->
-        @if (!col.loading && col.totalCount > col.items.length) {
-          <div class="text-[11px] text-center text-zinc-500 py-2 mt-2 border-t border-dashed border-border">
-            Mostrando {{ col.items.length | esNumber:0 }} de {{ col.totalCount | esNumber:0 }} —
-            <span class="text-blue-400">usa los filtros para refinar</span>
+        <!-- Loading more skeletons -->
+        @if (col.loadingMore) {
+          <div class="space-y-2 pt-2">
+            <div class="h-22 rounded-xl bg-body/60 animate-pulse"></div>
+            <div class="h-22 rounded-xl bg-body/40 animate-pulse"></div>
           </div>
         }
       </div>

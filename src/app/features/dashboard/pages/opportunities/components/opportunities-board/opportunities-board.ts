@@ -17,11 +17,14 @@ import { OpportunityCardComponent } from '../opportunity-card/opportunity-card';
 import { EsNumberPipe } from '../../../../../../shared/pipes/es-number.pipe';
 
 interface BoardColumn {
-  status:     OpportunityStatus;
-  label:      string;
-  loading:    boolean;
-  items:      OpportunitySummary[];
-  totalCount: number;
+  status:      OpportunityStatus;
+  label:       string;
+  loading:     boolean;
+  loadingMore: boolean;
+  items:       OpportunitySummary[];
+  totalCount:  number;
+  currentPage: number;
+  hasMore:     boolean;
 }
 
 interface StatusPalette {
@@ -34,7 +37,8 @@ interface StatusPalette {
 }
 
 const STATUS_ORDER = OPPORTUNITY_STATUS_ORDER;
-const PAGE_SIZE_PER_COLUMN = 100;
+const PAGE_SIZE_PER_COLUMN = 20;
+const SCROLL_THRESHOLD_PX = 200;
 
 @Component({
   selector: 'app-opportunities-board',
@@ -60,10 +64,13 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
 
   readonly columns = signal<BoardColumn[]>(STATUS_ORDER.map(status => ({
     status,
-    label:      OPPORTUNITY_STATUS_LABEL[status],
-    loading:    true,
-    items:      [],
-    totalCount: 0,
+    label:       OPPORTUNITY_STATUS_LABEL[status],
+    loading:     true,
+    loadingMore: false,
+    items:       [],
+    totalCount:  0,
+    currentPage: 1,
+    hasMore:     false,
   })));
 
   readonly listIds = STATUS_ORDER.map(s => `column-${s}`);
@@ -93,10 +100,13 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
       next: results => {
         this.columns.set(STATUS_ORDER.map(status => ({
           status,
-          label:      OPPORTUNITY_STATUS_LABEL[status],
-          loading:    false,
-          items:      results[status].items,
-          totalCount: results[status].totalCount,
+          label:       OPPORTUNITY_STATUS_LABEL[status],
+          loading:     false,
+          loadingMore: false,
+          items:       results[status].items,
+          totalCount:  results[status].totalCount,
+          currentPage: results[status].currentPage,
+          hasMore:     results[status].items.length < results[status].totalCount,
         })));
         this.emitCounts();
       },
@@ -180,6 +190,52 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
 
   trackByStatus = (_: number, col: BoardColumn) => col.status;
   trackById     = (_: number, item: OpportunitySummary) => item.id;
+
+  onColumnScroll(event: Event, status: OpportunityStatus) {
+    const el = event.target as HTMLElement;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (distanceFromBottom > SCROLL_THRESHOLD_PX) return;
+    this.loadMore(status);
+  }
+
+  private loadMore(status: OpportunityStatus) {
+    const col = this.columns().find(c => c.status === status);
+    if (!col || col.loading || col.loadingMore || !col.hasMore) return;
+
+    const nextPage = col.currentPage + 1;
+    this.columns.update(cols => cols.map(c =>
+      c.status === status ? { ...c, loadingMore: true } : c
+    ));
+
+    this.oppService.list({
+      ...this.filters, status, page: nextPage, pageSize: PAGE_SIZE_PER_COLUMN,
+    }).pipe(
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
+      next: result => {
+        this.columns.update(cols => cols.map(c => {
+          if (c.status !== status) return c;
+          const existingIds = new Set(c.items.map(i => i.id));
+          const newItems = result.items.filter(i => !existingIds.has(i.id));
+          const items = [...c.items, ...newItems];
+          return {
+            ...c,
+            items,
+            loadingMore: false,
+            currentPage: result.currentPage,
+            totalCount:  result.totalCount,
+            hasMore:     items.length < result.totalCount,
+          };
+        }));
+        this.emitCounts();
+      },
+      error: () => {
+        this.columns.update(cols => cols.map(c =>
+          c.status === status ? { ...c, loadingMore: false } : c
+        ));
+      },
+    });
+  }
 
   onDrop(event: CdkDragDrop<OpportunitySummary[]>, targetStatus: OpportunityStatus) {
     if (event.previousContainer === event.container) return;

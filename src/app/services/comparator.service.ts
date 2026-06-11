@@ -132,7 +132,8 @@ export class ComparatorService {
       }),
     ];
 
-    const consumoAnual = (ocr.energia?.reduce((a, e) => a + (e.activa?.kwh ?? 0), 0) ?? 0) * 10;
+    const totalKwhFactura = ocr.energia?.reduce((a, e) => a + (e.activa?.kwh ?? 0), 0) ?? 0;
+    const consumoAnual = dias > 0 ? Math.round(totalKwhFactura * (365 / dias)) : 0;
 
     const payload = {
       fileId,
