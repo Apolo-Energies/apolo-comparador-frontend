@@ -50,11 +50,28 @@
       <!-- Body -->
       <form class="flex flex-col flex-1 min-h-0">
 
-        <div class="flex-1 px-6 py-4 overflow-y-auto">
+        <div class="flex-1 px-6 py-4 overflow-y-auto space-y-4">
           @if (view() === 'Individual') {
             <app-form-individual-user [form]="individualForm" [submitted]="submitted()" />
           } @else {
             <app-form-company-user [form]="companyForm" [submitted]="submitted()" />
+          }
+
+          @if (canChooseParent() && parentComboboxOptions().length > 0) {
+            <div class="space-y-1">
+              <label class="text-sm font-medium text-muted-foreground">
+                Asignar a <span class="text-xs text-muted-foreground">(opcional)</span>
+              </label>
+              <ui-combobox
+                placeholder="Buscar Master..."
+                [options]="parentComboboxOptions()"
+                [value]="parentControlId()"
+                (valueChange)="onParentComboboxChange($event)"
+              />
+              <p class="text-xs text-muted-foreground">
+                Si no eliges nadie, el usuario se creará sin asignar.
+              </p>
+            </div>
           }
         </div>
 
@@ -135,6 +152,20 @@
           <p class="text-xs text-red-500">{{ simpleErrMsg('surnames') }}</p>
         }
       </div>
+
+      @if (canChooseParent() && parentComboboxOptions().length > 0) {
+        <div class="space-y-1">
+          <label class="text-sm font-medium text-muted-foreground">
+            Asignar a <span class="text-xs text-muted-foreground">(opcional)</span>
+          </label>
+          <ui-combobox
+            placeholder="Buscar Master..."
+            [options]="parentComboboxOptions()"
+            [value]="parentControlId()"
+            (valueChange)="onParentComboboxChange($event)"
+          />
+        </div>
+      }
 
       <div class="flex items-center justify-between pt-2 border-t border-border">
         <ui-button label="Cancelar" variant="outline" size="md" [disabled]="saving()" (click)="onCancel()" />

@@ -15,6 +15,7 @@ export interface UserDetail {
   commissions: UserDetailCommission[];
   isSubUser: boolean;
   availableActions: string[];
+  parentUserId: string | null;
 }
 
 export interface UserDetailCommission {
