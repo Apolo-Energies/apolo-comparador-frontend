@@ -12,6 +12,7 @@ import { StatisticsDashboardComponent } from './components/statistics-dashboard/
 import { UserDetailDialogComponent } from './components/user-detail-dialog/user-detail-dialog';
 import { DailySummaryApiItem, SummaryApiResult, MonthlySummaryApiItem, FiltersData, FilterProduct } from './models/dashboard-api.models';
 import { DateRange } from './models/dashboard-ui.models';
+import { EsNumberPipe } from '../../../../shared/pipes/es-number.pipe';
 
 type SortField = 'FullName' | 'Email' | 'TotalCups' | 'TotalAnnualConsumption';
 type SortDirection = 'Asc' | 'Desc';
@@ -30,6 +31,7 @@ export class StatisticsPageComponent implements AfterViewInit {
   private dashboardService = inject(DashboardStatsService);
   private platformId       = inject(PLATFORM_ID);
   private globalLoading    = inject(GlobalLoadingService);
+  private esNumber         = new EsNumberPipe();
 
   readonly isApolo = environment.features.userDetail;
 
@@ -119,8 +121,8 @@ export class StatisticsPageComponent implements AfterViewInit {
       { key: 'fullName',               label: 'Nombre' },
       { key: 'email',                  label: 'Email' },
       { key: 'totalCups',              label: 'Total CUPS',              align: 'center' },
-      { key: 'totalAnnualConsumption', label: 'Consumo anual (kWh)',     align: 'right',
-        format: row => `${row.totalAnnualConsumption.toFixed(2)} kWh` },
+      { key: 'totalAnnualConsumption', label: 'Consumo anual (MWh)',     align: 'right',
+        format: row => `${this.esNumber.transform(row.totalAnnualConsumption / 1000)} MWh` },
       { key: 'actions',                label: 'Acciones',                align: 'center' },
     ]);
   }

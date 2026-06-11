@@ -10,6 +10,7 @@ import { HistoryService, HistoryItem } from '../../../../services/history.servic
 import { GlobalLoadingService } from '../../../../services/global-loading.service';
 import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
 import { environment } from '../../../../../environments/environment';
+import { EsNumberPipe } from '../../../../shared/pipes/es-number.pipe';
 
 @Component({
   selector: 'app-history-page',
@@ -23,6 +24,7 @@ export class HistoryPageComponent implements AfterViewInit {
   private platformId     = inject(PLATFORM_ID);
   private cdr            = inject(ChangeDetectorRef);
   private globalLoading  = inject(GlobalLoadingService);
+  private esNumber       = new EsNumberPipe();
 
   // icons
   readonly searchIcon:   UiIconSource = { type: 'apolo', icon: SearchIcon,   size: 16 };
@@ -55,8 +57,8 @@ export class HistoryPageComponent implements AfterViewInit {
     { key: 'userName',          label: 'Usuario',   format: row => row.user?.fullName ?? '-' },
     { key: 'userEmail',         label: 'Email',     textColor: 'text-muted-foreground' },
     { key: 'cups',              label: 'CUPS' },
-    { key: 'annualConsumption', label: 'Consumo anual (kWh)', align: 'right',
-      format: row => `${row.annualConsumption.toFixed(2)} kWh` },
+    { key: 'annualConsumption', label: 'Consumo anual (MWh)', align: 'right',
+      format: row => `${this.esNumber.transform(row.annualConsumption / 1000)} MWh` },
     { key: 'createdAt',         label: 'Fecha', align: 'left' },
   ];
 
