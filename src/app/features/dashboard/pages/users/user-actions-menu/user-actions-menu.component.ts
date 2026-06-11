@@ -12,6 +12,7 @@ import { CatalogService } from '../../../../../services/catalog.service';
 import { RestorePasswordModalComponent } from '../restore-password-modal/restore-password-modal.component';
 import { SendContractModalComponent } from '../send-contract-modal/send-contract-modal.component';
 import { UserRole, UserRoleLabel, normalizeRoleToOptionValue } from '../../../../../entities/user-role';
+import { PotentialParent } from '../../../../../entities/user.model';
 import { environment } from '../../../../../../environments/environment';
 
 export interface SubUserSummary {
@@ -59,6 +60,13 @@ const SELECT_CLS = [
   'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1',
 ].join(' ');
 
+// Shared classes for the per-row action icons (eye / trash / gear). Keeps the icons aligned
+// and gives all three the same hover treatment (gray → white) so the gear matches the others.
+const ACTION_BTN_CLS = [
+  'p-2 rounded-md cursor-pointer transition-colors',
+  'text-muted-foreground hover:text-white hover:bg-muted',
+].join(' ');
+
 @Component({
   selector: 'app-user-actions-menu',
   standalone: true,
@@ -71,7 +79,7 @@ const SELECT_CLS = [
       @if (showUserDetail) {
         <button
           type="button"
-          class="p-2 rounded-md hover:bg-muted cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
+          [class]="actionBtnCls"
           title="Ver detalles"
           (click)="goToDetail()">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
@@ -85,7 +93,7 @@ const SELECT_CLS = [
       <!-- Trash: delete user -->
       <button
         type="button"
-        class="p-2 rounded-md hover:bg-muted cursor-pointer text-muted-foreground hover:text-white transition-colors"
+        [class]="actionBtnCls"
         title="Eliminar usuario"
         (click)="openDeleteConfirm()">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
@@ -102,7 +110,8 @@ const SELECT_CLS = [
       <button
         #triggerBtn
         type="button"
-        class="p-2 rounded-md hover:bg-muted cursor-pointer"
+        [class]="actionBtnCls + ' inline-flex items-center justify-center'"
+        title="Configurar usuario"
         (click)="toggle($event)">
         <lib-svg-icon [icon]="settingsIcon" [size]="16" />
       </button>
@@ -163,6 +172,17 @@ const SELECT_CLS = [
               }
             </select>
 
+            @if (canReassignParent()) {
+              <select [class]="selectCls + ' col-span-2'"
+                [ngModel]="selectedParent()"
+                (ngModelChange)="onParentChange($event)">
+                <option value="">— Sin asignar —</option>
+                @for (opt of parentSelectOptions(); track opt.value) {
+                  <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
+            }
+
           </div>
 
           <!-- Footer -->
@@ -216,8 +236,12 @@ export class UserActionsMenuComponent {
   @ViewChild('triggerBtn') private triggerRef!: ElementRef<HTMLButtonElement>;
   @ViewChild('container')  private containerRef!: ElementRef<HTMLDivElement>;
 
-  readonly user    = input.required<UserRow>();
-  readonly updated = output<void>();
+  readonly user              = input.required<UserRow>();
+  readonly potentialParents  = input<PotentialParent[]>([]);
+  readonly canReassignParent = input<boolean>(false);
+
+  readonly updated       = output<void>();
+  readonly parentChanged = output<string | null>();
 
   private readonly userService   = inject(UserService);
   private readonly catalogSvc    = inject(CatalogService);
@@ -226,6 +250,7 @@ export class UserActionsMenuComponent {
 
   readonly settingsIcon    = SettingsIcon;
   readonly selectCls       = SELECT_CLS;
+  readonly actionBtnCls    = ACTION_BTN_CLS;
   readonly showUserDetail  = environment.features.userDetail;
   readonly showContracts   = environment.features.contracts;
   readonly isSubUser       = computed(() => !!this.user().isSubUser);
@@ -242,6 +267,14 @@ export class UserActionsMenuComponent {
   readonly selectedExpert     = signal('');
   readonly selectedCommission = signal('');
   readonly selectedProvider   = signal('');
+  readonly selectedParent     = signal('');
+
+  readonly parentSelectOptions = computed<SelectOption[]>(() => {
+    const me = this.user().id;
+    return this.potentialParents()
+      .filter(p => p.id !== me)
+      .map(p => ({ value: p.id, label: p.fullName }));
+  });
 
   readonly commissionOptions = signal<SelectOption[]>([]);
   readonly providerOptions   = signal<SelectOption[]>([]);
@@ -271,6 +304,7 @@ export class UserActionsMenuComponent {
         u.commissions?.find(c => c.isActive)?.commissionType?.id ?? ''
       );
       this.selectedProvider.set(u.providerId != null ? String(u.providerId) : '');
+      this.selectedParent.set((u as { parentUserId?: string | null }).parentUserId ?? '');
     });
 
     this.catalogSvc.get().subscribe(catalog => {
@@ -356,6 +390,12 @@ export class UserActionsMenuComponent {
       next:  () => { this.alertService.show('Proveedor actualizado', 'success'); this.updated.emit(); },
       error: () => this.alertService.show('Error al actualizar el proveedor', 'error'),
     });
+  }
+
+  onParentChange(value: string): void {
+    this.selectedParent.set(value);
+    // Delegate the assignment to the parent component so it can centralize the reload + alert.
+    this.parentChanged.emit(value || null);
   }
 
   openDeleteConfirm(): void {

@@ -24,6 +24,7 @@ import {
   OcrResult,
 } from '../dashboard/pages/comparator/comparator.models';
 import { PublicLanding } from '../../entities/landing.model';
+import { EFFICIENCY_TIPS_LEAD, pickRandomEfficiencyTip } from '../../shared/constants/efficiency-tips';
 
 const DEFAULT_FORM_TITLE = 'Calculamos tu ahorro por ti';
 const DEFAULT_FORM_SUBTITLE = 'Rellena los datos manualmente o sube tu última factura. Comparamos tu tarifa de luz para que sepas cuánto ahorrarías.';
@@ -82,6 +83,8 @@ export class BrandedLandingComponent {
   readonly ocrResult      = signal<OcrResult | null>(null);
   readonly fileId         = signal<string>('');
   readonly comparisonId   = signal<string>('');
+  readonly loaderTitle    = EFFICIENCY_TIPS_LEAD;
+  readonly loaderTip      = signal<string>(pickRandomEfficiencyTip());
 
   readonly wizardOpen      = signal(false);
   readonly wizardTariff    = signal<string | null>(null);
@@ -102,6 +105,7 @@ export class BrandedLandingComponent {
   readonly landingSlug = computed(() => this.landing()?.slug ?? null);
 
   onCompare(event: ComparadorCompareEvent): void {
+    this.loaderTip.set(pickRandomEfficiencyTip());
     this.loading.set(true);
     this.result.set(null);
     this.ocrResult.set(null);

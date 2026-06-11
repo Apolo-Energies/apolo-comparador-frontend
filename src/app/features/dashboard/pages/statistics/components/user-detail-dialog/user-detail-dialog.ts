@@ -5,6 +5,7 @@ import { DashboardStatsService } from '../../../../../../services/dashboard-stat
 import { ComparisonDetailItem, PaginatedComparisonDetail } from '../../models/dashboard-api.models';
 import { DateRange } from '../../models/dashboard-ui.models';
 import { LoadingOverlayComponent } from '../../../../../../shared/components/loading-overlay/loading-overlay.component';
+import { EsNumberPipe } from '../../../../../../shared/pipes/es-number.pipe';
 
 @Component({
   selector: 'app-user-detail-dialog',
@@ -22,6 +23,7 @@ export class UserDetailDialogComponent {
   readonly closed = output<void>();
 
   private dashboardService = inject(DashboardStatsService);
+  private esNumber         = new EsNumberPipe();
 
   readonly loading          = signal(false);
   readonly data             = signal<ComparisonDetailItem[]>([]);
@@ -32,8 +34,8 @@ export class UserDetailDialogComponent {
 
   readonly columns = signal<TableColumn<ComparisonDetailItem>[]>([
     { key: 'cups',              label: 'CUPS',                align: 'left' },
-    { key: 'annualConsumption', label: 'Consumo anual (kWh)', align: 'right',
-      format: row => `${row.annualConsumption.toFixed(2)} kWh` },
+    { key: 'annualConsumption', label: 'Consumo anual (MWh)', align: 'right',
+      format: row => `${this.esNumber.transform(row.annualConsumption / 1000)} MWh` },
     { key: 'createdAt',         label: 'Fecha',               align: 'center',
       format: row => new Date(row.createdAt).toLocaleDateString('es-ES') },
   ]);

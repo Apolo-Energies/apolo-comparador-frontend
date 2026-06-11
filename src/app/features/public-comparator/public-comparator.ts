@@ -24,6 +24,7 @@ import {
   OcrResult,
 } from '../dashboard/pages/comparator/comparator.models';
 import { environment } from '../../../environments/environment';
+import { EFFICIENCY_TIPS_LEAD, pickRandomEfficiencyTip } from '../../shared/constants/efficiency-tips';
 
 @Component({
   selector: 'app-public-comparator',
@@ -52,6 +53,8 @@ export class PublicComparator implements AfterViewInit, OnDestroy {
   readonly ocrResult      = signal<OcrResult | null>(null);
   readonly fileId         = signal<string>('');
   readonly comparisonId   = signal<string>('');
+  readonly loaderTitle    = EFFICIENCY_TIPS_LEAD;
+  readonly loaderTip      = signal<string>(pickRandomEfficiencyTip());
 
   // Offer-request wizard state
   readonly wizardOpen      = signal(false);
@@ -104,6 +107,7 @@ export class PublicComparator implements AfterViewInit, OnDestroy {
 
   // ── handlers ────────────────────────────────────────────────────────────
   onCompare(event: ComparadorCompareEvent): void {
+    this.loaderTip.set(pickRandomEfficiencyTip());
     this.loading.set(true);
     this.result.set(null);
     this.ocrResult.set(null);
