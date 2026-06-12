@@ -232,113 +232,139 @@ body.apolo-light {
 
 body.apolo-light * { font-family: 'Space Grotesk', system-ui, sans-serif; }
 
-/* ── Offer-request wizard: animación de éxito ─────────────────────────────── */
-
-@keyframes offer-success-pop {
-  0%   { transform: scale(0.4); opacity: 0; }
-  60%  { transform: scale(1.1); opacity: 1; }
-  100% { transform: scale(1);   opacity: 1; }
+/* ─── ngx-editor — tema oscuro ──────────────────────────────────────────── */
+.NgxEditor__MenuBar {
+  background-color: #1e1f22 !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  border-radius: 0 !important;
+  padding: 4px 8px !important;
 }
 
-@keyframes offer-success-halo {
-  0%, 100% { transform: scale(1);    opacity: 0.45; }
-  50%      { transform: scale(1.15); opacity: 0.15; }
+.NgxEditor__MenuItem .NgxEditor__MenuItem--Button {
+  color: var(--color-foreground) !important;
+  border-radius: 4px !important;
 }
 
-@keyframes offer-success-draw {
-  to { stroke-dashoffset: 0; }
+.NgxEditor__MenuItem--Active > .NgxEditor__MenuItem--Button,
+.NgxEditor__MenuItem .NgxEditor__MenuItem--Button:hover {
+  background-color: var(--color-accent) !important;
+  color: var(--color-foreground) !important;
 }
 
-@keyframes offer-success-rise {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+.NgxEditor__Seperator {
+  border-left-color: var(--color-border) !important;
+  margin: 0 2px !important;
 }
 
-.offer-success__circle {
-  animation: offer-success-pop 480ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+.NgxEditor__Dropdown .NgxEditor__Dropdown--Text {
+  color: var(--color-foreground) !important;
 }
 
-.offer-success__halo {
-  animation: offer-success-halo 2.4s ease-in-out infinite;
+.NgxEditor__Dropdown .NgxEditor__Dropdown--DropdownMenu {
+  background-color: var(--color-card) !important;
+  border-color: var(--color-border) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
 }
 
-.offer-success__logo {
-  animation: offer-success-rise 420ms ease-out 280ms both;
+.NgxEditor__Dropdown .NgxEditor__Dropdown--Item {
+  color: var(--color-foreground) !important;
 }
 
-.offer-success__badge {
-  animation: offer-success-pop 360ms cubic-bezier(0.34, 1.56, 0.64, 1) 480ms both;
+.NgxEditor__Dropdown .NgxEditor__Dropdown--Item:hover,
+.NgxEditor__Dropdown .NgxEditor__Dropdown--Item--Active {
+  background-color: var(--color-accent) !important;
 }
 
-.offer-success__check {
-  stroke-dasharray: 32;
-  stroke-dashoffset: 32;
-  animation: offer-success-draw 380ms ease-out 720ms forwards;
+.NgxEditor {
+  background-color: #17181a !important;
+  color: var(--color-foreground) !important;
+  border: none !important;
+  border-radius: 0 0 0.5rem 0.5rem !important;
 }
 
-.offer-success__text {
-  animation: offer-success-rise 420ms ease-out 600ms both;
+.NgxEditor__Content {
+  color: var(--color-foreground) !important;
+  padding: 12px 14px !important;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .offer-success__circle,
-  .offer-success__halo,
-  .offer-success__logo,
-  .offer-success__badge,
-  .offer-success__check,
-  .offer-success__text {
-    animation: none;
-  }
-  .offer-success__check { stroke-dashoffset: 0; }
+.NgxEditor__Content > * {
+  color: var(--color-foreground) !important;
 }
 
-/* ────────────────────────────────────────────────────────────────────────
-   Buttons del footer de comparator-modal — colores más fuertes.
-   El "Solicitar oferta" venía en sky-300 light que se veía pálido.
-   Los targeteamos por su contexto (.comparator-modal__footer en el HTML).
-   ──────────────────────────────────────────────────────────────────────── */
-.comparator-modal__footer ui-button button,
-.comparator-modal__footer button[ui-button] {
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  transition: background-color 150ms ease, box-shadow 150ms ease, transform 100ms ease;
+.NgxEditor__Content p.is-empty:first-child::before {
+  color: var(--color-muted-foreground) !important;
 }
 
-/* Primary CTA "Solicitar oferta" (variant="default") — azul saturado oscuro */
-.comparator-modal__footer ui-button[variant="default"] button,
-.comparator-modal__footer button[variant="default"],
-.comparator-modal__footer [variant="default"] button {
-  background-color: #2563eb !important;
-  border-color: #2563eb !important;
-  color: #ffffff !important;
-  box-shadow: 0 6px 16px -6px rgba(37, 99, 235, 0.5);
-}
-.comparator-modal__footer ui-button[variant="default"] button:hover:not(:disabled),
-.comparator-modal__footer button[variant="default"]:hover:not(:disabled),
-.comparator-modal__footer [variant="default"] button:hover:not(:disabled) {
-  background-color: #1d4ed8 !important;
-  border-color: #1d4ed8 !important;
-  box-shadow: 0 10px 20px -6px rgba(29, 78, 216, 0.55);
-  transform: translateY(-1px);
+.NgxEditor__Popup {
+  background-color: var(--color-card) !important;
+  border-color: var(--color-border) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
 }
 
-/* Secondary "Ver comparativa" — outline más definido */
-.comparator-modal__footer ui-button[variant="secondary"] button,
-.comparator-modal__footer button[variant="secondary"],
-.comparator-modal__footer [variant="secondary"] button {
-  background-color: #ffffff !important;
-  border: 1px solid #cbd5e1 !important;
-  color: #0f172a !important;
-}
-.comparator-modal__footer ui-button[variant="secondary"] button:hover:not(:disabled),
-.comparator-modal__footer button[variant="secondary"]:hover:not(:disabled),
-.comparator-modal__footer [variant="secondary"] button:hover:not(:disabled) {
-  background-color: #f1f5f9 !important;
-  border-color: #94a3b8 !important;
+.NgxEditor__Popup input {
+  background-color: var(--color-input) !important;
+  color: var(--color-foreground) !important;
+  border-color: var(--color-border) !important;
 }
 
-.comparator-modal__footer button:disabled {
-  opacity: 0.55;
-  box-shadow: none !important;
-  cursor: not-allowed;
+/* ─── Listas en el editor (Tailwind reset borra list-style) ─────────────── */
+/* .ProseMirror es el div raíz que monta ngx-editor */
+.ProseMirror ul,
+.NgxEditor__Content ul {
+  list-style-type: disc !important;
+  padding-left:    2em !important;
+  margin:          0.5em 0 !important;
+}
+.ProseMirror ol,
+.NgxEditor__Content ol {
+  list-style-type: decimal !important;
+  padding-left:    2em !important;
+  margin:          0.5em 0 !important;
+}
+.ProseMirror li,
+.NgxEditor__Content li {
+  display:         list-item !important;
+  margin:          0.25em 0 !important;
+}
+
+/* ─── Tablas en el editor ────────────────────────────────────────────────── */
+.NgxEditor__Content table {
+  width:           100%;
+  border-collapse: collapse;
+  margin:          16px 0;
+  table-layout:    fixed;
+}
+.NgxEditor__Content td,
+.NgxEditor__Content th {
+  vertical-align:  top;
+  padding:         6px 8px;
+  border:          1px dashed var(--color-border);
+  color:           var(--color-foreground) !important;
+}
+
+/* ─── Salto de página en el editor ──────────────────────────────────────── */
+.NgxEditor__Content hr {
+  border:         none !important;
+  border-top:     2px dashed #f59e0b !important;
+  margin:         20px 0 !important;
+  position:       relative !important;
+  height:         20px !important;
+  background:     transparent !important;
+}
+
+.NgxEditor__Content hr::after {
+  content:          '— Salto de página —';
+  position:         absolute;
+  left:             50%;
+  top:              50%;
+  transform:        translate(-50%, -50%);
+  background:       #17181a;
+  padding:          0 10px;
+  font-size:        10px;
+  color:            #f59e0b;
+  font-family:      system-ui, sans-serif;
+  text-transform:   uppercase;
+  letter-spacing:   0.08em;
+  white-space:      nowrap;
+  pointer-events:   none;
 }

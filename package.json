@@ -12,7 +12,8 @@
     "start:renova": "ng serve --configuration renova",
     "start:coexpal": "ng serve --configuration coexpal",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "postinstall": "cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/pdf.worker.min.mjs"
   },
   "private": true,
   "packageManager": "pnpm@10.11.0",
@@ -35,11 +36,15 @@
     "@primeuix/themes": "^2.0.3",
     "chart.js": "^4.5.1",
     "date-fns": "^4.1.0",
+    "docx-preview": "^0.3.7",
     "lucide-angular": "^1.0.0",
     "mammoth": "^1.12.0",
     "ngx-editor": "19.0.0-beta.1",
     "ngx-permissions": "^19.0.0",
+    "pdfjs-dist": "^6.0.227",
     "primeng": "^21.1.6",
+    "prosemirror-model": "^1.25.8",
+    "prosemirror-tables": "^1.8.5",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

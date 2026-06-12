@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from '@apolo-energies/auth';
 import { Comparator } from './pages/comparator/comparator';
+import { ComparatorMultiple } from './pages/comparator-multiple/comparator-multiple';
 import { HistoryPageComponent } from './pages/history/history-page';
 import { UsersPageComponent } from './pages/users/users-page';
 import { UserDetailPageComponent } from './pages/users/user-detail/user-detail';
@@ -27,7 +28,8 @@ export const DASHBOARD_ROUTES: Routes = [
       { path: '', redirectTo: 'comparator', pathMatch: 'full' },
 
       // All roles
-      { path: 'comparator', component: Comparator },
+      { path: 'comparator',          component: Comparator },
+      { path: 'comparator-multiple', component: ComparatorMultiple, canActivate: [permissionGuard], data: { excludeRoles: ['Comercial'] } },
       { path: 'sips', component: SipsPageComponent },
       { path: 'fast-discharge', component: FastDischarge, children: FAST_DISCHARGE_ROUTES },
       { path: 'altaRapida', component: FastDischarge, children: FAST_DISCHARGE_ROUTES },
@@ -106,18 +108,26 @@ export const DASHBOARD_ROUTES: Routes = [
         path: 'settings/my-comercials',
         component: MyComercialsPage,
         canActivate: [featureGuard, permissionGuard],
-        data: { feature: 'userDetail', roles: ['Colaborador'] },
+        data: { feature: 'userDetail', roles: ['Colaborador', 'Colaborador - Referenciador'] },
       },
       {
         path: 'settings/sub-user-commissions',
         component: SubUserCommissionsPage,
         canActivate: [featureGuard, permissionGuard],
-        data: { feature: 'userDetail', roles: ['Colaborador'] },
+        data: { feature: 'userDetail', roles: ['Colaborador', 'Colaborador - Referenciador'] },
       },
 
       // Master only
       { path: 'support',   component: SupportPageComponent },
       { path: 'tariffs',   component: RatesPageComponent,   canActivate: [permissionGuard], data: { roles: ['Master'] } },
+      {
+        path: 'templates',
+        canActivate: [permissionGuard],
+        data: { roles: ['Master'] },
+        loadComponent: () =>
+          import('./pages/contract-templates/contract-templates-page')
+            .then(m => m.ContractTemplatesPageComponent),
+      },
 
       // Master only — Landings personalizadas
       {

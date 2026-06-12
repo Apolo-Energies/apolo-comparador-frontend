@@ -16,16 +16,20 @@ import { OpportunityStatus } from '../../entities/opportunity.model';
 import { GlobalLoadingService } from '../../services/global-loading.service';
 import { BrandLoaderComponent } from '../../shared/components/brand-loader/brand-loader.component';
 
+const COLABORADOR_PERMISSIONS = [
+  'comparator:view',
+  'sips:view',
+  'markets:view',
+  'settings:view',
+  'settings.colaborador:view',
+];
+
 const ROLE_PERMISSIONS: Record<string, string[]> = {
-  'Colaborador': [
-    'comparator:view',
-    'sips:view',
-    'markets:view',
-    'settings:view',
-    'settings.colaborador:view',
-  ],
+  'Colaborador':                 COLABORADOR_PERMISSIONS,
+  'Colaborador - Referenciador': COLABORADOR_PERMISSIONS,
   'Referenciador': ['comparator:view', 'sips:view', 'markets:view'],
   'Tester':        ['comparator:view', 'sips:view', 'markets:view'],
+  'Comercial':     ['comparator:view'],
 };
 
 @Component({
@@ -108,7 +112,7 @@ export class Layout {
 
   private buildSections(): SidebarSection[] {
     const roles         = getUserRoles(this.auth.currentUser());
-    const isColaborador = roles.includes('Colaborador') && !roles.includes('Master');
+    const isColaborador = (roles.includes('Colaborador') || roles.includes('Colaborador - Referenciador')) && !roles.includes('Master');
     const isApolo       = environment.features.userDetail;
     const userId        = this.refreshTokenService.getUserIdFromToken();
     const isSubUser     = !!this.refreshTokenService.getParentUserIdFromToken();
@@ -119,9 +123,10 @@ export class Layout {
           { title: 'Comisiones',    url: '/dashboard/settings/sub-user-commissions', access: ['settings.colaborador:view'] },
         ]
       : [
-          { title: 'Usuarios', url: '/dashboard/settings/users',      access: ['settings.users:view'] },
-          { title: 'Comisión', url: '/dashboard/settings/commission', access: ['settings.commission:view'] },
-          { title: 'Tarifas', url: '/dashboard/tariffs', access: ['support:view'] },
+          { title: 'Usuarios',   url: '/dashboard/settings/users',      access: ['settings.users:view'] },
+          { title: 'Comisión',   url: '/dashboard/settings/commission', access: ['settings.commission:view'] },
+          { title: 'Plantillas', url: '/dashboard/templates',           access: ['templates:view'] },
+          { title: 'Tarifas',    url: '/dashboard/tariffs',             access: ['support:view'] },
         ];
 
     const sections: SidebarSection[] = [
