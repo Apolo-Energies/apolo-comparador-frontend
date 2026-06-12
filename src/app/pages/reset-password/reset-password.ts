@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { AlertComponent, AlertService } from '@apolo-energies/ui';
+import { AuthService } from '@apolo-energies/auth';
 import { PasswordService } from '../../services/password.service';
 
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [ReactiveFormsModule, AlertComponent, RouterLink],
+  imports: [ReactiveFormsModule, AlertComponent],
   templateUrl: './reset-password.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -15,8 +16,8 @@ export class ResetPasswordComponent implements OnInit {
   private fb              = inject(FormBuilder);
   private passwordService = inject(PasswordService);
   private route           = inject(ActivatedRoute);
-  private router          = inject(Router);
   private alertService    = inject(AlertService);
+  private authService     = inject(AuthService);
 
   readonly loading      = signal(false);
   readonly done         = signal(false);
@@ -63,7 +64,10 @@ export class ResetPasswordComponent implements OnInit {
       next: () => {
         this.done.set(true);
         this.loading.set(false);
-        setTimeout(() => this.router.navigate(['/']), 3000);
+        // If another account is still logged in (a manager opened the email link
+        // while signed in), clear that session so the user lands on the login screen
+        // and signs in with the new password.
+        setTimeout(() => this.authService.signOut(), 3000);
       },
       error: (err) => {
         this.loading.set(false);
@@ -73,5 +77,9 @@ export class ResetPasswordComponent implements OnInit {
         this.alertService.show(msg, 'error');
       },
     });
+  }
+
+  goToLogin() {
+    this.authService.signOut();
   }
 }

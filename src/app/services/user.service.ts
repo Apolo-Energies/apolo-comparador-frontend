@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { UserFilters, UserPaged } from '../entities/user.model';
+import { PotentialParent, UserFilters, UserPaged } from '../entities/user.model';
 import { UserDetail } from '../entities/user-detail.model';
 import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs';
@@ -18,6 +18,7 @@ export interface CreateUserRequest {
   bankAccount?:        string;
   cif?:                string;
   companyName?:        string;
+  parentUserId?:       string;
 }
 
 export interface UpdateUserRequest {
@@ -59,11 +60,24 @@ export class UserService {
       .set('page',     String(filters.page     ?? 1))
       .set('pageSize', String(filters.pageSize ?? 10));
 
-    if (filters.fullName) params = params.set('fullName', filters.fullName);
-    if (filters.email)    params = params.set('email',    filters.email);
-    if (filters.role)     params = params.set('role',     filters.role);
+    if (filters.fullName)     params = params.set('fullName',     filters.fullName);
+    if (filters.email)        params = params.set('email',        filters.email);
+    if (filters.role)         params = params.set('role',         filters.role);
+    if (filters.parentUserId) params = params.set('parentUserId', filters.parentUserId);
 
     return this.http.get<UserPaged>(`${environment.apiUrl}/user/user-filter`, { params });
+  }
+
+  getPotentialParents(): Observable<PotentialParent[]> {
+    return this.http.get<PotentialParent[]>(`${environment.apiUrl}/user/potential-parents`);
+  }
+
+  assignParent(userId: string, parentUserId: string | null): Observable<void> {
+    return this.http.patch<void>(`${environment.apiUrl}/user/${userId}/assign-parent`, { parentUserId });
+  }
+
+  bulkAssignParent(userIds: string[], parentUserId: string | null): Observable<void> {
+    return this.http.post<void>(`${environment.apiUrl}/user/bulk-assign-parent`, { userIds, parentUserId });
   }
 
   getById(id: string): Observable<UserDetail> {

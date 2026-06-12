@@ -129,6 +129,16 @@ export const DASHBOARD_ROUTES: Routes = [
             .then(m => m.ContractTemplatesPageComponent),
       },
 
+      // Master only — Landings personalizadas
+      {
+        path: 'landings',
+        canActivate: [permissionGuard],
+        data: { roles: ['Master'] },
+        loadComponent: () =>
+          import('./pages/landings/landings-page')
+            .then(m => m.LandingsPageComponent),
+      },
+
       { path: 'forbidden', component: ForbiddenComponent },
     ],
   },

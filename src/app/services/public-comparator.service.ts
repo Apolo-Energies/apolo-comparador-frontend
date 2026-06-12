@@ -9,10 +9,12 @@ export class PublicComparatorService {
   private http = inject(HttpClient);
 
   // ── Tracking ────────────────────────────────────────────────────────────
-  register(cups: string | null | undefined) {
+  register(cups: string | null | undefined, landingSlug?: string | null) {
+    const body: { cups: string | null; landingSlug?: string } = { cups: cups ?? null };
+    if (landingSlug) body.landingSlug = landingSlug;
     return this.http.post<{ id: string }>(
       `${environment.apiUrl}/public/comparisons`,
-      { cups: cups ?? null },
+      body,
     );
   }
 

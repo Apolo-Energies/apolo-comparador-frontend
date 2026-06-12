@@ -32,9 +32,7 @@ function formatConsumptionTooltip(value: number): string {
 }
 
 export function mapSummaryToKpis(result: SummaryApiResult): KpiCardViewModel[] {
-  const rawConsumption = new Intl.NumberFormat(NUMBER_LOCALE, CONSUMPTION_SUMMARY_FORMAT).format(
-    result.totalAnnualConsumption,
-  );
+  const rawConsumption = (result.totalAnnualConsumption / 1_000_000).toLocaleString('es-ES', CONSUMPTION_SUMMARY_FORMAT);
 
   return [
     {
@@ -43,7 +41,7 @@ export function mapSummaryToKpis(result: SummaryApiResult): KpiCardViewModel[] {
       value:       rawConsumption,
       percent:     result.percentAnnualConsumption,
       trend:       toTrend(result.percentAnnualConsumption),
-      description: 'kWh energía gestionada',
+      description: 'GWh energía gestionada',
     },
     {
       id:          'cups',

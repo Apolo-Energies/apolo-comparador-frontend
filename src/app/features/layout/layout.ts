@@ -7,7 +7,7 @@ import { HttpClient } from '@angular/common/http';
 import { ApoloSidebar, SidebarChildItem, SidebarSection } from '@apolo-energies/sidebar';
 import { ApoloHeader, HeaderWelcomeContent, HeaderActionLink, UserMenuItem } from '@apolo-energies/header';
 import { AuthService } from '@apolo-energies/auth';
-import { ArrowDownBoxIcon, chevronDownIcon, chevronRightIcon, CircleIcon, CompassIcon, InfoIcon, LogoutIcon, NoteIcon, PieIcon, SettingsIcon, StarIcon, SupportIcon, UiIconSource, UserIcon } from '@apolo-energies/icons';
+import { ArrowDownBoxIcon, chevronDownIcon, chevronRightIcon, CircleIcon, CompassIcon, HomeIcon,InfoIcon, LogoutIcon, NoteIcon, PieIcon, SettingsIcon, StarIcon, SupportIcon, UiIconSource, UserIcon } from '@apolo-energies/icons';
 import { getUserRoles } from '../../utils/auth.utils';
 import { environment } from '../../../environments/environment';
 import { RefreshTokenService } from '../../services/refresh-token.service';
@@ -177,6 +177,12 @@ export class Layout {
             url: '/dashboard/markets',
             access: ['markets:view'],
           }] : []),
+          {
+            title: 'Landings personalizadas',
+            icon: { type: 'apolo' as const, icon: HomeIcon,size: 20 },
+            url: '/dashboard/landings',
+            access: ['analytics:view'],
+          },
         ],
       },
       {

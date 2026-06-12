@@ -1,17 +1,17 @@
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
-  inject,
-  OnDestroy,
   PLATFORM_ID,
+  ViewEncapsulation,
+  computed,
+  inject,
   signal,
-  ViewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ComparatorService } from '../../services/comparator.service';
 import { PublicComparatorService } from '../../services/public-comparator.service';
+import { LandingService } from '../../services/landing.service';
 import { ComparatorUploadComponent } from '../dashboard/pages/comparator/components/comparator-upload/comparator-upload';
 import { ComparatorModalComponent } from '../dashboard/pages/comparator/components/comparator-modal/comparator-modal';
 import { OfferRequestWizardComponent } from '../dashboard/pages/comparator/components/offer-request-wizard/offer-request-wizard';
@@ -23,28 +23,58 @@ import {
   ComparatorProductsByTariff,
   OcrResult,
 } from '../dashboard/pages/comparator/comparator.models';
-import { environment } from '../../../environments/environment';
+import { PublicLanding } from '../../entities/landing.model';
 import { EFFICIENCY_TIPS_LEAD, pickRandomEfficiencyTip } from '../../shared/constants/efficiency-tips';
 
+const DEFAULT_FORM_TITLE = 'Calculamos tu ahorro por ti';
+const DEFAULT_FORM_SUBTITLE = 'Rellena los datos manualmente o sube tu última factura. Comparamos tu tarifa de luz para que sepas cuánto ahorrarías.';
+
 @Component({
-  selector: 'app-public-comparator',
+  selector: 'app-branded-landing',
   standalone: true,
   imports: [ComparatorUploadComponent, ComparatorModalComponent, OfferRequestWizardComponent, BrandLoaderComponent],
-  templateUrl: './public-comparator.html',
+  templateUrl: './branded-landing.component.html',
+  styleUrl: './branded-landing.component.css',
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PublicComparator implements AfterViewInit, OnDestroy {
-  private comparatorService       = inject(ComparatorService);
-  private publicComparatorService = inject(PublicComparatorService);
-  private platformId              = inject(PLATFORM_ID);
+export class BrandedLandingComponent {
+  private readonly route                   = inject(ActivatedRoute);
+  private readonly router                  = inject(Router);
+  private readonly comparatorService       = inject(ComparatorService);
+  private readonly publicComparatorService = inject(PublicComparatorService);
+  private readonly landingService          = inject(LandingService);
+  private readonly platformId              = inject(PLATFORM_ID);
 
-  @ViewChild('root', { static: true }) rootEl!: ElementRef<HTMLElement>;
+  // Landing arranca null; el componente monta inmediatamente con un skeleton
+  // y la asigna cuando la API responde. Eso elimina la espera bloqueante
+  // que tenía el resolver.
+  readonly landing = signal<PublicLanding | null>(null);
+  readonly isReady = computed(() => this.landing() !== null);
+
+  readonly logoUrl       = computed(() => this.landing()?.branding.logoUrl ?? null);
+  readonly heroImageUrls = computed(() => this.landing()?.branding.heroImageUrls ?? []);
+  readonly heroTitle     = computed(() => this.landing()?.branding.heroTitle ?? '');
+  readonly heroSubtitle  = computed(() => this.landing()?.branding.heroSubtitle ?? '');
+  readonly formTitle     = computed(() => this.landing()?.branding.formTitle ?? DEFAULT_FORM_TITLE);
+  readonly formSubtitle  = computed(() => this.landing()?.branding.formSubtitle ?? DEFAULT_FORM_SUBTITLE);
 
   constructor() {
-    if (isPlatformBrowser(this.platformId)) {
-      this.comparatorService.loadTariffsPublic();
-      document.body.classList.add('apolo-light');
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    this.comparatorService.loadTariffsPublic();
+    document.body.classList.add('apolo-light');
+
+    const slug = this.route.snapshot.paramMap.get('slug');
+    if (!slug) {
+      this.router.navigateByUrl('/');
+      return;
     }
+
+    this.landingService.getBySlug(slug).subscribe({
+      next: landing => this.landing.set(landing),
+      error: () => this.router.navigateByUrl('/'),
+    });
   }
 
   readonly loading        = signal(false);
@@ -56,56 +86,24 @@ export class PublicComparator implements AfterViewInit, OnDestroy {
   readonly loaderTitle    = EFFICIENCY_TIPS_LEAD;
   readonly loaderTip      = signal<string>(pickRandomEfficiencyTip());
 
-  // Offer-request wizard state
   readonly wizardOpen      = signal(false);
   readonly wizardTariff    = signal<string | null>(null);
   readonly wizardProduct   = signal<string | null>(null);
   private  wizardSubmitted = signal(false);
 
-  // En Coexpal el comparador público usa solo el producto 'Asociados' (con precios fijos cargados
-  // en admin). En otros entornos sigue la lista histórica por defecto.
-  readonly productsByTariff: ComparatorProductsByTariff = environment.clientName === 'coexpal'
-    ? {
-        '2.0TD': ['Asociados'],
-        '3.0TD': ['Asociados'],
-        '6.1TD': ['Asociados'],
-      }
-    : {
-        '2.0TD': ['Index Base', 'Index Coste', 'Index Promo', 'Fijo Snap', 'Fijo Snap Mini', 'Passpool'],
-        '3.0TD': ['Index Base', 'Index Coste', 'Index Promo', 'Fijo Fácil', 'Fijo Estable', 'Fijo Dyn', 'Promo 3M Pro'],
-        '6.1TD': ['Index Base', 'Index Coste', 'Index Promo', 'Fijo Fácil', 'Fijo Estable', 'Fijo Dyn', 'Promo 3M Pro'],
-      };
+  readonly productsByTariff = computed<ComparatorProductsByTariff>(() => {
+    const p = this.landing()?.product;
+    if (!p) return {};
+    return { [p.tariffCode]: [p.name] };
+  });
 
   readonly feeLockedProducts = [
     'Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi',
     'Promo 3M Lite', 'Promo 3M Pro', 'Promo 3M Plus',
   ];
 
-  // ── iframe auto-resize ──────────────────────────────────────────────────
-  private resizeObserver?: ResizeObserver;
+  readonly landingSlug = computed(() => this.landing()?.slug ?? null);
 
-  ngAfterViewInit(): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-    if (typeof ResizeObserver === 'undefined') return;
-
-    this.resizeObserver = new ResizeObserver(() => this.postHeight());
-    this.resizeObserver.observe(this.rootEl.nativeElement);
-    this.postHeight();
-  }
-
-  ngOnDestroy(): void {
-    this.resizeObserver?.disconnect();
-    if (isPlatformBrowser(this.platformId)) {
-      document.body.classList.remove('apolo-light');
-    }
-  }
-
-  private postHeight(): void {
-    const height = this.rootEl.nativeElement.scrollHeight;
-    window.parent?.postMessage({ type: 'apolo-comparador:resize', height }, '*');
-  }
-
-  // ── handlers ────────────────────────────────────────────────────────────
   onCompare(event: ComparadorCompareEvent): void {
     this.loaderTip.set(pickRandomEfficiencyTip());
     this.loading.set(true);
@@ -120,8 +118,9 @@ export class PublicComparator implements AfterViewInit, OnDestroy {
         this.loading.set(false);
         this.modalOpen.set(true);
 
+        const slug = this.landingSlug();
         this.publicComparatorService
-          .register(res.ocrData?.cliente?.cups)
+          .register(res.ocrData?.cliente?.cups, slug)
           .subscribe(({ id }) => this.comparisonId.set(id));
       },
       error: () => this.loading.set(false),
@@ -131,7 +130,6 @@ export class PublicComparator implements AfterViewInit, OnDestroy {
   onFormChange(form: ComparadorFormValue): void {
     const ocr = this.ocrResult();
     if (!ocr) return;
-
     const base = this.comparatorService.getComisionBase(form.producto);
     this.result.set(this.comparatorService.calculate({ ...form, comisionEnergia: base }, ocr));
   }
@@ -150,7 +148,6 @@ export class PublicComparator implements AfterViewInit, OnDestroy {
     if (id) {
       this.publicComparatorService.markContratarClicked(id).subscribe();
     }
-
     this.wizardTariff.set(form?.tariff || null);
     this.wizardProduct.set(form?.producto || null);
     this.wizardSubmitted.set(false);
