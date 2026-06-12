@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '@apolo-energies/auth';
 import { getUserRoles } from '../../../../utils/auth.utils';
 import { ComparatorService } from '../../../../services/comparator.service';
@@ -23,7 +24,7 @@ import { environment } from '../../../../../environments/environment';
 @Component({
   selector: 'app-comparator',
   standalone: true,
-  imports: [ComparatorUploadComponent, ComparatorModalComponent, BrandLoaderComponent, LoadingOverlayComponent],
+  imports: [ComparatorUploadComponent, ComparatorModalComponent, BrandLoaderComponent, LoadingOverlayComponent, RouterLink],
   templateUrl: './comparator.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -64,8 +65,13 @@ export class Comparator {
     getUserRoles(this.currentUser()).includes('Master')
   );
 
-  readonly isReferrer = computed(() =>
-    getUserRoles(this.currentUser()).includes('Referenciador')
+  readonly isReferrer = computed(() => {
+    const roles = getUserRoles(this.currentUser());
+    return roles.includes('Referenciador') && !roles.includes('Colaborador') && !roles.includes('Colaborador - Referenciador');
+  });
+
+  readonly isComercial = computed(() =>
+    getUserRoles(this.currentUser()).includes('Comercial')
   );
 
   // ── static config ──────────────────────────────────────────────────────────

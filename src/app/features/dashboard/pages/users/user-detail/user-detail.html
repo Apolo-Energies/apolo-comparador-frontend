@@ -50,7 +50,8 @@
               [customerId]="customerIdForAction()"
               [contractId]="user()?.contract?.id"
               [signatureStatus]="signatureStatus()"
-              [actions]="availableActions()" />
+              [actions]="availableActions()"
+              [daysUntilExpiration]="daysUntilExpiration()" />
           }
           <!-- Non-master: preview contract -->
           @if (canViewContract()) {

@@ -231,3 +231,140 @@ body.apolo-light {
 }
 
 body.apolo-light * { font-family: 'Space Grotesk', system-ui, sans-serif; }
+
+/* ─── ngx-editor — tema oscuro ──────────────────────────────────────────── */
+.NgxEditor__MenuBar {
+  background-color: #1e1f22 !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  border-radius: 0 !important;
+  padding: 4px 8px !important;
+}
+
+.NgxEditor__MenuItem .NgxEditor__MenuItem--Button {
+  color: var(--color-foreground) !important;
+  border-radius: 4px !important;
+}
+
+.NgxEditor__MenuItem--Active > .NgxEditor__MenuItem--Button,
+.NgxEditor__MenuItem .NgxEditor__MenuItem--Button:hover {
+  background-color: var(--color-accent) !important;
+  color: var(--color-foreground) !important;
+}
+
+.NgxEditor__Seperator {
+  border-left-color: var(--color-border) !important;
+  margin: 0 2px !important;
+}
+
+.NgxEditor__Dropdown .NgxEditor__Dropdown--Text {
+  color: var(--color-foreground) !important;
+}
+
+.NgxEditor__Dropdown .NgxEditor__Dropdown--DropdownMenu {
+  background-color: var(--color-card) !important;
+  border-color: var(--color-border) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+}
+
+.NgxEditor__Dropdown .NgxEditor__Dropdown--Item {
+  color: var(--color-foreground) !important;
+}
+
+.NgxEditor__Dropdown .NgxEditor__Dropdown--Item:hover,
+.NgxEditor__Dropdown .NgxEditor__Dropdown--Item--Active {
+  background-color: var(--color-accent) !important;
+}
+
+.NgxEditor {
+  background-color: #17181a !important;
+  color: var(--color-foreground) !important;
+  border: none !important;
+  border-radius: 0 0 0.5rem 0.5rem !important;
+}
+
+.NgxEditor__Content {
+  color: var(--color-foreground) !important;
+  padding: 12px 14px !important;
+}
+
+.NgxEditor__Content > * {
+  color: var(--color-foreground) !important;
+}
+
+.NgxEditor__Content p.is-empty:first-child::before {
+  color: var(--color-muted-foreground) !important;
+}
+
+.NgxEditor__Popup {
+  background-color: var(--color-card) !important;
+  border-color: var(--color-border) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+}
+
+.NgxEditor__Popup input {
+  background-color: var(--color-input) !important;
+  color: var(--color-foreground) !important;
+  border-color: var(--color-border) !important;
+}
+
+/* ─── Listas en el editor (Tailwind reset borra list-style) ─────────────── */
+/* .ProseMirror es el div raíz que monta ngx-editor */
+.ProseMirror ul,
+.NgxEditor__Content ul {
+  list-style-type: disc !important;
+  padding-left:    2em !important;
+  margin:          0.5em 0 !important;
+}
+.ProseMirror ol,
+.NgxEditor__Content ol {
+  list-style-type: decimal !important;
+  padding-left:    2em !important;
+  margin:          0.5em 0 !important;
+}
+.ProseMirror li,
+.NgxEditor__Content li {
+  display:         list-item !important;
+  margin:          0.25em 0 !important;
+}
+
+/* ─── Tablas en el editor ────────────────────────────────────────────────── */
+.NgxEditor__Content table {
+  width:           100%;
+  border-collapse: collapse;
+  margin:          16px 0;
+  table-layout:    fixed;
+}
+.NgxEditor__Content td,
+.NgxEditor__Content th {
+  vertical-align:  top;
+  padding:         6px 8px;
+  border:          1px dashed var(--color-border);
+  color:           var(--color-foreground) !important;
+}
+
+/* ─── Salto de página en el editor ──────────────────────────────────────── */
+.NgxEditor__Content hr {
+  border:         none !important;
+  border-top:     2px dashed #f59e0b !important;
+  margin:         20px 0 !important;
+  position:       relative !important;
+  height:         20px !important;
+  background:     transparent !important;
+}
+
+.NgxEditor__Content hr::after {
+  content:          '— Salto de página —';
+  position:         absolute;
+  left:             50%;
+  top:              50%;
+  transform:        translate(-50%, -50%);
+  background:       #17181a;
+  padding:          0 10px;
+  font-size:        10px;
+  color:            #f59e0b;
+  font-family:      system-ui, sans-serif;
+  text-transform:   uppercase;
+  letter-spacing:   0.08em;
+  white-space:      nowrap;
+  pointer-events:   none;
+}
