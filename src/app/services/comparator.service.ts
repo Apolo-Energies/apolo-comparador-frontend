@@ -1,4 +1,14 @@
 import { Injectable, inject, signal } from '@angular/core';
+
+export interface BatchFileResult {
+  fileName: string;
+  success:  boolean;
+  data: {
+    fileId:   string;
+    ocrData:  OcrResult;
+  } | null;
+  error: string | null;
+}
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { ComparadorFormValue, ComparadorResult, OcrResult } from '../features/dashboard/pages/comparator/comparator.models';
@@ -72,6 +82,13 @@ export class ComparatorService {
     form.append('name', file.name);
     if (userId) form.append('userId', userId);
     return this.http.post<{ fileId: string; ocrData: OcrResult }>(`${environment.apiUrl}/files/upload-and-process`, form);
+  }
+
+  batchProcess(files: File[], userId?: string): Observable<BatchFileResult[]> {
+    const form = new FormData();
+    files.forEach(f => form.append('Files', f, f.name));
+    if (userId) form.append('UserId', userId);
+    return this.http.post<BatchFileResult[]>(`${environment.apiUrl}/files/batch-process`, form);
   }
 
   calculate(form: ComparadorFormValue, ocr: OcrResult): ComparadorResult {

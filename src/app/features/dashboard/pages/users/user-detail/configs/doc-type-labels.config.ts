@@ -5,5 +5,6 @@ export const DOC_TYPE_LABELS: Record<string, string> = {
   'SsCertificate': 'Certificado Seguridad Social',
   'BankStatement': 'Extracto Bancario',
   'CifCertificate': 'Certificado CIF',
+  'ConstitutionDeed': 'Escrituras de constitución',
   'SignedContract': 'Contrato Firmado',
 };

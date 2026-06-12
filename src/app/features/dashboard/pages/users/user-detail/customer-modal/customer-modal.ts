@@ -1,7 +1,7 @@
 import {
   ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { DialogComponent, ButtonComponent, AlertService } from '@apolo-energies/ui';
 import { CustomerService } from '../../../../../../services/customer.service';
 import { UserDetail } from '../../../../../../entities/user-detail.model';
@@ -30,6 +30,30 @@ function splitPhone(phone: string): { dialCode: string; local: string } {
   return match
     ? { dialCode: match.code, local: phone.slice(match.code.length) }
     : { dialCode: '+34', local: phone };
+}
+
+// Dígitos exactos requeridos por país (Signaturit los exige)
+const PHONE_DIGITS: Record<string, number> = {
+  '+34': 9, '+351': 9, '+44': 10, '+1': 10,
+};
+const PHONE_DIGITS_DEFAULT = { min: 7, max: 12 };
+
+function phoneLocalValidator(control: AbstractControl): ValidationErrors | null {
+  const raw = ((control.value as string) ?? '').replace(/[\s\-().]/g, '');
+  if (!raw) return null;
+  if (!/^\d+$/.test(raw)) return { phoneFormat: true };
+  const dialCode = (control.parent?.get('dialCode')?.value ?? '+34') as string;
+  const exact = PHONE_DIGITS[dialCode];
+  if (exact !== undefined) {
+    return raw.length === exact ? null : { phoneLength: { required: exact, actual: raw.length } };
+  }
+  const { min, max } = PHONE_DIGITS_DEFAULT;
+  return raw.length >= min && raw.length <= max ? null : { phoneLength: { required: `${min}-${max}`, actual: raw.length } };
+}
+
+function splitAddress(addr: string): { city: string; street: string; number: string } {
+  const parts = addr.split(',').map(s => s.trim());
+  return { city: parts[0] ?? '', street: parts[1] ?? '', number: parts[2] ?? '' };
 }
 
 const INPUT_CLS  = 'w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all';
@@ -148,7 +172,8 @@ const NUMBER_CLS = 'flex-1 min-w-0 px-4 py-2.5 text-sm rounded-r-lg border bg-ca
               <div class="space-y-1">
                 <label class="text-sm font-medium text-muted-foreground">Teléfono *</label>
                 <div class="flex">
-                  <select formControlName="dialCode" [class]="selectCls">
+                  <select formControlName="dialCode" [class]="selectCls"
+                    (change)="form.controls.phoneNumber.updateValueAndValidity()">
                     @for (c of phoneCountries; track c.code) {
                       <option [value]="c.code">{{ c.flag }} {{ c.code }}</option>
                     }
@@ -159,18 +184,54 @@ const NUMBER_CLS = 'flex-1 min-w-0 px-4 py-2.5 text-sm rounded-r-lg border bg-ca
                 @if (err('phoneNumber')) { <p class="text-xs text-red-500">{{ errMsg('phoneNumber') }}</p> }
               </div>
 
-              <div class="md:col-span-2 space-y-1">
+              <!-- Dirección legal: ciudad + calle + número -->
+              <div class="md:col-span-2 space-y-2">
                 <label class="text-sm font-medium text-muted-foreground">Dirección legal *</label>
-                <input formControlName="legalAddress" placeholder="Calle Mayor 1, 28001 Madrid"
-                  [class]="inputCls" [class.border-red-500]="err('legalAddress')" />
-                @if (err('legalAddress')) { <p class="text-xs text-red-500">{{ errMsg('legalAddress') }}</p> }
+                <div class="grid grid-cols-3 gap-2">
+                  <div class="space-y-1">
+                    <p class="text-xs text-muted-foreground">Ciudad</p>
+                    <input formControlName="legalCity" placeholder="Valencia"
+                      [class]="inputCls" [class.border-red-500]="err('legalCity')" />
+                    @if (err('legalCity')) { <p class="text-xs text-red-500">{{ errMsg('legalCity') }}</p> }
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-xs text-muted-foreground">Calle</p>
+                    <input formControlName="legalStreet" placeholder="Calle Mayor"
+                      [class]="inputCls" [class.border-red-500]="err('legalStreet')" />
+                    @if (err('legalStreet')) { <p class="text-xs text-red-500">{{ errMsg('legalStreet') }}</p> }
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-xs text-muted-foreground">Número</p>
+                    <input formControlName="legalNumber" placeholder="42"
+                      [class]="inputCls" [class.border-red-500]="err('legalNumber')" />
+                    @if (err('legalNumber')) { <p class="text-xs text-red-500">{{ errMsg('legalNumber') }}</p> }
+                  </div>
+                </div>
               </div>
 
-              <div class="md:col-span-2 space-y-1">
+              <!-- Dirección de notificación: ciudad + calle + número -->
+              <div class="md:col-span-2 space-y-2">
                 <label class="text-sm font-medium text-muted-foreground">Dirección de notificación *</label>
-                <input formControlName="notificationAddress" placeholder="Calle Mayor 1, 28001 Madrid"
-                  [class]="inputCls" [class.border-red-500]="err('notificationAddress')" />
-                @if (err('notificationAddress')) { <p class="text-xs text-red-500">{{ errMsg('notificationAddress') }}</p> }
+                <div class="grid grid-cols-3 gap-2">
+                  <div class="space-y-1">
+                    <p class="text-xs text-muted-foreground">Ciudad</p>
+                    <input formControlName="notificationCity" placeholder="Valencia"
+                      [class]="inputCls" [class.border-red-500]="err('notificationCity')" />
+                    @if (err('notificationCity')) { <p class="text-xs text-red-500">{{ errMsg('notificationCity') }}</p> }
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-xs text-muted-foreground">Calle</p>
+                    <input formControlName="notificationStreet" placeholder="Calle Mayor"
+                      [class]="inputCls" [class.border-red-500]="err('notificationStreet')" />
+                    @if (err('notificationStreet')) { <p class="text-xs text-red-500">{{ errMsg('notificationStreet') }}</p> }
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-xs text-muted-foreground">Número</p>
+                    <input formControlName="notificationNumber" placeholder="42"
+                      [class]="inputCls" [class.border-red-500]="err('notificationNumber')" />
+                    @if (err('notificationNumber')) { <p class="text-xs text-red-500">{{ errMsg('notificationNumber') }}</p> }
+                  </div>
+                </div>
               </div>
 
               <div class="md:col-span-2 space-y-1">
@@ -230,17 +291,21 @@ export class CustomerModalComponent {
   ];
 
   readonly form = this.fb.nonNullable.group({
-    firstName:           ['', [Validators.maxLength(50)]],
-    lastName:            ['', [Validators.maxLength(100)]],
-    dni:                 ['', [Validators.maxLength(20)]],
-    companyName:         ['', [Validators.maxLength(150)]],
-    cif:                 ['', [Validators.maxLength(30)]],
-    email:               ['', [Validators.required, Validators.email]],
-    dialCode:            ['+34'],
-    phoneNumber:         ['', [Validators.required, Validators.maxLength(20)]],
-    legalAddress:        ['', [Validators.required, Validators.maxLength(200)]],
-    notificationAddress: ['', [Validators.required, Validators.maxLength(200)]],
-    bankAccount:         ['', [Validators.required, Validators.maxLength(50)]],
+    firstName:            ['', [Validators.maxLength(50)]],
+    lastName:             ['', [Validators.maxLength(100)]],
+    dni:                  ['', [Validators.maxLength(20)]],
+    companyName:          ['', [Validators.maxLength(150)]],
+    cif:                  ['', [Validators.maxLength(30)]],
+    email:                ['', [Validators.required, Validators.email]],
+    dialCode:             ['+34'],
+    phoneNumber:          ['', [Validators.required, phoneLocalValidator]],
+    legalCity:            ['', [Validators.required, Validators.maxLength(100)]],
+    legalStreet:          ['', [Validators.required, Validators.maxLength(150)]],
+    legalNumber:          ['', [Validators.required, Validators.maxLength(20)]],
+    notificationCity:     ['', [Validators.required, Validators.maxLength(100)]],
+    notificationStreet:   ['', [Validators.required, Validators.maxLength(150)]],
+    notificationNumber:   ['', [Validators.required, Validators.maxLength(20)]],
+    bankAccount:          ['', [Validators.required, Validators.maxLength(50)]],
   });
 
   constructor() {
@@ -251,18 +316,25 @@ export class CustomerModalComponent {
       const c = u.customer;
       this.personType.set(c?.personType === 'Company' ? 1 : 0);
 
+      const legal = splitAddress(c?.legalAddress ?? '');
+      const notif = splitAddress(c?.notificationAddress ?? '');
+
       this.form.patchValue({
-        firstName:           c?.firstName           ?? '',
-        lastName:            c?.lastName            ?? '',
-        dni:                 c?.dni                 ?? '',
-        companyName:         c?.companyName         ?? (this.mode() === 'create' ? (u.fullName ?? '') : ''),
-        cif:                 c?.cif                 ?? '',
-        email:               c?.email               ?? u.email ?? '',
-        dialCode:            splitPhone(c?.phone ?? u.phone ?? '').dialCode,
-        phoneNumber:         splitPhone(c?.phone ?? u.phone ?? '').local,
-        legalAddress:        c?.legalAddress        ?? '',
-        notificationAddress: c?.notificationAddress ?? '',
-        bankAccount:         c?.bankAccount         ?? '',
+        firstName:            c?.firstName   ?? '',
+        lastName:             c?.lastName    ?? '',
+        dni:                  c?.dni         ?? '',
+        companyName:          c?.companyName ?? (this.mode() === 'create' ? (u.fullName ?? '') : ''),
+        cif:                  c?.cif         ?? '',
+        email:                c?.email       ?? u.email ?? '',
+        dialCode:             splitPhone(c?.phone ?? u.phone ?? '').dialCode,
+        phoneNumber:          splitPhone(c?.phone ?? u.phone ?? '').local,
+        legalCity:            legal.city,
+        legalStreet:          legal.street,
+        legalNumber:          legal.number,
+        notificationCity:     notif.city,
+        notificationStreet:   notif.street,
+        notificationNumber:   notif.number,
+        bankAccount:          c?.bankAccount ?? '',
       });
     });
   }
@@ -285,9 +357,16 @@ export class CustomerModalComponent {
   errMsg(field: string): string {
     const errors = this.form.get(field)?.errors;
     if (!errors) return '';
-    if (errors['required'])  return 'Este campo es obligatorio';
-    if (errors['email'])     return 'Email inválido';
-    if (errors['maxlength']) return `Máximo ${errors['maxlength'].requiredLength} caracteres`;
+    if (errors['required'])     return 'Este campo es obligatorio';
+    if (errors['email'])        return 'Email inválido';
+    if (errors['maxlength'])    return `Máximo ${errors['maxlength'].requiredLength} caracteres`;
+    if (errors['phoneFormat'])  return 'Solo se permiten dígitos (sin espacios ni guiones)';
+    if (errors['phoneLength']) {
+      const e = errors['phoneLength'];
+      return typeof e.required === 'number'
+        ? `Necesita ${e.required} dígitos, tienes ${e.actual}`
+        : `Debe tener entre ${e.required} dígitos`;
+    }
     return 'Campo inválido';
   }
 
@@ -323,8 +402,8 @@ export class CustomerModalComponent {
       cif:                 !isIndividual ? raw.cif         : '',
       email:               raw.email,
       phone:               raw.phoneNumber ? `${raw.dialCode}${raw.phoneNumber}` : '',
-      legalAddress:        raw.legalAddress,
-      notificationAddress: raw.notificationAddress,
+      legalAddress:        `${raw.legalCity}, ${raw.legalStreet}, ${raw.legalNumber}`,
+      notificationAddress: `${raw.notificationCity}, ${raw.notificationStreet}, ${raw.notificationNumber}`,
       bankAccount:         raw.bankAccount,
     };
 

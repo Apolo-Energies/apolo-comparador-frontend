@@ -1,0 +1,322 @@
+<ui-dialog [open]="open()" [closeable]="true" maxWidth="max-w-[95vw]" (openChange)="$event ? null : onCancel()">
+
+  <!-- Header -->
+  <div class="px-6 pt-5 pb-4 border-b border-border">
+    @if (isEditMode()) {
+      <h3 class="text-lg font-semibold text-foreground">Nueva versión de plantilla</h3>
+      <p class="text-sm text-muted-foreground mt-0.5">
+        Modifica el contenido y guarda como nueva versión. El código, nombre y tipo no pueden cambiarse.
+      </p>
+    } @else {
+      <h3 class="text-lg font-semibold text-foreground">Nueva plantilla de contrato</h3>
+      <p class="text-sm text-muted-foreground mt-0.5">
+        Rellena los metadatos a la izquierda y escribe el contenido a la derecha.
+      </p>
+    }
+  </div>
+
+  <!-- Body: two-column -->
+  <form [formGroup]="form" (ngSubmit)="onSubmit()"
+        class="flex min-h-0" style="height: calc(100vh - 170px)">
+
+    <!-- ── Left panel ── -->
+    <div class="w-80 shrink-0 border-r border-border overflow-y-auto px-5 py-5 flex flex-col gap-5">
+
+      @if (isEditMode()) {
+        <!-- Read-only template info -->
+        <div class="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+          <div>
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Código</p>
+            <p class="text-sm font-mono font-bold text-foreground">{{ template()!.code }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Nombre</p>
+            <p class="text-sm font-semibold text-foreground">{{ template()!.name }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Tipo</p>
+            <p class="text-sm text-foreground">{{ typeLabel(template()!.type) }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Versión actual</p>
+            <p class="text-sm text-muted-foreground">{{ template()!.version }}</p>
+          </div>
+        </div>
+      } @else {
+        <!-- Código -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Código *</label>
+          <input
+            [value]="form.controls.code.value ?? ''"
+            (input)="onCodeInput($event)"
+            placeholder="LUZ_INDIVIDUAL"
+            spellcheck="false"
+            autocomplete="off"
+            class="w-full bg-input border border-border rounded-md px-3 py-2 text-sm font-mono
+                   text-foreground placeholder:text-muted-foreground
+                   focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
+          />
+          @if (form.controls.code.invalid && form.controls.code.touched) {
+            <p class="text-xs text-destructive">
+              @if (form.controls.code.errors?.['required']) { Obligatorio }
+              @else { Solo mayúsculas, números y guiones bajos }
+            </p>
+          }
+        </div>
+
+        <!-- Nombre -->
+        <div class="space-y-1">
+          <ui-input label="Nombre *" placeholder="Contrato de Luz Individual"
+            [value]="form.controls.name.value ?? ''"
+            (valueChange)="form.controls.name.setValue($event); form.controls.name.markAsTouched()" />
+          @if (form.controls.name.invalid && form.controls.name.touched) {
+            <p class="text-xs text-destructive">Obligatorio</p>
+          }
+        </div>
+
+        <!-- Tipo -->
+        <ui-select label="Tipo *" [options]="typeOptions"
+          [value]="form.controls.type.value ?? 'individual'"
+          (valueChange)="form.controls.type.setValue($event)" />
+      }
+
+      <!-- Tipo de cambio (solo edit mode) -->
+      @if (isEditMode()) {
+        <div class="space-y-2">
+          <p class="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tipo de cambio</p>
+          <div class="flex flex-col gap-2">
+            <label class="flex items-start gap-2.5 cursor-pointer group">
+              <input type="radio" name="versionMode" [checked]="isNewVersion()"
+                     (change)="setVersionMode(true)"
+                     class="mt-0.5 accent-primary cursor-pointer" />
+              <span class="flex flex-col">
+                <span class="text-sm font-medium text-foreground group-hover:text-primary transition-colors">Nueva versión</span>
+                <span class="text-xs text-muted-foreground">Genera un nuevo número de versión en el historial</span>
+              </span>
+            </label>
+            <label class="flex items-start gap-2.5 cursor-pointer group">
+              <input type="radio" name="versionMode" [checked]="!isNewVersion()"
+                     (change)="setVersionMode(false)"
+                     class="mt-0.5 accent-primary cursor-pointer" />
+              <span class="flex flex-col">
+                <span class="text-sm font-medium text-foreground group-hover:text-primary transition-colors">Corrección</span>
+                <span class="text-xs text-muted-foreground">Actualiza el contenido sin cambiar la versión</span>
+              </span>
+            </label>
+          </div>
+        </div>
+      }
+
+      <!-- Versión -->
+      @if (!isEditMode() || isNewVersion()) {
+        <div class="space-y-1">
+          <ui-input
+            [label]="isEditMode() ? 'Nueva versión *' : 'Versión *'"
+            placeholder="1.0"
+            [value]="form.controls.version.value ?? ''"
+            (valueChange)="form.controls.version.setValue($event); form.controls.version.markAsTouched()" />
+          @if (form.controls.version.invalid && form.controls.version.touched) {
+            <p class="text-xs text-destructive">Obligatoria</p>
+          }
+        </div>
+      } @else {
+        <div class="rounded-lg border border-border bg-muted/30 px-3 py-2">
+          <p class="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">Versión actual</p>
+          <p class="text-sm font-mono font-bold text-foreground">{{ form.controls.version.value }}</p>
+        </div>
+      }
+
+      <!-- Notas del cambio -->
+      <ui-input
+        label="Notas del cambio"
+        [placeholder]="isEditMode() ? 'Qué cambió en esta versión...' : 'Descripción de los cambios...'"
+        [value]="form.controls.changeNotes.value ?? ''"
+        (valueChange)="form.controls.changeNotes.setValue($event)" />
+
+      <!-- Marcadores -->
+      <div class="border-t border-border pt-4 space-y-3">
+        <p class="text-xs font-medium text-muted-foreground uppercase tracking-wide">Marcadores disponibles</p>
+        @for (group of placeholderGroups; track group.label) {
+          <div class="space-y-1.5">
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">{{ group.label }}</p>
+            <div class="flex flex-wrap gap-1.5">
+              @for (ph of group.items; track ph) {
+                <button type="button"
+                  class="inline-flex items-center px-2 py-1 rounded border border-border bg-muted
+                         text-xs font-mono text-muted-foreground
+                         hover:border-primary/60 hover:text-primary hover:bg-primary/5
+                         transition-colors cursor-pointer"
+                  (click)="insertPlaceholder(ph)">
+                  {{ ph }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+        <p class="text-xs text-muted-foreground/60 leading-relaxed">
+          Haz clic en un marcador para insertarlo en la posición del cursor.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- ── Right panel: editor ── -->
+    <div class="flex-1 flex flex-col min-w-0 px-5 py-5 gap-2">
+
+      <!-- Hidden file input -->
+      <input #fileInput type="file" accept=".docx,.pdf,.html,.htm" class="hidden" (change)="onFileSelected($event)" />
+
+      <!-- Word preview overlay -->
+      @if (previewOpen()) {
+        <div class="fixed inset-0 z-300 flex flex-col bg-[#f0f0f0]">
+
+          <!-- Toolbar -->
+          <div class="bg-[#1e2028] text-white px-6 py-3 flex items-center justify-between shrink-0 shadow-lg">
+            <div>
+              <p class="text-sm font-semibold">Vista previa del documento</p>
+              <p class="text-xs text-gray-400 mt-0.5">Revisa el contenido y confirma para importarlo al editor.</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <button (click)="onCancelPreview()"
+                class="px-4 py-1.5 text-sm text-gray-300 border border-gray-600 rounded-md
+                       hover:bg-gray-700 transition-colors cursor-pointer">
+                Cancelar
+              </button>
+              <button (click)="onConfirmImport()" [disabled]="confirming()"
+                class="inline-flex items-center gap-2 px-5 py-1.5 text-sm bg-primary-button text-[#17181A]
+                       rounded-md font-semibold hover:opacity-90 transition-opacity cursor-pointer
+                       disabled:opacity-60 disabled:cursor-not-allowed">
+                @if (confirming()) {
+                  <svg class="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"
+                            stroke-dasharray="31.4" stroke-dashoffset="10"/>
+                  </svg>
+                  Importando...
+                } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  Importar al editor
+                }
+              </button>
+            </div>
+          </div>
+
+          <!-- Rendered document — iframe isolates docx-preview CSS from Angular -->
+          <iframe #previewFrame class="flex-1 w-full border-0 block"></iframe>
+
+        </div>
+      }
+
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-medium text-muted-foreground uppercase tracking-wide">Contenido *</p>
+        <div class="flex items-center gap-3">
+          @if (contentError()) {
+            <p class="text-xs text-destructive font-medium">El contenido es obligatorio</p>
+          }
+          <button type="button" (click)="insertPageBreak()"
+            title="Insertar salto de página en la posición del cursor"
+            class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border border-border
+                   bg-muted text-muted-foreground hover:border-amber-400/60 hover:text-amber-400 hover:bg-amber-400/5
+                   transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <polyline points="8 8 12 4 16 8"/>
+              <polyline points="16 16 12 20 8 16"/>
+            </svg>
+            Salto de página
+          </button>
+
+          <button type="button" (click)="insertSignatureBlock()"
+            title="Insertar bloque de firma (dos columnas)"
+            class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border border-border
+                   bg-muted text-muted-foreground hover:border-emerald-400/60 hover:text-emerald-400 hover:bg-emerald-400/5
+                   transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+            </svg>
+            Insertar firma
+          </button>
+
+          <button type="button" (click)="triggerImport()" [disabled]="importing()"
+            class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border border-border
+                   bg-muted text-muted-foreground hover:border-primary/60 hover:text-primary hover:bg-primary/5
+                   transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            @if (importing()) {
+              <svg class="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"
+                        stroke-dasharray="31.4" stroke-dashoffset="10"/>
+              </svg>
+              Leyendo...
+            } @else {
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="12" y1="18" x2="12" y2="12"/>
+                <line x1="9" y1="15" x2="15" y2="15"/>
+              </svg>
+              Importar documento (.docx / .pdf / .html)
+            }
+          </button>
+        </div>
+      </div>
+
+      <div class="flex-1 flex flex-col border rounded-lg overflow-hidden min-h-0"
+           [class.border-border]="!contentError()"
+           [class.border-destructive]="contentError()">
+        <ngx-editor-menu [editor]="editor" [toolbar]="toolbar" [customMenuRef]="fontSizeTpl" />
+
+        <!-- Font size custom menu item -->
+        <ng-template #fontSizeTpl>
+          <div class="NgxEditor__MenuItem">
+            <select
+              title="Tamaño de letra"
+              (change)="applyFontSize($any($event.target).value); $any($event.target).value = ''"
+              style="background:#1e1f22;border:1px solid #3f3f46;border-radius:4px;color:#a1a1aa;font-size:11px;padding:1px 6px;height:24px;cursor:pointer;outline:none;margin:0 2px;">
+              <option value="" disabled selected>Tamaño</option>
+              @for (size of fontSizes; track size) {
+                <option [value]="size">{{ size }}</option>
+              }
+            </select>
+          </div>
+        </ng-template>
+        <div class="flex-1 relative min-h-0">
+          <ngx-editor
+            [editor]="editor"
+            placeholder="Escribe el contenido del contrato aquí..."
+            class="absolute inset-0 overflow-y-auto block"
+          />
+        </div>
+      </div>
+
+    </div>
+
+  </form>
+
+  <!-- Footer -->
+  <div class="px-6 py-4 border-t border-border flex items-center justify-between bg-card">
+    <ui-button label="Cancelar" variant="outline" size="md" [disabled]="saving()" (click)="onCancel()" />
+    @if (saving()) {
+      <button disabled
+        class="inline-flex items-center justify-center min-w-44 rounded-md px-5 py-2
+               bg-primary-button text-white text-sm font-semibold cursor-not-allowed opacity-80">
+        <svg class="h-4 w-4 animate-spin mr-2" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+          <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="white"/>
+        </svg>
+        Guardando...
+      </button>
+    } @else {
+      <ui-button
+        [label]="isEditMode() ? (isNewVersion() ? 'Guardar nueva versión' : 'Guardar corrección') : 'Crear plantilla'"
+        variant="default" size="md"
+        [disabled]="form.invalid"
+        (click)="onSubmit()" />
+    }
+  </div>
+
+</ui-dialog>
