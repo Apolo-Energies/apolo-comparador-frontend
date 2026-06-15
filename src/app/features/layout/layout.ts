@@ -15,6 +15,7 @@ import { OpportunityService } from '../../services/opportunity.service';
 import { OpportunityStatus } from '../../entities/opportunity.model';
 import { GlobalLoadingService } from '../../services/global-loading.service';
 import { BrandLoaderComponent } from '../../shared/components/brand-loader/brand-loader.component';
+import { EnergyTypeToggleComponent } from '../../shared/components/energy-type-toggle/energy-type-toggle.component';
 
 const COLABORADOR_PERMISSIONS = [
   'comparator:view',
@@ -34,7 +35,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
 
 @Component({
   selector: 'app-layout',
-  imports: [RouterOutlet, ApoloSidebar, ApoloHeader, BrandLoaderComponent],
+  imports: [RouterOutlet, ApoloSidebar, ApoloHeader, BrandLoaderComponent, EnergyTypeToggleComponent],
   templateUrl: './layout.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
