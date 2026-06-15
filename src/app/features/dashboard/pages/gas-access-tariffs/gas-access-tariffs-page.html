@@ -1,0 +1,199 @@
+<div class="p-6 space-y-6">
+  <header class="flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <h1 class="text-2xl font-bold text-foreground">Tramos de acceso (gas)</h1>
+      <p class="text-sm text-muted-foreground">RL1..RL6 — Término fijo y peajes ATR según BOE. Cierra y crea para versionar.</p>
+    </div>
+    <button
+      type="button"
+      class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
+      (click)="openCreate()"
+    >
+      Nuevo tramo
+    </button>
+  </header>
+
+  <div class="flex items-center gap-3">
+    <label class="flex items-center gap-2 text-sm text-foreground select-none cursor-pointer">
+      <input
+        type="checkbox"
+        class="h-4 w-4 rounded border-border accent-blue-500"
+        [checked]="onlyActive()"
+        (change)="toggleActiveOnly()"
+      />
+      Solo vigentes
+    </label>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="rounded-md border border-red-300 bg-red-50 text-red-700 px-4 py-3 text-sm">
+      {{ errorMessage() }}
+    </div>
+  }
+
+  <div class="rounded-lg border border-border bg-card overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-muted/40 text-left">
+        <tr>
+          <th class="px-4 py-3 font-medium text-muted-foreground">Código</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground">Rango kWh/año</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground text-right">Término fijo (€/año)</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground text-right">ATR (€/MWh)</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground">Vigente desde</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground">Hasta</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground text-center">Estado</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground text-right">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr><td colspan="8" class="px-4 py-6 text-center text-muted-foreground">Cargando…</td></tr>
+        } @else if (visibleRows().length === 0) {
+          <tr><td colspan="8" class="px-4 py-6 text-center text-muted-foreground">Sin tramos registrados.</td></tr>
+        } @else {
+          @for (row of visibleRows(); track row.id) {
+            <tr class="border-t border-border hover:bg-muted/20">
+              <td class="px-4 py-3 font-mono text-xs text-foreground">{{ row.code }}</td>
+              <td class="px-4 py-3 text-foreground">
+                {{ row.minAnnualKwh | number:'1.0-0' }} – {{ row.maxAnnualKwh != null ? (row.maxAnnualKwh | number:'1.0-0') : '∞' }}
+              </td>
+              <td class="px-4 py-3 text-right text-foreground">{{ row.fixedTermPerYear | number:'1.2-4' }}</td>
+              <td class="px-4 py-3 text-right text-foreground">{{ row.atrVariable | number:'1.2-4' }}</td>
+              <td class="px-4 py-3 text-foreground">{{ row.validFrom }}</td>
+              <td class="px-4 py-3 text-foreground">{{ row.validTo ?? '—' }}</td>
+              <td class="px-4 py-3 text-center">
+                @if (isActive(row)) {
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700">Vigente</span>
+                } @else {
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-xs bg-muted text-muted-foreground">Cerrado</span>
+                }
+              </td>
+              <td class="px-4 py-3 text-right whitespace-nowrap">
+                <button
+                  type="button"
+                  class="px-2 py-1 text-xs rounded border border-border text-foreground hover:bg-muted/50"
+                  (click)="openUpdatePrices(row)"
+                  [disabled]="!isActive(row)"
+                  [title]="isActive(row) ? 'Editar precios' : 'No editable: tramo cerrado'"
+                >
+                  Editar precios
+                </button>
+                <button
+                  type="button"
+                  class="ml-2 px-2 py-1 text-xs rounded border border-border text-red-600 hover:bg-red-50"
+                  (click)="openClose(row)"
+                  [disabled]="!isActive(row)"
+                  [title]="isActive(row) ? 'Cerrar tramo (set ValidTo)' : 'Ya cerrado'"
+                >
+                  Cerrar
+                </button>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@if (dialogOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" (click)="closeDialog()">
+    <div class="bg-card rounded-lg shadow-xl border border-border w-full max-w-md mx-4" (click)="$event.stopPropagation()">
+      <header class="px-5 py-4 border-b border-border">
+        <h2 class="text-lg font-semibold text-foreground">
+          @switch (dialogMode()) {
+            @case ('create')       { Nuevo tramo de acceso }
+            @case ('updatePrices') { Editar precios del tramo {{ form().code }} }
+            @case ('close')        { Cerrar tramo {{ form().code }} }
+          }
+        </h2>
+      </header>
+
+      <div class="p-5 space-y-4">
+        @if (dialogMode() === 'create') {
+          <div>
+            <label class="block text-xs font-medium text-muted-foreground mb-1">Código (RL1..RL6)</label>
+            <input type="text" class="w-full rounded border border-border px-3 py-2 text-sm"
+                   [value]="form().code"
+                   (input)="updateField('code', $any($event.target).value)" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-muted-foreground mb-1">Min kWh/año</label>
+              <input type="number" min="0" class="w-full rounded border border-border px-3 py-2 text-sm"
+                     [value]="form().minAnnualKwh ?? ''"
+                     (input)="updateField('minAnnualKwh', $any($event.target).valueAsNumber)" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-muted-foreground mb-1">Max kWh/año (vacío = ∞)</label>
+              <input type="number" min="0" class="w-full rounded border border-border px-3 py-2 text-sm"
+                     [value]="form().maxAnnualKwh ?? ''"
+                     (input)="updateField('maxAnnualKwh', $any($event.target).value ? $any($event.target).valueAsNumber : null)" />
+            </div>
+          </div>
+        }
+
+        @if (dialogMode() === 'create' || dialogMode() === 'updatePrices') {
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-muted-foreground mb-1">Término fijo (€/año)</label>
+              <input type="number" min="0" step="0.0001" class="w-full rounded border border-border px-3 py-2 text-sm"
+                     [value]="form().fixedTermPerYear ?? ''"
+                     (input)="updateField('fixedTermPerYear', $any($event.target).valueAsNumber)" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-muted-foreground mb-1">ATR variable (€/MWh)</label>
+              <input type="number" min="0" step="0.0001" class="w-full rounded border border-border px-3 py-2 text-sm"
+                     [value]="form().atrVariable ?? ''"
+                     (input)="updateField('atrVariable', $any($event.target).valueAsNumber)" />
+            </div>
+          </div>
+        }
+
+        @if (dialogMode() === 'create') {
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-muted-foreground mb-1">Vigente desde</label>
+              <input type="date" class="w-full rounded border border-border px-3 py-2 text-sm"
+                     [value]="form().validFrom"
+                     (input)="updateField('validFrom', $any($event.target).value)" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-muted-foreground mb-1">Hasta (opcional)</label>
+              <input type="date" class="w-full rounded border border-border px-3 py-2 text-sm"
+                     [value]="form().validTo"
+                     (input)="updateField('validTo', $any($event.target).value)" />
+            </div>
+          </div>
+        }
+
+        @if (dialogMode() === 'close') {
+          <p class="text-sm text-muted-foreground">
+            Al cerrar este tramo, los cálculos pasados quedan intactos. Para sustituirlo crea un nuevo tramo con la nueva vigencia.
+          </p>
+          <div>
+            <label class="block text-xs font-medium text-muted-foreground mb-1">Fecha de cierre (ValidTo)</label>
+            <input type="date" class="w-full rounded border border-border px-3 py-2 text-sm"
+                   [value]="form().validTo"
+                   (input)="updateField('validTo', $any($event.target).value)" />
+          </div>
+        }
+      </div>
+
+      <footer class="px-5 py-3 border-t border-border flex items-center justify-end gap-2">
+        <button type="button"
+                class="px-3 py-1.5 text-sm rounded border border-border text-foreground hover:bg-muted/40"
+                [disabled]="saving()"
+                (click)="closeDialog()">
+          Cancelar
+        </button>
+        <button type="button"
+                class="px-3 py-1.5 text-sm rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                [disabled]="!canSubmit() || saving()"
+                (click)="submit()">
+          @if (saving()) { Guardando… } @else { Confirmar }
+        </button>
+      </footer>
+    </div>
+  </div>
+}

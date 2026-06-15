@@ -184,6 +184,15 @@ export class Layout {
             url: '/dashboard/landings',
             access: ['analytics:view'],
           },
+          {
+            title: 'Gas regulatorio',
+            icon: { type: 'apolo' as const, icon: NoteIcon, size: 20 },
+            access: ['analytics:view'],
+            children: [
+              { title: 'Tramos de acceso', url: '/dashboard/gas/access-tariffs',    access: ['analytics:view'] },
+              { title: 'Parámetros',       url: '/dashboard/gas/regulatory-params', access: ['analytics:view'] },
+            ],
+          },
         ],
       },
       {

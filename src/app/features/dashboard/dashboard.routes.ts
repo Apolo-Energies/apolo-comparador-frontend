@@ -139,6 +139,24 @@ export const DASHBOARD_ROUTES: Routes = [
             .then(m => m.LandingsPageComponent),
       },
 
+      // Master only — Gas regulatory admin
+      {
+        path: 'gas/access-tariffs',
+        canActivate: [permissionGuard],
+        data: { roles: ['Master'] },
+        loadComponent: () =>
+          import('./pages/gas-access-tariffs/gas-access-tariffs-page')
+            .then(m => m.GasAccessTariffsPageComponent),
+      },
+      {
+        path: 'gas/regulatory-params',
+        canActivate: [permissionGuard],
+        data: { roles: ['Master'] },
+        loadComponent: () =>
+          import('./pages/gas-regulatory-params/gas-regulatory-params-page')
+            .then(m => m.GasRegulatoryParamsPageComponent),
+      },
+
       { path: 'forbidden', component: ForbiddenComponent },
     ],
   },
