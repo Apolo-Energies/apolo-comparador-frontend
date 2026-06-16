@@ -1,9 +1,9 @@
 export const REQUIRED_DOCS_BY_PERSON_TYPE: Record<string, string[]> = {
-  'Individual': ['DniFront', 'DniBack', 'AeatCertificate', 'SsCertificate', 'BankStatement'],
-  'Company':    ['DniFront', 'DniBack', 'AeatCertificate', 'SsCertificate', 'BankStatement', 'CifCertificate'],
+  'Individual': ['DniFront', 'DniBack'],
+  'Company':    ['DniFront', 'DniBack'],
 };
 
 export const OPTIONAL_DOCS_BY_PERSON_TYPE: Record<string, string[]> = {
-  'Individual': [],
-  'Company':    ['ConstitutionDeed'],
+  'Individual': ['AeatCertificate', 'SsCertificate', 'BankStatement'],
+  'Company':    ['AeatCertificate', 'SsCertificate', 'BankStatement', 'CifCertificate', 'ConstitutionDeed'],
 };
