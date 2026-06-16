@@ -75,6 +75,10 @@ export class ContractService {
     return this.http.get(`${environment.apiUrl}/contracts/my-preview`, { responseType: 'blob' });
   }
 
+  getPreviewById(contractId: string): Observable<Blob> {
+    return this.http.get(`${environment.apiUrl}/contracts/${contractId}/preview`, { responseType: 'blob' });
+  }
+
   requestSignature(userId: string): Observable<void> {
     return this.http.post<void>(`${environment.apiUrl}/contracts/request-signature`, { userId });
   }
