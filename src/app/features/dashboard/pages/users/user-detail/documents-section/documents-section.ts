@@ -9,14 +9,15 @@ import { ContractDocumentService } from '../../../../../../services/contract-doc
 import { ContractService } from '../../../../../../services/contract.service';
 import { firstValueFrom } from 'rxjs';
 import { ContractDocument, UserDetail } from '../../../../../../entities/user-detail.model';
-import { REQUIRED_DOCS_BY_PERSON_TYPE } from '../configs/doc-by-person-type.config';
+import { REQUIRED_DOCS_BY_PERSON_TYPE, OPTIONAL_DOCS_BY_PERSON_TYPE } from '../configs/doc-by-person-type.config';
 import { DOC_TYPE_LABELS } from '../configs/doc-type-labels.config';
 import { DOC_STATUS_CONFIG } from '../configs/doc-status.config';
 
 interface DocSlot {
-  type: string;
-  label: string;
-  doc: ContractDocument | null;
+  type:       string;
+  label:      string;
+  doc:        ContractDocument | null;
+  isOptional: boolean;
 }
 
 @Component({
@@ -204,11 +205,17 @@ interface DocSlot {
                     }
 
                   } @else {
-                    <!-- Pending badge (master only sees these) -->
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                      Pendiente
-                    </span>
+                    @if (slot.isOptional) {
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                   bg-muted text-muted-foreground">
+                        Opcional
+                      </span>
+                    } @else {
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                   bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                        Pendiente
+                      </span>
+                    }
                   }
 
                 </div>
@@ -390,7 +397,7 @@ export class DocumentsSectionComponent {
   // When set, onUpload calls replace instead of upload
   private replacingDocId      = signal<string | null>(null);
 
-  // Types not yet uploaded (required but missing or rejected)
+  // Types not yet uploaded (required but missing/rejected + optional not yet uploaded)
   readonly availableTypes = computed(() => {
     const u = this.user();
     const contract = u?.contract;
@@ -398,12 +405,15 @@ export class DocumentsSectionComponent {
     const required = contract?.documents.required
       ?? REQUIRED_DOCS_BY_PERSON_TYPE[u.customer.personType]
       ?? [];
+    const reqSet = new Set(required);
+    const optional = (OPTIONAL_DOCS_BY_PERSON_TYPE[u.customer.personType] ?? [])
+      .filter(t => !reqSet.has(t));
     const done = new Set(
       (contract?.documents.uploaded ?? [])
         .filter(d => d.status !== 'Rejected')
         .map(d => d.documentType),
     );
-    return required.filter(t => !done.has(t));
+    return [...required.filter(t => !done.has(t)), ...optional.filter(t => !done.has(t))];
   });
 
   // Master can upload the physical signed contract when it doesn't exist yet or was rejected
@@ -425,7 +435,7 @@ export class DocumentsSectionComponent {
     return avail;
   });
 
-  // All slots: required (with or without upload) + extra uploaded (SignedContract etc.)
+  // All slots: required + optional (always visible) + extra uploaded (SignedContract etc.)
   readonly allSlots = computed<DocSlot[]>(() => {
     const u = this.user();
     const contract = u?.contract;
@@ -433,18 +443,26 @@ export class DocumentsSectionComponent {
     const required = contract?.documents.required
       ?? REQUIRED_DOCS_BY_PERSON_TYPE[u.customer.personType]
       ?? [];
+    const requiredSet = new Set(required);
+    const optional = (OPTIONAL_DOCS_BY_PERSON_TYPE[u.customer.personType] ?? [])
+      .filter(t => !requiredSet.has(t));
     const uploadedMap = new Map(
       (contract?.documents.uploaded ?? []).map(d => [d.documentType, d]),
     );
-    const slots: DocSlot[] = required.map(type => ({
-      type,
-      label: DOC_TYPE_LABELS[type] ?? type,
-      doc: uploadedMap.get(type) ?? null,
-    }));
-    const requiredSet = new Set(required);
+    const slots: DocSlot[] = [
+      ...required.map(type => ({
+        type, label: DOC_TYPE_LABELS[type] ?? type,
+        doc: uploadedMap.get(type) ?? null, isOptional: false,
+      })),
+      ...optional.map(type => ({
+        type, label: DOC_TYPE_LABELS[type] ?? type,
+        doc: uploadedMap.get(type) ?? null, isOptional: true,
+      })),
+    ];
+    const knownSet = new Set([...required, ...optional]);
     for (const [type, doc] of uploadedMap) {
-      if (!requiredSet.has(type)) {
-        slots.push({ type, label: DOC_TYPE_LABELS[type] ?? type, doc });
+      if (!knownSet.has(type)) {
+        slots.push({ type, label: DOC_TYPE_LABELS[type] ?? type, doc, isOptional: false });
       }
     }
     return slots;
@@ -455,9 +473,24 @@ export class DocumentsSectionComponent {
     this.allSlots().filter(s => s.doc !== null)
   );
 
+  private readonly pendingRequiredTypes = computed(() => {
+    const u = this.user();
+    const contract = u?.contract;
+    if (!u?.customer) return [];
+    const required = contract?.documents.required
+      ?? REQUIRED_DOCS_BY_PERSON_TYPE[u.customer.personType]
+      ?? [];
+    const done = new Set(
+      (contract?.documents.uploaded ?? [])
+        .filter(d => d.status !== 'Rejected')
+        .map(d => d.documentType),
+    );
+    return required.filter(t => !done.has(t));
+  });
+
   readonly showCompletionBanner = computed(() =>
     !this.isMaster() &&
-    this.availableTypes().length === 0 &&
+    this.pendingRequiredTypes().length === 0 &&
     this.uploadedSlots().length > 0 &&
     !this.completionDismissed()
   );
