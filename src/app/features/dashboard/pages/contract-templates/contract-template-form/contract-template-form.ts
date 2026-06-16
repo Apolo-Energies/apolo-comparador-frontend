@@ -1,6 +1,6 @@
 import {
   ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef,
-  effect, inject, input, OnDestroy, OnInit, output, signal, ViewChild,
+  effect, inject, input, NgZone, OnDestroy, OnInit, output, signal, ViewChild,
   computed,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -10,10 +10,12 @@ import { Editor, NgxEditorModule, Toolbar, toHTML, schema as ngxSchema } from 'n
 import { Schema, MarkSpec, DOMParser as PMParser } from 'prosemirror-model';
 import { tableNodes, tableEditing } from 'prosemirror-tables';
 import { ContractTemplateService } from '../../../../../services/contract-template.service';
-import { ContractTemplate } from '../../../../../entities/contract-template.model';
+import { ContractTemplate, SignatureWidget } from '../../../../../entities/contract-template.model';
 
 // ── Signature block HTML ────────────────────────────────────────────────────
-const SIGNATURE_BLOCK = `<table style="width:100%;border-collapse:collapse;margin-top:50px;table-layout:fixed"><tbody><tr><td style="width:45%;border-top:1.5px solid #111;padding-top:10px;vertical-align:top;text-align:left"><p>Apolo Business S.L.</p><p>&nbsp;</p><p>P.p. D. Wenceslao González Vicens</p></td><td style="width:10%"><p>&nbsp;</p></td><td style="width:45%;border-top:1.5px solid #111;padding-top:10px;vertical-align:top;text-align:left"><p>{{ClientName}}</p><p>&nbsp;</p><p>P.p. {{ClientName}}</p></td></tr></tbody></table>`;
+// vertical-align:bottom garantiza que las líneas siempre queden a la misma altura
+// sin importar qué haya encima en cada columna (imagen, espacio, etc.)
+const SIGNATURE_BLOCK = `<table style="width:100%;border-collapse:collapse;margin-top:50px;table-layout:fixed"><tbody><tr style="vertical-align:bottom"><td style="width:45%;border-top:1.5px solid #111;padding-top:10px;vertical-align:bottom;text-align:left"><p>Apolo Business S.L.</p><p>&nbsp;</p><p>P.p. D. Wenceslao González Vicens</p></td><td style="width:10%">&nbsp;</td><td style="width:45%;border-top:1.5px solid #111;padding-top:10px;vertical-align:bottom;text-align:left"><p>{{ClientName}}</p><p>&nbsp;</p><p>P.p. {{ClientName}}</p></td></tr></tbody></table>`;
 
 // ── Font size mark ──────────────────────────────────────────────────────────
 const FONT_SIZE_MARK: MarkSpec = {
@@ -98,14 +100,38 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
   private alertService    = inject(AlertService);
   private cdr             = inject(ChangeDetectorRef);
 
-  readonly saving         = signal(false);
-  readonly importing      = signal(false);
-  readonly confirming     = signal(false);
-  readonly contentError   = signal(false);
-  readonly previewOpen    = signal(false);
-  readonly isNewVersion   = signal(true);
+  readonly saving            = signal(false);
+  readonly importing         = signal(false);
+  readonly confirming        = signal(false);
+  readonly contentError      = signal(false);
+  readonly previewOpen       = signal(false);
+  readonly isNewVersion      = signal(true);
+  readonly widgets           = signal<SignatureWidget[]>([]);
+  readonly currentPage       = signal(1);
+  readonly selectedWidget    = signal<number | null>(null);
+  readonly pdfPages          = signal<string[]>([]);
+  readonly loadingPdf        = signal(false);
   readonly placeholderGroups = PLACEHOLDER_GROUPS;
-  readonly typeOptions    = TYPE_OPTIONS;
+  readonly typeOptions       = TYPE_OPTIONS;
+
+  readonly pageWidgets = computed(() =>
+    this.widgets().map((w, i) => ({ w, i })).filter(({ w }) => w.page === this.currentPage())
+  );
+
+  readonly drawDraft = signal<{ left: number; top: number; width: number; height: number } | null>(null);
+
+  private dragInfo: {
+    i: number; ox: number; oy: number; ow: number; oh: number;
+    mx: number; my: number; rect: DOMRect; mode: 'move' | 'resize';
+  } | null = null;
+
+  private drawStart: { x: number; y: number; rect: DOMRect } | null = null;
+
+  private readonly zone    = inject(NgZone);
+  private boundMove        = this.onGlobalMove.bind(this);
+  private boundUp          = this.onGlobalUp.bind(this);
+  private boundDrawMove    = this.onDrawMove.bind(this);
+  private boundDrawUp      = this.onDrawUp.bind(this);
 
   readonly isEditMode = computed(() => this.template() !== null);
 
@@ -153,6 +179,10 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.editor.destroy();
     this.editorSub?.unsubscribe();
+    window.removeEventListener('mousemove', this.boundMove);
+    window.removeEventListener('mouseup', this.boundUp);
+    window.removeEventListener('mousemove', this.boundDrawMove);
+    window.removeEventListener('mouseup', this.boundDrawUp);
   }
 
   // ── Edit mode ────────────────────────────────────────────────────────────
@@ -162,6 +192,7 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
       this.form.controls.code.enable();
       this.form.controls.name.enable();
       this.form.controls.type.enable();
+      this.widgets.set([]);
       return;
     }
     this.isNewVersion.set(true);
@@ -175,6 +206,9 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
     this.form.controls.version.enable();
     this.editor.setContent(tpl.content);
     this.editorDoc = {};
+    this.widgets.set(tpl.signatureWidgets ? [...tpl.signatureWidgets] : []);
+    this.currentPage.set(1);
+    this.selectedWidget.set(null);
     this.contentError.set(false);
     this.cdr.markForCheck();
   }
@@ -481,6 +515,141 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
     this.editor.view.focus();
   }
 
+  // ── Signature widgets ────────────────────────────────────────────────────
+
+  prevPage(): void { if (this.currentPage() > 1) this.currentPage.update(p => p - 1); }
+  nextPage(): void { this.currentPage.update(p => p + 1); }
+  goToPage(page: number): void { this.currentPage.set(page); this.selectedWidget.set(null); }
+
+  addWidget(): void {
+    const newIdx = this.widgets().length;
+    this.widgets.update(ws => [...ws, {
+      recipientIndex: 0, page: this.currentPage(), left: 35, top: 40,
+      width: 26, height: 9, type: 'signature', required: true, editable: true,
+    }]);
+    this.selectedWidget.set(newIdx);
+  }
+
+  removeWidget(index: number): void {
+    this.widgets.update(ws => ws.filter((_, i) => i !== index));
+    if (this.selectedWidget() === index) this.selectedWidget.set(null);
+  }
+
+  setWidgetType(index: number, value: string): void {
+    this.widgets.update(ws => { const c = [...ws]; c[index] = { ...c[index], type: value }; return c; });
+  }
+
+  setWidgetRecipient(index: number, value: number): void {
+    this.widgets.update(ws => { const c = [...ws]; c[index] = { ...c[index], recipientIndex: value }; return c; });
+  }
+
+  setWidgetBool(index: number, field: 'required' | 'editable', value: boolean): void {
+    this.widgets.update(ws => { const c = [...ws]; c[index] = { ...c[index], [field]: value }; return c; });
+  }
+
+  // ── Draw-to-place ────────────────────────────────────────────────────────
+
+  onCanvasMousedown(event: MouseEvent, canvas: HTMLElement): void {
+    // Only start drawing if click is directly on canvas (not on a widget)
+    if (event.target !== canvas) return;
+    event.preventDefault();
+    this.selectedWidget.set(null);
+    this.drawStart = { x: event.clientX, y: event.clientY, rect: canvas.getBoundingClientRect() };
+    window.addEventListener('mousemove', this.boundDrawMove);
+    window.addEventListener('mouseup', this.boundDrawUp);
+  }
+
+  private onDrawMove(event: MouseEvent): void {
+    const d = this.drawStart;
+    if (!d) return;
+    const toPercent = (px: number, total: number) => Math.round(Math.max(0, Math.min(100, (px / total) * 100)));
+    const x1 = event.clientX - d.rect.left;
+    const y1 = event.clientY - d.rect.top;
+    this.zone.run(() => {
+      this.drawDraft.set({
+        left:   toPercent(Math.min(d.x - d.rect.left, x1), d.rect.width),
+        top:    toPercent(Math.min(d.y - d.rect.top,  y1), d.rect.height),
+        width:  toPercent(Math.abs(x1 - (d.x - d.rect.left)), d.rect.width),
+        height: toPercent(Math.abs(y1 - (d.y - d.rect.top)),  d.rect.height),
+      });
+    });
+  }
+
+  private onDrawUp(): void {
+    window.removeEventListener('mousemove', this.boundDrawMove);
+    window.removeEventListener('mouseup', this.boundDrawUp);
+    const draft = this.drawDraft();
+    this.drawDraft.set(null);
+    this.drawStart = null;
+    if (!draft || draft.width < 3 || draft.height < 2) return;  // too small → ignore
+    const newIdx = this.widgets().length;
+    this.zone.run(() => {
+      this.widgets.update(ws => [...ws, {
+        recipientIndex: 0, page: this.currentPage(),
+        left: draft.left, top: draft.top, width: draft.width, height: draft.height,
+        type: 'signature', required: true, editable: true,
+      }]);
+      this.selectedWidget.set(newIdx);
+    });
+  }
+
+  onWidgetMousedown(event: MouseEvent, index: number, mode: 'move' | 'resize', canvas: HTMLElement): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.selectedWidget.set(index);
+    const w = this.widgets()[index];
+    this.dragInfo = {
+      i: index, ox: w.left, oy: w.top, ow: w.width, oh: w.height,
+      mx: event.clientX, my: event.clientY,
+      rect: canvas.getBoundingClientRect(), mode,
+    };
+    window.addEventListener('mousemove', this.boundMove);
+    window.addEventListener('mouseup', this.boundUp);
+  }
+
+  private onGlobalMove(event: MouseEvent): void {
+    const d = this.dragInfo;
+    if (!d) return;
+    const dx = ((event.clientX - d.mx) / d.rect.width)  * 100;
+    const dy = ((event.clientY - d.my) / d.rect.height) * 100;
+    this.zone.run(() => {
+      this.widgets.update(ws => {
+        const copy = [...ws];
+        const w    = { ...copy[d.i] };
+        if (d.mode === 'move') {
+          w.left = Math.round(Math.max(0, Math.min(100 - w.width,  d.ox + dx)));
+          w.top  = Math.round(Math.max(0, Math.min(100 - w.height, d.oy + dy)));
+        } else {
+          w.width  = Math.round(Math.max(5, Math.min(100 - w.left, d.ow + dx)));
+          w.height = Math.round(Math.max(3, Math.min(100 - w.top,  d.oh + dy)));
+        }
+        copy[d.i] = w;
+        return copy;
+      });
+    });
+  }
+
+  private onGlobalUp(): void {
+    this.dragInfo = null;
+    window.removeEventListener('mousemove', this.boundMove);
+    window.removeEventListener('mouseup', this.boundUp);
+  }
+
+  exportHtml(): void {
+    const html = toHTML(
+      this.editor.view.state.doc.toJSON() as Record<string, unknown>,
+      this.editor.schema,
+    );
+    const name = this.form.getRawValue().name || this.template()?.name || 'template';
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `${name.toLowerCase().replace(/\s+/g, '-')}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   onCodeInput(event: Event): void {
     const value = (event.target as HTMLInputElement).value.toUpperCase();
     this.form.controls.code.setValue(value);
@@ -493,25 +662,26 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
 
-    const html = toHTML(this.editorDoc, this.editor.schema).trim();
+    const html = toHTML(this.editor.view.state.doc.toJSON() as Record<string, unknown>, this.editor.schema).trim();
     if (!html || html === '<p></p>') { this.contentError.set(true); return; }
     this.contentError.set(false);
     this.saving.set(true);
 
     const { version, changeNotes } = this.form.getRawValue();
+    const signatureWidgets = this.widgets().length ? this.widgets() : undefined;
 
     if (this.isEditMode()) {
       const tpl = this.template()!;
       if (this.isNewVersion()) {
         this.templateService.createVersion(tpl.code, {
-          version: version!, content: html, changeNotes: changeNotes || undefined,
+          version: version!, content: html, changeNotes: changeNotes || undefined, signatureWidgets,
         }).subscribe({
           next: () => { this.alertService.show('Nueva versión creada correctamente', 'success'); this.saving.set(false); this.resetForm(); this.saved.emit(); },
           error: () => { this.saving.set(false); this.alertService.show('Error al crear la versión', 'error'); },
         });
       } else {
         this.templateService.updateContent(tpl.id, {
-          content: html, changeNotes: changeNotes || undefined,
+          content: html, changeNotes: changeNotes || undefined, signatureWidgets,
         }).subscribe({
           next: () => { this.alertService.show('Plantilla actualizada correctamente', 'success'); this.saving.set(false); this.resetForm(); this.saved.emit(); },
           error: () => { this.saving.set(false); this.alertService.show('Error al actualizar la plantilla', 'error'); },
@@ -521,7 +691,7 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
       const { code, name, type } = this.form.getRawValue();
       this.templateService.create({
         code: code!, name: name!, type: type as 'individual' | 'company',
-        version: version!, content: html, changeNotes: changeNotes || undefined,
+        version: version!, content: html, changeNotes: changeNotes || undefined, signatureWidgets,
       }).subscribe({
         next: () => { this.alertService.show('Plantilla creada correctamente', 'success'); this.saving.set(false); this.resetForm(); this.saved.emit(); },
         error: (err) => { this.saving.set(false); this.alertService.show(err.status === 409 ? 'Ya existe una plantilla con ese código' : 'Error al crear la plantilla', 'error'); },
@@ -531,8 +701,43 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
 
   onCancel(): void { this.resetForm(); this.cancelled.emit(); }
 
+  async loadPdfPreview(): Promise<void> {
+    const tpl = this.template();
+    if (!tpl) return;
+    this.loadingPdf.set(true);
+    try {
+      const { firstValueFrom } = await import('rxjs');
+      const blob   = await firstValueFrom(this.templateService.getPreview(tpl.id));
+      const buffer = await blob.arrayBuffer();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pdfjs  = await import('pdfjs-dist') as any;
+      pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+      const pdf    = await pdfjs.getDocument({ data: buffer }).promise;
+      const pages: string[] = [];
+      for (let p = 1; p <= pdf.numPages; p++) {
+        const page     = await pdf.getPage(p);
+        const viewport = page.getViewport({ scale: 2 });
+        const cvs      = document.createElement('canvas');
+        cvs.width      = viewport.width;
+        cvs.height     = viewport.height;
+        await page.render({ canvasContext: cvs.getContext('2d')!, viewport }).promise;
+        pages.push(cvs.toDataURL('image/jpeg', 0.9));
+      }
+      this.pdfPages.set(pages);
+      this.alertService.show(`PDF cargado — ${pages.length} páginas`, 'success');
+    } catch {
+      this.alertService.show('No se pudo cargar el PDF del template', 'error');
+    } finally {
+      this.loadingPdf.set(false);
+    }
+  }
+
   private resetForm(): void {
     this.isNewVersion.set(true);
+    this.widgets.set([]);
+    this.currentPage.set(1);
+    this.selectedWidget.set(null);
+    this.pdfPages.set([]);
     this.form.reset({ code: '', name: '', type: 'individual', version: '1.0', changeNotes: '' });
     this.form.controls.code.enable();
     this.form.controls.name.enable();

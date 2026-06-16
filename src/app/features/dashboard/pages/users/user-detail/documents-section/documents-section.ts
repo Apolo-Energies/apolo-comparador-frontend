@@ -322,10 +322,10 @@ interface DocSlot {
     </ui-dialog>
 
     <!-- ─── View document modal ──────────────────────────────────── -->
-    <ui-dialog [open]="!!viewDoc()" [closeable]="true" maxWidth="max-w-2xl"
+    <ui-dialog [open]="!!viewDoc()" [closeable]="true" maxWidth="max-w-5xl"
       (openChange)="$event ? null : viewDoc.set(null)">
       @if (viewDoc(); as doc) {
-        <div class="flex flex-col" style="height: 80vh">
+        <div class="flex flex-col" style="height: min(90vh, 900px)">
           <div class="shrink-0 border-b border-border px-6 py-4 flex items-center justify-between">
             <div>
               <p class="text-base font-semibold text-foreground">{{ docTypeLabel(doc.documentType) }}</p>
@@ -339,6 +339,15 @@ interface DocSlot {
                 }
               </p>
             </div>
+            <a [href]="doc.fileUrl" target="_blank" rel="noopener noreferrer"
+              class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+              Abrir en nueva pestaña
+            </a>
           </div>
 
           @if (doc.reviewComment) {
@@ -348,23 +357,9 @@ interface DocSlot {
             </div>
           }
 
-          <div class="flex-1 min-h-0 px-6 py-4">
-            @if (doc.previewUrl) {
-              <iframe [src]="sanitizeUrl(doc.previewUrl)"
-                class="w-full h-full rounded-md border border-border"></iframe>
-            } @else {
-              <div class="flex flex-col items-center justify-center h-full text-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24"
-                  fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                  class="text-muted-foreground">
-                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                  <polyline points="14 2 14 8 20 8"/>
-                </svg>
-                <p class="text-sm text-muted-foreground">Vista previa no disponible</p>
-                <a [href]="doc.fileUrl" target="_blank" rel="noopener noreferrer"
-                  class="text-sm text-blue-500 hover:underline">Abrir archivo</a>
-              </div>
-            }
+          <div class="flex-1 min-h-0 p-2">
+            <iframe [src]="sanitizeUrl(doc.previewUrl ?? doc.fileUrl)"
+              class="w-full h-full rounded-md border-0"></iframe>
           </div>
         </div>
       }
