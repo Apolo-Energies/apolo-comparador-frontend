@@ -224,7 +224,11 @@ export class UserDetailPageComponent implements OnInit {
   openContractPreview(): void {
     this.loadingPreview.set(true);
     this.contractPreviewOpen.set(true);
-    this.contractService.getMyPreview().subscribe({
+    const contractId = this.user()?.contract?.id;
+    const preview$ = this.isMaster() && contractId
+      ? this.contractService.getPreviewById(contractId)
+      : this.contractService.getMyPreview();
+    preview$.subscribe({
       next: blob => {
         this.revokePreviewUrl();
         this.previewObjectUrl = URL.createObjectURL(blob);

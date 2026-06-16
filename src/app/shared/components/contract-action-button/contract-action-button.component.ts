@@ -1,5 +1,5 @@
 import {
-  ChangeDetectionStrategy, Component, computed, inject, input, signal,
+  ChangeDetectionStrategy, Component, computed, inject, input, output, signal,
 } from '@angular/core';
 import { AlertService, ButtonComponent } from '@apolo-energies/ui';
 import { ContractService } from '../../../services/contract.service';
@@ -12,7 +12,8 @@ import { ContractService } from '../../../services/contract.service';
   template: `
     @if (canSend() || canRequestSignature()) {
       <ui-button label="Enviar contrato" variant="default" size="sm"
-        [disabled]="acting()" (click)="onSendContract()" />
+        [disabled]="acting()"
+        (click)="previewMode() ? openPreview.emit() : onSendContract()" />
     } @else if (canRenew()) {
       <ui-button label="Renovar contrato" variant="default" size="sm"
         [disabled]="acting()" (click)="onRenew()" />
@@ -32,6 +33,9 @@ export class ContractActionButtonComponent {
   readonly signatureStatus     = input<string | null>(null);
   readonly actions             = input<string[]>([]);
   readonly daysUntilExpiration = input<number | null>(null);
+  readonly previewMode         = input<boolean>(false);
+
+  readonly openPreview = output<void>();
 
   private readonly contractSvc = inject(ContractService);
   private readonly alert       = inject(AlertService);

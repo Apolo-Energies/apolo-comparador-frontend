@@ -44,14 +44,16 @@
           Datos Personales
         </p>
         <div class="flex items-center gap-2">
-          <!-- Master: contract action buttons (send/renew/resend) -->
+          <!-- Master: contract action buttons — Enviar abre preview, Renovar/Reenviar actúan directo -->
           @if (isMaster() && customerIdForAction()) {
             <app-contract-action-button
               [customerId]="customerIdForAction()"
               [contractId]="user()?.contract?.id"
               [signatureStatus]="signatureStatus()"
               [actions]="availableActions()"
-              [daysUntilExpiration]="daysUntilExpiration()" />
+              [daysUntilExpiration]="daysUntilExpiration()"
+              [previewMode]="true"
+              (openPreview)="openContractPreview()" />
           }
           <!-- Non-master: preview contract -->
           @if (canViewContract()) {
@@ -341,6 +343,17 @@
     </div>
 
     <!-- Footer -->
+    @if (isMaster()) {
+      <div class="shrink-0 border-t border-border px-6 py-4 flex items-center justify-end gap-3">
+        <app-contract-action-button
+          [customerId]="customerIdForAction()"
+          [contractId]="user()?.contract?.id"
+          [signatureStatus]="signatureStatus()"
+          [actions]="availableActions()"
+          [daysUntilExpiration]="daysUntilExpiration()"
+          [previewMode]="false" />
+      </div>
+    }
     @if (!isMaster()) {
       @if (isSigned()) {
         <div class="shrink-0 border-t border-border px-6 py-4 flex items-center justify-end">
