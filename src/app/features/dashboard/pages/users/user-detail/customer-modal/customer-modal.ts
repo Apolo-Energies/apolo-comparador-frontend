@@ -242,6 +242,13 @@ const NUMBER_CLS = 'flex-1 min-w-0 px-4 py-2.5 text-sm rounded-r-lg border bg-ca
                 @if (err('bankAccount')) { <p class="text-xs text-red-500">{{ errMsg('bankAccount') }}</p> }
               </div>
 
+              <div class="space-y-1">
+                <label class="text-sm font-medium text-muted-foreground">Código postal</label>
+                <input formControlName="postalCode" placeholder="28001"
+                  [class]="inputCls" [class.border-red-500]="err('postalCode')" />
+                @if (err('postalCode')) { <p class="text-xs text-red-500">{{ errMsg('postalCode') }}</p> }
+              </div>
+
             </div>
           </div>
 
@@ -306,6 +313,7 @@ export class CustomerModalComponent {
     notificationStreet:   ['', [Validators.required, Validators.maxLength(150)]],
     notificationNumber:   ['', [Validators.required, Validators.maxLength(20)]],
     bankAccount:          ['', [Validators.required, Validators.maxLength(50)]],
+    postalCode:           ['', [Validators.maxLength(10)]],
   });
 
   constructor() {
@@ -334,7 +342,8 @@ export class CustomerModalComponent {
         notificationCity:     notif.city,
         notificationStreet:   notif.street,
         notificationNumber:   notif.number,
-        bankAccount:          c?.bankAccount ?? '',
+        bankAccount:          c?.bankAccount  ?? '',
+        postalCode:           c?.postalCode   ?? '',
       });
     });
   }
@@ -405,6 +414,7 @@ export class CustomerModalComponent {
       legalAddress:        `${raw.legalCity}, ${raw.legalStreet}, ${raw.legalNumber}`,
       notificationAddress: `${raw.notificationCity}, ${raw.notificationStreet}, ${raw.notificationNumber}`,
       bankAccount:         raw.bankAccount,
+      postalCode:          raw.postalCode || undefined,
     };
 
     const request$ = this.mode() === 'create'
