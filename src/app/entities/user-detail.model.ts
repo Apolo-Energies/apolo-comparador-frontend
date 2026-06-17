@@ -45,6 +45,7 @@ export interface CustomerDetail {
   legalAddress: string;
   notificationAddress: string;
   bankAccount: string;
+  postalCode: string | null;
   createdAt: string;
 }
 

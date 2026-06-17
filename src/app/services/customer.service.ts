@@ -17,6 +17,7 @@ export interface CreateCustomerRequest {
   dni?: string;
   cif?: string;
   companyName?: string;
+  postalCode?: string;
 }
 
 export interface UpdateCustomerRequest {
@@ -34,6 +35,7 @@ export interface UpdateCustomerRequest {
   dni?: string;
   cif?: string;
   companyName?: string;
+  postalCode?: string;
 }
 
 @Injectable({ providedIn: 'root' })

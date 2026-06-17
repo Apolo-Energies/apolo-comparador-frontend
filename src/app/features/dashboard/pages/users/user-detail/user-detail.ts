@@ -164,6 +164,7 @@ export class UserDetailPageComponent implements OnInit {
         ['Teléfono',                 c.phone                   ?? '-'],
         ['Dirección legal',          c.legalAddress            ?? '-'],
         ['Dirección notificación',   c.notificationAddress     ?? '-'],
+        ['Código postal',            c.postalCode              ?? '-'],
         estadoContrato,
         vigencia,
       ];
@@ -178,6 +179,7 @@ export class UserDetailPageComponent implements OnInit {
       ['Teléfono',               c?.phone              ?? '-'],
       ['Dirección legal',        c?.legalAddress       ?? '-'],
       ['Dirección notificación', c?.notificationAddress ?? '-'],
+      ['Código postal',          c?.postalCode          ?? '-'],
       estadoContrato,
       vigencia,
     ];
