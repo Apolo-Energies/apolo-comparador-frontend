@@ -163,23 +163,29 @@ export class UserDetailPageComponent implements OnInit {
         ['DNI representante legal',  c.dni                     ?? '-'],
         ['Teléfono',                 c.phone                   ?? '-'],
         ['Dirección legal',          c.legalAddress            ?? '-'],
+        ['Ciudad legal',             c.cityLegal               ?? '-'],
+        ['CP legal',                 c.postalCodeLegal         ?? '-'],
         ['Dirección notificación',   c.notificationAddress     ?? '-'],
-        ['Código postal',            c.postalCode              ?? '-'],
+        ['Ciudad notificación',      c.cityNotification        ?? '-'],
+        ['CP notificación',          c.postalCodeNotification  ?? '-'],
         estadoContrato,
         vigencia,
       ];
     }
 
-    const fullName = `${c?.firstName ?? ''} ${c?.lastName ?? ''}`.trim() || '-';
+    const fullName = `${c?.firstName ?? ''} ${c?.lastName ?? ''} ${c?.secondLastName ?? ''}`.trim() || '-';
     return [
       ['Nombre',                 fullName],
       ['DNI',                    c?.dni                ?? '-'],
       ['Tipo de cliente',        'Individual'],
       ['Correo',                 c?.email              ?? '-'],
       ['Teléfono',               c?.phone              ?? '-'],
-      ['Dirección legal',        c?.legalAddress       ?? '-'],
-      ['Dirección notificación', c?.notificationAddress ?? '-'],
-      ['Código postal',          c?.postalCode          ?? '-'],
+      ['Dirección legal',        c?.legalAddress           ?? '-'],
+      ['Ciudad legal',           c?.cityLegal              ?? '-'],
+      ['CP legal',               c?.postalCodeLegal        ?? '-'],
+      ['Dirección notificación', c?.notificationAddress    ?? '-'],
+      ['Ciudad notificación',    c?.cityNotification       ?? '-'],
+      ['CP notificación',        c?.postalCodeNotification ?? '-'],
       estadoContrato,
       vigencia,
     ];

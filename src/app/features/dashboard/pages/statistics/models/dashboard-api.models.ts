@@ -1,3 +1,5 @@
+import { OpportunitySummary } from '../../../../../entities/opportunity.model';
+
 /** Usuario dentro de un registro de comparación */
 export interface ComparisonUser {
   id:              string;
@@ -110,6 +112,22 @@ export interface ConsolidatedComparisonData {
   dailySummary:    DailySummaryApiItem[] | null;
   monthlySummary:  MonthlySummaryApiItem[] | null;
   filters:         FiltersData;
+}
+
+export interface DashboardResult {
+  comparisonData: {
+    history:       PaginatedHistory | null;
+    summary:       SummaryApiResult | null;
+    dailySummary:  DailySummaryApiItem[] | null;
+    filters:       FiltersData;
+  } | null;
+  opportunities: {
+    items:       OpportunitySummary[];
+    currentPage: number;
+    pageSize:    number;
+    totalCount:  number;
+    totalPages:  number;
+  } | null;
 }
 
 /** Parámetros para el endpoint consolidado */

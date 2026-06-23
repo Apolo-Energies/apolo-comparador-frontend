@@ -6,10 +6,9 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { catchError, forkJoin, of } from 'rxjs';
+import { catchError, of } from 'rxjs';
 import { BrandLoaderComponent } from '../../../../shared/components/brand-loader/brand-loader.component';
 import { DashboardStatsService } from '../../../../services/dashboard-stats.service';
-import { OpportunityService } from '../../../../services/opportunity.service';
 import { SummaryApiResult, DailySummaryApiItem, HistoryItem } from '../statistics/models/dashboard-api.models';
 import { OpportunitySummary, OpportunityStatus } from '../../../../entities/opportunity.model';
 import { ReportsAnalyticsTabComponent, ColabPeriod } from './components/analytics-tab/analytics-tab.component';
@@ -29,9 +28,8 @@ const CRITICAL_DAYS = 7;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReportsPageComponent {
-  private readonly stats  = inject(DashboardStatsService);
-  private readonly oppSvc = inject(OpportunityService);
-  private readonly cdr    = inject(ChangeDetectorRef);
+  private readonly stats = inject(DashboardStatsService);
+  private readonly cdr   = inject(ChangeDetectorRef);
 
   readonly activeTab = signal<ReportTab>('analitica');
   readonly loading   = signal(false);
@@ -75,20 +73,17 @@ export class ReportsPageComponent {
 
   load(): void {
     this.loading.set(true);
-    forkJoin({
-      analytics: this.stats.getConsolidatedData().pipe(catchError(() => of(null))),
-      opps:      this.oppSvc.list({ pageSize: 500 }).pipe(catchError(() => of(null))),
-    }).subscribe(({ analytics, opps }) => {
-      if (analytics) {
-        this.summary.set(analytics.summary);
-        this.daily.set(analytics.dailySummary ?? []);
-        this.historyItems.set(analytics.history?.items ?? []);
-        // Sync colabRows if showing "all time" (no extra fetch needed)
+    this.stats.getDashboard().pipe(catchError(() => of(null))).subscribe(data => {
+      if (data) {
+        const cd = data.comparisonData;
+        this.summary.set(cd?.summary ?? null);
+        this.daily.set(cd?.dailySummary ?? []);
+        this.historyItems.set(cd?.history?.items ?? []);
+        this.opps.set(data.opportunities?.items ?? []);
         if (this.colabPeriod() === 'all') {
-          this.colabRows.set(analytics.history?.items ?? []);
+          this.colabRows.set(cd?.history?.items ?? []);
         }
       }
-      if (opps) this.opps.set(opps.items);
       this.loading.set(false);
       this.cdr.markForCheck();
     });
