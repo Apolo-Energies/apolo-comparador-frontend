@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { ConsolidatedComparisonData, ConsolidatedDataParams, DailySummaryApiItem, MonthlySummaryApiItem, PaginatedComparisonDetail, SummaryApiResult } from '../features/dashboard/pages/statistics/models/dashboard-api.models';
+import { ConsolidatedComparisonData, ConsolidatedDataParams, DailySummaryApiItem, DashboardResult, MonthlySummaryApiItem, PaginatedComparisonDetail, SummaryApiResult } from '../features/dashboard/pages/statistics/models/dashboard-api.models';
 import { DateRange } from '../features/dashboard/pages/statistics/models/dashboard-ui.models';
 
 const BASE_PATH = 'comparison-history';
@@ -53,6 +53,17 @@ export class DashboardStatsService {
     return this.http.get<ConsolidatedComparisonData>(
       `${environment.apiUrl}/${BASE_PATH}/data`,
       { params: this.buildParams(params) },
+    );
+  }
+
+  getDashboard(): Observable<DashboardResult> {
+    const params = new HttpParams()
+      .set('includeDailySummary', 'true')
+      .set('includeHistory',      'true')
+      .set('includeSummary',      'true');
+    return this.http.get<DashboardResult>(
+      `${environment.apiUrl}/${BASE_PATH}/dashboard`,
+      { params },
     );
   }
 
