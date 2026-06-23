@@ -59,11 +59,11 @@ const PLACEHOLDER_GROUPS = [
   },
   {
     label: 'Dirección legal',
-    items: ['{{Address1}}', '{{LegalCity}}', '{{LegalStreet}}', '{{LegalNumber}}'],
+    items: ['{{Address1}}', '{{LegalCity}}', '{{LegalStreet}}', '{{LegalNumber}}', '{{PostalCodeLegal}}'],
   },
   {
     label: 'Dirección notificación',
-    items: ['{{Address2}}', '{{NotificationCity}}', '{{NotificationStreet}}', '{{NotificationNumber}}'],
+    items: ['{{Address2}}', '{{NotificationCity}}', '{{NotificationStreet}}', '{{NotificationNumber}}', '{{PostalCodeNotification}}'],
   },
 ];
 

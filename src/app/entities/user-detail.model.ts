@@ -36,6 +36,7 @@ export interface CustomerDetail {
   personType: string;
   firstName: string;
   lastName: string;
+  secondLastName: string | null;
   companyName: string | null;
   dni: string | null;
   cif: string | null;
@@ -43,9 +44,14 @@ export interface CustomerDetail {
   phone: string;
   userId: string;
   legalAddress: string;
+  legalNumber: string | null;
   notificationAddress: string;
+  notificationNumber: string | null;
+  cityLegal: string | null;
+  cityNotification: string | null;
   bankAccount: string;
-  postalCode: string | null;
+  postalCodeLegal: string | null;
+  postalCodeNotification: string | null;
   createdAt: string;
 }
 

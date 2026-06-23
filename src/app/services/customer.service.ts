@@ -9,15 +9,21 @@ export interface CreateCustomerRequest {
   personType: number;
   firstName: string;
   lastName: string;
+  secondLastName: string;
   email: string;
   phone: string;
   legalAddress: string;
+  legalNumber: string;
   notificationAddress: string;
+  notificationNumber: string;
+  cityLegal: string;
+  cityNotification: string;
   bankAccount: string;
   dni?: string;
   cif?: string;
   companyName?: string;
-  postalCode?: string;
+  postalCodeLegal?: string;
+  postalCodeNotification?: string;
 }
 
 export interface UpdateCustomerRequest {
@@ -27,15 +33,21 @@ export interface UpdateCustomerRequest {
   personType: number;
   firstName: string;
   lastName: string;
+  secondLastName: string;
   email: string;
   phone: string;
   legalAddress: string;
+  legalNumber: string;
   notificationAddress: string;
+  notificationNumber: string;
+  cityLegal: string;
+  cityNotification: string;
   bankAccount: string;
   dni?: string;
   cif?: string;
   companyName?: string;
-  postalCode?: string;
+  postalCodeLegal?: string;
+  postalCodeNotification?: string;
 }
 
 @Injectable({ providedIn: 'root' })
