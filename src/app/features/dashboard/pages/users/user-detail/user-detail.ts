@@ -163,21 +163,29 @@ export class UserDetailPageComponent implements OnInit {
         ['DNI representante legal',  c.dni                     ?? '-'],
         ['Teléfono',                 c.phone                   ?? '-'],
         ['Dirección legal',          c.legalAddress            ?? '-'],
+        ['Ciudad legal',             c.cityLegal               ?? '-'],
+        ['CP legal',                 c.postalCodeLegal         ?? '-'],
         ['Dirección notificación',   c.notificationAddress     ?? '-'],
+        ['Ciudad notificación',      c.cityNotification        ?? '-'],
+        ['CP notificación',          c.postalCodeNotification  ?? '-'],
         estadoContrato,
         vigencia,
       ];
     }
 
-    const fullName = `${c?.firstName ?? ''} ${c?.lastName ?? ''}`.trim() || '-';
+    const fullName = `${c?.firstName ?? ''} ${c?.lastName ?? ''} ${c?.secondLastName ?? ''}`.trim() || '-';
     return [
       ['Nombre',                 fullName],
       ['DNI',                    c?.dni                ?? '-'],
       ['Tipo de cliente',        'Individual'],
       ['Correo',                 c?.email              ?? '-'],
       ['Teléfono',               c?.phone              ?? '-'],
-      ['Dirección legal',        c?.legalAddress       ?? '-'],
-      ['Dirección notificación', c?.notificationAddress ?? '-'],
+      ['Dirección legal',        c?.legalAddress           ?? '-'],
+      ['Ciudad legal',           c?.cityLegal              ?? '-'],
+      ['CP legal',               c?.postalCodeLegal        ?? '-'],
+      ['Dirección notificación', c?.notificationAddress    ?? '-'],
+      ['Ciudad notificación',    c?.cityNotification       ?? '-'],
+      ['CP notificación',        c?.postalCodeNotification ?? '-'],
       estadoContrato,
       vigencia,
     ];
@@ -224,7 +232,11 @@ export class UserDetailPageComponent implements OnInit {
   openContractPreview(): void {
     this.loadingPreview.set(true);
     this.contractPreviewOpen.set(true);
-    this.contractService.getMyPreview().subscribe({
+    const contractId = this.user()?.contract?.id;
+    const preview$ = this.isMaster() && contractId
+      ? this.contractService.getPreviewById(contractId)
+      : this.contractService.getMyPreview();
+    preview$.subscribe({
       next: blob => {
         this.revokePreviewUrl();
         this.previewObjectUrl = URL.createObjectURL(blob);

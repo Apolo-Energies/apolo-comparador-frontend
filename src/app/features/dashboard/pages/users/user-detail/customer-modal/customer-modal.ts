@@ -51,9 +51,15 @@ function phoneLocalValidator(control: AbstractControl): ValidationErrors | null 
   return raw.length >= min && raw.length <= max ? null : { phoneLength: { required: `${min}-${max}`, actual: raw.length } };
 }
 
-function splitAddress(addr: string): { city: string; street: string; number: string } {
-  const parts = addr.split(',').map(s => s.trim());
-  return { city: parts[0] ?? '', street: parts[1] ?? '', number: parts[2] ?? '' };
+const STREET_TYPES = ['Calle','Avenida','Paseo','Bulevar','Ronda','Plaza','Alameda','Rambla','Camino','Vía'];
+
+function splitStreetAddress(addr: string): { type: string; name: string } {
+  const typeMatch = STREET_TYPES.find(t =>
+    addr.toLowerCase().startsWith(t.toLowerCase() + ' ')
+  );
+  const type = typeMatch ?? 'Calle';
+  const name = typeMatch ? addr.slice(type.length + 1).trim() : addr;
+  return { type, name };
 }
 
 const INPUT_CLS  = 'w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all';
@@ -67,7 +73,7 @@ const NUMBER_CLS = 'flex-1 min-w-0 px-4 py-2.5 text-sm rounded-r-lg border bg-ca
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ui-dialog [open]="open()" [closeable]="true" maxWidth="max-w-2xl" (openChange)="$event ? null : onClose()">
-      <div class="flex flex-col" style="max-height: 90vh">
+      <div class="flex flex-col overflow-hidden" style="max-height: 90vh">
 
         <!-- Header + toggle -->
         <div class="shrink-0 space-y-4 border-b border-border px-6 py-4">
@@ -114,13 +120,20 @@ const NUMBER_CLS = 'flex-1 min-w-0 px-4 py-2.5 text-sm rounded-r-lg border bg-ca
                 </div>
 
                 <div class="space-y-1">
-                  <label class="text-sm font-medium text-muted-foreground">Apellidos *</label>
-                  <input formControlName="lastName" placeholder="García López"
-                    [class]="inputCls" [class.border-red-500]="err('lastName')" />
-                  @if (err('lastName')) { <p class="text-xs text-red-500">{{ errMsg('lastName') }}</p> }
+                  <label class="text-sm font-medium text-muted-foreground">Primer apellido *</label>
+                  <input formControlName="lastName1" placeholder="García"
+                    [class]="inputCls" [class.border-red-500]="err('lastName1')" />
+                  @if (err('lastName1')) { <p class="text-xs text-red-500">{{ errMsg('lastName1') }}</p> }
                 </div>
 
-                <div class="md:col-span-2 space-y-1">
+                <div class="space-y-1">
+                  <label class="text-sm font-medium text-muted-foreground">Segundo apellido *</label>
+                  <input formControlName="lastName2" placeholder="López"
+                    [class]="inputCls" [class.border-red-500]="err('lastName2')" />
+                  @if (err('lastName2')) { <p class="text-xs text-red-500">{{ errMsg('lastName2') }}</p> }
+                </div>
+
+                <div class="space-y-1">
                   <label class="text-sm font-medium text-muted-foreground">DNI / NIE *</label>
                   <input formControlName="dni" placeholder="12345678A"
                     [class]="inputCls" [class.border-red-500]="err('dni')" />
@@ -142,22 +155,33 @@ const NUMBER_CLS = 'flex-1 min-w-0 px-4 py-2.5 text-sm rounded-r-lg border bg-ca
                   @if (err('cif')) { <p class="text-xs text-red-500">{{ errMsg('cif') }}</p> }
                 </div>
 
-                <div class="space-y-1">
-                  <label class="text-sm font-medium text-muted-foreground">Nombre representante legal</label>
-                  <input formControlName="firstName" placeholder="Juan"
-                    [class]="inputCls" />
-                </div>
-
-                <div class="space-y-1">
-                  <label class="text-sm font-medium text-muted-foreground">Apellidos representante legal</label>
-                  <input formControlName="lastName" placeholder="García López"
-                    [class]="inputCls" />
-                </div>
-
-                <div class="md:col-span-2 space-y-1">
-                  <label class="text-sm font-medium text-muted-foreground">DNI representante legal</label>
-                  <input formControlName="dni" placeholder="12345678A"
-                    [class]="inputCls" />
+                <div class="md:col-span-2 space-y-2">
+                  <label class="text-sm font-medium text-muted-foreground">Datos representante legal</label>
+                  <div class="grid grid-cols-2 gap-2">
+                    <div class="space-y-1">
+                      <p class="text-xs text-muted-foreground">Nombre *</p>
+                      <input formControlName="firstName" placeholder="Juan"
+                        [class]="inputCls" [class.border-red-500]="err('firstName')" />
+                      @if (err('firstName')) { <p class="text-xs text-red-500">{{ errMsg('firstName') }}</p> }
+                    </div>
+                    <div class="space-y-1">
+                      <p class="text-xs text-muted-foreground">Primer apellido *</p>
+                      <input formControlName="lastName1" placeholder="García"
+                        [class]="inputCls" [class.border-red-500]="err('lastName1')" />
+                      @if (err('lastName1')) { <p class="text-xs text-red-500">{{ errMsg('lastName1') }}</p> }
+                    </div>
+                    <div class="space-y-1">
+                      <p class="text-xs text-muted-foreground">Segundo apellido *</p>
+                      <input formControlName="lastName2" placeholder="López"
+                        [class]="inputCls" [class.border-red-500]="err('lastName2')" />
+                      @if (err('lastName2')) { <p class="text-xs text-red-500">{{ errMsg('lastName2') }}</p> }
+                    </div>
+                    <div class="space-y-1">
+                      <p class="text-xs text-muted-foreground">DNI</p>
+                      <input formControlName="dni" placeholder="12345678A"
+                        [class]="inputCls" />
+                    </div>
+                  </div>
                 </div>
               }
 
@@ -184,20 +208,21 @@ const NUMBER_CLS = 'flex-1 min-w-0 px-4 py-2.5 text-sm rounded-r-lg border bg-ca
                 @if (err('phoneNumber')) { <p class="text-xs text-red-500">{{ errMsg('phoneNumber') }}</p> }
               </div>
 
-              <!-- Dirección legal: ciudad + calle + número -->
+              <!-- Dirección legal -->
               <div class="md:col-span-2 space-y-2">
                 <label class="text-sm font-medium text-muted-foreground">Dirección legal *</label>
-                <div class="grid grid-cols-3 gap-2">
+                <div class="grid grid-cols-2 gap-2">
                   <div class="space-y-1">
-                    <p class="text-xs text-muted-foreground">Ciudad</p>
-                    <input formControlName="legalCity" placeholder="Valencia"
-                      [class]="inputCls" [class.border-red-500]="err('legalCity')" />
-                    @if (err('legalCity')) { <p class="text-xs text-red-500">{{ errMsg('legalCity') }}</p> }
-                  </div>
-                  <div class="space-y-1">
-                    <p class="text-xs text-muted-foreground">Calle</p>
-                    <input formControlName="legalStreet" placeholder="Calle Mayor"
-                      [class]="inputCls" [class.border-red-500]="err('legalStreet')" />
+                    <p class="text-xs text-muted-foreground">Tipo de vía / Calle</p>
+                    <div class="flex">
+                      <select formControlName="legalStreetType" [class]="selectCls">
+                        @for (t of streetTypes; track t) {
+                          <option [value]="t">{{ t }}</option>
+                        }
+                      </select>
+                      <input formControlName="legalStreet" placeholder="Mayor"
+                        [class]="numberCls" [class.border-red-500]="err('legalStreet')" />
+                    </div>
                     @if (err('legalStreet')) { <p class="text-xs text-red-500">{{ errMsg('legalStreet') }}</p> }
                   </div>
                   <div class="space-y-1">
@@ -206,23 +231,36 @@ const NUMBER_CLS = 'flex-1 min-w-0 px-4 py-2.5 text-sm rounded-r-lg border bg-ca
                       [class]="inputCls" [class.border-red-500]="err('legalNumber')" />
                     @if (err('legalNumber')) { <p class="text-xs text-red-500">{{ errMsg('legalNumber') }}</p> }
                   </div>
+                  <div class="space-y-1">
+                    <p class="text-xs text-muted-foreground">Ciudad</p>
+                    <input formControlName="cityLegal" placeholder="Madrid"
+                      [class]="inputCls" [class.border-red-500]="err('cityLegal')" />
+                    @if (err('cityLegal')) { <p class="text-xs text-red-500">{{ errMsg('cityLegal') }}</p> }
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-xs text-muted-foreground">Código postal</p>
+                    <input formControlName="postalCodeLegal" placeholder="28001"
+                      [class]="inputCls" [class.border-red-500]="err('postalCodeLegal')" />
+                    @if (err('postalCodeLegal')) { <p class="text-xs text-red-500">{{ errMsg('postalCodeLegal') }}</p> }
+                  </div>
                 </div>
               </div>
 
-              <!-- Dirección de notificación: ciudad + calle + número -->
+              <!-- Dirección de notificación -->
               <div class="md:col-span-2 space-y-2">
                 <label class="text-sm font-medium text-muted-foreground">Dirección de notificación *</label>
-                <div class="grid grid-cols-3 gap-2">
+                <div class="grid grid-cols-2 gap-2">
                   <div class="space-y-1">
-                    <p class="text-xs text-muted-foreground">Ciudad</p>
-                    <input formControlName="notificationCity" placeholder="Valencia"
-                      [class]="inputCls" [class.border-red-500]="err('notificationCity')" />
-                    @if (err('notificationCity')) { <p class="text-xs text-red-500">{{ errMsg('notificationCity') }}</p> }
-                  </div>
-                  <div class="space-y-1">
-                    <p class="text-xs text-muted-foreground">Calle</p>
-                    <input formControlName="notificationStreet" placeholder="Calle Mayor"
-                      [class]="inputCls" [class.border-red-500]="err('notificationStreet')" />
+                    <p class="text-xs text-muted-foreground">Tipo de vía / Calle</p>
+                    <div class="flex">
+                      <select formControlName="notificationStreetType" [class]="selectCls">
+                        @for (t of streetTypes; track t) {
+                          <option [value]="t">{{ t }}</option>
+                        }
+                      </select>
+                      <input formControlName="notificationStreet" placeholder="Mayor"
+                        [class]="numberCls" [class.border-red-500]="err('notificationStreet')" />
+                    </div>
                     @if (err('notificationStreet')) { <p class="text-xs text-red-500">{{ errMsg('notificationStreet') }}</p> }
                   </div>
                   <div class="space-y-1">
@@ -230,6 +268,18 @@ const NUMBER_CLS = 'flex-1 min-w-0 px-4 py-2.5 text-sm rounded-r-lg border bg-ca
                     <input formControlName="notificationNumber" placeholder="42"
                       [class]="inputCls" [class.border-red-500]="err('notificationNumber')" />
                     @if (err('notificationNumber')) { <p class="text-xs text-red-500">{{ errMsg('notificationNumber') }}</p> }
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-xs text-muted-foreground">Ciudad</p>
+                    <input formControlName="cityNotification" placeholder="Madrid"
+                      [class]="inputCls" [class.border-red-500]="err('cityNotification')" />
+                    @if (err('cityNotification')) { <p class="text-xs text-red-500">{{ errMsg('cityNotification') }}</p> }
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-xs text-muted-foreground">Código postal</p>
+                    <input formControlName="postalCodeNotification" placeholder="28001"
+                      [class]="inputCls" [class.border-red-500]="err('postalCodeNotification')" />
+                    @if (err('postalCodeNotification')) { <p class="text-xs text-red-500">{{ errMsg('postalCodeNotification') }}</p> }
                   </div>
                 </div>
               </div>
@@ -285,27 +335,34 @@ export class CustomerModalComponent {
   readonly phoneCountries = PHONE_COUNTRIES;
   readonly isEditMode  = computed(() => this.mode() === 'edit');
 
+  readonly streetTypes = STREET_TYPES;
+
   readonly typeOptions = [
     { value: 0, label: 'Persona Física' },
     { value: 1, label: 'Persona Jurídica' },
   ];
 
   readonly form = this.fb.nonNullable.group({
-    firstName:            ['', [Validators.maxLength(50)]],
-    lastName:             ['', [Validators.maxLength(100)]],
-    dni:                  ['', [Validators.maxLength(20)]],
-    companyName:          ['', [Validators.maxLength(150)]],
-    cif:                  ['', [Validators.maxLength(30)]],
-    email:                ['', [Validators.required, Validators.email]],
-    dialCode:             ['+34'],
-    phoneNumber:          ['', [Validators.required, phoneLocalValidator]],
-    legalCity:            ['', [Validators.required, Validators.maxLength(100)]],
-    legalStreet:          ['', [Validators.required, Validators.maxLength(150)]],
-    legalNumber:          ['', [Validators.required, Validators.maxLength(20)]],
-    notificationCity:     ['', [Validators.required, Validators.maxLength(100)]],
-    notificationStreet:   ['', [Validators.required, Validators.maxLength(150)]],
-    notificationNumber:   ['', [Validators.required, Validators.maxLength(20)]],
-    bankAccount:          ['', [Validators.required, Validators.maxLength(50)]],
+    firstName:              ['', [Validators.required, Validators.maxLength(50)]],
+    lastName1:              ['', [Validators.required, Validators.maxLength(100)]],
+    lastName2:              ['', [Validators.required, Validators.maxLength(100)]],
+    dni:                    ['', [Validators.maxLength(20)]],
+    companyName:            ['', [Validators.maxLength(150)]],
+    cif:                    ['', [Validators.maxLength(30)]],
+    email:                  ['', [Validators.required, Validators.email]],
+    dialCode:               ['+34'],
+    phoneNumber:            ['', [Validators.required, phoneLocalValidator]],
+    legalStreetType:        ['Calle'],
+    legalStreet:            ['', [Validators.required, Validators.maxLength(150)]],
+    legalNumber:            ['', [Validators.required, Validators.maxLength(20)]],
+    cityLegal:              ['', [Validators.required, Validators.maxLength(100)]],
+    postalCodeLegal:        ['', [Validators.maxLength(10)]],
+    notificationStreetType: ['Calle'],
+    notificationStreet:     ['', [Validators.required, Validators.maxLength(150)]],
+    notificationNumber:     ['', [Validators.required, Validators.maxLength(20)]],
+    cityNotification:       ['', [Validators.required, Validators.maxLength(100)]],
+    postalCodeNotification: ['', [Validators.maxLength(10)]],
+    bankAccount:            ['', [Validators.required, Validators.maxLength(50)]],
   });
 
   constructor() {
@@ -316,25 +373,30 @@ export class CustomerModalComponent {
       const c = u.customer;
       this.personType.set(c?.personType === 'Company' ? 1 : 0);
 
-      const legal = splitAddress(c?.legalAddress ?? '');
-      const notif = splitAddress(c?.notificationAddress ?? '');
+      const legalSt = splitStreetAddress(c?.legalAddress ?? '');
+      const notifSt = splitStreetAddress(c?.notificationAddress ?? '');
 
       this.form.patchValue({
-        firstName:            c?.firstName   ?? '',
-        lastName:             c?.lastName    ?? '',
-        dni:                  c?.dni         ?? '',
-        companyName:          c?.companyName ?? (this.mode() === 'create' ? (u.fullName ?? '') : ''),
-        cif:                  c?.cif         ?? '',
-        email:                c?.email       ?? u.email ?? '',
-        dialCode:             splitPhone(c?.phone ?? u.phone ?? '').dialCode,
-        phoneNumber:          splitPhone(c?.phone ?? u.phone ?? '').local,
-        legalCity:            legal.city,
-        legalStreet:          legal.street,
-        legalNumber:          legal.number,
-        notificationCity:     notif.city,
-        notificationStreet:   notif.street,
-        notificationNumber:   notif.number,
-        bankAccount:          c?.bankAccount ?? '',
+        firstName:              c?.firstName      ?? '',
+        lastName1:              c?.lastName       ?? '',
+        lastName2:              c?.secondLastName ?? '',
+        dni:                    c?.dni         ?? '',
+        companyName:            c?.companyName ?? (this.mode() === 'create' ? (u.fullName ?? '') : ''),
+        cif:                    c?.cif         ?? '',
+        email:                  c?.email       ?? u.email ?? '',
+        dialCode:               splitPhone(c?.phone ?? u.phone ?? '').dialCode,
+        phoneNumber:            splitPhone(c?.phone ?? u.phone ?? '').local,
+        legalStreetType:        legalSt.type,
+        legalStreet:            legalSt.name,
+        legalNumber:            c?.legalNumber          ?? '',
+        cityLegal:              c?.cityLegal            ?? '',
+        postalCodeLegal:        c?.postalCodeLegal      ?? '',
+        notificationStreetType: notifSt.type,
+        notificationStreet:     notifSt.name,
+        notificationNumber:     c?.notificationNumber  ?? '',
+        cityNotification:       c?.cityNotification        ?? '',
+        postalCodeNotification: c?.postalCodeNotification  ?? '',
+        bankAccount:            c?.bankAccount ?? '',
       });
     });
   }
@@ -345,7 +407,7 @@ export class CustomerModalComponent {
     if (v === 0) {
       this.form.patchValue({ companyName: '', cif: '' });
     } else {
-      this.form.patchValue({ firstName: '', lastName: '', dni: '' });
+      this.form.patchValue({ firstName: '', lastName1: '', lastName2: '', dni: '' });
     }
   }
 
@@ -392,19 +454,26 @@ export class CustomerModalComponent {
     this.saving.set(true);
 
     const payload = {
-      userId:              u.id,
-      kind:                1,
-      personType:          pt,
-      firstName:           raw.firstName    || '',
-      lastName:            raw.lastName     || '',
-      dni:                 raw.dni          || '',
-      companyName:         !isIndividual ? raw.companyName : '',
-      cif:                 !isIndividual ? raw.cif         : '',
-      email:               raw.email,
-      phone:               raw.phoneNumber ? `${raw.dialCode}${raw.phoneNumber}` : '',
-      legalAddress:        `${raw.legalCity}, ${raw.legalStreet}, ${raw.legalNumber}`,
-      notificationAddress: `${raw.notificationCity}, ${raw.notificationStreet}, ${raw.notificationNumber}`,
-      bankAccount:         raw.bankAccount,
+      userId:                 u.id,
+      kind:                   1,
+      personType:             pt,
+      firstName:              raw.firstName  || '',
+      lastName:               raw.lastName1  || '',
+      secondLastName:         raw.lastName2  || '',
+      dni:                    raw.dni       || '',
+      companyName:            !isIndividual ? raw.companyName : '',
+      cif:                    !isIndividual ? raw.cif         : '',
+      email:                  raw.email,
+      phone:                  raw.phoneNumber ? `${raw.dialCode}${raw.phoneNumber}` : '',
+      legalAddress:           `${raw.legalStreetType} ${raw.legalStreet}`,
+      legalNumber:            raw.legalNumber,
+      notificationAddress:    `${raw.notificationStreetType} ${raw.notificationStreet}`,
+      notificationNumber:     raw.notificationNumber,
+      cityLegal:              raw.cityLegal,
+      cityNotification:       raw.cityNotification,
+      bankAccount:            raw.bankAccount,
+      postalCodeLegal:        raw.postalCodeLegal        || undefined,
+      postalCodeNotification: raw.postalCodeNotification || undefined,
     };
 
     const request$ = this.mode() === 'create'

@@ -37,6 +37,10 @@ export class ContractTemplateService {
     return this.http.patch<ContractTemplate>(`${environment.apiUrl}/contract-templates/${id}`, data);
   }
 
+  getPreview(id: string): Observable<Blob> {
+    return this.http.get(`${environment.apiUrl}/contract-templates/${id}/preview`, { responseType: 'blob' });
+  }
+
   activate(id: string): Observable<void> {
     return this.http.put<void>(`${environment.apiUrl}/contract-templates/${id}/activate`, {});
   }
