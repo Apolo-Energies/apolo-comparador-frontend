@@ -2,15 +2,9 @@
   <header class="flex items-center justify-between gap-4 flex-wrap">
     <div>
       <h1 class="text-2xl font-bold text-foreground">Tramos de acceso (gas)</h1>
-      <p class="text-sm text-muted-foreground">RL1..RL6 — Término fijo y peajes ATR según BOE. Cierra y crea para versionar.</p>
+      <p class="text-sm text-muted-foreground">RL1..RL6 — Término fijo, peajes ATR y margen comercial (FEE). Cierra y crea para versionar.</p>
     </div>
-    <button
-      type="button"
-      class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
-      (click)="openCreate()"
-    >
-      Nuevo tramo
-    </button>
+    <ui-button label="Nuevo tramo" variant="default" size="md" [leadingIcon]="starIcon" (click)="openCreate()" />
   </header>
 
   <div class="flex items-center gap-3">
@@ -39,6 +33,7 @@
           <th class="px-4 py-3 font-medium text-muted-foreground">Rango kWh/año</th>
           <th class="px-4 py-3 font-medium text-muted-foreground text-right">Término fijo (€/año)</th>
           <th class="px-4 py-3 font-medium text-muted-foreground text-right">ATR (€/MWh)</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground text-right">Margen (FEE)</th>
           <th class="px-4 py-3 font-medium text-muted-foreground">Vigente desde</th>
           <th class="px-4 py-3 font-medium text-muted-foreground">Hasta</th>
           <th class="px-4 py-3 font-medium text-muted-foreground text-center">Estado</th>
@@ -47,9 +42,9 @@
       </thead>
       <tbody>
         @if (loading()) {
-          <tr><td colspan="8" class="px-4 py-6 text-center text-muted-foreground">Cargando…</td></tr>
+          <tr><td colspan="9" class="px-4 py-6 text-center text-muted-foreground">Cargando…</td></tr>
         } @else if (visibleRows().length === 0) {
-          <tr><td colspan="8" class="px-4 py-6 text-center text-muted-foreground">Sin tramos registrados.</td></tr>
+          <tr><td colspan="9" class="px-4 py-6 text-center text-muted-foreground">Sin tramos registrados.</td></tr>
         } @else {
           @for (row of visibleRows(); track row.id) {
             <tr class="border-t border-border hover:bg-muted/20">
@@ -59,6 +54,7 @@
               </td>
               <td class="px-4 py-3 text-right text-foreground">{{ row.fixedTermPerYear | number:'1.2-4' }}</td>
               <td class="px-4 py-3 text-right text-foreground">{{ row.atrVariable | number:'1.2-4' }}</td>
+              <td class="px-4 py-3 text-right text-foreground">{{ row.commercialMarginPercentage | percent:'1.0-2' }}</td>
               <td class="px-4 py-3 text-foreground">{{ row.validFrom }}</td>
               <td class="px-4 py-3 text-foreground">{{ row.validTo ?? '—' }}</td>
               <td class="px-4 py-3 text-center">
@@ -69,24 +65,44 @@
                 }
               </td>
               <td class="px-4 py-3 text-right whitespace-nowrap">
-                <button
-                  type="button"
-                  class="px-2 py-1 text-xs rounded border border-border text-foreground hover:bg-muted/50"
-                  (click)="openUpdatePrices(row)"
-                  [disabled]="!isActive(row)"
-                  [title]="isActive(row) ? 'Editar precios' : 'No editable: tramo cerrado'"
-                >
-                  Editar precios
-                </button>
-                <button
-                  type="button"
-                  class="ml-2 px-2 py-1 text-xs rounded border border-border text-red-600 hover:bg-red-50"
-                  (click)="openClose(row)"
-                  [disabled]="!isActive(row)"
-                  [title]="isActive(row) ? 'Cerrar tramo (set ValidTo)' : 'Ya cerrado'"
-                >
-                  Cerrar
-                </button>
+                <div class="inline-flex items-center gap-3">
+                  <button type="button"
+                    class="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    [disabled]="!isActive(row)"
+                    [title]="isActive(row) ? 'Editar precios' : 'No editable: tramo cerrado'"
+                    (click)="openUpdatePrices(row)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    Editar precios
+                  </button>
+                  <button type="button"
+                    class="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    [disabled]="!isActive(row)"
+                    [title]="isActive(row) ? 'Editar margen comercial (FEE)' : 'No editable: tramo cerrado'"
+                    (click)="openUpdateMargin(row)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    Editar margen
+                  </button>
+                  <button type="button"
+                    class="inline-flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    [disabled]="!isActive(row)"
+                    [title]="isActive(row) ? 'Cerrar tramo (set ValidTo)' : 'Ya cerrado'"
+                    (click)="openClose(row)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                    Cerrar
+                  </button>
+                </div>
               </td>
             </tr>
           }
@@ -104,6 +120,7 @@
           @switch (dialogMode()) {
             @case ('create')       { Nuevo tramo de acceso }
             @case ('updatePrices') { Editar precios del tramo {{ form().code }} }
+            @case ('updateMargin') { Editar margen (FEE) del tramo {{ form().code }} }
             @case ('close')        { Cerrar tramo {{ form().code }} }
           }
         </h2>
@@ -150,6 +167,24 @@
           </div>
         }
 
+        @if (dialogMode() === 'create' || dialogMode() === 'updateMargin') {
+          <div>
+            <label class="block text-xs font-medium text-muted-foreground mb-1">
+              Margen comercial / FEE (%)
+              <span class="text-muted-foreground/70">— ej. 100 para 100%, 40 para 40%</span>
+            </label>
+            <div class="relative">
+              <input type="number" min="0" step="0.01" class="w-full rounded border border-border px-3 py-2 text-sm pr-8"
+                     [value]="form().commercialMarginPercent ?? ''"
+                     (input)="updateField('commercialMarginPercent', $any($event.target).valueAsNumber)" />
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
+            </div>
+            <p class="mt-1 text-xs text-muted-foreground">
+              Se aplica sobre el Fijo anual: <code class="text-foreground">Fijo × (1 + margen)</code>. Por tramo Excel oficial: RL1=100%, RL2=40%, RL3=30%, RL4=25%, RL5=15%, RL6=10%.
+            </p>
+          </div>
+        }
+
         @if (dialogMode() === 'create') {
           <div class="grid grid-cols-2 gap-3">
             <div>
@@ -181,18 +216,19 @@
       </div>
 
       <footer class="px-5 py-3 border-t border-border flex items-center justify-end gap-2">
-        <button type="button"
-                class="px-3 py-1.5 text-sm rounded border border-border text-foreground hover:bg-muted/40"
-                [disabled]="saving()"
-                (click)="closeDialog()">
-          Cancelar
-        </button>
-        <button type="button"
-                class="px-3 py-1.5 text-sm rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                [disabled]="!canSubmit() || saving()"
-                (click)="submit()">
-          @if (saving()) { Guardando… } @else { Confirmar }
-        </button>
+        <ui-button label="Cancelar" variant="outline" size="md" [disabled]="saving()" (click)="closeDialog()" />
+        @if (saving()) {
+          <button disabled
+            class="inline-flex items-center justify-center rounded-md px-5 py-2 bg-primary-button text-white text-sm font-semibold cursor-not-allowed opacity-80">
+            <svg class="h-4 w-4 animate-spin mr-2" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+              <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="white"/>
+            </svg>
+            Guardando...
+          </button>
+        } @else {
+          <ui-button label="Confirmar" variant="default" size="md" [disabled]="!canSubmit()" (click)="submit()" />
+        }
       </footer>
     </div>
   </div>

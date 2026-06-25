@@ -6,6 +6,7 @@ import {
   CloseGasAccessTariffPayload,
   CreateGasAccessTariffPayload,
   GasAccessTariff,
+  UpdateGasAccessTariffMarginPayload,
   UpdateGasAccessTariffPricesPayload,
 } from '../entities/gas-access-tariff.model';
 
@@ -31,6 +32,10 @@ export class GasAccessTariffService {
 
   updatePrices(id: number, payload: UpdateGasAccessTariffPricesPayload): Observable<void> {
     return this.http.put<void>(`${this.base}/${id}/prices`, payload);
+  }
+
+  updateMargin(id: number, payload: UpdateGasAccessTariffMarginPayload): Observable<void> {
+    return this.http.put<void>(`${this.base}/${id}/margin`, payload);
   }
 
   close(id: number, payload: CloseGasAccessTariffPayload): Observable<void> {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, PLATFORM_ID, signal } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, PLATFORM_ID, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterOutlet, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -13,9 +13,9 @@ import { environment } from '../../../environments/environment';
 import { RefreshTokenService } from '../../services/refresh-token.service';
 import { OpportunityService } from '../../services/opportunity.service';
 import { OpportunityStatus } from '../../entities/opportunity.model';
+import { EnergyType } from '../../entities/energy-type.enum';
 import { GlobalLoadingService } from '../../services/global-loading.service';
 import { BrandLoaderComponent } from '../../shared/components/brand-loader/brand-loader.component';
-import { EnergyTypeToggleComponent } from '../../shared/components/energy-type-toggle/energy-type-toggle.component';
 
 const COLABORADOR_PERMISSIONS = [
   'comparator:view',
@@ -35,7 +35,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
 
 @Component({
   selector: 'app-layout',
-  imports: [RouterOutlet, ApoloSidebar, ApoloHeader, BrandLoaderComponent, EnergyTypeToggleComponent],
+  imports: [RouterOutlet, ApoloSidebar, ApoloHeader, BrandLoaderComponent],
   templateUrl: './layout.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -46,6 +46,7 @@ export class Layout {
   private refreshTokenService = inject(RefreshTokenService);
   private oppService = inject(OpportunityService);
   private platformId = inject(PLATFORM_ID);
+  private destroyRef = inject(DestroyRef);
   readonly globalLoading = inject(GlobalLoadingService);
 
   readonly isApolo = environment.features.userDetail;
@@ -58,27 +59,82 @@ export class Layout {
   readonly mobileOpen    = signal(false);
   readonly loggingOut    = signal(false);
 
-  /** Pending opportunities — refreshed on init and on every route change. */
-  readonly opportunitiesCount = signal<number>(0);
+  /** Pending opportunities por tipo. El parent muestra la suma (Luz + Gas)
+      via un data-attribute inyectado por JS (ver markOpportunitiesParent). */
+  readonly opportunitiesCountLuz = signal<number>(0);
+  readonly opportunitiesCountGas = signal<number>(0);
+
+  /** Titulo del parent en el sidebar — usado para matchear el boton via querySelector. */
+  private static readonly OPP_PARENT_TITLE = 'Oportunidades';
 
   constructor() {
     if (!isPlatformBrowser(this.platformId)) return;
     if (environment.features.opportunities) {
       this.refreshOpportunitiesCount();
+      afterNextRender(() => this.setupOpportunitiesParentMarker());
     }
     effect(() => {
-      const count = this.opportunitiesCount();
-      if (count > 0) {
-        document.documentElement.style.setProperty('--opp-count', `"${count}"`);
-      } else {
-        document.documentElement.style.removeProperty('--opp-count');
-      }
+      const luz = this.opportunitiesCountLuz();
+      const gas = this.opportunitiesCountGas();
+      this.setCssCount('--opp-count-luz', luz);
+      this.setCssCount('--opp-count-gas', gas);
+      this.setCssCount('--opp-count',     luz + gas);
     });
   }
 
+  /**
+   * Marca el boton del parent "Oportunidades" con data-opp-parent="true" para que la
+   * regla CSS del badge total lo pueda seleccionar. Necesario porque el sidebar lib no
+   * envuelve al parent en un <a href>, asi que no hay forma de selectorlo solo con CSS.
+   *
+   * El sidebar puede no estar en el DOM al primer afterNextRender (auth resolving,
+   * lazy render, etc), por eso reintentamos hasta encontrar la raiz y entonces montamos
+   * el MutationObserver que re-aplica el marker cuando sections() re-renderea.
+   */
+  private setupOpportunitiesParentMarker(): void {
+    this.markOpportunitiesParent();
+    this.attachSidebarObserver(0);
+  }
+
+  private attachSidebarObserver(attempt: number): void {
+    const sidebarRoot = document.querySelector('lib-apolo-sidebar');
+    if (!sidebarRoot) {
+      if (attempt < 60) { // ~1s a 60fps; si no esta para entonces, sidebar no se montara
+        requestAnimationFrame(() => this.attachSidebarObserver(attempt + 1));
+      }
+      return;
+    }
+    this.markOpportunitiesParent();
+    const observer = new MutationObserver(() => this.markOpportunitiesParent());
+    observer.observe(sidebarRoot, { childList: true, subtree: true });
+    this.destroyRef.onDestroy(() => observer.disconnect());
+  }
+
+  private markOpportunitiesParent(): void {
+    const items = document.querySelectorAll<HTMLElement>('lib-apolo-sidebar lib-sidebar-item');
+    for (const item of Array.from(items)) {
+      // Match por texto del title. Si renombramos el item en sidebar, actualizar OPP_PARENT_TITLE.
+      const titleSpan = item.querySelector(':scope > button > div > span');
+      if (titleSpan?.textContent?.trim() !== Layout.OPP_PARENT_TITLE) continue;
+      const btn = item.querySelector('button');
+      if (btn && !btn.hasAttribute('data-opp-parent')) {
+        btn.setAttribute('data-opp-parent', 'true');
+      }
+    }
+  }
+
+  private setCssCount(name: string, value: number): void {
+    if (value > 0) document.documentElement.style.setProperty(name, `"${value}"`);
+    else document.documentElement.style.removeProperty(name);
+  }
+
   private refreshOpportunitiesCount(): void {
-    this.oppService.list({ pageSize: 1, status: OpportunityStatus.Pending }).subscribe({
-      next: res => this.opportunitiesCount.set(res.totalCount),
+    this.oppService.list({ pageSize: 1, status: OpportunityStatus.Pending, energyType: EnergyType.Electricity }).subscribe({
+      next: res => this.opportunitiesCountLuz.set(res.totalCount),
+      error: () => { },
+    });
+    this.oppService.list({ pageSize: 1, status: OpportunityStatus.Pending, energyType: EnergyType.Gas }).subscribe({
+      next: res => this.opportunitiesCountGas.set(res.totalCount),
       error: () => { },
     });
   }
@@ -139,9 +195,12 @@ export class Layout {
             icon: { type: 'apolo', icon: PieIcon, size: 20 },
             access: ['analytics:view'],
             children: [
-              { title: 'Historial',    url: '/dashboard/analytics/history',    access: ['analytics.history:view'] },
-              { title: 'Estadísticas', url: '/dashboard/analytics/statistics', access: ['analytics.statistics:view'] },
-              { title: 'Reportes',     url: '/dashboard/analytics/reports',    access: ['analytics.statistics:view'] },
+              { title: 'Historial · Luz',    url: '/dashboard/analytics/history',        access: ['analytics.history:view'] },
+              { title: 'Historial · Gas',    url: '/dashboard/analytics/history/gas',    access: ['analytics.history:view'] },
+              { title: 'Estadísticas · Luz', url: '/dashboard/analytics/statistics',     access: ['analytics.statistics:view'] },
+              { title: 'Estadísticas · Gas', url: '/dashboard/analytics/statistics/gas', access: ['analytics.statistics:view'] },
+              { title: 'Reportes · Luz',     url: '/dashboard/analytics/reports',        access: ['analytics.statistics:view'] },
+              { title: 'Reportes · Gas',     url: '/dashboard/analytics/reports/gas',    access: ['analytics.statistics:view'] },
             ],
           },
           // TODO: habilitar Contratos cuando esté listo (solo Apolo)
@@ -157,20 +216,29 @@ export class Layout {
           ...(environment.features.opportunities ? [{
             title: 'Oportunidades',
             icon: { type: 'apolo' as const, icon: StarIcon, size: 20 },
-            url: '/dashboard/analytics/opportunities',
             access: ['opportunities:view'],
+            children: [
+              { title: 'Luz', url: '/dashboard/analytics/opportunities/luz', access: ['opportunities:view'] },
+              { title: 'Gas', url: '/dashboard/analytics/opportunities/gas', access: ['opportunities:view'] },
+            ],
           }] : []),
           {
             title: 'Comparador',
             icon: { type: 'apolo', icon: ArrowDownBoxIcon, size: 20 },
-            url: '/dashboard/comparator',
             access: ['comparator:view'],
+            children: [
+              { title: 'Luz', url: '/dashboard/comparator',     access: ['comparator:view'] },
+              { title: 'Gas', url: '/dashboard/comparator/gas', access: ['comparator:view'] },
+            ],
           },
           {
             title: 'Consultas SIPS',
             icon: { type: 'apolo', icon: CompassIcon, size: 20 },
-            url: '/dashboard/sips',
             access: ['sips:view'],
+            children: [
+              { title: 'Luz', url: '/dashboard/sips',     access: ['sips:view'] },
+              { title: 'Gas', url: '/dashboard/sips/gas', access: ['sips:view'] },
+            ],
           },
           ...(environment.features.markets ? [{
             title: 'Mercados',

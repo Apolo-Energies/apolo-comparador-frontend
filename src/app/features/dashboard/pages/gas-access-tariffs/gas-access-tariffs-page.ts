@@ -1,10 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ButtonComponent } from '@apolo-energies/ui';
+import { StarIcon, UiIconSource } from '@apolo-energies/icons';
 import { GasAccessTariffService } from '../../../../services/gas-access-tariff.service';
 import { GasAccessTariff } from '../../../../entities/gas-access-tariff.model';
 
-type DialogMode = 'create' | 'updatePrices' | 'close';
+type DialogMode = 'create' | 'updatePrices' | 'updateMargin' | 'close';
 
 interface FormState {
   code: string;
@@ -12,6 +14,8 @@ interface FormState {
   maxAnnualKwh: number | null;
   fixedTermPerYear: number | null;
   atrVariable: number | null;
+  /** FEE margen comercial - guardado como porcentaje en UI (40 = 40%). Se convierte a decimal (0.40) al enviar al API. */
+  commercialMarginPercent: number | null;
   validFrom: string;
   validTo: string;
 }
@@ -19,7 +23,7 @@ interface FormState {
 @Component({
   selector: 'app-gas-access-tariffs-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ButtonComponent],
   templateUrl: './gas-access-tariffs-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -37,6 +41,8 @@ export class GasAccessTariffsPageComponent {
   readonly editingId    = signal<number | null>(null);
   readonly form         = signal<FormState>(this.emptyForm());
 
+  readonly starIcon: UiIconSource = { type: 'apolo', icon: StarIcon, size: 16 };
+
   readonly visibleRows = computed(() => this.rows());
 
   readonly canSubmit = computed(() => {
@@ -47,11 +53,15 @@ export class GasAccessTariffsPageComponent {
         && f.minAnnualKwh != null && f.minAnnualKwh >= 0
         && f.fixedTermPerYear != null && f.fixedTermPerYear >= 0
         && f.atrVariable != null && f.atrVariable >= 0
+        && f.commercialMarginPercent != null && f.commercialMarginPercent >= 0
         && !!f.validFrom;
     }
     if (mode === 'updatePrices') {
       return f.fixedTermPerYear != null && f.fixedTermPerYear >= 0
           && f.atrVariable != null && f.atrVariable >= 0;
+    }
+    if (mode === 'updateMargin') {
+      return f.commercialMarginPercent != null && f.commercialMarginPercent >= 0;
     }
     return !!f.validTo;
   });
@@ -93,6 +103,17 @@ export class GasAccessTariffsPageComponent {
     this.dialogOpen.set(true);
   }
 
+  openUpdateMargin(row: GasAccessTariff): void {
+    this.dialogMode.set('updateMargin');
+    this.editingId.set(row.id);
+    this.form.set({
+      ...this.emptyForm(),
+      code: row.code,
+      commercialMarginPercent: this.toPercent(row.commercialMarginPercentage),
+    });
+    this.dialogOpen.set(true);
+  }
+
   openClose(row: GasAccessTariff): void {
     this.dialogMode.set('close');
     this.editingId.set(row.id);
@@ -129,6 +150,7 @@ export class GasAccessTariffsPageComponent {
         maxAnnualKwh: f.maxAnnualKwh,
         fixedTermPerYear: f.fixedTermPerYear!,
         atrVariable: f.atrVariable!,
+        commercialMarginPercentage: this.toDecimal(f.commercialMarginPercent!),
         validFrom: f.validFrom,
         validTo: f.validTo || null,
       }).subscribe({ next: done, error: fail });
@@ -141,11 +163,27 @@ export class GasAccessTariffsPageComponent {
       }).subscribe({ next: done, error: fail });
       return;
     }
+    if (mode === 'updateMargin') {
+      this.service.updateMargin(this.editingId()!, {
+        commercialMarginPercentage: this.toDecimal(f.commercialMarginPercent!),
+      }).subscribe({ next: done, error: fail });
+      return;
+    }
     this.service.close(this.editingId()!, { validTo: f.validTo }).subscribe({ next: done, error: fail });
   }
 
   isActive(row: GasAccessTariff): boolean {
     return row.validTo == null;
+  }
+
+  /** decimal (0.40) -> percent (40) para mostrar/editar en UI */
+  private toPercent(decimal: number): number {
+    return Math.round(decimal * 10000) / 100;
+  }
+
+  /** percent (40) -> decimal (0.40) para enviar al API */
+  private toDecimal(percent: number): number {
+    return Math.round(percent * 100) / 10000;
   }
 
   private emptyForm(): FormState {
@@ -155,6 +193,7 @@ export class GasAccessTariffsPageComponent {
       maxAnnualKwh: null,
       fixedTermPerYear: null,
       atrVariable: null,
+      commercialMarginPercent: null,
       validFrom: new Date().toISOString().slice(0, 10),
       validTo: '',
     };

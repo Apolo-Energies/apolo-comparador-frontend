@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ButtonComponent } from '@apolo-energies/ui';
+import { StarIcon, UiIconSource } from '@apolo-energies/icons';
 import { GasRegulatoryParamsService } from '../../../../services/gas-regulatory-params.service';
 import { GasRegulatoryParams } from '../../../../entities/gas-regulatory-params.model';
 
@@ -18,7 +20,7 @@ interface FormState {
 @Component({
   selector: 'app-gas-regulatory-params-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ButtonComponent],
   templateUrl: './gas-regulatory-params-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -33,6 +35,8 @@ export class GasRegulatoryParamsPageComponent {
   readonly dialogOpen   = signal(false);
   readonly dialogMode   = signal<DialogMode>('create');
   readonly editingId    = signal<number | null>(null);
+
+  readonly starIcon: UiIconSource = { type: 'apolo', icon: StarIcon, size: 16 };
   readonly form         = signal<FormState>(this.emptyForm());
 
   readonly canSubmit = computed(() => {

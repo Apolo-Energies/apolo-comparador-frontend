@@ -1,0 +1,79 @@
+<div class="space-y-4">
+  <header>
+    <h1 class="text-2xl font-semibold text-foreground">OCR de gas — banco de pruebas</h1>
+    <p class="mt-1 text-sm text-muted-foreground">
+      Sube una o varias facturas de gas en PDF y mira el JSON que Claude devuelve para cada una.
+      No se guarda nada en la BD. Se procesan secuencialmente.
+    </p>
+  </header>
+
+  <div class="rounded-2xl bg-card p-6">
+    <label class="inline-flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-secondary px-4 py-3 text-sm font-medium text-foreground hover:bg-accent">
+      <span>Seleccionar PDFs (puedes elegir varios)</span>
+      <input type="file" accept="application/pdf" multiple class="hidden" (change)="onFilesSelected($event)" [disabled]="loading()" />
+    </label>
+
+    @if (loading() && progress(); as p) {
+      <div class="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
+        <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted border-t-primary"></div>
+        <span>Procesando factura <strong class="text-foreground">{{ p.done + 1 }}</strong> de <strong class="text-foreground">{{ p.total }}</strong>… (~15 s por factura)</span>
+      </div>
+    }
+
+    @if (hasResults() && !loading()) {
+      <div class="mt-4 flex items-center gap-3">
+        <button (click)="copyAllResults()" class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
+          Copiar todos los resultados
+        </button>
+        <span class="text-xs text-muted-foreground">
+          {{ results().length }} factura(s) procesada(s)
+        </span>
+      </div>
+    }
+  </div>
+
+  @for (r of results(); track $index) {
+    <div class="rounded-2xl bg-card p-6">
+      <div class="flex items-center justify-between gap-3 border-b border-border pb-3">
+        <div class="min-w-0">
+          <div class="text-xs uppercase tracking-wide text-muted-foreground">Factura {{ $index + 1 }}</div>
+          <div class="truncate text-sm font-medium text-foreground">{{ r.fileName }}</div>
+        </div>
+        @if (r.response) {
+          <div class="flex items-center gap-2">
+            @if (r.response.modelUsed) {
+              <span class="rounded-md bg-primary/15 px-2 py-1 text-xs font-mono text-foreground" [title]="r.response.modelUsed">
+                {{ r.response.modelUsed.includes('haiku') ? 'Haiku' : r.response.modelUsed.includes('sonnet') ? 'Sonnet (fallback)' : r.response.modelUsed }}
+              </span>
+            }
+            <span class="rounded-md bg-secondary px-2 py-1 text-xs font-mono text-muted-foreground">
+              {{ r.response.durationMs }} ms
+            </span>
+            <button (click)="copySingleJson($index)" class="rounded-lg border border-border bg-secondary px-3 py-1 text-xs hover:bg-accent">
+              Copiar JSON
+            </button>
+          </div>
+        }
+      </div>
+
+      @if (r.errorMessage) {
+        <div class="mt-3 rounded-lg border border-destructive bg-destructive/10 p-3 text-sm text-destructive">
+          Error HTTP: {{ r.errorMessage }}
+        </div>
+      } @else if (r.response?.parseError) {
+        <div class="mt-3 rounded-lg border border-destructive bg-destructive/10 p-3 text-xs text-destructive">
+          <div class="font-semibold">Error de deserialización:</div>
+          <div class="mt-1 font-mono">{{ r.response!.parseError }}</div>
+        </div>
+        <details class="mt-3" open>
+          <summary class="cursor-pointer text-xs text-muted-foreground hover:text-foreground">
+            tool_use input (lo que Claude devolvió antes de deserializar)
+          </summary>
+          <pre class="mt-2 max-h-[400px] overflow-auto rounded-lg bg-background p-4 text-xs leading-relaxed text-muted-foreground">{{ r.response!.toolInputRawJson }}</pre>
+        </details>
+      } @else {
+        <pre class="mt-3 max-h-[500px] overflow-auto rounded-lg bg-background p-4 text-xs leading-relaxed text-foreground">{{ prettyJson(r.response!.ocrData) }}</pre>
+      }
+    </div>
+  }
+</div>

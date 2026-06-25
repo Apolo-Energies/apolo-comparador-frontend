@@ -45,6 +45,7 @@ export class OpportunityService {
     if (filters.createdByFullName)     params = params.set('createdByFullName', filters.createdByFullName);
     if (filters.createdByEmail)        params = params.set('createdByEmail',    filters.createdByEmail);
     if (filters.searchTerm)            params = params.set('searchTerm',        filters.searchTerm);
+    if (filters.energyType !== undefined) params = params.set('energyType',     String(filters.energyType));
 
     return this.http.get<OpportunityPaged>(this.base, { params }).pipe(
       map(res => ({

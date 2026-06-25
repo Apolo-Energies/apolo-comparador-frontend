@@ -39,6 +39,7 @@
             label="Consultar"
             variant="default"
             size="sm"
+            [leadingIcon]="searchIcon"
             [disabled]="!isSingle() || loading() || exporting()"
             (click)="onConsultar()"
           />
