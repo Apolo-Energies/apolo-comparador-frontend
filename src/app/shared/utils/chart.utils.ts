@@ -1,4 +1,5 @@
 import { SipsConsumo } from "../../entities/sips.model";
+import { GasSipsConsumption } from "../../entities/gas-sips.model";
 
 export interface MonthlyRowDatum {
   month: string;
@@ -45,6 +46,34 @@ export function getMonthlyStackedChartData(rows: SipsConsumo[]): MonthlyRowDatum
     acc.P4 = (acc.P4 ?? 0) + Math.round(wToKwh(item.energiaP4 ?? 0));
     acc.P5 = (acc.P5 ?? 0) + Math.round(wToKwh(item.energiaP5 ?? 0));
     acc.P6 = (acc.P6 ?? 0) + Math.round(wToKwh(item.energiaP6 ?? 0));
+  });
+
+  return Array.from(grouped.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([, value]) => value)
+    .slice(-12);
+}
+
+export function getGasMonthlyStackedChartData(rows: GasSipsConsumption[]): MonthlyRowDatum[] {
+  if (!rows || rows.length === 0) return [];
+
+  const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const grouped = new Map<number, MonthlyRowDatum>();
+
+  rows.forEach((item) => {
+    const date = new Date(item.fechaFin);
+    const key = date.getFullYear() * 100 + date.getMonth();
+
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        month: `${months[date.getMonth()]} ${String(date.getFullYear()).slice(-2)}`,
+        P1: 0, P2: 0, P3: 0, P4: 0, P5: 0, P6: 0,
+      });
+    }
+
+    const acc = grouped.get(key)!;
+    acc.P1 = (acc.P1 ?? 0) + Math.round(item.consumoP1Kwh ?? 0);
+    acc.P2 = (acc.P2 ?? 0) + Math.round(item.consumoP2Kwh ?? 0);
   });
 
   return Array.from(grouped.entries())
