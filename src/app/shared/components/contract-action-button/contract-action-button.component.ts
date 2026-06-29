@@ -10,16 +10,21 @@ import { ContractService } from '../../../services/contract.service';
   imports: [ButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (canSend() || canRequestSignature()) {
+    @if (acting()) {
+      <button disabled class="inline-flex items-center justify-center gap-2 min-w-32 rounded-md px-4 py-2 bg-primary-button text-white text-sm font-semibold cursor-not-allowed opacity-80">
+        <svg class="h-4 w-4 animate-spin shrink-0" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+          <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="white"/>
+        </svg>
+        Enviando…
+      </button>
+    } @else if (canSend() || canRequestSignature()) {
       <ui-button label="Enviar contrato" variant="default" size="sm"
-        [disabled]="acting()"
         (click)="previewMode() ? openPreview.emit() : onSendContract()" />
     } @else if (canRenew()) {
-      <ui-button label="Renovar contrato" variant="default" size="sm"
-        [disabled]="acting()" (click)="onRenew()" />
+      <ui-button label="Renovar contrato" variant="default" size="sm" (click)="onRenew()" />
     } @else if (canResend()) {
-      <ui-button label="Reenviar contrato" variant="outline" size="sm"
-        [disabled]="acting()" (click)="onResend()" />
+      <ui-button label="Reenviar contrato" variant="outline" size="sm" (click)="onResend()" />
     } @else if (isInProgress()) {
       <ui-button label="Esperando firma" variant="outline" size="sm" [disabled]="true" />
     } @else if (actions().length > 0) {
@@ -36,6 +41,7 @@ export class ContractActionButtonComponent {
   readonly previewMode         = input<boolean>(false);
 
   readonly openPreview = output<void>();
+  readonly sent        = output<void>();
 
   private readonly contractSvc = inject(ContractService);
   private readonly alert       = inject(AlertService);
@@ -64,8 +70,8 @@ export class ContractActionButtonComponent {
     if (!cid) return;
     this.acting.set(true);
     this.contractSvc.sendContract(cid).subscribe({
-      next:  () => { this.alert.show('Contrato enviado correctamente', 'success'); this.acting.set(false); },
-      error: () => { this.alert.show('Error al enviar el contrato', 'error');      this.acting.set(false); },
+      next:  () => { this.acting.set(false); this.sent.emit(); this.alert.show('Contrato enviado correctamente', 'success'); },
+      error: () => { this.acting.set(false); this.alert.show('Error al enviar el contrato', 'error'); },
     });
   }
 
@@ -74,8 +80,8 @@ export class ContractActionButtonComponent {
     if (!cid) return;
     this.acting.set(true);
     this.contractSvc.send(cid).subscribe({
-      next:  () => { this.alert.show('Contrato enviado para firma', 'success'); this.acting.set(false); },
-      error: () => { this.alert.show('Error al solicitar la firma', 'error');   this.acting.set(false); },
+      next:  () => { this.acting.set(false); this.sent.emit(); this.alert.show('Contrato enviado para firma', 'success'); },
+      error: () => { this.acting.set(false); this.alert.show('Error al solicitar la firma', 'error'); },
     });
   }
 
@@ -84,8 +90,8 @@ export class ContractActionButtonComponent {
     if (!cid) return;
     this.acting.set(true);
     this.contractSvc.send(cid).subscribe({
-      next:  () => { this.alert.show('Contrato renovado correctamente', 'success'); this.acting.set(false); },
-      error: () => { this.alert.show('Error al renovar el contrato', 'error');      this.acting.set(false); },
+      next:  () => { this.acting.set(false); this.sent.emit(); this.alert.show('Contrato renovado correctamente', 'success'); },
+      error: () => { this.acting.set(false); this.alert.show('Error al renovar el contrato', 'error'); },
     });
   }
 
@@ -94,8 +100,8 @@ export class ContractActionButtonComponent {
     if (!cid) return;
     this.acting.set(true);
     this.contractSvc.send(cid).subscribe({
-      next:  () => { this.alert.show('Contrato reenviado correctamente', 'success'); this.acting.set(false); },
-      error: () => { this.alert.show('Error al reenviar el contrato', 'error');      this.acting.set(false); },
+      next:  () => { this.acting.set(false); this.sent.emit(); this.alert.show('Contrato reenviado correctamente', 'success'); },
+      error: () => { this.acting.set(false); this.alert.show('Error al reenviar el contrato', 'error'); },
     });
   }
 }
