@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '@apolo-energies/auth';
-import { AlertService, ButtonComponent, DialogComponent } from '@apolo-energies/ui';
+import { AlertComponent, AlertService, ButtonComponent, DialogComponent } from '@apolo-energies/ui';
 import { UserService } from '../../../../../services/user.service';
 import { ContractService } from '../../../../../services/contract.service';
 import { UserDetail } from '../../../../../entities/user-detail.model';
@@ -24,6 +24,7 @@ import { GlobalLoadingService } from '../../../../../services/global-loading.ser
   standalone: true,
   imports: [
     FormsModule,
+    AlertComponent,
     ButtonComponent,
     DialogComponent,
     EditUserModalComponent,
@@ -251,6 +252,10 @@ export class UserDetailPageComponent implements OnInit {
         this.contractPreviewOpen.set(false);
       },
     });
+  }
+
+  onContractSent(): void {
+    this.closeContractPreview();
   }
 
   closeContractPreview(): void {
