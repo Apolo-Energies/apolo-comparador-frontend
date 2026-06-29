@@ -271,7 +271,7 @@ export class ProductsTabComponent implements AfterViewInit {
       return;
     }
 
-    const power = this.parsedSection(this.fillEmptyWithZero(this.createPowerPeriods(), count), count);
+    const power = this.parsedSection(this.createPowerPeriods(), count);
     if (!power.ok) {
       this.alertService.show('Los valores de potencia deben ser números válidos (≥ 0)', 'error');
       return;
@@ -413,7 +413,7 @@ export class ProductsTabComponent implements AfterViewInit {
       return;
     }
 
-    const power = this.parsedSection(this.fillEmptyWithZero(this.editPowerPeriods(), count), count);
+    const power = this.parsedSection(this.editPowerPeriods(), count);
     if (!power.ok) {
       this.alertService.show('Los valores de potencia deben ser números válidos (≥ 0)', 'error');
       return;
