@@ -32,8 +32,9 @@ const calculateComision = (form: ComparadorFormValue, ocr: OcrResult): number =>
     return round3(energia + potencia);
   }
 
-  const coeficienteEnergia = 10 * consumoPeriodo;
-  const energia            = (feeEnergia * comisionEnergia * coeficienteEnergia) / 1000;
+  const diasFactura        = ocr.periodo_facturacion?.numero_dias || 1;
+  const consumoAnual       = consumoPeriodo * (365 / diasFactura);
+  const energia            = (feeEnergia * comisionEnergia * consumoAnual) / 1000;
   const potencia           = feePotencia * coeficientePotencia * potenciaContratada;
   return round3(energia + potencia);
 };
@@ -220,7 +221,7 @@ export const calcularFactura = (
   // kwhTotal: sum directly from OCR (avoids nested find; same result as periodos sum)
   const kwhTotal       = round6((ocr.energia ?? []).reduce((s, e) => s + (e.activa?.kwh ?? 0), 0));
   const diasFacturados = dias || 1;
-  const consumoAnual   = kwhTotal * 10;
+  const consumoAnual   = kwhTotal * (365 / diasFacturados);
 
   const deltaEnergia  = (kwhTotal > 0)
     ? ((totalEnergiaActual  - totalEnergia)  / kwhTotal) * consumoAnual
