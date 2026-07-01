@@ -196,6 +196,14 @@ export const DASHBOARD_ROUTES: Routes = [
           import('./pages/gas-regulatory-params/gas-regulatory-params-page')
             .then(m => m.GasRegulatoryParamsPageComponent),
       },
+      {
+        path: 'gas/products',
+        canActivate: [permissionGuard],
+        data: { roles: ['Master'] },
+        loadComponent: () =>
+          import('./pages/gas-products/gas-products-page')
+            .then(m => m.GasProductsPageComponent),
+      },
 
       { path: 'forbidden', component: ForbiddenComponent },
     ],
