@@ -81,32 +81,32 @@ export function calcularFacturaGas(
 // admin de productos de gas) cuando se quiera ajustar.
 export const DEFAULT_GAS_PRODUCTS: GasProductsByTariff = {
   'R1': [
-    { name: 'Fijo Gas Mini',  type: 'Fixed',   precioEnergia: 0.0650, precioFijoDia: 0.1500 },
-    { name: 'Fijo Gas',       type: 'Fixed',   precioEnergia: 0.0625, precioFijoDia: 0.1500 },
-    { name: 'Fijo Gas Maxi',  type: 'Fixed',   precioEnergia: 0.0600, precioFijoDia: 0.1500 },
-    { name: 'Indexado',       type: 'Indexed', precioEnergia: 0.0550, precioFijoDia: 0.1500 },
+    { name: 'Fijo Gas Mini',  type: 'Fixed',   precioEnergia: 0.0650, precioFijoDia: 0.1500, feeLocked: true  },
+    { name: 'Fijo Gas',       type: 'Fixed',   precioEnergia: 0.0625, precioFijoDia: 0.1500, feeLocked: true  },
+    { name: 'Fijo Gas Maxi',  type: 'Fixed',   precioEnergia: 0.0600, precioFijoDia: 0.1500, feeLocked: true  },
+    { name: 'Indexado',       type: 'Indexed', precioEnergia: 0.0550, precioFijoDia: 0.1500, feeLocked: false },
   ],
   'R2': [
-    { name: 'Fijo Gas Mini',  type: 'Fixed',   precioEnergia: 0.0625, precioFijoDia: 0.2500 },
-    { name: 'Fijo Gas',       type: 'Fixed',   precioEnergia: 0.0600, precioFijoDia: 0.2500 },
-    { name: 'Fijo Gas Maxi',  type: 'Fixed',   precioEnergia: 0.0575, precioFijoDia: 0.2500 },
-    { name: 'Indexado',       type: 'Indexed', precioEnergia: 0.0525, precioFijoDia: 0.2500 },
+    { name: 'Fijo Gas Mini',  type: 'Fixed',   precioEnergia: 0.0625, precioFijoDia: 0.2500, feeLocked: true  },
+    { name: 'Fijo Gas',       type: 'Fixed',   precioEnergia: 0.0600, precioFijoDia: 0.2500, feeLocked: true  },
+    { name: 'Fijo Gas Maxi',  type: 'Fixed',   precioEnergia: 0.0575, precioFijoDia: 0.2500, feeLocked: true  },
+    { name: 'Indexado',       type: 'Indexed', precioEnergia: 0.0525, precioFijoDia: 0.2500, feeLocked: false },
   ],
   'R3': [
-    { name: 'Fijo Gas Pyme',  type: 'Fixed',   precioEnergia: 0.0600, precioFijoDia: 0.6500 },
-    { name: 'Indexado',       type: 'Indexed', precioEnergia: 0.0500, precioFijoDia: 0.6500 },
+    { name: 'Fijo Gas Pyme',  type: 'Fixed',   precioEnergia: 0.0600, precioFijoDia: 0.6500, feeLocked: false },
+    { name: 'Indexado',       type: 'Indexed', precioEnergia: 0.0500, precioFijoDia: 0.6500, feeLocked: false },
   ],
   'R4': [
-    { name: 'Fijo Gas Empresa', type: 'Fixed',   precioEnergia: 0.0580, precioFijoDia: 1.4500 },
-    { name: 'Indexado',         type: 'Indexed', precioEnergia: 0.0480, precioFijoDia: 1.4500 },
+    { name: 'Fijo Gas Empresa', type: 'Fixed',   precioEnergia: 0.0580, precioFijoDia: 1.4500, feeLocked: false },
+    { name: 'Indexado',         type: 'Indexed', precioEnergia: 0.0480, precioFijoDia: 1.4500, feeLocked: false },
   ],
   'R5': [
-    { name: 'Fijo Gas Industria', type: 'Fixed',   precioEnergia: 0.0560, precioFijoDia: 2.5000 },
-    { name: 'Indexado',           type: 'Indexed', precioEnergia: 0.0460, precioFijoDia: 2.5000 },
+    { name: 'Fijo Gas Industria', type: 'Fixed',   precioEnergia: 0.0560, precioFijoDia: 2.5000, feeLocked: false },
+    { name: 'Indexado',           type: 'Indexed', precioEnergia: 0.0460, precioFijoDia: 2.5000, feeLocked: false },
   ],
   'R6': [
-    { name: 'Fijo Gas Industria', type: 'Fixed',   precioEnergia: 0.0540, precioFijoDia: 3.8000 },
-    { name: 'Indexado',           type: 'Indexed', precioEnergia: 0.0440, precioFijoDia: 3.8000 },
+    { name: 'Fijo Gas Industria', type: 'Fixed',   precioEnergia: 0.0540, precioFijoDia: 3.8000, feeLocked: false },
+    { name: 'Indexado',           type: 'Indexed', precioEnergia: 0.0440, precioFijoDia: 3.8000, feeLocked: false },
   ],
 };
 
