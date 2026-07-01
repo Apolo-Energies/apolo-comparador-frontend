@@ -259,6 +259,7 @@ export class Layout {
             children: [
               { title: 'Tramos de acceso', url: '/dashboard/gas/access-tariffs',    access: ['analytics:view'] },
               { title: 'Parámetros',       url: '/dashboard/gas/regulatory-params', access: ['analytics:view'] },
+              { title: 'Productos',        url: '/dashboard/gas/products',          access: ['analytics:view'] },
             ],
           },
         ],

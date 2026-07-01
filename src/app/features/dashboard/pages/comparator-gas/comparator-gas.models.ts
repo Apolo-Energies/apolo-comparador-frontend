@@ -203,6 +203,7 @@ export interface GasProduct {
   type:          'Fixed' | 'Indexed';
   precioEnergia: number;    // €/kWh base
   precioFijoDia: number;    // €/día base (término fijo)
+  feeLocked:     boolean;   // si true, el comparador bloquea el fee
 }
 
 export type GasProductsByTariff = Record<string, GasProduct[]>;
