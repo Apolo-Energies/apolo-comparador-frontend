@@ -22,10 +22,12 @@ export interface CreateUserRequest {
 }
 
 export interface UpdateUserRequest {
-  role?:           number;
-  isActive?:       boolean;
-  isEnergyExpert?: boolean;
-  providerId?:     number;
+  role?:             number;
+  isActive?:         boolean;
+  isEnergyExpert?:   boolean;
+  providerId?:       number;
+  delegationId?:     number;
+  clearDelegation?:  boolean;
 }
 
 export interface CreateUserResponse {

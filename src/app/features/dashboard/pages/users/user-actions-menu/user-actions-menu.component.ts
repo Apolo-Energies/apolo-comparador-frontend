@@ -11,8 +11,10 @@ import { UserService } from '../../../../../services/user.service';
 import { CatalogService } from '../../../../../services/catalog.service';
 import { RestorePasswordModalComponent } from '../restore-password-modal/restore-password-modal.component';
 import { SendContractModalComponent } from '../send-contract-modal/send-contract-modal.component';
+import { DelegationPickerModalComponent } from '../delegation-picker-modal/delegation-picker-modal.component';
 import { UserRole, UserRoleLabel, normalizeRoleToOptionValue } from '../../../../../entities/user-role';
 import { PotentialParent } from '../../../../../entities/user.model';
+import { Delegation } from '../../../../../entities/delegation.model';
 import { environment } from '../../../../../../environments/environment';
 
 export interface SubUserSummary {
@@ -36,6 +38,7 @@ export interface UserRow {
   commissions:    { isActive: boolean; commissionType: { id: string; name: string } }[];
   providerId:     number | null;
   provider:       { id: number; name: string } | null;
+  delegationId?:  number | null;
   customerId?:                string | null;
   identifier?:                string | null;
   contractSignatureStatus?:   string | null;
@@ -70,7 +73,7 @@ const ACTION_BTN_CLS = [
 @Component({
   selector: 'app-user-actions-menu',
   standalone: true,
-  imports: [FormsModule, SvgIcon, RestorePasswordModalComponent, SendContractModalComponent, DeleteUserModalComponent],
+  imports: [FormsModule, SvgIcon, RestorePasswordModalComponent, SendContractModalComponent, DeleteUserModalComponent, DelegationPickerModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex items-center gap-0.5">
@@ -146,10 +149,10 @@ const ACTION_BTN_CLS = [
 
             @if (!isSubUser()) {
               <select [class]="selectCls"
-                [ngModel]="selectedExpert()"
-                (ngModelChange)="onExpertChange($event)">
+                [value]="selectedExpert()"
+                (change)="onExpertChange($any($event.target).value)">
                 @for (opt of expertOptions; track opt.value) {
-                  <option [value]="opt.value">{{ opt.label }}</option>
+                  <option [value]="opt.value" [selected]="opt.value === selectedExpert()">{{ opt.label }}</option>
                 }
               </select>
 
@@ -230,6 +233,12 @@ const ACTION_BTN_CLS = [
       [userEmail]="user().email"
       (closed)="sendContractModalOpen.set(false)"
     />
+
+    <app-delegation-picker-modal
+      [open]="delegationPickerOpen()"
+      (closed)="onDelegationPickerClosed()"
+      (selected)="onDelegationSelected($event)"
+    />
   `,
 })
 export class UserActionsMenuComponent {
@@ -261,6 +270,7 @@ export class UserActionsMenuComponent {
   readonly passwordModalOpen     = signal(false);
   readonly sendContractModalOpen = signal(false);
   readonly deleteConfirmOpen     = signal(false);
+  readonly delegationPickerOpen  = signal(false);
 
   readonly selectedRole       = signal('');
   readonly selectedStatus     = signal('');
@@ -368,9 +378,42 @@ export class UserActionsMenuComponent {
 
   onExpertChange(value: string): void {
     this.selectedExpert.set(value);
-    this.userService.patch(this.user().id, { isEnergyExpert: value === 'true' }).subscribe({
-      next:  () => { this.alertService.show('Energy Expert actualizado', 'success'); this.updated.emit(); },
+    const isExpert = value === 'true';
+
+    if (isExpert) {
+      this.isOpen.set(false);
+      this.delegationPickerOpen.set(true);
+      return;
+    }
+
+    this.userService.patch(this.user().id, {
+      isEnergyExpert: false,
+      clearDelegation: true,
+    }).subscribe({
+      next: () => {
+        this.alertService.show('Energy Expert actualizado', 'success');
+        this.updated.emit();
+      },
       error: () => this.alertService.show('Error al actualizar Energy Expert', 'error'),
+    });
+  }
+
+  onDelegationPickerClosed(): void {
+    this.delegationPickerOpen.set(false);
+    this.selectedExpert.set(String(this.user().isEnergyExpert));
+  }
+
+  onDelegationSelected(delegation: Delegation): void {
+    this.userService.patch(this.user().id, {
+      isEnergyExpert: true,
+      delegationId: delegation.id,
+    }).subscribe({
+      next: () => {
+        this.alertService.show(`Energy Expert activado con delegación "${delegation.name}"`, 'success');
+        this.delegationPickerOpen.set(false);
+        this.updated.emit();
+      },
+      error: () => this.alertService.show('Error al asignar la delegación', 'error'),
     });
   }
 
