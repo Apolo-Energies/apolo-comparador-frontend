@@ -14,6 +14,7 @@ export class PeriodEditorComponent {
   readonly value     = input.required<number>();
   readonly isEditing = input.required<boolean>();
   readonly isSaving  = input.required<boolean>();
+  readonly isEmpty   = input<boolean>(false);
   readonly decimals  = input<number>(6);
   readonly step      = input<string>('0.00000001');
 

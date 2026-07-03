@@ -5,7 +5,7 @@ import { ComparatorService } from '../../../../services/comparator.service';
 import { Provider } from '../../../../entities/provider.model';
 import { TabType } from '../../../../entities/rates.model';
 import { LucideAngularModule, Building, Calculator, TrendingUp, Zap } from 'lucide-angular';
-import { ButtonComponent } from '@apolo-energies/ui';
+import { AlertComponent, ButtonComponent } from '@apolo-energies/ui';
 import { DownloadIcon, UiIconSource } from '@apolo-energies/icons';
 
 // Tab components
@@ -22,6 +22,7 @@ import { GlobalLoadingService } from '../../../../services/global-loading.servic
   standalone: true,
   imports: [
     LucideAngularModule,
+    AlertComponent,
     ButtonComponent,
     ProviderTabComponent,
     ProductsTabComponent,

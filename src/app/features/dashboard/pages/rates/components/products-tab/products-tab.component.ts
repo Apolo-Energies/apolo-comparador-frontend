@@ -164,6 +164,19 @@ export class ProductsTabComponent implements AfterViewInit {
     return { ok: true, periods };
   }
 
+  /** Para potencia: acepta rellenos parciales, solo valida y devuelve los slots con valor. */
+  private parsedPowerSection(slots: string[], count: number): { ok: true; periods: PeriodValue[] } | { ok: false } {
+    const trimmed = slots.slice(0, count).map(v => v.trim());
+    const periods: PeriodValue[] = [];
+    for (let i = 0; i < trimmed.length; i++) {
+      if (trimmed[i] === '') continue;
+      const num = parseFloat(trimmed[i]);
+      if (isNaN(num) || num < 0) return { ok: false };
+      periods.push({ period: `P${i + 1}`, value: num });
+    }
+    return { ok: true, periods };
+  }
+
   /** Rellena vacíos con '0' antes de parsear (para que los huecos se persistan como 0). */
   private fillEmptyWithZero(slots: string[], count: number): string[] {
     return slots.slice(0, count).map(v => v.trim() === '' ? '0' : v);
@@ -271,7 +284,7 @@ export class ProductsTabComponent implements AfterViewInit {
       return;
     }
 
-    const power = this.parsedSection(this.createPowerPeriods(), count);
+    const power = this.parsedPowerSection(this.createPowerPeriods(), count);
     if (!power.ok) {
       this.alertService.show('Los valores de potencia deben ser números válidos (≥ 0)', 'error');
       return;
@@ -413,7 +426,7 @@ export class ProductsTabComponent implements AfterViewInit {
       return;
     }
 
-    const power = this.parsedSection(this.editPowerPeriods(), count);
+    const power = this.parsedPowerSection(this.editPowerPeriods(), count);
     if (!power.ok) {
       this.alertService.show('Los valores de potencia deben ser números válidos (≥ 0)', 'error');
       return;

@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs';
-import { Product, ProductType } from '../entities/provider.model';
+import { Product, ProductType, OmieDistributionPeriod, BoePowerPeriod } from '../entities/provider.model';
 
 // Request types
 export interface CreateProductPeriod {
@@ -74,11 +74,19 @@ export class RatesService {
     return this.http.put<void>(`${environment.apiUrl}/product-period/${periodId}`, data);
   }
 
+  createOmieDistributionPeriod(data: { period: string; factor: number; omieDistributionId: number }): Observable<OmieDistributionPeriod> {
+    return this.http.post<OmieDistributionPeriod>(`${environment.apiUrl}/omie-distribution-period`, data);
+  }
+
   /**
    * Actualizar un período individual de distribución OMIE
    */
   updateOmieDistributionPeriod(periodId: number, data: UpdateOmieDistributionPeriodRequest): Observable<void> {
     return this.http.put<void>(`${environment.apiUrl}/omie-distribution-period/${periodId}`, data);
+  }
+
+  createBoePowerPeriod(data: { period: string; value: number; boePowerId: number }): Observable<BoePowerPeriod> {
+    return this.http.post<BoePowerPeriod>(`${environment.apiUrl}/boe-power-period`, data);
   }
 
   /**
