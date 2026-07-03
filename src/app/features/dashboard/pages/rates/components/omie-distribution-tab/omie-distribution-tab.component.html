@@ -30,22 +30,23 @@
             </div>
           </div>
 
-          <!-- Factores de distribución -->
+          <!-- Factores de distribución — siempre 6 slots fijos -->
           <div>
-            <p class="text-sm text-muted-foreground mb-3">Distribution Factors</p>
+            <p class="text-sm text-muted-foreground mb-3">Factores de distribución</p>
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-              @for (period of sortedPeriods(dist.periods); track period.id) {
+              @for (slot of prepareSlots(dist, item.tariffCode); track slot.cellId) {
                 <app-period-editor
-                  [period]="period.period"
-                  [value]="period.factor"
-                  [isEditing]="editingPeriod() === period.id"
+                  [period]="slot.period.period"
+                  [value]="slot.period.factor"
+                  [isEmpty]="slot.isEmpty"
+                  [isEditing]="editingCell() === slot.cellId"
                   [isSaving]="isSaving()"
                   [decimals]="6"
                   step="0.00000001"
-                  (edit)="startEdit(period)"
-                  (save)="saveEdit(dist, period, $event)"
+                  (edit)="startEdit(slot.period, slot.cellId)"
+                  (save)="saveEdit(dist, slot.period, $event)"
                   (cancel)="cancelEdit()"
-                  (delete)="deleteValue(dist, period)"
+                  (delete)="deleteValue(dist, slot.period)"
                 />
               }
             </div>
