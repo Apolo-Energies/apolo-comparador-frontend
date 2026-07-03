@@ -2,9 +2,16 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, signal } f
 import { Tariff, OmieDistribution, OmieDistributionPeriod } from '../../../../../../entities/provider.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AlertService } from '@apolo-energies/ui';
 import { RatesService } from '../../../../../../services/rates.service';
 import { PeriodEditorComponent } from '../period-editor/period-editor.component';
 import { LucideAngularModule, TrendingUp } from 'lucide-angular';
+
+interface OmieSlot {
+  cellId:  string;
+  isEmpty: boolean;
+  period:  OmieDistributionPeriod;
+}
 
 @Component({
   selector: 'app-omie-distribution-tab',
@@ -14,122 +21,120 @@ import { LucideAngularModule, TrendingUp } from 'lucide-angular';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OmieDistributionTabComponent {
-  private ratesService = inject(RatesService);
+  private readonly ratesService  = inject(RatesService);
+  private readonly alertService  = inject(AlertService);
 
   readonly TrendingUpIcon = TrendingUp;
 
-  readonly tariffs = input.required<Tariff[]>();
+  readonly tariffs          = input.required<Tariff[]>();
   readonly selectedTariffId = signal<number | null>(null);
-  readonly editingPeriod = signal<number | null>(null);
-  readonly isSaving = signal<boolean>(false);
+  readonly editingCell      = signal<string | null>(null);
+  readonly isSaving         = signal<boolean>(false);
 
-  readonly allDistributions = computed(() => {
-    const distributions: OmieDistribution[] = [];
-    this.tariffs().forEach(tariff => {
-      if (tariff.omieDistributions) {
-        distributions.push(...tariff.omieDistributions);
-      }
-    });
-    return distributions;
-  });
-
-  readonly groupedData = computed(() => {
-    const grouped: { tariffCode: string; distributions: OmieDistribution[] }[] = [];
-
-    this.tariffs().forEach(tariff => {
-      if (tariff.omieDistributions && tariff.omieDistributions.length > 0) {
-        grouped.push({
-          tariffCode: tariff.code,
-          distributions: tariff.omieDistributions,
-        });
-      }
-    });
-
-    return grouped;
-  });
+  readonly groupedData = computed(() =>
+    this.tariffs()
+      .filter(t => t.omieDistributions?.length)
+      .map(t => ({ tariffCode: t.code, distributions: t.omieDistributions }))
+  );
 
   readonly filteredGroupedData = computed(() => {
-    const selectedId = this.selectedTariffId();
-    if (selectedId === null) {
-      return this.groupedData();
-    }
-    const selectedTariff = this.tariffs().find(t => t.id === selectedId);
-    if (!selectedTariff) return [];
-
-    return [{
-      tariffCode: selectedTariff.code,
-      distributions: selectedTariff.omieDistributions || [],
-    }];
+    const id = this.selectedTariffId();
+    if (id === null) return this.groupedData();
+    const t = this.tariffs().find(t => t.id === id);
+    return t ? [{ tariffCode: t.code, distributions: t.omieDistributions ?? [] }] : [];
   });
 
   onTariffChange(value: any): void {
-    const numValue = value === 'null' || value === null ? null : Number(value);
-    this.selectedTariffId.set(numValue);
+    this.selectedTariffId.set(value === 'null' || value === null ? null : Number(value));
   }
 
-  sortedPeriods<T extends { period: string }>(periods: T[]): T[] {
-    return [...periods].sort((a, b) => {
-      const numA = parseInt(a.period.substring(1));
-      const numB = parseInt(b.period.substring(1));
-      return numA - numB;
+  prepareSlots(dist: OmieDistribution, tariffCode: string): OmieSlot[] {
+    const count = tariffCode.startsWith('2.') ? 3 : 6;
+    const map = new Map(dist.periods.map(p => [p.period, p]));
+    return Array.from({ length: count }, (_, i) => {
+      const num    = i + 1;
+      const key    = `P${num}`;
+      const found  = map.get(key as any);
+      return {
+        cellId:  `omie-${dist.id}-${num}`,
+        isEmpty: !found,
+        period:  found ?? ({
+          id: -1,
+          period: key,
+          factor: 0,
+          omieDistributionId: dist.id,
+          omieDistribution: null,
+        } as any),
+      };
     });
   }
 
-  startEdit(period: OmieDistributionPeriod): void {
-    this.editingPeriod.set(period.id);
+  startEdit(period: OmieDistributionPeriod, cellId: string): void {
+    this.editingCell.set(cellId);
   }
 
   saveEdit(distribution: OmieDistribution, period: OmieDistributionPeriod, newValue: number): void {
     if (this.isSaving()) return;
-
-    const originalValue = period.factor;
     this.isSaving.set(true);
-    period.factor = newValue;
 
-    const updateRequest = {
-      period: period.period,
-      factor: period.factor,
-      omieDistributionId: distribution.id
-    };
-
-    this.ratesService.updateOmieDistributionPeriod(period.id, updateRequest).subscribe({
-      next: () => {
-        this.editingPeriod.set(null);
-        this.isSaving.set(false);
-      },
-      error: () => {
-        period.factor = originalValue;
-        alert('Error al guardar los cambios. Por favor, intente nuevamente.');
-        this.isSaving.set(false);
-      }
-    });
+    if (period.id === -1) {
+      this.ratesService.createOmieDistributionPeriod({
+        period: period.period,
+        factor: newValue,
+        omieDistributionId: distribution.id,
+      }).subscribe({
+        next: created => {
+          distribution.periods.push(created);
+          this.editingCell.set(null);
+          this.isSaving.set(false);
+          this.alertService.show(`${period.period} agregado correctamente`, 'success');
+        },
+        error: () => {
+          this.isSaving.set(false);
+          this.alertService.show(`Error al agregar ${period.period}`, 'error');
+        },
+      });
+    } else {
+      const originalValue = period.factor;
+      period.factor = newValue;
+      this.ratesService.updateOmieDistributionPeriod(period.id, {
+        period: period.period,
+        factor: newValue,
+        omieDistributionId: distribution.id,
+      }).subscribe({
+        next: () => {
+          this.editingCell.set(null);
+          this.isSaving.set(false);
+          this.alertService.show('Cambios guardados correctamente', 'success');
+        },
+        error: () => {
+          period.factor = originalValue;
+          this.isSaving.set(false);
+          this.alertService.show('Error al guardar los cambios', 'error');
+        },
+      });
+    }
   }
 
   cancelEdit(): void {
-    this.editingPeriod.set(null);
+    this.editingCell.set(null);
   }
 
   deleteValue(distribution: OmieDistribution, period: OmieDistributionPeriod): void {
-    if (!confirm(`¿Está seguro de eliminar el período ${period.period}?`)) {
-      return;
-    }
-
     if (this.isSaving()) return;
     this.isSaving.set(true);
 
     this.ratesService.deleteOmieDistributionPeriod(period.id).subscribe({
       next: () => {
-        const periodIndex = distribution.periods.findIndex(p => p.id === period.id);
-        if (periodIndex > -1) {
-          distribution.periods.splice(periodIndex, 1);
-        }
-        this.editingPeriod.set(null);
+        distribution.periods = distribution.periods.filter(p => p.id !== period.id);
+        this.editingCell.set(null);
         this.isSaving.set(false);
+        this.alertService.show(`${period.period} eliminado`, 'success');
       },
       error: () => {
-        alert('Error al eliminar el período. Por favor, intente nuevamente.');
         this.isSaving.set(false);
-      }
+        this.alertService.show('Error al eliminar el período', 'error');
+      },
     });
   }
 }

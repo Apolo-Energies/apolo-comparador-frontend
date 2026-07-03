@@ -2,9 +2,16 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, signal } f
 import { Tariff, BoePower, BoePowerPeriod } from '../../../../../../entities/provider.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AlertService } from '@apolo-energies/ui';
 import { RatesService } from '../../../../../../services/rates.service';
 import { PeriodEditorComponent } from '../period-editor/period-editor.component';
 import { LucideAngularModule, Zap } from 'lucide-angular';
+
+interface BoeSlot {
+  cellId:  string;
+  isEmpty: boolean;
+  period:  BoePowerPeriod;
+}
 
 @Component({
   selector: 'app-boe-power-tab',
@@ -14,122 +21,120 @@ import { LucideAngularModule, Zap } from 'lucide-angular';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BoePowerTabComponent {
-  private ratesService = inject(RatesService);
+  private readonly ratesService = inject(RatesService);
+  private readonly alertService = inject(AlertService);
 
   readonly ZapIcon = Zap;
 
-  readonly tariffs = input.required<Tariff[]>();
+  readonly tariffs          = input.required<Tariff[]>();
   readonly selectedTariffId = signal<number | null>(null);
-  readonly editingPeriod = signal<number | null>(null);
-  readonly isSaving = signal<boolean>(false);
+  readonly editingCell      = signal<string | null>(null);
+  readonly isSaving         = signal<boolean>(false);
 
-  readonly allBoePowers = computed(() => {
-    const powers: BoePower[] = [];
-    this.tariffs().forEach(tariff => {
-      if (tariff.boePowers) {
-        powers.push(...tariff.boePowers);
-      }
-    });
-    return powers;
-  });
-
-  readonly groupedData = computed(() => {
-    const grouped: { tariffCode: string; powers: BoePower[] }[] = [];
-
-    this.tariffs().forEach(tariff => {
-      if (tariff.boePowers && tariff.boePowers.length > 0) {
-        grouped.push({
-          tariffCode: tariff.code,
-          powers: tariff.boePowers,
-        });
-      }
-    });
-
-    return grouped;
-  });
+  readonly groupedData = computed(() =>
+    this.tariffs()
+      .filter(t => t.boePowers?.length)
+      .map(t => ({ tariffCode: t.code, powers: t.boePowers }))
+  );
 
   readonly filteredGroupedData = computed(() => {
-    const selectedId = this.selectedTariffId();
-    if (selectedId === null) {
-      return this.groupedData();
-    }
-    const selectedTariff = this.tariffs().find(t => t.id === selectedId);
-    if (!selectedTariff) return [];
-
-    return [{
-      tariffCode: selectedTariff.code,
-      powers: selectedTariff.boePowers || [],
-    }];
+    const id = this.selectedTariffId();
+    if (id === null) return this.groupedData();
+    const t = this.tariffs().find(t => t.id === id);
+    return t ? [{ tariffCode: t.code, powers: t.boePowers ?? [] }] : [];
   });
 
   onTariffChange(value: any): void {
-    const numValue = value === 'null' || value === null ? null : Number(value);
-    this.selectedTariffId.set(numValue);
+    this.selectedTariffId.set(value === 'null' || value === null ? null : Number(value));
   }
 
-  sortedPeriods<T extends { period: string }>(periods: T[]): T[] {
-    return [...periods].sort((a, b) => {
-      const numA = parseInt(a.period.substring(1));
-      const numB = parseInt(b.period.substring(1));
-      return numA - numB;
+  prepareSlots(power: BoePower, tariffCode: string): BoeSlot[] {
+    const count = tariffCode.startsWith('2.') ? 3 : 6;
+    const map = new Map(power.periods.map(p => [p.period, p]));
+    return Array.from({ length: count }, (_, i) => {
+      const num   = i + 1;
+      const key   = `P${num}`;
+      const found = map.get(key as any);
+      return {
+        cellId:  `boe-${power.id}-${num}`,
+        isEmpty: !found,
+        period:  found ?? ({
+          id: -1,
+          period: key,
+          value: 0,
+          boePowerId: power.id,
+          boePower: null,
+        } as any),
+      };
     });
   }
 
-  startEdit(period: BoePowerPeriod): void {
-    this.editingPeriod.set(period.id);
+  startEdit(period: BoePowerPeriod, cellId: string): void {
+    this.editingCell.set(cellId);
   }
 
   saveEdit(boePower: BoePower, period: BoePowerPeriod, newValue: number): void {
     if (this.isSaving()) return;
-
-    const originalValue = period.value;
     this.isSaving.set(true);
-    period.value = newValue;
 
-    const updateRequest = {
-      period: period.period,
-      value: period.value,
-      boePowerId: boePower.id
-    };
-
-    this.ratesService.updateBoePowerPeriod(period.id, updateRequest).subscribe({
-      next: () => {
-        this.editingPeriod.set(null);
-        this.isSaving.set(false);
-      },
-      error: () => {
-        period.value = originalValue;
-        alert('Error al guardar los cambios. Por favor, intente nuevamente.');
-        this.isSaving.set(false);
-      }
-    });
+    if (period.id === -1) {
+      this.ratesService.createBoePowerPeriod({
+        period: period.period,
+        value: newValue,
+        boePowerId: boePower.id,
+      }).subscribe({
+        next: created => {
+          boePower.periods.push(created);
+          this.editingCell.set(null);
+          this.isSaving.set(false);
+          this.alertService.show(`${period.period} agregado correctamente`, 'success');
+        },
+        error: () => {
+          this.isSaving.set(false);
+          this.alertService.show(`Error al agregar ${period.period}`, 'error');
+        },
+      });
+    } else {
+      const originalValue = period.value;
+      period.value = newValue;
+      this.ratesService.updateBoePowerPeriod(period.id, {
+        period: period.period,
+        value: newValue,
+        boePowerId: boePower.id,
+      }).subscribe({
+        next: () => {
+          this.editingCell.set(null);
+          this.isSaving.set(false);
+          this.alertService.show('Cambios guardados correctamente', 'success');
+        },
+        error: () => {
+          period.value = originalValue;
+          this.isSaving.set(false);
+          this.alertService.show('Error al guardar los cambios', 'error');
+        },
+      });
+    }
   }
 
   cancelEdit(): void {
-    this.editingPeriod.set(null);
+    this.editingCell.set(null);
   }
 
   deleteValue(boePower: BoePower, period: BoePowerPeriod): void {
-    if (!confirm(`¿Está seguro de eliminar el período ${period.period}?`)) {
-      return;
-    }
-
     if (this.isSaving()) return;
     this.isSaving.set(true);
 
     this.ratesService.deleteBoePowerPeriod(period.id).subscribe({
       next: () => {
-        const periodIndex = boePower.periods.findIndex(p => p.id === period.id);
-        if (periodIndex > -1) {
-          boePower.periods.splice(periodIndex, 1);
-        }
-        this.editingPeriod.set(null);
+        boePower.periods = boePower.periods.filter(p => p.id !== period.id);
+        this.editingCell.set(null);
         this.isSaving.set(false);
+        this.alertService.show(`${period.period} eliminado`, 'success');
       },
       error: () => {
-        alert('Error al eliminar el período. Por favor, intente nuevamente.');
         this.isSaving.set(false);
-      }
+        this.alertService.show('Error al eliminar el período', 'error');
+      },
     });
   }
 }
