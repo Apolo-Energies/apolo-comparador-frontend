@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Router } from '@angular/router';
 import { ButtonComponent } from '@apolo-energies/ui';
 import { SipsInfoCardComponent } from './components/sips-info-card.component';
-import { DownloadIcon, UiIconSource } from '@apolo-energies/icons';
+import { DownloadIcon, SearchIcon, UiIconSource } from '@apolo-energies/icons';
 import { SipsService } from '../../../../services/sips.service';
 import { environment } from '../../../../../environments/environment';
 import { GlobalLoadingService } from '../../../../services/global-loading.service';
@@ -84,6 +84,7 @@ export class SipsPageComponent {
 
   //readonly searchIcon: UiIconSource = { type: 'apolo', icon: SearchIcon, size: 16 };
   readonly downloadIcon: UiIconSource = { type: 'apolo', icon: DownloadIcon, size: 16 };
+  readonly searchIcon: UiIconSource = { type: 'apolo', icon: SearchIcon, size: 16 };
 
   readonly cups = signal('');
   readonly loading = signal(false);

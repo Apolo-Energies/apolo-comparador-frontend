@@ -3,7 +3,7 @@ import {
   Component, computed, inject, signal, TemplateRef, ViewChild, PLATFORM_ID,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
 import { ButtonComponent, InputFieldComponent, SelectFieldComponent, SelectOption } from '@apolo-energies/ui';
@@ -16,6 +16,7 @@ import {
   OpportunitySummary, OpportunityStatus, OpportunityFilters,
   OPPORTUNITY_STATUS_LABEL,
 } from '../../../../entities/opportunity.model';
+import { EnergyType } from '../../../../entities/energy-type.enum';
 import { OpportunityService } from '../../../../services/opportunity.service';
 import { OpportunityStatusBadgeComponent } from './components/opportunity-status-badge/opportunity-status-badge';
 import { OpportunitiesBoardComponent } from './components/opportunities-board/opportunities-board';
@@ -64,12 +65,15 @@ export class OpportunitiesPageComponent implements AfterViewInit {
   private platformId    = inject(PLATFORM_ID);
   private cdr           = inject(ChangeDetectorRef);
   private router        = inject(Router);
+  private route         = inject(ActivatedRoute);
   private toast         = inject(MessageService);
   private globalLoading = inject(GlobalLoadingService);
 
+  /** Tipo de energía determinado por la ruta (data.energyType). Default: Electricity. */
+  readonly energyType: EnergyType = (this.route.snapshot.data['energyType'] as EnergyType | undefined) ?? EnergyType.Electricity;
+
   readonly isApolo = environment.features.userDetail;
 
-  // icons
   readonly searchIcon: UiIconSource = { type: 'apolo', icon: SearchIcon, size: 16 };
   readonly filterIcon: UiIconSource = { type: 'apolo', icon: filterIcon, size: 16 };
   readonly xIcon:      UiIconSource = { type: 'apolo', icon: XIcon,      size: 16 };
@@ -78,20 +82,16 @@ export class OpportunitiesPageComponent implements AfterViewInit {
   readonly emailIcon:  UiIconSource = { type: 'apolo', icon: EmailIcon,  size: 14 };
   readonly listIcon:   UiIconSource = { type: 'apolo', icon: ListIcon,   size: 16 };
 
-  // KPI tile icons
   readonly kpiIconTotal:      UiIconSource = { type: 'apolo', icon: NoteIcon,        size: 36 };
   readonly kpiIconWon:        UiIconSource = { type: 'apolo', icon: ShieldCheckIcon, size: 36 };
   readonly kpiIconConversion: UiIconSource = { type: 'apolo', icon: TradingUpIcon,   size: 36 };
   readonly kpiIconLost:       UiIconSource = { type: 'apolo', icon: XIcon,           size: 36 };
 
-  // segmented control icons
   readonly tableroIcon: UiIconSource = { type: 'apolo', icon: NoteIcon, size: 14 };
   readonly tablaIcon:   UiIconSource = { type: 'apolo', icon: ListIcon, size: 14 };
 
-  //view mode
   readonly viewMode = signal<ViewMode>('board');
 
-  // side drawer
   readonly selectedOpportunityId = signal<string | null>(null);
 
   readonly filterSearch     = signal('');
@@ -102,7 +102,7 @@ export class OpportunitiesPageComponent implements AfterViewInit {
   readonly filterUserEmail  = signal('');
   readonly filtersOpen      = signal(false);
 
-  readonly appliedFilters = signal<OpportunityFilters>({});
+  readonly appliedFilters = signal<OpportunityFilters>({ energyType: this.energyType });
 
   readonly kpis = signal<KpiTotals>({
     total: 0, pending: 0, negotiation: 0, won: 0, lost: 0, conversion: 0,
@@ -113,7 +113,6 @@ export class OpportunitiesPageComponent implements AfterViewInit {
   });
 
 
-  // table mode state 
   readonly currentPage  = signal(1);
   readonly pageSize     = signal(10);
   readonly totalCount   = signal(0);
@@ -163,17 +162,16 @@ export class OpportunitiesPageComponent implements AfterViewInit {
     this.cdr.markForCheck();
   }
 
-  //derived
-
   private parseStatus(raw: string): OpportunityStatus | undefined {
     if (raw === '') return undefined;
     const n = Number(raw);
     return Number.isNaN(n) ? undefined : (n as OpportunityStatus);
   }
 
-  /** Builds a filter snapshot from the current draft inputs. */
+  /** Builds a filter snapshot from the current draft inputs. EnergyType siempre viene de la ruta, no del UI. */
   private buildDraftFilters(): OpportunityFilters {
     return {
+      energyType:        this.energyType,
       searchTerm:        this.filterSearch()    || undefined,
       status:            this.parseStatus(this.filterStatus()),
       startDate:         this.filterDateFrom()  || undefined,
@@ -198,13 +196,13 @@ export class OpportunitiesPageComponent implements AfterViewInit {
   readonly volWon     = computed(() => this.volumes().won);
   readonly volLost    = computed(() => this.volumes().lost);
 
+  readonly pageTitle = computed(() => this.energyType === EnergyType.Gas ? 'Oportunidades · Gas' : 'Oportunidades · Luz');
+
   readonly subtitleText = computed(() => {
     const total = this.kpis().total;
     if (total === 0) return 'Pipeline de ventas';
     return `Pipeline de ventas · ${total.toLocaleString('es-ES')} oportunidades`;
   });
-
-  // handlers 
 
   toggleFilters() { this.filtersOpen.update(v => !v); }
 
@@ -229,7 +227,7 @@ export class OpportunitiesPageComponent implements AfterViewInit {
     this.filterDateTo.set('');
     this.filterUserName.set('');
     this.filterUserEmail.set('');
-    this.appliedFilters.set({});
+    this.appliedFilters.set({ energyType: this.energyType });
     if (this.viewMode() === 'board') this.board?.reload();
     else { this.currentPage.set(1); this.loadTable(); }
   }
@@ -268,8 +266,6 @@ export class OpportunitiesPageComponent implements AfterViewInit {
       life:     4500,
     });
   }
-
-  //table mode
 
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.pageSize())));
 

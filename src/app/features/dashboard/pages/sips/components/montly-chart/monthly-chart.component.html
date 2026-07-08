@@ -3,7 +3,7 @@
         <p class="text-lg font-semibold">{{ title() }}</p>
 
         <div class="hidden md:flex gap-4">
-          @for (entry of legendEntries; track entry.key) {
+          @for (entry of legendEntries(); track entry.key) {
             <div class="flex items-center gap-2">
               <span
                 [style.width.px]="12"

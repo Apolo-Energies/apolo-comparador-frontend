@@ -1,0 +1,145 @@
+<div class="relative">
+
+  @if (!mappedPs()) {
+    <div class="mb-6 bg-card rounded-lg border border-border p-6">
+      <p class="text-lg font-semibold mb-2">Consultas SIPS Gas</p>
+      <div class="flex flex-col md:flex-row md:items-start gap-4">
+
+        <div class="w-full max-w-xl">
+          <label class="block text-xs font-medium text-muted-foreground mb-1.5" for="cups-textarea">CUPS</label>
+          <textarea
+            id="cups-textarea"
+            rows="1"
+            [value]="cups()"
+            (input)="onCupsInput($any($event.target))"
+            placeholder="Ingrese un CUPS de gas (ej: ES0203000000000001WH)"
+            class="w-full resize-none overflow-hidden rounded-md border border-input bg-background px-3 py-2 text-sm leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-input uppercase"
+            style="min-height: 38px; max-height: 240px;"
+          ></textarea>
+
+          @if (validCount() > 0 || invalidCount() > 0) {
+            <p class="text-xs text-muted-foreground mt-1.5 flex items-center gap-3">
+              @if (validCount() > 0) {
+                <span class="text-emerald-500">✓ {{ validCount() }} CUPS válido{{ validCount() === 1 ? '' : 's' }}</span>
+              }
+              @if (invalidCount() > 0) {
+                <span class="text-amber-500">⚠ {{ invalidCount() }} inválido{{ invalidCount() === 1 ? '' : 's' }}</span>
+              }
+            </p>
+          }
+
+          @if (notFound()) {
+            <p class="text-xs text-amber-500 mt-1">CUPS no encontrado en la base SIPS local.</p>
+          }
+
+          @if (error()) {
+            <p class="text-xs text-red-500 mt-1">{{ error() }}</p>
+          }
+        </div>
+
+        <div class="flex gap-2 mt-4 md:mt-6">
+          <ui-button label="Consultar" variant="default" size="sm" [leadingIcon]="searchIcon"
+            [disabled]="!isSingle() || loading() || exporting()" (click)="onConsultar()" />
+          <ui-button [label]="exporting() ? 'Generando…' : 'Exportar'" variant="secondary" size="sm"
+            [leadingIcon]="downloadIcon" [disabled]="validCount() === 0 || loading() || exporting()"
+            (click)="onExportClick()" />
+        </div>
+
+      </div>
+    </div>
+  } @else {
+    <app-sips-gas-info-card [psData]="mappedPs()!"
+      (onExport)="onExport()" (onComparativa)="onComparativa()" (onClear)="onClear()" />
+  }
+
+  @if (hasData()) {
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 mt-6">
+
+      @if (hasConsumptions()) {
+        <app-sips-donut-chart
+          title="Consumo Anual"
+          [value]="donutTotal()"
+          [data]="donutData()"
+          [trend]="trend()" />
+      } @else {
+        <div class="bg-card rounded-lg border border-border p-6 shadow-sm flex items-center justify-center min-h-[280px] text-center">
+          <div>
+            <p class="text-sm text-muted-foreground">Sin histórico de consumos para este CUPS</p>
+            <p class="text-xs text-muted-foreground/70 mt-2">El CUPS existe en SIPS pero no hay periodos cargados en la base local</p>
+          </div>
+        </div>
+      }
+
+      <div class="bg-card rounded-lg border border-border p-6 shadow-sm">
+        <h3 class="text-base font-semibold mb-4">Caudal contratado</h3>
+        @let cc = mappedPs()?.caudalContratadoNm3H;
+        @if (cc == null) {
+          <p class="text-sm text-muted-foreground">No disponible</p>
+        } @else if (cc === 0) {
+          <p class="text-4xl font-bold">0 <span class="text-xl text-muted-foreground">Nm³/h</span></p>
+          <p class="text-xs text-muted-foreground mt-1">Sin caudal contratado (residencial)</p>
+          <p class="text-xs text-muted-foreground/70 mt-3">
+            Tarifa peaje: <span class="font-mono">{{ mappedPs()?.codigoPeajeAtr ?? '—' }}</span>
+            · Presión: <span class="font-mono">{{ mappedPs()?.presion ?? '—' }}</span>
+          </p>
+        } @else {
+          <p class="text-4xl font-bold">{{ (cc / 1000 / 11.7) | number:'1.2-2' }} <span class="text-xl text-muted-foreground">Nm³/h</span></p>
+          <p class="text-xs text-muted-foreground mt-1">{{ cc | number:'1.0-0' }} Wh/h</p>
+          <p class="text-xs text-muted-foreground/70 mt-3">
+            Tarifa peaje: <span class="font-mono">{{ mappedPs()?.codigoPeajeAtr ?? '—' }}</span>
+            · Presión: <span class="font-mono">{{ mappedPs()?.presion ?? '—' }}</span>
+          </p>
+        }
+      </div>
+
+    </div>
+
+    @if (hasConsumptions()) {
+      <div class="mb-6">
+        <app-sips-monthly-chart
+          title="Consumo Energético Mensual"
+          [data]="monthlyRows()"
+          [periods]="gasPeriods" />
+      </div>
+    } @else {
+      <div class="bg-card rounded-lg border border-border p-6 mb-6 flex items-center justify-center h-32 text-center">
+        <p class="text-sm text-muted-foreground">No hay histórico de consumos para este CUPS en la base local.</p>
+      </div>
+    }
+
+    @if (hasConsumptions()) {
+      <div class="bg-card rounded-lg border border-border p-6 mb-6">
+        <h3 class="text-base font-semibold mb-4">Detalle de facturas registradas</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="text-muted-foreground border-b border-border">
+              <tr>
+                <th class="text-left py-2 font-medium">Desde</th>
+                <th class="text-left py-2 font-medium">Hasta</th>
+                <th class="text-left py-2 font-medium">Tarifa</th>
+                <th class="text-right py-2 font-medium">Consumo (kWh)</th>
+                <th class="text-right py-2 font-medium">Caudal medio</th>
+                <th class="text-right py-2 font-medium">% Nocturno</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of rawConsumptions(); track c.fechaInicio + c.fechaFin) {
+                <tr class="border-b border-border/40 hover:bg-muted/20">
+                  <td class="py-2">{{ c.fechaInicio | date:'shortDate' }}</td>
+                  <td class="py-2">{{ c.fechaFin | date:'shortDate' }}</td>
+                  <td class="py-2 font-mono">{{ c.codigoTarifaPeaje ?? '—' }}</td>
+                  <td class="py-2 text-right font-medium">{{ c.totalKwh | number:'1.0-0' }}</td>
+                  <td class="py-2 text-right text-muted-foreground">{{ c.caudalMedioWhDia != null ? (c.caudalMedioWhDia | number:'1.0-0') : '—' }}</td>
+                  <td class="py-2 text-right text-muted-foreground">{{ c.porcentajeConsumoNocturno != null ? (c.porcentajeConsumoNocturno | number:'1.0-1') + '%' : '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+  }
+
+</div>

@@ -1,0 +1,24 @@
+<div class="energy-toggle" role="tablist" aria-label="Tipo de energía">
+  <button
+    type="button"
+    role="tab"
+    class="energy-toggle__btn"
+    [class.is-active]="current() === EnergyType.Electricity"
+    [attr.aria-selected]="current() === EnergyType.Electricity"
+    (click)="select(EnergyType.Electricity)"
+  >
+    <span class="energy-toggle__dot energy-toggle__dot--electricity" aria-hidden="true"></span>
+    <span>Electricidad</span>
+  </button>
+  <button
+    type="button"
+    role="tab"
+    class="energy-toggle__btn"
+    [class.is-active]="current() === EnergyType.Gas"
+    [attr.aria-selected]="current() === EnergyType.Gas"
+    (click)="select(EnergyType.Gas)"
+  >
+    <span class="energy-toggle__dot energy-toggle__dot--gas" aria-hidden="true"></span>
+    <span>Gas</span>
+  </button>
+</div>

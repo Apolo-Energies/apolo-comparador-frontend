@@ -10,6 +10,7 @@ export interface User {
   role:            number;
   providerId:      number;
   provider:        Provider | null;
+  delegationId?:   number | null;
   commissions:     UserCommission[];
   createdAt?:      string;
   parentUserId?:   string | null;

@@ -173,13 +173,31 @@ lib-apolo-sidebar.pin-last-section lib-sidebar-section nav > div:last-child {
   padding-bottom: 0;
 }
 
-lib-apolo-sidebar a[href*="/analytics/opportunities"] lib-sidebar-item button {
+/* Badge de oportunidades pendientes.
+   - Children Luz/Gas: count individual por tipo (--opp-count-luz / --opp-count-gas)
+   - Parent "Oportunidades": total (Luz + Gas) via [data-opp-parent="true"], inyectado
+     por JS en Layout (ver markOpportunitiesParent). Funciona en colapsado y expandido. */
+
+lib-apolo-sidebar a[href$="/analytics/opportunities/luz"] lib-sidebar-item button,
+lib-apolo-sidebar a[href$="/analytics/opportunities/gas"] lib-sidebar-item button,
+lib-apolo-sidebar lib-sidebar-item button[data-opp-parent="true"] {
   position: relative;
 }
-lib-apolo-sidebar a[href*="/analytics/opportunities"] lib-sidebar-item button::after {
+
+lib-apolo-sidebar a[href$="/analytics/opportunities/luz"] lib-sidebar-item button::after {
+  content: var(--opp-count-luz);
+}
+lib-apolo-sidebar a[href$="/analytics/opportunities/gas"] lib-sidebar-item button::after {
+  content: var(--opp-count-gas);
+}
+lib-apolo-sidebar lib-sidebar-item button[data-opp-parent="true"]::after {
   content: var(--opp-count);
+}
+
+lib-apolo-sidebar a[href$="/analytics/opportunities/luz"] lib-sidebar-item button::after,
+lib-apolo-sidebar a[href$="/analytics/opportunities/gas"] lib-sidebar-item button::after,
+lib-apolo-sidebar lib-sidebar-item button[data-opp-parent="true"]::after {
   position: absolute;
-  right: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
   display: inline-flex;
@@ -197,6 +215,17 @@ lib-apolo-sidebar a[href*="/analytics/opportunities"] lib-sidebar-item button::a
   line-height: 1;
   letter-spacing: 0.01em;
   pointer-events: none;
+}
+
+/* Children: pegado al borde derecho (no hay chevron). */
+lib-apolo-sidebar a[href$="/analytics/opportunities/luz"] lib-sidebar-item button::after,
+lib-apolo-sidebar a[href$="/analytics/opportunities/gas"] lib-sidebar-item button::after {
+  right: 0.75rem;
+}
+
+/* Parent: corrido a la izquierda para no chocar con el chevron de expand/collapse. */
+lib-apolo-sidebar lib-sidebar-item button[data-opp-parent="true"]::after {
+  right: 2.25rem;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────

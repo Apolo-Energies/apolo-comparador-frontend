@@ -2,6 +2,7 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  computed,
   ElementRef,
   inject,
   OnDestroy,
@@ -25,6 +26,14 @@ import {
 } from '../dashboard/pages/comparator/comparator.models';
 import { environment } from '../../../environments/environment';
 import { EFFICIENCY_TIPS_LEAD, pickRandomEfficiencyTip } from '../../shared/constants/efficiency-tips';
+
+// Candidatos a "producto fijo ganador" por tarifa. Al recibir un OCR se simula el cálculo con
+// cada uno y se ofrece al cliente solo el que produce mayor ahorroEstudio.
+const FIXED_CANDIDATES: Record<string, string[]> = {
+  '2.0TD': ['Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi'],
+  '3.0TD': ['Fijo Fácil', 'Fijo Estable', 'Fijo Dyn'],
+  '6.1TD': ['Fijo Fácil', 'Fijo Estable', 'Fijo Dyn'],
+};
 
 @Component({
   selector: 'app-public-comparator',
@@ -63,18 +72,23 @@ export class PublicComparator implements AfterViewInit, OnDestroy {
   private  wizardSubmitted = signal(false);
 
   // En Coexpal el comparador público usa solo el producto 'Asociados' (con precios fijos cargados
-  // en admin). En otros entornos sigue la lista histórica por defecto.
-  readonly productsByTariff: ComparatorProductsByTariff = environment.clientName === 'coexpal'
-    ? {
-        '2.0TD': ['Asociados'],
-        '3.0TD': ['Asociados'],
-        '6.1TD': ['Asociados'],
-      }
-    : {
-        '2.0TD': ['Index Base', 'Index Coste', 'Index Promo', 'Fijo Snap', 'Fijo Snap Mini', 'Passpool'],
-        '3.0TD': ['Index Base', 'Index Coste', 'Index Promo', 'Fijo Fácil', 'Fijo Estable', 'Fijo Dyn', 'Promo 3M Pro'],
-        '6.1TD': ['Index Base', 'Index Coste', 'Index Promo', 'Fijo Fácil', 'Fijo Estable', 'Fijo Dyn', 'Promo 3M Pro'],
-      };
+  // en admin). En el resto de entornos se ofrece un único producto fijo por tarifa: el que más
+  // ahorre al cliente segun el OCR (FIXED_CANDIDATES). Antes de recibir el OCR mostramos el
+  // primer candidato como placeholder para que el modal tenga algo que seleccionar.
+  readonly productsByTariff = computed<ComparatorProductsByTariff>(() => {
+    if (environment.clientName === 'coexpal') {
+      return { '2.0TD': ['Asociados'], '3.0TD': ['Asociados'], '6.1TD': ['Asociados'] };
+    }
+    const ocr = this.ocrResult();
+    const tariffsLoaded = this.comparatorService.tariffs().length > 0;
+    const result: ComparatorProductsByTariff = {};
+    for (const [tarifa, candidatos] of Object.entries(FIXED_CANDIDATES)) {
+      result[tarifa] = (!ocr || !tariffsLoaded)
+        ? [candidatos[0]]
+        : [this.pickBestFixedProduct(tarifa, candidatos, ocr)];
+    }
+    return result;
+  });
 
   readonly feeLockedProducts = [
     'Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi',
@@ -103,6 +117,28 @@ export class PublicComparator implements AfterViewInit, OnDestroy {
   private postHeight(): void {
     const height = this.rootEl.nativeElement.scrollHeight;
     window.parent?.postMessage({ type: 'apolo-comparador:resize', height }, '*');
+  }
+
+  private pickBestFixedProduct(tarifa: string, candidatos: string[], ocr: OcrResult): string {
+    let mejor = candidatos[0];
+    let mejorAhorro = -Infinity;
+    for (const producto of candidatos) {
+      const comisionBase = this.comparatorService.getComisionBase(producto, tarifa);
+      const form: ComparadorFormValue = {
+        tariff: tarifa,
+        producto,
+        precioMedio: 0,
+        feeEnergia: 0,
+        feePotencia: 0,
+        comisionEnergia: comisionBase,
+      };
+      const ahorro = this.comparatorService.calculate(form, ocr).ahorroEstudio;
+      if (ahorro > mejorAhorro) {
+        mejorAhorro = ahorro;
+        mejor = producto;
+      }
+    }
+    return mejor;
   }
 
   // ── handlers ────────────────────────────────────────────────────────────

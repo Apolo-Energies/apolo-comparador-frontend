@@ -12,7 +12,7 @@ import {
   signal,
 } from '@angular/core';
 import { MonthlyRowDatum } from '../../../../../../shared/utils/chart.utils';
-import { PERIODS } from '../../../../../../shared/constants/period';
+import { PERIODS, Period } from '../../../../../../shared/constants/period';
 
 interface Segment {
   y: number;
@@ -91,16 +91,17 @@ export class SipsMonthlyChartComponent implements AfterViewInit, OnDestroy {
 
   readonly title = input('');
   readonly data = input<MonthlyRowDatum[]>([]);
+  readonly periods = input<readonly Period[]>(PERIODS);
 
   readonly CHART_H = CHART_H;
   readonly PAD_L = PAD_L;
   readonly PAD_R = PAD_R;
   readonly PAD_B = PAD_B;
 
-  readonly legendEntries = PERIODS.map(key => ({
+  readonly legendEntries = computed(() => this.periods().map(key => ({
     key,
     color: COLORS[key],
-  }));
+  })));
 
   readonly w = signal(0);
   readonly tooltip = signal<{
@@ -134,8 +135,9 @@ export class SipsMonthlyChartComponent implements AfterViewInit, OnDestroy {
   private readonly drawW = computed(() => Math.max(0, this.w() - PAD_L - PAD_R));
 
   private readonly maxTotal = computed(() => {
+    const periods = this.periods();
     const max = Math.max(
-      ...this.data().map(row => PERIODS.reduce((sum, period) => sum + (row[period] ?? 0), 0)),
+      ...this.data().map(row => periods.reduce((sum, period) => sum + (row[period] ?? 0), 0)),
       0
     );
 
@@ -154,6 +156,7 @@ export class SipsMonthlyChartComponent implements AfterViewInit, OnDestroy {
 
   readonly bars = computed((): StackBar[] => {
     const rows = this.data();
+    const periods = this.periods();
     const n = rows.length;
     const max = this.maxTotal();
 
@@ -166,10 +169,10 @@ export class SipsMonthlyChartComponent implements AfterViewInit, OnDestroy {
 
     return rows.map((row, i) => {
       const x = PAD_L + gap + i * (w + gap);
-      const total = PERIODS.reduce((sum, period) => sum + (row[period] ?? 0), 0);
+      const total = periods.reduce((sum, period) => sum + (row[period] ?? 0), 0);
 
       let cumulativeH = 0;
-      const segments: Segment[] = PERIODS
+      const segments: Segment[] = periods
         .filter(period => (row[period] ?? 0) > 0)
         .map(period => {
           const value = row[period] ?? 0;

@@ -1,3 +1,5 @@
+import { EnergyType } from './energy-type.enum';
+
 /** Estados posibles de una oportunidad. Deben coincidir con el enum del backend. */
 export enum OpportunityStatus {
   Pending     = 0, // Pendiente — recién creada, sin trabajar
@@ -31,12 +33,13 @@ export interface OpportunitySummary {
   cups:                  string;
   tariff:                string | null;
   status:                OpportunityStatus;
+  energyType:            EnergyType;
   client:                OpportunityClient;
   comparisonsCount:      number;
   createdBy:             OpportunityCreator | null;
   createdAt:             string;
   updatedAt:             string;
-  lastAnnualConsumption: number | null; // kWh del último historial con consumo
+  lastAnnualConsumption: number | null;
 }
 
 /**
@@ -95,6 +98,7 @@ export interface ComparisonsPaged {
 export interface OpportunityFilters {
   cups?:              string;
   status?:            OpportunityStatus;
+  energyType?:        EnergyType;
   startDate?:         string;
   endDate?:           string;
   clientName?:        string;

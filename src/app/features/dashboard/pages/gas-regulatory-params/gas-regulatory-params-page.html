@@ -1,0 +1,161 @@
+<div class="p-6 space-y-6">
+  <header class="flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <h1 class="text-2xl font-bold text-foreground">Parámetros regulatorios (gas)</h1>
+      <p class="text-sm text-muted-foreground">FNEE, Almacenamiento, Pérdidas y Coste financiero — versionados por BOE.</p>
+    </div>
+    <ui-button label="Nueva versión" variant="default" size="md" [leadingIcon]="starIcon" (click)="openCreate()" />
+  </header>
+
+  @if (errorMessage()) {
+    <div class="rounded-md border border-red-300 bg-red-50 text-red-700 px-4 py-3 text-sm">
+      {{ errorMessage() }}
+    </div>
+  }
+
+  <div class="rounded-lg border border-border bg-card overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-muted/40 text-left">
+        <tr>
+          <th class="px-4 py-3 font-medium text-muted-foreground text-right">FNEE (€/MWh)</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground text-right">Almacenam. (€/MWh)</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground text-right">Pérdidas (%)</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground text-right">Coste fin. (%)</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground">Vigente desde</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground">Hasta</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground text-center">Estado</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground text-right">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr><td colspan="8" class="px-4 py-6 text-center text-muted-foreground">Cargando…</td></tr>
+        } @else if (rows().length === 0) {
+          <tr><td colspan="8" class="px-4 py-6 text-center text-muted-foreground">Sin parámetros registrados.</td></tr>
+        } @else {
+          @for (row of rows(); track row.id) {
+            <tr class="border-t border-border hover:bg-muted/20">
+              <td class="px-4 py-3 text-right text-foreground">{{ row.fnee | number:'1.2-4' }}</td>
+              <td class="px-4 py-3 text-right text-foreground">{{ row.storage | number:'1.2-4' }}</td>
+              <td class="px-4 py-3 text-right text-foreground">{{ (row.lossesPercentage * 100) | number:'1.2-2' }}</td>
+              <td class="px-4 py-3 text-right text-foreground">{{ (row.financialCostPercentage * 100) | number:'1.2-2' }}</td>
+              <td class="px-4 py-3 text-foreground">{{ row.validFrom }}</td>
+              <td class="px-4 py-3 text-foreground">{{ row.validTo ?? '—' }}</td>
+              <td class="px-4 py-3 text-center">
+                @if (isActive(row)) {
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700">Vigente</span>
+                } @else {
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-xs bg-muted text-muted-foreground">Cerrado</span>
+                }
+              </td>
+              <td class="px-4 py-3 text-right whitespace-nowrap">
+                <button type="button"
+                  class="inline-flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  [disabled]="!isActive(row)"
+                  [title]="isActive(row) ? 'Cerrar versión (set ValidTo)' : 'Ya cerrada'"
+                  (click)="openClose(row)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                  Cerrar
+                </button>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@if (dialogOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" (click)="closeDialog()">
+    <div class="bg-card rounded-lg shadow-xl border border-border w-full max-w-md mx-4" (click)="$event.stopPropagation()">
+      <header class="px-5 py-4 border-b border-border">
+        <h2 class="text-lg font-semibold text-foreground">
+          @switch (dialogMode()) {
+            @case ('create') { Nueva versión de parámetros }
+            @case ('close')  { Cerrar versión }
+          }
+        </h2>
+      </header>
+
+      <div class="p-5 space-y-4">
+        @if (dialogMode() === 'create') {
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-muted-foreground mb-1">FNEE (€/MWh)</label>
+              <input type="number" min="0" step="0.0001" class="w-full rounded border border-border px-3 py-2 text-sm"
+                     [value]="form().fnee ?? ''"
+                     (input)="updateField('fnee', $any($event.target).valueAsNumber)" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-muted-foreground mb-1">Almacenamiento (€/MWh)</label>
+              <input type="number" min="0" step="0.0001" class="w-full rounded border border-border px-3 py-2 text-sm"
+                     [value]="form().storage ?? ''"
+                     (input)="updateField('storage', $any($event.target).valueAsNumber)" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-muted-foreground mb-1">Pérdidas (0–0.99)</label>
+              <input type="number" min="0" max="0.99" step="0.0001" class="w-full rounded border border-border px-3 py-2 text-sm"
+                     [value]="form().lossesPercentage ?? ''"
+                     (input)="updateField('lossesPercentage', $any($event.target).valueAsNumber)" />
+              <p class="text-[10px] text-muted-foreground mt-1">Ej.: 0.02 = 2%</p>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-muted-foreground mb-1">Coste financiero (0–0.99)</label>
+              <input type="number" min="0" max="0.99" step="0.0001" class="w-full rounded border border-border px-3 py-2 text-sm"
+                     [value]="form().financialCostPercentage ?? ''"
+                     (input)="updateField('financialCostPercentage', $any($event.target).valueAsNumber)" />
+              <p class="text-[10px] text-muted-foreground mt-1">Ej.: 0.01 = 1%</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-muted-foreground mb-1">Vigente desde</label>
+              <input type="date" class="w-full rounded border border-border px-3 py-2 text-sm"
+                     [value]="form().validFrom"
+                     (input)="updateField('validFrom', $any($event.target).value)" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-muted-foreground mb-1">Hasta (opcional)</label>
+              <input type="date" class="w-full rounded border border-border px-3 py-2 text-sm"
+                     [value]="form().validTo"
+                     (input)="updateField('validTo', $any($event.target).value)" />
+            </div>
+          </div>
+        }
+
+        @if (dialogMode() === 'close') {
+          <p class="text-sm text-muted-foreground">
+            Al cerrar, los cálculos pasados quedan intactos. Crea una versión nueva para los siguientes periodos.
+          </p>
+          <div>
+            <label class="block text-xs font-medium text-muted-foreground mb-1">Fecha de cierre (ValidTo)</label>
+            <input type="date" class="w-full rounded border border-border px-3 py-2 text-sm"
+                   [value]="form().validTo"
+                   (input)="updateField('validTo', $any($event.target).value)" />
+          </div>
+        }
+      </div>
+
+      <footer class="px-5 py-3 border-t border-border flex items-center justify-end gap-2">
+        <ui-button label="Cancelar" variant="outline" size="md" [disabled]="saving()" (click)="closeDialog()" />
+        @if (saving()) {
+          <button disabled
+            class="inline-flex items-center justify-center rounded-md px-5 py-2 bg-primary-button text-white text-sm font-semibold cursor-not-allowed opacity-80">
+            <svg class="h-4 w-4 animate-spin mr-2" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+              <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="white"/>
+            </svg>
+            Guardando...
+          </button>
+        } @else {
+          <ui-button label="Confirmar" variant="default" size="md" [disabled]="!canSubmit()" (click)="submit()" />
+        }
+      </footer>
+    </div>
+  </div>
+}
