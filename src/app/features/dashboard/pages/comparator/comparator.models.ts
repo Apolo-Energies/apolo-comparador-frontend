@@ -68,6 +68,11 @@ export interface OcrResult {
 
 // ── Form value emitted on each change ─────────────────────────────────────────
 
+export enum FeeMode {
+  Global  = 0,
+  Periods = 1,
+}
+
 export interface ComparadorFormValue {
   tariff:            string;
   producto:          string;
@@ -76,6 +81,13 @@ export interface ComparadorFormValue {
   feePotencia:       number;
   comisionEnergia:   number;
   willCloseContract?: boolean;
+
+  // Modo del ajuste de fees. Si es 'periods', se usan los arrays por período
+  // (longitud 6, uno por P1..P6). Si es 'global' o los arrays no existen, se
+  // usa el valor global de feeEnergia / feePotencia.
+  feeMode?:             FeeMode;
+  feeEnergiaByPeriod?:  number[];
+  feePotenciaByPeriod?: number[];
 }
 
 // ── Calculation result ─────────────────────────────────────────────────────────
