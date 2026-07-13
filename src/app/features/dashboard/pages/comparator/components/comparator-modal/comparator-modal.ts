@@ -15,9 +15,12 @@ import {
   ComparadorFormValue,
   ComparadorResult,
   ComparatorProductsByTariff,
+  FeeMode,
   OcrResult,
 } from '../../comparator.models';
 import { PERIOD_NUMBERS } from '../../../../../../shared/constants/period';
+
+const emptyPeriods = (): number[] => Array.from({ length: 6 }, () => 0);
 
 @Component({
   selector: 'app-comparator-modal',
@@ -76,6 +79,39 @@ export class ComparatorModalComponent {
   readonly feePotencia     = signal(0);
   readonly comisionEnergia = signal(0);
 
+  // Fees por período (P1..P6). Sólo se aplican cuando feeMode() === FeeMode.Periods.
+  readonly feeMode             = signal<FeeMode>(FeeMode.Global);
+  readonly feeEnergiaByPeriod  = signal<number[]>(emptyPeriods());
+  readonly feePotenciaByPeriod = signal<number[]>(emptyPeriods());
+
+  // Expongo el enum a la template para poder hacer feeMode() === FeeMode.Global.
+  protected readonly FeeMode = FeeMode;
+
+  // Nº de periodos relevantes según la tarifa. 2.0TD → 3 energía / 2 potencia.
+  // Resto (3.0TD, 6.X) → 6 y 6.
+  readonly energiaPeriods = computed<number[]>(() =>
+    this.tariff().startsWith('2.') ? [1, 2, 3] : [1, 2, 3, 4, 5, 6]
+  );
+  readonly potenciaPeriods = computed<number[]>(() =>
+    this.tariff().startsWith('2.') ? [1, 2] : [1, 2, 3, 4, 5, 6]
+  );
+  readonly energiaGridClass = computed(() =>
+    this.tariff().startsWith('2.') ? 'grid-cols-3' : 'grid-cols-6'
+  );
+  readonly potenciaGridClass = computed(() =>
+    this.tariff().startsWith('2.') ? 'grid-cols-2' : 'grid-cols-6'
+  );
+
+  readonly hasEnergiaOverrides = computed(() =>
+    this.feeEnergiaByPeriod().some(v => v !== this.feeEnergia())
+  );
+  readonly hasPotenciaOverrides = computed(() =>
+    this.feePotenciaByPeriod().some(v => v !== this.feePotencia())
+  );
+  readonly hasPerPeriodOverrides = computed(() =>
+    this.hasEnergiaOverrides() || this.hasPotenciaOverrides()
+  );
+
   // ── derived select options ─────────────────────────────────────────────────
   readonly tarifaOptions = computed<SelectOption[]>(() =>
     Object.keys(this.productsByTariff()).map(t => ({ value: t, label: t }))
@@ -108,6 +144,9 @@ export class ComparatorModalComponent {
         this.feeEnergia.set(0);
         this.feePotencia.set(0);
         this.comisionEnergia.set(this.referrerDefaultFee());
+        this.feeMode.set(FeeMode.Global);
+        this.feeEnergiaByPeriod.set(emptyPeriods());
+        this.feePotenciaByPeriod.set(emptyPeriods());
         this.emitFormChange();
       });
     });
@@ -151,6 +190,50 @@ export class ComparatorModalComponent {
     this.emitFormChange();
   }
 
+  onFeeModeChange(mode: FeeMode) {
+    if (this.isFeeBlocked()) return;
+    // Al entrar en Periods por primera vez, inicializamos los inputs con el
+    // valor global para que el usuario sólo modifique lo que necesite.
+    if (mode === FeeMode.Periods) {
+      if (this.feeEnergiaByPeriod().every(v => v === 0) || !this.hasEnergiaOverrides()) {
+        this.feeEnergiaByPeriod.set(Array(6).fill(this.feeEnergia()));
+      }
+      if (this.feePotenciaByPeriod().every(v => v === 0) || !this.hasPotenciaOverrides()) {
+        this.feePotenciaByPeriod.set(Array(6).fill(this.feePotencia()));
+      }
+    }
+    this.feeMode.set(mode);
+    this.emitFormChange();
+  }
+
+  onFeeEnergiaPeriodChange(index: number, raw: string | number) {
+    const value = typeof raw === 'string' ? parseFloat(raw.replace(',', '.')) : raw;
+    const safe  = Number.isFinite(value) ? value : 0;
+    const arr = [...this.feeEnergiaByPeriod()];
+    arr[index] = safe;
+    this.feeEnergiaByPeriod.set(arr);
+    this.emitFormChange();
+  }
+
+  onFeePotenciaPeriodChange(index: number, raw: string | number) {
+    const value = typeof raw === 'string' ? parseFloat(raw.replace(',', '.')) : raw;
+    const safe  = Number.isFinite(value) ? value : 0;
+    const arr = [...this.feePotenciaByPeriod()];
+    arr[index] = safe;
+    this.feePotenciaByPeriod.set(arr);
+    this.emitFormChange();
+  }
+
+  resetFeeEnergiaOverrides() {
+    this.feeEnergiaByPeriod.set(Array(6).fill(this.feeEnergia()));
+    this.emitFormChange();
+  }
+
+  resetFeePotenciaOverrides() {
+    this.feePotenciaByPeriod.set(Array(6).fill(this.feePotencia()));
+    this.emitFormChange();
+  }
+
   onComisionEnergiaChange(value: string) {
     this.comisionEnergia.set(Number(value) || 0);
     this.emitFormChange();
@@ -177,17 +260,23 @@ export class ComparatorModalComponent {
     if (this.feeLockedProducts().includes(producto)) {
       this.feeEnergia.set(0);
       this.feePotencia.set(0);
+      this.feeMode.set(FeeMode.Global);
+      this.feeEnergiaByPeriod.set(emptyPeriods());
+      this.feePotenciaByPeriod.set(emptyPeriods());
     }
   }
 
   private buildFormValue(): ComparadorFormValue {
     return {
-      tariff:          this.tariff(),
-      producto:        this.producto(),
-      precioMedio:     this.precioMedio(),
-      feeEnergia:      this.feeEnergia(),
-      feePotencia:     this.feePotencia(),
-      comisionEnergia: this.effectiveComision(),
+      tariff:              this.tariff(),
+      producto:            this.producto(),
+      precioMedio:         this.precioMedio(),
+      feeEnergia:          this.feeEnergia(),
+      feePotencia:         this.feePotencia(),
+      comisionEnergia:     this.effectiveComision(),
+      feeMode:             this.feeMode(),
+      feeEnergiaByPeriod:  this.feeEnergiaByPeriod(),
+      feePotenciaByPeriod: this.feePotenciaByPeriod(),
     };
   }
 
