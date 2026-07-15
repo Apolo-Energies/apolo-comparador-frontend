@@ -99,9 +99,11 @@ export class ComparatorGasService {
       cliente?.direccion?.detalles,
     ].filter(Boolean).join(' ');
 
-    const consumoAnualKwh = result.dias > 0
-      ? Math.round(result.kwhTotal * (365 / result.dias))
-      : result.kwhTotal;
+    // Prefiere el consumo anual efectivo (SIPS o proyección) que el helper calculó.
+    // Fallback a la proyección local por compatibilidad con resultados antiguos.
+    const consumoAnualKwh = result.consumoAnualKwh > 0
+      ? Math.round(result.consumoAnualKwh)
+      : (result.dias > 0 ? Math.round(result.kwhTotal * (365 / result.dias)) : result.kwhTotal);
 
     const ivaPct = (ocr.iva?.porcentaje ?? 21) / 100;
     const precioEnergiaActual = result.kwhTotal > 0 && ocr.consumo?.importe_total
