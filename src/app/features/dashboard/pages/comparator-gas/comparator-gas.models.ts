@@ -221,6 +221,12 @@ export interface GasResult {
   ivaImporteOferta:    number;
   dias:                number;
   kwhTotal:            number;
+  /**
+   * Consumo anual efectivo usado en el cálculo de comisión y proyecciones.
+   * Origen: SIPS por CUPS si estaba disponible; si no, proyección `kwh × 365/dias`.
+   * Se expone para que el reporte descargado use el mismo valor que se muestra en el modal.
+   */
+  consumoAnualKwh:     number;
 }
 
 export interface GasCompareEvent {
