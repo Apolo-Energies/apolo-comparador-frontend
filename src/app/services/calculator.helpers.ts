@@ -51,14 +51,14 @@ const calculateComision = (form: ComparadorFormValue, ocr: OcrResult): number =>
   if (isPromo) {
     const consumoEnergia = (consumoPeriodo / 12) * 3;
     const energia        = (feeEnergia / 100) * consumoEnergia * comisionEnergia;
-    const potencia       = feePotencia * coeficientePotencia * potenciaContratada;
+    const potencia       = feePotencia * coeficientePotencia * potenciaContratada * comisionEnergia;
     return round3(energia + potencia);
   }
 
   const diasFactura        = ocr.periodo_facturacion?.numero_dias || 1;
   const consumoAnual       = consumoPeriodo * (365 / diasFactura);
   const energia            = (feeEnergia * comisionEnergia * consumoAnual) / 1000;
-  const potencia           = feePotencia * coeficientePotencia * potenciaContratada;
+  const potencia           = feePotencia * coeficientePotencia * potenciaContratada * comisionEnergia;
   return round3(energia + potencia);
 };
 
