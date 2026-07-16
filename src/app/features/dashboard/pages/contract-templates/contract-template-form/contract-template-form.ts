@@ -8,7 +8,7 @@ import { Subscription } from 'rxjs';
 import { AlertService, ButtonComponent, DialogComponent, InputFieldComponent, SelectFieldComponent } from '@apolo-energies/ui';
 import { Editor, NgxEditorModule, Toolbar, toHTML, schema as ngxSchema } from 'ngx-editor';
 import { Schema, MarkSpec, DOMParser as PMParser } from 'prosemirror-model';
-import { tableNodes, tableEditing } from 'prosemirror-tables';
+import { tableNodes, tableEditing, addRowBefore, addRowAfter, deleteRow, deleteColumn, deleteTable } from 'prosemirror-tables';
 import { ContractTemplateService } from '../../../../../services/contract-template.service';
 import { ContractTemplate, SignatureWidget } from '../../../../../entities/contract-template.model';
 
@@ -512,6 +512,38 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
     dom.innerHTML = SIGNATURE_BLOCK;
     const slice = PMParser.fromSchema(state.schema).parseSlice(dom);
     dispatch(state.tr.replaceSelection(slice).scrollIntoView());
+    this.editor.view.focus();
+  }
+
+  // ── Table commands ───────────────────────────────────────────────────────
+
+  tableAddRowBefore(): void {
+    const { state, dispatch } = this.editor.view;
+    addRowBefore(state, dispatch);
+    this.editor.view.focus();
+  }
+
+  tableAddRowAfter(): void {
+    const { state, dispatch } = this.editor.view;
+    addRowAfter(state, dispatch);
+    this.editor.view.focus();
+  }
+
+  tableDeleteRow(): void {
+    const { state, dispatch } = this.editor.view;
+    deleteRow(state, dispatch);
+    this.editor.view.focus();
+  }
+
+  tableDeleteColumn(): void {
+    const { state, dispatch } = this.editor.view;
+    deleteColumn(state, dispatch);
+    this.editor.view.focus();
+  }
+
+  tableDeleteTable(): void {
+    const { state, dispatch } = this.editor.view;
+    deleteTable(state, dispatch);
     this.editor.view.focus();
   }
 

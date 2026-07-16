@@ -5,9 +5,15 @@ export interface NaturalPerson {
   type: 'Individual';
   dni: string;
   name: string;
+  apellido1: string;
+  apellido2: string;
   surnames: string;
   address_1: string;
   address_2: string;
+  cp: string;
+  idProvincia: number;
+  idPoblacion: number;
+  townName: string;
   email: string;
   bank_account: string;
   phone: string;
@@ -17,11 +23,17 @@ export interface ArtificialPerson {
   type: 'Company';
   dni: string;
   name: string;
+  apellido1: string;
+  apellido2: string;
   surnames: string;
   companyName: string;
   cif: string;
   address_1: string;
   address_2: string;
+  cp: string;
+  idProvincia: number;
+  idPoblacion: number;
+  townName: string;
   email: string;
   bank_account: string;
   phone: string;
@@ -30,13 +42,15 @@ export interface ArtificialPerson {
 export type Person = NaturalPerson | ArtificialPerson;
 
 export interface SupplyPoint {
-  cups:       string;
-  address:    string;
-  cnae:       string;
-  province:   string;
-  city:       string;
-  zipCode:    string;
-  tariffType: string;
+  cups:        string;
+  address:     string;
+  cnae:        string;
+  province:    string;
+  city:        string;
+  zipCode:     string;
+  tariffType:  string;
+  idProvincia: number;
+  idPoblacion: number;
   p1: number;
   p2: number;
   p3: number;
