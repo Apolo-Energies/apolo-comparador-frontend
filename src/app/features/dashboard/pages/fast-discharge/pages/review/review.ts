@@ -3,25 +3,13 @@ import { Router } from '@angular/router';
 import { ButtonComponent, AlertService } from '@apolo-energies/ui';
 import { AlertComponent } from '@apolo-energies/ui';
 import { FastDischargeStore } from '../../store/fast-discharge.store';
-import { ArtificialPerson, NaturalPerson } from '../../models/person.models';
-import { ContractService, EeTown } from '../../../../../../services/contract.service';
+import { ArtificialPerson, DocumentKey, NaturalPerson } from '../../models/person.models';
+import { ContractService } from '../../../../../../services/contract.service';
 import { SipsConsumo } from '../../../../../../entities/sips.model';
+import { toEeDecimal } from '../../utils/format.utils';
 
-// Static map: tariff ATR code → EE internal numeric ID
-const EE_TARIFF_IDS: Record<string, string> = {
-  '2.0TD': '47',
-  '3.0TD': '48',
-  '6.1TD': '49',
-  '6.2TD': '50',
-  '6.3TD': '51',
-  '6.4TD': '52',
-};
-
-const fmt2    = (n: number) =>
+const fmt2 = (n: number) =>
   n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-const fmtPot     = (v: number): string => v > 0 ? String(v) : '';
-const fmtConsumo = (v: number): string => v > 0 ? String(Math.round(v)) : '';
 
 const TRAMITE_LABELS: Record<string, string> = {
   ALTA_NUEVA:      'Alta nueva',
@@ -86,7 +74,11 @@ const TRAMITE_LABELS: Record<string, string> = {
               </div>
               <div class="col-span-2">
                 <p class="text-xs text-muted-foreground">Dirección</p>
-                <p class="font-medium text-foreground">{{ p.address_1 }}{{ p.address_2 ? ', ' + p.address_2 : '' }}</p>
+                <p class="font-medium text-foreground">{{ p.address_1 }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-muted-foreground">CP / Municipio</p>
+                <p class="font-medium text-foreground">{{ p.cp }}{{ p.townName ? ' — ' + p.townName : '' }}</p>
               </div>
             </div>
           } @else {
@@ -267,104 +259,99 @@ export class ReviewPage {
     this.router.navigate(['/dashboard/fast-discharge/documents']);
   }
 
+  private readonly DOC_MAP: Partial<Record<DocumentKey, string>> = {
+    dni_front:          'UpDni',
+    dni_back:           'UpDni',
+    factura_estudio:    'UpFacturaEstudio',
+    bank:               'UpOtros',
+    escrituras_poderes: 'UpOtros',
+    cif_file:           'UpCif',
+    cie:                'UpOtros',
+    justo_titulo:       'UpJustoTitulo',
+  };
+
   onSend(): void {
     const person      = this.store.person();
     const supplyPoint = this.store.supplyPoint();
     if (!person || !supplyPoint) return;
 
-    const cp          = supplyPoint.zipCode ?? '';
-    const idProvincia = cp.length >= 2 ? parseInt(cp.substring(0, 2), 10).toString() : '0';
+    const consumos = this.annualKwhByPeriod(this.store.consumos());
+
+    const fd = new FormData();
+
+    // Cliente
+    fd.append('NifCliente',       person.dni);
+    fd.append('NombreCliente',    person.name);
+    fd.append('Apellido1Cliente', person.apellido1 ?? '');
+    if (person.apellido2) fd.append('Apellido2Cliente', person.apellido2);
+    fd.append('Email',    person.email);
+    fd.append('Telefono', person.phone);
+
+    // Domiciliación
+    const iban = person.bank_account?.replace(/\s/g, '') ?? '';
+    if (iban) fd.append('Iban', iban);
+
+    // Dirección cliente
+    fd.append('DireccionCliente',    person.address_1 ?? '');
+    fd.append('CpCliente',           person.cp ?? '');
+    fd.append('IdProvinciaCliente',  String(person.idProvincia ?? 0));
+    fd.append('IdPoblacionCliente',  String(person.idPoblacion ?? 0));
+
+    // Suministro
+    fd.append('Cups',   supplyPoint.cups);
+    fd.append('Tarifa', supplyPoint.tariffType);
+    if (supplyPoint.cnae) fd.append('Cnae', supplyPoint.cnae);
+
+    // Dirección suministro
+    fd.append('DireccionSuministro',    supplyPoint.address);
+    fd.append('CpSuministro',           supplyPoint.zipCode ?? '');
+    fd.append('IdProvinciaSuministro',  String(supplyPoint.idProvincia ?? 0));
+    fd.append('IdPoblacionSuministro',  String(supplyPoint.idPoblacion ?? 0));
+
+    // Potencias
+    fd.append('PotenciaP1', toEeDecimal(supplyPoint.p1));
+    fd.append('PotenciaP2', toEeDecimal(supplyPoint.p2));
+    fd.append('PotenciaP3', toEeDecimal(supplyPoint.p3));
+    fd.append('PotenciaP4', toEeDecimal(supplyPoint.p4));
+    fd.append('PotenciaP5', toEeDecimal(supplyPoint.p5));
+    fd.append('PotenciaP6', toEeDecimal(supplyPoint.p6));
+
+    // Consumos anuales
+    fd.append('ConsumoAnualP1', toEeDecimal(consumos[0]));
+    fd.append('ConsumoAnualP2', toEeDecimal(consumos[1]));
+    fd.append('ConsumoAnualP3', toEeDecimal(consumos[2]));
+    fd.append('ConsumoAnualP4', toEeDecimal(consumos[3]));
+    fd.append('ConsumoAnualP5', toEeDecimal(consumos[4]));
+    fd.append('ConsumoAnualP6', toEeDecimal(consumos[5]));
+
+    // Documentos
+    const docs = this.store.documents();
+    for (const [key, file] of Object.entries(docs) as [DocumentKey, File][]) {
+      const backendKey = this.DOC_MAP[key];
+      if (backendKey && file) fd.append(backendKey, file, file.name);
+    }
+    // Para personas físicas, UpCif = mismo DNI (el backend lo exige siempre)
+    if (person.type === 'Individual' && docs['dni_front'] && !docs['cif_file']) {
+      fd.append('UpCif', docs['dni_front'], docs['dni_front'].name);
+    }
 
     this.sending.set(true);
 
-    this.contractService.getTowns(idProvincia).subscribe({
-      next: towns => this.submitWithTowns(towns, idProvincia),
-      error: ()    => this.submitWithTowns([], idProvincia),
-    });
-  }
-
-  private submitWithTowns(towns: EeTown[], idProvincia: string): void {
-    const person      = this.store.person()!;
-    const supplyPoint = this.store.supplyPoint()!;
-
-    const surnames  = person.surnames ?? '';
-    const parts     = surnames.trim().split(/\s+/);
-    const apellido1 = parts[0] ?? '';
-    const apellido2 = parts.slice(1).join(' ');
-    const fullName  = `${person.name} ${surnames}`.trim();
-    const consumos  = this.annualKwhByPeriod(this.store.consumos());
-    const cp        = supplyPoint.zipCode ?? '';
-
-    const findTown = (name: string): string => {
-      const norm  = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-      const byName = towns.find(t => norm(t.nombre) === norm(name));
-      if (byName) return byName.id;
-      const byCp = towns.find(t => t.cp === cp);
-      return byCp?.id ?? '0';
-    };
-
-    const idPoblacionSuministro = findTown(supplyPoint.city);
-    const idPoblacionCliente    = idPoblacionSuministro;
-    const idTarifa              = EE_TARIFF_IDS[supplyPoint.tariffType ?? ''] ?? '0';
-
-    this.contractService.quickRegistration({
-      // Cliente
-      NombrePilaCliente:    person.name,
-      Apellido1Cliente:     apellido1,
-      Apellido2Cliente:     apellido2,
-      NIFCliente:           person.dni,
-      DireccionCliente:     person.address_1,
-      CPCliente:            cp,
-      IdProvinciaCliente:   idProvincia,
-      IdPoblacionCliente:   idPoblacionCliente,
-      Email:                person.email,
-      Telefono:             person.phone,
-      // Suministro
-      CUPS:                    supplyPoint.cups,
-      DireccionSuministro:     supplyPoint.address,
-      CPSuministro:            cp,
-      IdProvinciaSuministro:   idProvincia,
-      IdPoblacionSuministro:   idPoblacionSuministro,
-      IdTarifaSuministro:      idTarifa,
-      // Potencias
-      PotenciaP1: fmtPot(supplyPoint.p1), PotenciaP2: fmtPot(supplyPoint.p2),
-      PotenciaP3: fmtPot(supplyPoint.p3), PotenciaP4: fmtPot(supplyPoint.p4),
-      PotenciaP5: fmtPot(supplyPoint.p5), PotenciaP6: fmtPot(supplyPoint.p6),
-      // Consumos anuales
-      ConsumoAnualP1: fmtConsumo(consumos[0]), ConsumoAnualP2: fmtConsumo(consumos[1]),
-      ConsumoAnualP3: fmtConsumo(consumos[2]), ConsumoAnualP4: fmtConsumo(consumos[3]),
-      ConsumoAnualP5: fmtConsumo(consumos[4]), ConsumoAnualP6: fmtConsumo(consumos[5]),
-      // Titular
-      NombreTitular: fullName,
-      NIFTitular:    person.dni,
-      // Domiciliación
-      CodigoCuentaDomiciliacion: person.bank_account?.replace(/\s/g, '') ?? '',
-      CodigoSWIFTDomiciliacion:  '',
-      // Firmante
-      ChkOtroFirmante:    'false',
-      swFirmante:         'false',
-      NombrePilaFirmante: '',
-      Apellido1Firmante:  '',
-      Apellido2Firmante:  '',
-      NIFFirmante:        '',
-      EmailFirmante:      '',
-      TelefonoFirmante:   '',
-      // Otros
-      CNAE:      supplyPoint.cnae ?? '',
-      IdCli:     '0',
-      Callback:  '',
-      secondary: '',
-    }).subscribe({
-      next: () => {
+    this.contractService.altaRapida(fd).subscribe({
+      next: res => {
         this.sending.set(false);
-        this.alertService.show('Contrato enviado correctamente', 'success');
+        if (!res.success) {
+          this.alertService.show(res.message || 'Error al enviar el alta', 'error');
+          return;
+        }
+        this.alertService.show('Alta enviada correctamente', 'success');
         setTimeout(() => {
           this.router.navigate(['/dashboard/fast-discharge']).then(() => this.store.reset());
         }, 1500);
       },
       error: () => {
         this.sending.set(false);
-        this.alertService.show('Error al enviar el contrato. Inténtalo de nuevo.', 'error');
+        this.alertService.show('Error al enviar el alta. Inténtalo de nuevo.', 'error');
       },
     });
   }

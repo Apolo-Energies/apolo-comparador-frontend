@@ -4,6 +4,7 @@ import { ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
 import { SipsService } from '../../../../../../services/sips.service';
 import { SipsPs } from '../../../../../../entities/sips.model';
 import { FastDischargeStore } from '../../store/fast-discharge.store';
+import { ContractService, EeTown, EeMunicipio } from '../../../../../../services/contract.service';
 
 @Component({
   selector: 'app-fd-supply-point',
@@ -91,26 +92,100 @@ import { FastDischargeStore } from '../../store/fast-discharge.store';
             </div>
           </div>
 
-          <!-- Provincia / Ciudad / CP -->
-          <div class="grid grid-cols-3 gap-4">
-            <ui-input
-              label="Provincia"
-              placeholder="Madrid"
-              [value]="province()"
-              (valueChange)="province.set($event)"
-            />
-            <ui-input
-              label="Ciudad"
-              placeholder="Madrid"
-              [value]="city()"
-              (valueChange)="city.set($event)"
-            />
-            <ui-input
-              label="CP"
-              placeholder="28001"
-              [value]="zipCode()"
-              (valueChange)="zipCode.set($event)"
-            />
+          <!-- CP + Provincia -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-muted-foreground">CP del suministro</label>
+              <input
+                class="px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
+                placeholder="28001" maxlength="5"
+                [value]="zipCode()"
+                (input)="onZipCodeChange($any($event.target).value)"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-muted-foreground">Provincia</label>
+              @if (loadingProvinces()) {
+                <div class="px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-muted-foreground">Cargando...</div>
+              } @else {
+                <select
+                  class="px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all cursor-pointer"
+                  (change)="onProvinciaChange($event)"
+                >
+                  <option value="0">— Selecciona —</option>
+                  @for (p of provinces(); track p.IdProvincia) {
+                    <option [value]="p.IdProvincia" [selected]="provinciaId() === p.IdProvincia">{{ p.Nombre }}</option>
+                  }
+                </select>
+              }
+            </div>
+          </div>
+
+          <!-- Municipio (suministro) -->
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-muted-foreground">Municipio del suministro</label>
+            @if (loadingMunicipios()) {
+              <div class="flex items-center gap-2 px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-muted-foreground">
+                <svg class="animate-spin h-4 w-4 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                </svg>
+                Cargando municipios...
+              </div>
+            } @else {
+              <div class="relative">
+                <div class="relative">
+                  <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                       fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                  </svg>
+                  <input
+                    class="w-full pl-9 pr-9 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    [placeholder]="municipios().length ? 'Buscar municipio...' : 'Selecciona una provincia primero'"
+                    [disabled]="!municipios().length"
+                    [value]="municipioSearch()"
+                    (input)="onMunicipioSearchInput($any($event.target).value)"
+                    (focus)="municipioOpen.set(true)"
+                    (blur)="onMunicipioBlur()"
+                    autocomplete="off"
+                  />
+                  @if (municipioSearch()) {
+                    <button type="button"
+                      class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      (mousedown)="municipioSearch.set(''); municipioId.set(0); municipioOpen.set(false)">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M18 6 6 18M6 6l12 12"/>
+                      </svg>
+                    </button>
+                  }
+                </div>
+                @if (municipioOpen() && filteredMunicipios().length) {
+                  <div class="absolute z-50 w-full mt-1 max-h-60 overflow-y-auto rounded-lg border border-border bg-card shadow-xl ring-1 ring-black/5">
+                    @for (m of filteredMunicipios(); track m.IdPoblacion) {
+                      <button type="button"
+                        class="w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors"
+                        [class.bg-blue-500]="municipioId() === m.IdPoblacion"
+                        [class.text-white]="municipioId() === m.IdPoblacion"
+                        [class.text-foreground]="municipioId() !== m.IdPoblacion"
+                        [class.hover:bg-muted]="municipioId() !== m.IdPoblacion"
+                        (mousedown)="selectMunicipio(m)">
+                        <span>{{ m.Nombre }}</span>
+                        @if (municipioId() === m.IdPoblacion) {
+                          <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path d="M20 6 9 17l-5-5"/>
+                          </svg>
+                        }
+                      </button>
+                    }
+                  </div>
+                }
+                @if (municipioOpen() && municipioSearch() && !filteredMunicipios().length) {
+                  <div class="absolute z-50 w-full mt-1 rounded-lg border border-border bg-card shadow-xl px-4 py-3 text-sm text-muted-foreground text-center">
+                    Sin resultados para "{{ municipioSearch() }}"
+                  </div>
+                }
+              </div>
+            }
           </div>
 
           <!-- Potencias -->
@@ -157,22 +232,37 @@ import { FastDischargeStore } from '../../store/fast-discharge.store';
   `,
 })
 export class SupplyPointPage {
-  private readonly router = inject(Router);
-  private readonly store  = inject(FastDischargeStore);
-  private readonly sips   = inject(SipsService);
+  private readonly router          = inject(Router);
+  private readonly store           = inject(FastDischargeStore);
+  private readonly sips            = inject(SipsService);
+  private readonly contractService = inject(ContractService);
 
   readonly validating      = signal(false);
   readonly validationError = signal(false);
   readonly validated       = signal(false);
   readonly submitted       = signal(false);
 
-  readonly cups     = signal('');
-  readonly address  = signal('');
-  readonly cnae     = signal('');
-  readonly province = signal('');
-  readonly city     = signal('');
-  readonly zipCode  = signal('');
+  readonly cups       = signal('');
+  readonly address    = signal('');
+  readonly cnae       = signal('');
+  readonly province   = signal('');
+  readonly city       = signal('');
+  readonly zipCode    = signal('');
   readonly tariffType = signal<string | null>(null);
+
+  readonly provinces         = signal<EeTown[]>([]);
+  readonly provinciaId       = signal(0);
+  readonly loadingProvinces  = signal(false);
+  readonly municipios        = signal<EeMunicipio[]>([]);
+  readonly municipioId       = signal(0);
+  readonly municipioSearch   = signal('');
+  readonly municipioOpen     = signal(false);
+  readonly loadingMunicipios = signal(false);
+
+  readonly filteredMunicipios = computed(() => {
+    const q = this.municipioSearch().toLowerCase();
+    return q ? this.municipios().filter(m => m.Nombre.toLowerCase().includes(q)) : this.municipios();
+  });
 
   readonly p1 = signal(0);
   readonly p2 = signal(0);
@@ -193,9 +283,13 @@ export class SupplyPointPage {
       this.city.set(sp.city);
       this.zipCode.set(sp.zipCode);
       this.tariffType.set(sp.tariffType || null);
+      this.provinciaId.set(sp.idProvincia ?? 0);
+      this.municipioId.set(sp.idPoblacion ?? 0);
       this.p1.set(sp.p1); this.p2.set(sp.p2); this.p3.set(sp.p3);
       this.p4.set(sp.p4); this.p5.set(sp.p5); this.p6.set(sp.p6);
       if (sp.cups) this.validated.set(true);
+      if (sp.zipCode?.length === 5) this.loadProvinces(sp.zipCode.substring(0, 2));
+      else if ((sp.idProvincia ?? 0) > 0) this.loadMunicipios(sp.idProvincia!);
     }
   }
 
@@ -223,6 +317,90 @@ export class SupplyPointPage {
     this.validationError.set(false);
   }
 
+  onZipCodeChange(value: string): void {
+    const digits = value.replace(/\D/g, '').substring(0, 5);
+    this.zipCode.set(digits);
+    this.provinciaId.set(0);
+    this.provinces.set([]);
+    this.municipios.set([]);
+    this.municipioId.set(0);
+    this.municipioSearch.set('');
+    if (digits.length === 5) this.loadProvinces(digits.substring(0, 2));
+  }
+
+  onProvinciaChange(event: Event): void {
+    const id = parseInt((event.target as HTMLSelectElement).value, 10);
+    this.provinciaId.set(isNaN(id) ? 0 : id);
+    this.municipioId.set(0);
+    this.municipios.set([]);
+    this.municipioSearch.set('');
+    if (id > 0) this.loadMunicipios(id);
+  }
+
+  onMunicipioSearchInput(value: string): void {
+    this.municipioSearch.set(value);
+    this.municipioId.set(0);
+    this.municipioOpen.set(true);
+  }
+
+  selectMunicipio(m: EeMunicipio): void {
+    this.municipioId.set(m.IdPoblacion);
+    this.municipioSearch.set(m.Nombre);
+    this.city.set(m.Nombre);
+    this.municipioOpen.set(false);
+  }
+
+  onMunicipioBlur(): void {
+    setTimeout(() => this.municipioOpen.set(false), 150);
+  }
+
+  private loadProvinces(prefix: string): void {
+    const id = parseInt(prefix, 10);
+    this.loadingProvinces.set(true);
+    this.contractService.getProvinces(id).subscribe({
+      next: list => {
+        this.provinces.set(list);
+        this.loadingProvinces.set(false);
+        const match = list.find(p => p.IdProvincia === id);
+        if (match) {
+          this.provinciaId.set(match.IdProvincia);
+          this.province.set(match.Nombre);
+          this.municipios.set([]);
+          this.municipioId.set(0);
+          this.municipioSearch.set('');
+          this.loadMunicipios(match.IdProvincia);
+        }
+      },
+      error: () => this.loadingProvinces.set(false),
+    });
+  }
+
+  private loadMunicipios(idProvincia: number): void {
+    this.loadingMunicipios.set(true);
+    this.contractService.getMunicipios(idProvincia).subscribe({
+      next: list => {
+        this.municipios.set(list);
+        this.loadingMunicipios.set(false);
+        const savedId = this.municipioId();
+        if (savedId > 0) {
+          const m = list.find(m => m.IdPoblacion === savedId);
+          if (m) this.municipioSearch.set(m.Nombre);
+        } else {
+          const diacritics = new RegExp('[̀-ͯ]', 'g');
+          const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(diacritics, '');
+          const cityName = norm(this.city().trim());
+          if (cityName) {
+            const m = list.find(m => norm(m.Nombre) === cityName)
+                    ?? list.find(m => norm(m.Nombre).split('/').some(p => p.trim() === cityName))
+                    ?? list.find(m => norm(m.Nombre).includes(cityName) || cityName.includes(norm(m.Nombre).split('/')[0].trim()));
+            if (m) { this.municipioId.set(m.IdPoblacion); this.municipioSearch.set(m.Nombre); }
+          }
+        }
+      },
+      error: () => this.loadingMunicipios.set(false),
+    });
+  }
+
   onReset(): void {
     this.cups.set('');
     this.validated.set(false);
@@ -230,6 +408,8 @@ export class SupplyPointPage {
     this.validationError.set(false);
     this.tariffType.set(null);
     this.province.set(''); this.city.set(''); this.zipCode.set(''); this.cnae.set('');
+    this.provinces.set([]); this.provinciaId.set(0);
+    this.municipios.set([]); this.municipioId.set(0); this.municipioSearch.set('');
     this.p1.set(0); this.p2.set(0); this.p3.set(0);
     this.p4.set(0); this.p5.set(0); this.p6.set(0);
   }
@@ -256,15 +436,17 @@ export class SupplyPointPage {
     this.tariffType.set(ps.codigoTarifaATREnVigor ?? null);
     this.province.set(ps.codigoProvinciaPS ?? '');
     this.city.set(ps.municipioPS ?? '');
-    this.zipCode.set(ps.codigoPostalPS ?? '');
+    const zip = ps.codigoPostalPS ?? '';
+    this.zipCode.set(zip);
     if (ps['cnae']) this.cnae.set(String(ps['cnae']));
-    // SIPS potencias come in W → convert to kW for display and manual editing
     this.p1.set((ps.potenciaContratadaP1 ?? 0) / 1000);
     this.p2.set((ps.potenciaContratadaP2 ?? 0) / 1000);
     this.p3.set((ps.potenciaContratadaP3 ?? 0) / 1000);
     this.p4.set((ps.potenciaContratadaP4 ?? 0) / 1000);
     this.p5.set((ps.potenciaContratadaP5 ?? 0) / 1000);
     this.p6.set((ps.potenciaContratadaP6 ?? 0) / 1000);
+    // Load province/municipio IDs using zip code prefix
+    if (zip.length === 5) this.loadProvinces(zip.substring(0, 2));
   }
 
   readonly isValid = computed(() =>
@@ -280,13 +462,15 @@ export class SupplyPointPage {
     if (!this.isValid()) return;
 
     this.store.setSupplyPoint({
-      cups:       this.cups(),
-      address:    this.address(),
-      cnae:       this.cnae(),
-      province:   this.province(),
-      city:       this.city(),
-      zipCode:    this.zipCode(),
-      tariffType: this.tariffType() ?? '',
+      cups:        this.cups(),
+      address:     this.address(),
+      cnae:        this.cnae(),
+      province:    this.province(),
+      city:        this.city(),
+      zipCode:     this.zipCode(),
+      tariffType:  this.tariffType() ?? '',
+      idProvincia: this.provinciaId(),
+      idPoblacion: this.municipioId(),
       p1: this.p1(), p2: this.p2(), p3: this.p3(),
       p4: this.p4(), p5: this.p5(), p6: this.p6(),
     });

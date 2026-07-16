@@ -7,9 +7,48 @@ import { ContratoListItem } from '../entities/contrato.model';
 import { ServicioListItem } from '../entities/servicio.model';
 
 export interface EeTown {
-  id:     string;
-  nombre: string;
-  cp?:    string;
+  IdProvincia: number;
+  Nombre:      string;
+}
+
+export interface EeMunicipio {
+  IdPoblacion: number;
+  Nombre:      string;
+  IdProvincia: number;
+}
+
+export interface AltaRapidaRequest {
+  nifCliente:            string;
+  nombreCliente:         string;
+  apellido1Cliente:      string;
+  apellido2Cliente?:     string;
+  email:                 string;
+  telefono:              string;
+  iban?:                 string;
+  swift?:                string;
+  direccionCliente:      string;
+  cpCliente:             string;
+  idProvinciaCliente:    number;
+  idPoblacionCliente:    number;
+  cups:                  string;
+  tarifa:                string;
+  cnae?:                 string;
+  nifTitular?:           string;
+  nombreTitular?:        string;
+  direccionSuministro?:  string;
+  cpSuministro?:         string;
+  idProvinciaSuministro?: number;
+  idPoblacionSuministro?: number;
+  potenciaP1?: string; potenciaP2?: string; potenciaP3?: string;
+  potenciaP4?: string; potenciaP5?: string; potenciaP6?: string;
+  consumoAnualP1?: string; consumoAnualP2?: string; consumoAnualP3?: string;
+  consumoAnualP4?: string; consumoAnualP5?: string; consumoAnualP6?: string;
+}
+
+export interface AltaRapidaResponse {
+  success:    boolean;
+  message:    string;
+  statusCode: number;
 }
 
 export interface QuickRegistrationFields {
@@ -114,10 +153,31 @@ export class ContractService {
     );
   }
 
+  altaRapida(formData: FormData): Observable<AltaRapidaResponse> {
+    return this.http.post<AltaRapidaResponse>(
+      `${environment.apiUrl}/energy-expert/alta-rapida`,
+      formData,
+    );
+  }
+
   quickRegistration(fields: QuickRegistrationFields): Observable<unknown> {
     return this.http.post(
       `${environment.apiUrl}/energy-expert/quick-registration`,
       { fields },
+    );
+  }
+
+  getMunicipios(idProvincia: number): Observable<EeMunicipio[]> {
+    return this.http.get<EeMunicipio[]>(
+      `${environment.apiUrl}/energy-expert/towns`,
+      { params: new HttpParams().set('idProvincia', idProvincia).set('limit', '500') },
+    );
+  }
+
+  getProvinces(idProvincia: number): Observable<EeTown[]> {
+    return this.http.get<EeTown[]>(
+      `${environment.apiUrl}/energy-expert/provinces`,
+      { params: new HttpParams().set('idProvincia', idProvincia).set('limit', '100') },
     );
   }
 
