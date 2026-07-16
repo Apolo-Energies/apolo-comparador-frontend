@@ -386,10 +386,13 @@ export class SupplyPointPage {
           const m = list.find(m => m.IdPoblacion === savedId);
           if (m) this.municipioSearch.set(m.Nombre);
         } else {
-          const cityName = this.city().trim().toLowerCase();
+          const diacritics = new RegExp('[̀-ͯ]', 'g');
+          const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(diacritics, '');
+          const cityName = norm(this.city().trim());
           if (cityName) {
-            const m = list.find(m => m.Nombre.toLowerCase() === cityName)
-                    ?? list.find(m => m.Nombre.toLowerCase().includes(cityName));
+            const m = list.find(m => norm(m.Nombre) === cityName)
+                    ?? list.find(m => norm(m.Nombre).split('/').some(p => p.trim() === cityName))
+                    ?? list.find(m => norm(m.Nombre).includes(cityName) || cityName.includes(norm(m.Nombre).split('/')[0].trim()));
             if (m) { this.municipioId.set(m.IdPoblacion); this.municipioSearch.set(m.Nombre); }
           }
         }

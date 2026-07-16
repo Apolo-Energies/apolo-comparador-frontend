@@ -330,6 +330,10 @@ export class ReviewPage {
       const backendKey = this.DOC_MAP[key];
       if (backendKey && file) fd.append(backendKey, file, file.name);
     }
+    // Para personas físicas, UpCif = mismo DNI (el backend lo exige siempre)
+    if (person.type === 'Individual' && docs['dni_front'] && !docs['cif_file']) {
+      fd.append('UpCif', docs['dni_front'], docs['dni_front'].name);
+    }
 
     this.sending.set(true);
 
