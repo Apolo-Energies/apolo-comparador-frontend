@@ -12,6 +12,16 @@ export interface SubUser {
   commissionPercentage: number | null;
 }
 
+export interface SubUserMyCommission {
+  id: string;
+  parentUserId: string;
+  subUserId: string;
+  percentageOfParentPool: number;
+  startDate: string;
+  endDate: string | null;
+  isActive: boolean;
+}
+
 export interface CreateSubUserRequest {
   email:    string;
   fullName: string;
@@ -29,6 +39,10 @@ export class SubUsersService {
 
   getMySubUsers(): Observable<SubUser[]> {
     return this.http.get<SubUser[]>(`${environment.apiUrl}/sub-users`);
+  }
+
+  getMyCommission(): Observable<SubUserMyCommission> {
+    return this.http.get<SubUserMyCommission>(`${environment.apiUrl}/sub-users/my-commission`);
   }
 
   getSubUsersByParent(parentUserId: string): Observable<SubUser[]> {

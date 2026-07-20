@@ -6,6 +6,7 @@ import { getUserRoles } from '../../../../utils/auth.utils';
 import { ComparatorService } from '../../../../services/comparator.service';
 import { CommissionService } from '../../../../services/commission.service';
 import { UserService } from '../../../../services/user.service';
+import { SubUsersService } from '../../../../services/sub-users.service';
 import { ComparatorUploadComponent } from './components/comparator-upload/comparator-upload';
 import { ComparatorModalComponent } from './components/comparator-modal/comparator-modal';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
@@ -33,13 +34,27 @@ export class Comparator {
   private comparatorService = inject(ComparatorService);
   private commissionService = inject(CommissionService);
   private userService       = inject(UserService);
+  private subUsersService   = inject(SubUsersService);
   private platformId        = inject(PLATFORM_ID);
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
       this.comparatorService.loadTariffs();
       const userId = this.auth.currentUser()?.id;
-      if (userId) this.commissionService.loadForUser(String(userId));
+      if (userId) {
+        this.subUsersService.getMyCommission().subscribe({
+          next: myCommission => {
+            this.subUserPoolPct.set(myCommission.percentageOfParentPool);
+            this.commissionService.loadForUserOnce(myCommission.parentUserId).subscribe((parentPct: number) => {
+              this.commissionService.commission.set(parentPct);
+            });
+          },
+          error: () => {
+            // 404 → not a sub-user, load own commission normally
+            this.commissionService.loadForUser(String(userId));
+          },
+        });
+      }
       if (this.isMaster()) this.loadUsers();
     }
   }
@@ -55,6 +70,7 @@ export class Comparator {
   readonly fileId         = signal<string>('');
   readonly selectedUserId = signal<string>('');
   readonly comisionBase   = signal(0);
+  readonly subUserPoolPct = signal<number | null>(null);
   readonly users          = signal<ComparadorUser[]>([]);
 
   // ── computed roles ─────────────────────────────────────────────────────────
@@ -126,7 +142,7 @@ export class Comparator {
     const commissionPct = this.isMaster()
       ? (selectedUser?.commissionPct ?? undefined)
       : (this.commissionService.commission() || undefined);
-    const base            = this.comparatorService.getComisionBase(form.producto, form.tariff, commissionPct);
+    const base = this.comparatorService.getComisionBase(form.producto, form.tariff, commissionPct);
     this.comisionBase.set(base);
 
     // For non-referrers always override comisionEnergia with the fresh base
@@ -134,7 +150,15 @@ export class Comparator {
       ? form
       : { ...form, comisionEnergia: base };
 
-    this.result.set(this.comparatorService.calculate(correctedForm, ocr));
+    const calculated = this.comparatorService.calculate(correctedForm, ocr);
+
+    // Sub-user: scale the full commission (energy + potencia) by their pool percentage
+    const poolPct = this.subUserPoolPct();
+    if (poolPct !== null) {
+      calculated.comision = parseFloat((calculated.comision * poolPct / 100).toFixed(3));
+    }
+
+    this.result.set(calculated);
   }
 
   onDownload(event: ComparadorDownloadEvent): void {

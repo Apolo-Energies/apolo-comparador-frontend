@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { tap } from 'rxjs';
+import { map, tap } from 'rxjs';
+import { Observable } from 'rxjs';
 import { UserCommission } from '../entities/commission.model';
 import { environment } from '../../environments/environment';
 
@@ -77,5 +78,10 @@ export class CommissionService {
     this.http.get<UserCommission>(`${environment.apiUrl}/user-commission/${userId}`)
       .pipe(tap(res => this.commission.set(res?.commissionType?.percentage ?? 0)))
       .subscribe();
+  }
+
+  loadForUserOnce(userId: string): Observable<number> {
+    return this.http.get<UserCommission>(`${environment.apiUrl}/user-commission/${userId}`)
+      .pipe(map(res => res?.commissionType?.percentage ?? 0));
   }
 }
