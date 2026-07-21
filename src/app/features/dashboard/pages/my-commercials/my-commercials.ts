@@ -3,12 +3,12 @@ import {
   Component, inject, signal, TemplateRef, ViewChild, PLATFORM_ID,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DataTableComponent, TableColumn } from '@apolo-energies/table';
-import { AlertComponent, AlertService, ButtonComponent, DialogComponent } from '@apolo-energies/ui';
+import { AlertComponent, AlertService, ButtonComponent } from '@apolo-energies/ui';
 import { StarIcon, UiIconSource } from '@apolo-energies/icons';
 import { SubUsersService, SubUser } from '../../../../services/sub-users.service';
 import { UserActionsMenuComponent, UserRow } from '../users/user-actions-menu/user-actions-menu.component';
+import { AddCommercialModalComponent, CommercialFormValue } from '../users/add-commercial-modal/add-commercial-modal';
 import { GlobalLoadingService } from '../../../../services/global-loading.service';
 import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
 
@@ -16,8 +16,9 @@ import { TableSkeletonComponent } from '../../../../shared/components/table-skel
   selector: 'app-my-commercials',
   standalone: true,
   imports: [
-    DataTableComponent, ButtonComponent, AlertComponent, DialogComponent,
-    ReactiveFormsModule, UserActionsMenuComponent, TableSkeletonComponent,
+    DataTableComponent, ButtonComponent, AlertComponent,
+    UserActionsMenuComponent, TableSkeletonComponent,
+    AddCommercialModalComponent,
   ],
   templateUrl: './my-commercials.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -25,7 +26,6 @@ import { TableSkeletonComponent } from '../../../../shared/components/table-skel
 export class MyComercialsPage implements AfterViewInit {
   private subUsersService = inject(SubUsersService);
   private alertService    = inject(AlertService);
-  private fb              = inject(FormBuilder);
   private platformId      = inject(PLATFORM_ID);
   private cdr             = inject(ChangeDetectorRef);
   private globalLoading   = inject(GlobalLoadingService);
@@ -33,16 +33,9 @@ export class MyComercialsPage implements AfterViewInit {
   readonly data      = signal<SubUser[]>([]);
   readonly loading   = signal(false);
   readonly modalOpen = signal(false);
-  readonly submitted = signal(false);
   readonly saving    = signal(false);
 
   readonly addIcon: UiIconSource = { type: 'apolo', icon: StarIcon, size: 16 };
-
-  readonly form = this.fb.nonNullable.group({
-    email:    ['', [Validators.required, Validators.email]],
-    name:     ['', [Validators.required, Validators.maxLength(50)]],
-    surnames: ['', [Validators.required, Validators.maxLength(50)]],
-  });
 
   @ViewChild('statusTpl') statusTpl!: TemplateRef<{ $implicit: SubUser }>;
   @ViewChild('commTpl')   commTpl!:   TemplateRef<{ $implicit: SubUser }>;
@@ -97,47 +90,23 @@ export class MyComercialsPage implements AfterViewInit {
     };
   }
 
-  hasErr(field: string): boolean {
-    const c = this.form.get(field);
-    return !!c && c.invalid && (c.touched || this.submitted());
-  }
-
-  errMsg(field: string): string {
-    const errors = this.form.get(field)?.errors;
-    if (!errors) return '';
-    if (errors['required'])  return 'This field is required';
-    if (errors['email'])     return 'Invalid email';
-    if (errors['maxlength']) return `Max ${errors['maxlength'].requiredLength} characters`;
-    return 'Invalid field';
-  }
-
   onOpenModal() {
-    this.form.reset();
-    this.submitted.set(false);
     this.modalOpen.set(true);
   }
 
   onCancel() {
     this.modalOpen.set(false);
-    this.form.reset();
-    this.submitted.set(false);
   }
 
-  onSubmit() {
-    this.submitted.set(true);
-    if (this.form.invalid) return;
-
+  onCreate(value: CommercialFormValue) {
     this.saving.set(true);
-    const raw = this.form.getRawValue();
     this.subUsersService.create({
-      email:    raw.email.toLowerCase().trim(),
-      fullName: `${raw.name.trim()} ${raw.surnames.trim()}`,
+      email:    value.email,
+      fullName: `${value.name} ${value.surnames}`,
     }).subscribe({
       next: () => {
         this.alertService.show('Comercial creado correctamente', 'success');
         this.modalOpen.set(false);
-        this.form.reset();
-        this.submitted.set(false);
         this.saving.set(false);
         this.load();
       },

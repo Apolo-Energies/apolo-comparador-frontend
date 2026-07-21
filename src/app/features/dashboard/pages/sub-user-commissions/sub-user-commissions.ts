@@ -1,13 +1,15 @@
 import {
   AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef,
-  Component, inject, signal, TemplateRef, ViewChild, PLATFORM_ID,
+  Component, computed, inject, signal, TemplateRef, ViewChild, PLATFORM_ID,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DataTableComponent, TableColumn } from '@apolo-energies/table';
 import { AlertComponent, AlertService } from '@apolo-energies/ui';
 import { ApoloIcons, XIcon, UiIconSource } from '@apolo-energies/icons';
 import { SubUsersService, SubUser } from '../../../../services/sub-users.service';
+import { UserService } from '../../../../services/user.service';
 import { RefreshTokenService } from '../../../../services/refresh-token.service';
 import { GlobalLoadingService } from '../../../../services/global-loading.service';
 import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
@@ -26,14 +28,40 @@ interface SubUserRow extends SubUser {
 })
 export class SubUserCommissionsPage implements AfterViewInit {
   private subUsersService      = inject(SubUsersService);
+  private userService          = inject(UserService);
   private alertService         = inject(AlertService);
   private refreshTokenService  = inject(RefreshTokenService);
   private platformId           = inject(PLATFORM_ID);
   private cdr                  = inject(ChangeDetectorRef);
   private globalLoading        = inject(GlobalLoadingService);
+  private route                = inject(ActivatedRoute);
+  private router               = inject(Router);
 
   readonly data    = signal<SubUserRow[]>([]);
   readonly loading = signal(false);
+
+  /** When set, the page is being used by a Master to manage the commercials of another collaborator. */
+  readonly targetParentId   = signal<string | null>(null);
+  readonly targetParentName = signal<string | null>(null);
+  readonly isMasterMode     = computed(() => this.targetParentId() !== null);
+
+  readonly title = computed(() =>
+    this.isMasterMode()
+      ? `Comisiones de ${this.targetParentName() ?? 'colaborador'}`
+      : 'Comisiones de Comerciales',
+  );
+
+  readonly subtitle = computed(() =>
+    this.isMasterMode()
+      ? 'Asigna o modifica el porcentaje de comisión de cada comercial de este colaborador'
+      : 'Asigna o modifica el porcentaje de comisión de cada comercial',
+  );
+
+  readonly emptyMessage = computed(() =>
+    this.isMasterMode()
+      ? 'Este colaborador aún no tiene comerciales.'
+      : 'No tienes comerciales. Ve a "Comerciales" para crear el primero.',
+  );
 
   readonly deleteIcon: UiIconSource = { type: 'apolo', icon: XIcon, size: 15 };
 
@@ -41,19 +69,32 @@ export class SubUserCommissionsPage implements AfterViewInit {
   @ViewChild('actionsTpl') actionsTpl!: TemplateRef<{ $implicit: SubUserRow }>;
 
   columns: TableColumn<SubUserRow>[] = [
-    { key: 'fullName', label: 'Colaborador' },
+    { key: 'fullName', label: 'Comercial' },
     { key: 'email',    label: 'Email' },
     { key: 'comm',     label: 'Comisión (%)', align: 'center' },
     { key: 'actions',  label: 'Acciones',     align: 'center' },
   ];
 
   private get parentUserId(): string {
-    return this.refreshTokenService.getUserIdFromToken() ?? '';
+    return this.targetParentId() ?? this.refreshTokenService.getUserIdFromToken() ?? '';
   }
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
-      this.load();
+      this.route.queryParamMap.subscribe(params => {
+        const pid = params.get('parentUserId');
+        if (pid) {
+          this.targetParentId.set(pid);
+          this.userService.getById(pid).subscribe({
+            next: detail => this.targetParentName.set(detail?.fullName ?? null),
+            error: () => this.targetParentName.set(null),
+          });
+        } else {
+          this.targetParentId.set(null);
+          this.targetParentName.set(null);
+        }
+        this.load();
+      });
     }
   }
 
@@ -68,7 +109,13 @@ export class SubUserCommissionsPage implements AfterViewInit {
   private load() {
     this.loading.set(true);
     this.globalLoading.start();
-    this.subUsersService.getMySubUsers().subscribe({
+
+    const targetId = this.targetParentId();
+    const source$ = targetId
+      ? this.subUsersService.getSubUsersByParent(targetId)
+      : this.subUsersService.getMySubUsers();
+
+    source$.subscribe({
       next: rows => {
         this.data.set(rows.map(r => ({
           ...r,
@@ -119,7 +166,8 @@ export class SubUserCommissionsPage implements AfterViewInit {
     row.saving = true;
     this.cdr.markForCheck();
 
-    this.subUsersService.deleteCommission(row.userId).subscribe({
+    const targetId = this.targetParentId();
+    this.subUsersService.deleteCommission(row.userId, targetId ?? undefined).subscribe({
       next: () => {
         row.commissionPercentage = null;
         row.draftPercentage = '';
@@ -133,5 +181,9 @@ export class SubUserCommissionsPage implements AfterViewInit {
         this.cdr.markForCheck();
       },
     });
+  }
+
+  goBackToUsers(): void {
+    this.router.navigate(['/dashboard/settings/users']);
   }
 }

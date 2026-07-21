@@ -8,10 +8,13 @@ import { AlertComponent, AlertService, ButtonComponent, ComboboxComponent, Combo
 import { AuthService } from '@apolo-energies/auth';
 import { ApoloIcons, DateIcon, DownloadIcon, filterIcon, SearchIcon, StarIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
 import { UserService } from '../../../../services/user.service';
+import { SubUsersService } from '../../../../services/sub-users.service';
 import { PotentialParent } from '../../../../entities/user.model';
 import { AddUserModalComponent } from './add-user-modal/add-user-modal';
+import { AddCommercialModalComponent, CommercialFormValue, CommercialParent } from './add-commercial-modal/add-commercial-modal';
+import { ManageCommissionsModalComponent, CommissionsParent } from './manage-commissions-modal/manage-commissions-modal';
 import { UserActionsMenuComponent, UserRow, SubUserSummary } from './user-actions-menu/user-actions-menu.component';
-import { getRoleLabel } from '../../../../entities/user-role';
+import { getRoleLabel, UserRole } from '../../../../entities/user-role';
 import { getUserRoles } from '../../../../utils/auth.utils';
 import { GlobalLoadingService } from '../../../../services/global-loading.service';
 import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
@@ -23,7 +26,8 @@ import { environment } from '../../../../../environments/environment';
   imports: [
     DataTableComponent, PaginatorComponent, InputFieldComponent,
     SelectFieldComponent, ComboboxComponent, ButtonComponent, AlertComponent,
-    AddUserModalComponent, UserActionsMenuComponent, TableSkeletonComponent,
+    AddUserModalComponent, AddCommercialModalComponent, ManageCommissionsModalComponent,
+    UserActionsMenuComponent, TableSkeletonComponent,
     ApoloIcons,
   ],
   templateUrl: './users-page.html',
@@ -58,6 +62,48 @@ import { environment } from '../../../../../environments/environment';
       color: var(--color-primary-button);
       border: 1px solid color-mix(in srgb, var(--color-primary-button) 30%, transparent);
     }
+
+    /* "Añadir comercial" contextual CTA at the bottom of an expanded collaborator. */
+    :host ::ng-deep .add-commercial-row:hover {
+      background-color: color-mix(in srgb, var(--color-primary-button) 8%, transparent);
+    }
+    :host ::ng-deep .add-commercial-btn {
+      color: color-mix(in srgb, var(--color-primary-button) 85%, transparent);
+      cursor: pointer;
+    }
+    :host ::ng-deep .add-commercial-btn:hover {
+      color: var(--color-primary-button);
+    }
+    :host ::ng-deep .add-commercial-plus {
+      border-color: color-mix(in srgb, var(--color-primary-button) 50%, transparent);
+      color: var(--color-primary-button);
+      background-color: color-mix(in srgb, var(--color-primary-button) 10%, transparent);
+    }
+    :host ::ng-deep .add-commercial-btn:hover .add-commercial-plus {
+      border-color: var(--color-primary-button);
+      background-color: color-mix(in srgb, var(--color-primary-button) 18%, transparent);
+    }
+
+    /* "Gestionar comisiones" contextual link — matches the "Añadir comercial" tone. */
+    :host ::ng-deep .manage-commissions-row:hover {
+      background-color: color-mix(in srgb, var(--color-primary-button) 8%, transparent);
+    }
+    :host ::ng-deep .manage-commissions-btn {
+      color: color-mix(in srgb, var(--color-primary-button) 85%, transparent);
+      cursor: pointer;
+    }
+    :host ::ng-deep .manage-commissions-btn:hover {
+      color: var(--color-primary-button);
+    }
+    :host ::ng-deep .manage-commissions-icon {
+      border-color: color-mix(in srgb, var(--color-primary-button) 50%, transparent);
+      color: var(--color-primary-button);
+      background-color: color-mix(in srgb, var(--color-primary-button) 10%, transparent);
+    }
+    :host ::ng-deep .manage-commissions-btn:hover .manage-commissions-icon {
+      border-color: var(--color-primary-button);
+      background-color: color-mix(in srgb, var(--color-primary-button) 18%, transparent);
+    }
   `],
 })
 export class UsersPageComponent implements AfterViewInit {
@@ -67,8 +113,9 @@ export class UsersPageComponent implements AfterViewInit {
   @ViewChild('parentCellTpl')     private parentCellTpl!:     TemplateRef<{ $implicit: UserRow }>;
   @ViewChild('selectCellTpl')     private selectCellTpl!:     TemplateRef<{ $implicit: UserRow }>;
 
-  private userService   = inject(UserService);
-  private platformId    = inject(PLATFORM_ID);
+  private userService     = inject(UserService);
+  private subUsersService = inject(SubUsersService);
+  private platformId      = inject(PLATFORM_ID);
   private globalLoading = inject(GlobalLoadingService);
   private auth          = inject(AuthService);
   private alertService  = inject(AlertService);
@@ -95,6 +142,18 @@ export class UsersPageComponent implements AfterViewInit {
   readonly modalOpen = signal(false);
   readonly loading   = signal(false);
   readonly data      = signal<UserRow[]>([]);
+
+  // Add-commercial contextual modal
+  readonly commercialModalOpen = signal(false);
+  readonly commercialParent    = signal<CommercialParent | null>(null);
+  readonly commercialSaving    = signal(false);
+
+  // Manage-commissions modal (edit % of every commercial of a given collaborator)
+  readonly commissionsModalOpen = signal(false);
+  readonly commissionsParent    = signal<CommissionsParent | null>(null);
+
+  /** Comercial role value expected by the backend (UserRoles.Comercial = 16). */
+  private static readonly ROLE_COMERCIAL = 16;
 
   readonly potentialParents = signal<PotentialParent[]>([]);
 
@@ -272,6 +331,85 @@ export class UsersPageComponent implements AfterViewInit {
     this.loadPotentialParents();
   }
 
+  openAddCommercialFor(parent: UserRow): void {
+    this.commercialParent.set({ id: parent.id, fullName: parent.fullName });
+    this.commercialModalOpen.set(true);
+  }
+
+  openCommissions(parent: UserRow): void {
+    this.commissionsParent.set({ id: parent.id, fullName: parent.fullName });
+    this.commissionsModalOpen.set(true);
+  }
+
+  onCommissionsClosed(): void {
+    this.commissionsModalOpen.set(false);
+    this.commissionsParent.set(null);
+  }
+
+  onCommercialCancelled(): void {
+    this.commercialModalOpen.set(false);
+    this.commercialParent.set(null);
+  }
+
+  onCreateCommercial(value: CommercialFormValue): void {
+    const parent = this.commercialParent();
+    if (!parent) return;
+
+    this.commercialSaving.set(true);
+    this.userService.create({
+      personType:   0,
+      email:        value.email,
+      role:         UsersPageComponent.ROLE_COMERCIAL,
+      name:         value.name,
+      surnames:     value.surnames,
+      parentUserId: parent.id,
+    }).subscribe({
+      next: (created) => {
+        const percentage = value.commissionPercentage;
+        if (percentage != null && created?.id) {
+          this.subUsersService.assignCommission({
+            parentUserId: parent.id,
+            subUserId:    created.id,
+            percentage,
+          }).subscribe({
+            next: () => this.finishCommercialCreation(parent.fullName, percentage),
+            error: () => {
+              this.commercialSaving.set(false);
+              this.commercialModalOpen.set(false);
+              this.commercialParent.set(null);
+              this.alertService.show(
+                `Comercial creado, pero no se pudo asignar la comisión (${percentage}%). Asígnala desde "Gestionar comisiones".`,
+                'error',
+              );
+              this.load();
+            },
+          });
+        } else {
+          this.finishCommercialCreation(parent.fullName, null);
+        }
+      },
+      error: (err) => {
+        this.commercialSaving.set(false);
+        if (err?.status === 409) {
+          this.alertService.show('Ya existe un usuario con ese email', 'error');
+        } else if (err?.status === 403) {
+          this.alertService.show('No tienes permiso para crear este comercial', 'error');
+        } else {
+          this.alertService.show('No se pudo crear el comercial', 'error');
+        }
+      },
+    });
+  }
+
+  private finishCommercialCreation(parentName: string, percentage: number | null): void {
+    this.commercialSaving.set(false);
+    this.commercialModalOpen.set(false);
+    this.commercialParent.set(null);
+    const suffix = percentage != null ? ` con ${percentage}% de comisión` : '';
+    this.alertService.show(`Comercial añadido a ${parentName}${suffix}`, 'success');
+    this.load();
+  }
+
   onSearch() {
     this.currentPage.set(1);
     this.load();
@@ -389,18 +527,32 @@ export class UsersPageComponent implements AfterViewInit {
   }
 
   /**
-   * Masters never show the expand chevron: their children already appear as top-level rows
-   * (the top-level rule keeps them visible), so expanding would only duplicate what's on screen.
-   * Comerciales keep the chevron because their sub-users are excluded from the top-level list.
+   * Masters never expand: their children already appear as top-level rows.
+   * Colaboradores always expand (even without commercials yet) so the master can add the first one.
+   * Other non-master roles only expand when they actually have sub-users to show.
    */
-  readonly rowIsExpandable = (row: UserRow) =>
-    !this.isMasterRow(row) && (row.subUsers?.length ?? 0) > 0;
+  readonly rowIsExpandable = (row: UserRow) => {
+    if (this.isMasterRow(row)) return false;
+    if (this.canReceiveCommercials(row)) return true;
+    return (row.subUsers?.length ?? 0) > 0;
+  };
 
-  readonly rowBadge = (row: UserRow) =>
-    this.isMasterRow(row) ? null : (row.subUsers?.length ?? null);
+  readonly rowBadge = (row: UserRow) => {
+    if (this.isMasterRow(row)) return null;
+    const count = row.subUsers?.length ?? 0;
+    return count > 0 ? count : null;
+  };
 
   private isMasterRow(row: UserRow): boolean {
-    return row.role === 1 || row.role === 'Master';
+    return row.role === UserRole.MASTER || row.role === 'Master';
+  }
+
+  /** A row that can host commercials (colaborador or colaborador-referenciador). */
+  canReceiveCommercials(row: UserRow): boolean {
+    return row.role === UserRole.COLLABORATOR
+        || row.role === UserRole.COLLABORATOR_REFERRER
+        || row.role === 'Colaborador'
+        || row.role === 'Colaborador - Referenciador';
   }
 
   toSubUserRow(sub: SubUserSummary): UserRow {
