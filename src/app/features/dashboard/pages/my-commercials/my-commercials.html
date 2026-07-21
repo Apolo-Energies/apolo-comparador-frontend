@@ -45,60 +45,9 @@
 
 </div>
 
-<!-- Create modal -->
-<ui-dialog [open]="modalOpen()" [closeable]="true" maxWidth="max-w-md" (openChange)="$event ? null : onCancel()">
-
-  <div class="px-6 pt-5 pb-2 space-y-1">
-    <p class="text-base font-semibold text-foreground">Nuevo Comercial</p>
-    <p class="text-sm text-muted-foreground">Se creará como un Comercial bajo tu cuenta </p>
-  </div>
-
-  <form [formGroup]="form" class="px-6 pb-6 pt-4 space-y-4">
-
-    <div class="space-y-1">
-      <label class="text-sm font-medium text-muted-foreground">Email *</label>
-      <input formControlName="email" type="email" placeholder="commercial@email.com"
-        class="w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
-        [class.border-red-500]="hasErr('email')" />
-      @if (hasErr('email')) {
-      <p class="text-xs text-red-500">{{ errMsg('email') }}</p>
-      }
-    </div>
-
-    <div class="space-y-1">
-      <label class="text-sm font-medium text-muted-foreground">First name *</label>
-      <input formControlName="name" placeholder="John"
-        class="w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
-        [class.border-red-500]="hasErr('name')" />
-      @if (hasErr('name')) {
-      <p class="text-xs text-red-500">{{ errMsg('name') }}</p>
-      }
-    </div>
-
-    <div class="space-y-1">
-      <label class="text-sm font-medium text-muted-foreground">Last name *</label>
-      <input formControlName="surnames" placeholder="Smith"
-        class="w-full px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all"
-        [class.border-red-500]="hasErr('surnames')" />
-      @if (hasErr('surnames')) {
-      <p class="text-xs text-red-500">{{ errMsg('surnames') }}</p>
-      }
-    </div>
-
-    <div class="flex items-center justify-between pt-2 border-t border-border">
-      <ui-button label="Cancelar" variant="outline" size="md" [disabled]="saving()" (click)="onCancel()" />
-      @if (saving()) {
-        <button disabled class="inline-flex items-center justify-center min-w-32 rounded-md px-4 py-2 bg-primary-button text-white text-sm font-semibold cursor-not-allowed opacity-80">
-          <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
-            <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="white"/>
-          </svg>
-        </button>
-      } @else {
-        <ui-button label="Agregar Comercial" variant="default" size="md" (click)="onSubmit()" />
-      }
-    </div>
-
-  </form>
-
-</ui-dialog>
+<app-add-commercial-modal
+  [open]="modalOpen()"
+  [saving]="saving()"
+  (saveRequested)="onCreate($event)"
+  (cancelled)="onCancel()"
+/>

@@ -60,6 +60,6 @@ export class SubUsersService {
   deleteCommission(subUserId: string, parentUserId?: string): Observable<void> {
     const params: Record<string, string> = {};
     if (parentUserId) params['parentUserId'] = parentUserId;
-    return this.http.delete<void>(`${environment.apiUrl}/sub-users/${subUserId}/commission`, { params });
+    return this.http.delete<void>(`${environment.apiUrl}/sub-users/commission/${subUserId}`, { params });
   }
 }
