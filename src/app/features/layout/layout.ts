@@ -364,7 +364,9 @@ export class Layout {
     const roles = getUserRoles(this.auth.currentUser());
     if (roles.includes('Master')) return true;
     const granted = roles.flatMap(r => ROLE_PERMISSIONS[r] ?? []);
-    return access.some(key => granted.includes(key));
+    const isComercial = roles.includes('Comercial');
+    const effective = isComercial ? [...granted, 'sips:view', 'markets:view'] : granted;
+    return access.some(key => effective.includes(key));
   };
 
   onLogout() {
