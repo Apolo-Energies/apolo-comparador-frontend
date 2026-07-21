@@ -129,6 +129,52 @@
         </td>
       </tr>
     }
+
+    @if (isMaster() && canReceiveCommercials(row)) {
+      @if ((row.subUsers?.length ?? 0) === 0) {
+        <tr class="border-b border-border bg-muted/10">
+          <td [attr.colspan]="14" class="px-4 py-3">
+            <div class="flex items-center gap-2 text-xs text-muted-foreground">
+              <span class="w-0.5 h-4 rounded-full bg-border shrink-0"></span>
+              <span>Este colaborador aún no tiene comerciales asignados.</span>
+            </div>
+          </td>
+        </tr>
+      } @else {
+        <tr class="manage-commissions-row border-b border-border bg-muted/10 transition-colors">
+          <td [attr.colspan]="14" class="p-0">
+            <button
+              type="button"
+              class="manage-commissions-btn w-full text-left px-4 py-2.5 flex items-center gap-3 text-sm transition-colors"
+              (click)="openCommissions(row)"
+            >
+              <span class="w-0.5 h-4 rounded-full bg-transparent shrink-0"></span>
+              <span class="manage-commissions-icon inline-flex items-center justify-center h-5 w-5 rounded-full border">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2v20"/>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+              </span>
+              <span class="font-medium">Gestionar comisiones de {{ row.fullName }}</span>
+            </button>
+          </td>
+        </tr>
+      }
+
+      <tr class="add-commercial-row border-b border-border bg-muted/10 transition-colors">
+        <td [attr.colspan]="14" class="p-0">
+          <button
+            type="button"
+            class="add-commercial-btn w-full text-left px-4 py-2.5 flex items-center gap-3 text-sm transition-colors"
+            (click)="openAddCommercialFor(row)"
+          >
+            <span class="w-0.5 h-4 rounded-full bg-transparent shrink-0"></span>
+            <span class="add-commercial-plus inline-flex items-center justify-center h-5 w-5 rounded-full border border-dashed text-xs font-bold">+</span>
+            <span class="font-medium">Añadir comercial a {{ row.fullName }}</span>
+          </button>
+        </td>
+      </tr>
+    }
   </ng-template>
 
   <!-- Selection bar (Master only) -->
@@ -226,4 +272,19 @@
   [canChooseParent]="isMaster()"
   (saved)="onSaved()"
   (cancelled)="modalOpen.set(false)"
+/>
+
+<app-add-commercial-modal
+  [open]="commercialModalOpen()"
+  [parentUser]="commercialParent()"
+  [saving]="commercialSaving()"
+  (saveRequested)="onCreateCommercial($event)"
+  (cancelled)="onCommercialCancelled()"
+/>
+
+<app-manage-commissions-modal
+  [open]="commissionsModalOpen()"
+  [parentUser]="commissionsParent()"
+  (closed)="onCommissionsClosed()"
+  (changed)="load()"
 />
