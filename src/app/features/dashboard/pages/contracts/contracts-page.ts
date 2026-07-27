@@ -11,6 +11,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
 import { ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
 import { SearchIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
@@ -88,30 +89,40 @@ export class ContractsPageComponent implements AfterViewInit {
   @ViewChild('cupsTpl')     private cupsTpl!:     TemplateRef<{ $implicit: ContratoListItem }>;
   @ViewChild('estadoTpl')   private estadoTpl!:   TemplateRef<{ $implicit: ContratoListItem }>;
   @ViewChild('fechaFinTpl') private fechaFinTpl!: TemplateRef<{ $implicit: ContratoListItem }>;
+  @ViewChild('archivoTpl')  private archivoTpl!:  TemplateRef<{ $implicit: ContratoListItem }>;
 
   private readonly contractService = inject(ContractService);
   private readonly globalLoading   = inject(GlobalLoadingService);
   private readonly platformId      = inject(PLATFORM_ID);
   private readonly cdr             = inject(ChangeDetectorRef);
+  private readonly sanitizer       = inject(DomSanitizer);
 
   readonly searchIcon: UiIconSource = { type: 'apolo', icon: SearchIcon, size: 16 };
   readonly xIcon:      UiIconSource = { type: 'apolo', icon: XIcon,      size: 16 };
 
-  readonly filter   = signal('');
-  readonly copiedId = signal<number | null>(null);
+  readonly filter       = signal('');
+  readonly copiedId     = signal<number | null>(null);
+  readonly downloadingId = signal<number | null>(null);
+  readonly pdfUrl        = signal<string | null>(null);
+  readonly safePdfUrl    = computed<SafeResourceUrl | null>(() => {
+    const url = this.pdfUrl();
+    return url ? this.sanitizer.bypassSecurityTrustResourceUrl(url) : null;
+  });
   readonly currentPage = signal(1);
   readonly pageSize    = signal(10);
   readonly loading     = signal(false);
   readonly data        = signal<ContratoListItem[]>([]);
-  readonly hasMore     = signal(false);
+  readonly hasMore = signal(false);
 
-  // Without a real totalCount from the API we derive a best-effort value so
-  // the paginator can still render prev/next correctly.
-  readonly totalCount = computed(() =>
-    (this.currentPage() - 1) * this.pageSize() + this.data().length
-  );
+  // Paginator requires totalPages + totalCount. With hasMore-based pagination
+  // we synthesise both: if hasMore, report at least one page beyond current.
   readonly totalPages = computed(() =>
-    this.currentPage() + (this.hasMore() ? 1 : 0)
+    this.hasMore() ? this.currentPage() + 1 : this.currentPage()
+  );
+  readonly totalCount = computed(() =>
+    this.hasMore()
+      ? this.currentPage() * this.pageSize() + 1
+      : (this.currentPage() - 1) * this.pageSize() + this.data().length
   );
 
   readonly columns = signal<TableColumn<ContratoListItem>[]>([
@@ -125,6 +136,7 @@ export class ContractsPageComponent implements AfterViewInit {
     { key: 'FechaInicio',         label: 'Inicio',
       format: row => fmtDate(row.FechaInicio) },
     { key: 'FechaFin',            label: 'Fin · Días' },
+    { key: 'idArchivo',           label: 'Archivo',     align: 'center' },
   ]);
 
   readonly estadoCls   = estadoCls;
@@ -145,9 +157,30 @@ export class ContractsPageComponent implements AfterViewInit {
       if (col.key === 'CUPS')           return { ...col, cellTemplate: this.cupsTpl     };
       if (col.key === 'EstadoContrato') return { ...col, cellTemplate: this.estadoTpl   };
       if (col.key === 'FechaFin')       return { ...col, cellTemplate: this.fechaFinTpl };
+      if (col.key === 'idArchivo')      return { ...col, cellTemplate: this.archivoTpl  };
       return col;
     }));
     this.cdr.markForCheck();
+  }
+
+  openArchivo(c: ContratoListItem): void {
+    if (!c.idArchivo || this.downloadingId() === c.idArchivo) return;
+    this.downloadingId.set(c.idArchivo);
+    this.contractService.getContratoArchivo(c.idArchivo).subscribe({
+      next: blob => {
+        this.closePdf();
+        const url = URL.createObjectURL(blob);
+        this.pdfUrl.set(url);
+        this.downloadingId.set(null);
+      },
+      error: () => this.downloadingId.set(null),
+    });
+  }
+
+  closePdf(): void {
+    const prev = this.pdfUrl();
+    if (prev) URL.revokeObjectURL(prev);
+    this.pdfUrl.set(null);
   }
 
   copyCups(c: ContratoListItem): void {
@@ -188,8 +221,8 @@ export class ContractsPageComponent implements AfterViewInit {
       limit:  this.pageSize(),
     }).subscribe({
       next: res => {
-        this.data.set(res ?? []);
-        this.hasMore.set((res?.length ?? 0) >= this.pageSize());
+        this.data.set(res?.data ?? []);
+        this.hasMore.set(res?.hasMore ?? false);
         this.loading.set(false);
         this.globalLoading.stop();
       },
