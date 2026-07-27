@@ -144,7 +144,7 @@ export const DASHBOARD_ROUTES: Routes = [
         path: 'settings/sub-user-commissions',
         component: SubUserCommissionsPage,
         canActivate: [featureGuard, permissionGuard],
-        data: { feature: 'userDetail', roles: ['Colaborador', 'Colaborador - Referenciador'] },
+        data: { feature: 'userDetail', roles: ['Colaborador', 'Colaborador - Referenciador', 'Master'] },
       },
 
       // Master only

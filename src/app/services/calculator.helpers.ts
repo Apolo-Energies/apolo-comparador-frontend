@@ -1,4 +1,4 @@
-import { ComparadorFormValue, ComparadorPeriodo, ComparadorResult, OcrResult } from '../features/dashboard/pages/comparator/comparator.models';
+import { ComparadorFormValue, ComparadorPeriodo, ComparadorResult, FeeMode, OcrResult } from '../features/dashboard/pages/comparator/comparator.models';
 import { Tariff } from '../entities/provider.model';
 import { PERIOD_NUMBERS, PeriodNumber, numberToPeriod } from '../shared/constants/period';
 
@@ -11,10 +11,33 @@ const IVA_RATE = 0.21;         // IVA 21 %
 
 const SNAP_PRODUCTS_SET = new Set(['Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi']);
 
+// Devuelve la fee efectiva a usar en fórmulas escalares (comisión). En modo
+// 'periods' hace media ponderada por consumo/potencia para representar de
+// forma coherente lo que realmente se cobrará al cliente.
+const resolveEffectiveFeeEnergia = (form: ComparadorFormValue, ocr: OcrResult): number => {
+  if (form.feeMode !== FeeMode.Periods || !form.feeEnergiaByPeriod?.length) return form.feeEnergia;
+  const kwhs = (ocr.energia ?? []).map(e => e.activa?.kwh ?? 0);
+  const totalKwh = kwhs.reduce((s, k) => s + k, 0);
+  if (totalKwh === 0) return form.feeEnergia;
+  const weighted = form.feeEnergiaByPeriod.reduce((s, fee, i) => s + fee * (kwhs[i] ?? 0), 0);
+  return weighted / totalKwh;
+};
+
+const resolveEffectiveFeePotencia = (form: ComparadorFormValue, ocr: OcrResult): number => {
+  if (form.feeMode !== FeeMode.Periods || !form.feePotenciaByPeriod?.length) return form.feePotencia;
+  const kws = (ocr.potencia ?? []).map(p => p.contratada?.kw ?? 0);
+  const totalKw = kws.reduce((s, k) => s + k, 0);
+  if (totalKw === 0) return form.feePotencia;
+  const weighted = form.feePotenciaByPeriod.reduce((s, fee, i) => s + fee * (kws[i] ?? 0), 0);
+  return weighted / totalKw;
+};
+
 const calculateComision = (form: ComparadorFormValue, ocr: OcrResult): number => {
   if (!ocr.energia || !ocr.potencia) return 0;
 
-  const { producto, feeEnergia, feePotencia, comisionEnergia } = form;
+  const { producto, comisionEnergia } = form;
+  const feeEnergia  = resolveEffectiveFeeEnergia(form, ocr);
+  const feePotencia = resolveEffectiveFeePotencia(form, ocr);
   const coeficientePotencia = 0.50;
 
   if (SNAP_PRODUCTS_SET.has(producto)) {
@@ -28,14 +51,14 @@ const calculateComision = (form: ComparadorFormValue, ocr: OcrResult): number =>
   if (isPromo) {
     const consumoEnergia = (consumoPeriodo / 12) * 3;
     const energia        = (feeEnergia / 100) * consumoEnergia * comisionEnergia;
-    const potencia       = feePotencia * coeficientePotencia * potenciaContratada;
+    const potencia       = feePotencia * coeficientePotencia * potenciaContratada * comisionEnergia;
     return round3(energia + potencia);
   }
 
   const diasFactura        = ocr.periodo_facturacion?.numero_dias || 1;
   const consumoAnual       = consumoPeriodo * (365 / diasFactura);
   const energia            = (feeEnergia * comisionEnergia * consumoAnual) / 1000;
-  const potencia           = feePotencia * coeficientePotencia * potenciaContratada;
+  const potencia           = feePotencia * coeficientePotencia * potenciaContratada * comisionEnergia;
   return round3(energia + potencia);
 };
 
@@ -146,8 +169,18 @@ export const calcularFactura = (
 ): ComparadorResult => {
   const PS = PERIOD_NUMBERS;
 
-  const energiaPrecios  = PS.map(p => calcularPrecios(tariffs, form.tariff, form.producto, p, form.precioMedio, form.feeEnergia));
-  const potenciaPrecios = PS.map(p => calcularPotencia(tariffs, form.tariff, p, form.feePotencia, form.producto));
+  // En modo Periods, cada P1..P6 puede tener su propia fee. Si no, se usa la global.
+  const feeE = (i: number): number =>
+    form.feeMode === FeeMode.Periods && form.feeEnergiaByPeriod?.[i] != null
+      ? form.feeEnergiaByPeriod[i]
+      : form.feeEnergia;
+  const feeP = (i: number): number =>
+    form.feeMode === FeeMode.Periods && form.feePotenciaByPeriod?.[i] != null
+      ? form.feePotenciaByPeriod[i]
+      : form.feePotencia;
+
+  const energiaPrecios  = PS.map((p, i) => calcularPrecios(tariffs, form.tariff, form.producto, p, form.precioMedio, feeE(i)));
+  const potenciaPrecios = PS.map((p, i) => calcularPotencia(tariffs, form.tariff, p, feeP(i), form.producto));
 
   const dias = ocr.periodo_facturacion?.numero_dias ?? 0;
 
