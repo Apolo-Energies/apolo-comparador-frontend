@@ -40,22 +40,30 @@ const CONTRACT_TABLE_NODES = tableNodes({
 });
 
 const CONTRACT_SCHEMA = new Schema({
-  nodes: (ngxSchema.spec.nodes as any).append({
-    ...CONTRACT_TABLE_NODES,
-    table: {
-      ...CONTRACT_TABLE_NODES.table,
-      attrs:    { style: { default: null } },
-      parseDOM: [{ tag: 'table', getAttrs: (dom: Element) => ({ style: (dom as HTMLElement).getAttribute('style') }) }],
-      toDOM:    (node: any) => { const a: Record<string, unknown> = {}; if (node.attrs['style']) a['style'] = node.attrs['style']; return ['table', a, ['tbody', 0]] as any; },
-    },
-    // Preserve tr inline styles (e.g. alternating row background colors from Word/HTML imports)
-    table_row: {
-      ...CONTRACT_TABLE_NODES.table_row,
-      attrs:    { style: { default: null } },
-      parseDOM: [{ tag: 'tr', getAttrs: (dom: Element) => ({ style: (dom as HTMLElement).getAttribute('style') || null }) }],
-      toDOM:    (node: any) => { const a: Record<string, unknown> = {}; if (node.attrs['style']) a['style'] = node.attrs['style']; return ['tr', a, 0] as any; },
-    },
-  }),
+  nodes: (ngxSchema.spec.nodes as any)
+    // whitespace:'pre' tells ProseMirror's DOM parser to preserve spaces verbatim
+    // inside every paragraph — prevents single spaces from being collapsed when the
+    // adjacent text runs carry different marks (e.g. "SNAP " + bold "2" → "SNAP2").
+    .update('paragraph', {
+      ...(ngxSchema.spec.nodes as any).get('paragraph'),
+      whitespace: 'pre',
+    })
+    .append({
+      ...CONTRACT_TABLE_NODES,
+      table: {
+        ...CONTRACT_TABLE_NODES.table,
+        attrs:    { style: { default: null } },
+        parseDOM: [{ tag: 'table', getAttrs: (dom: Element) => ({ style: (dom as HTMLElement).getAttribute('style') }) }],
+        toDOM:    (node: any) => { const a: Record<string, unknown> = {}; if (node.attrs['style']) a['style'] = node.attrs['style']; return ['table', a, ['tbody', 0]] as any; },
+      },
+      // Preserve tr inline styles (e.g. alternating row background colors from Word/HTML imports)
+      table_row: {
+        ...CONTRACT_TABLE_NODES.table_row,
+        attrs:    { style: { default: null } },
+        parseDOM: [{ tag: 'tr', getAttrs: (dom: Element) => ({ style: (dom as HTMLElement).getAttribute('style') || null }) }],
+        toDOM:    (node: any) => { const a: Record<string, unknown> = {}; if (node.attrs['style']) a['style'] = node.attrs['style']; return ['tr', a, 0] as any; },
+      },
+    }),
   marks: (ngxSchema.spec.marks as any).addToEnd('font_size', FONT_SIZE_MARK),
 });
 
