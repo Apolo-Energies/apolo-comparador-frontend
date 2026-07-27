@@ -166,15 +166,6 @@ const ACTION_BTN_CLS = [
               </select>
             }
 
-            <select [class]="selectCls"
-              [ngModel]="selectedProvider()"
-              (ngModelChange)="onProviderChange($event)">
-              <option value="">— Proveedor —</option>
-              @for (opt of providerOptions(); track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-              }
-            </select>
-
             @if (canReassignParent()) {
               <select [class]="selectCls + ' col-span-2'"
                 [ngModel]="selectedParent()"
@@ -276,7 +267,6 @@ export class UserActionsMenuComponent {
   readonly selectedStatus     = signal('');
   readonly selectedExpert     = signal('');
   readonly selectedCommission = signal('');
-  readonly selectedProvider   = signal('');
   readonly selectedParent     = signal('');
 
   readonly parentSelectOptions = computed<SelectOption[]>(() => {
@@ -287,7 +277,6 @@ export class UserActionsMenuComponent {
   });
 
   readonly commissionOptions = signal<SelectOption[]>([]);
-  readonly providerOptions   = signal<SelectOption[]>([]);
 
   readonly roleOptions: SelectOption[] = Object.entries(UserRoleLabel).map(
     ([id, name]) => ({ value: id, label: name })
@@ -313,13 +302,11 @@ export class UserActionsMenuComponent {
       this.selectedCommission.set(
         u.commissions?.find(c => c.isActive)?.commissionType?.id ?? ''
       );
-      this.selectedProvider.set(u.providerId != null ? String(u.providerId) : '');
       this.selectedParent.set((u as { parentUserId?: string | null }).parentUserId ?? '');
     });
 
     this.catalogSvc.get().subscribe(catalog => {
       this.commissionOptions.set(catalog.commissions.map(c => ({ value: c.id, label: c.name })));
-      this.providerOptions.set(catalog.providers.map(p => ({ value: p.id, label: p.name })));
     });
   }
 
@@ -423,15 +410,6 @@ export class UserActionsMenuComponent {
     this.userService.assignCommission(this.user().id, value).subscribe({
       next:  () => { this.alertService.show('Comisión actualizada', 'success'); this.updated.emit(); },
       error: () => this.alertService.show('Error al actualizar la comisión', 'error'),
-    });
-  }
-
-  onProviderChange(value: string): void {
-    this.selectedProvider.set(value);
-    if (!value) return;
-    this.userService.patch(this.user().id, { providerId: Number(value) }).subscribe({
-      next:  () => { this.alertService.show('Proveedor actualizado', 'success'); this.updated.emit(); },
-      error: () => this.alertService.show('Error al actualizar el proveedor', 'error'),
     });
   }
 
