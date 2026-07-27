@@ -1,12 +1,12 @@
 import {
   AfterViewInit, ChangeDetectionStrategy, Component, computed,
-  inject, signal, PLATFORM_ID, TemplateRef, ViewChild,
+  HostListener, inject, signal, PLATFORM_ID, TemplateRef, ViewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
-import { AlertComponent, AlertService, ButtonComponent, ComboboxComponent, ComboboxOption, InputFieldComponent, SelectFieldComponent, SelectOption } from '@apolo-energies/ui';
+import { AlertComponent, AlertService, ButtonComponent, ComboboxComponent, ComboboxOption, SelectOption } from '@apolo-energies/ui';
 import { AuthService } from '@apolo-energies/auth';
-import { ApoloIcons, DateIcon, DownloadIcon, filterIcon, SearchIcon, StarIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
+import { ApoloIcons, DateIcon, DownloadIcon, filterIcon, StarIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
 import { UserService } from '../../../../services/user.service';
 import { PotentialParent } from '../../../../entities/user.model';
 import { AddUserModalComponent } from './add-user-modal/add-user-modal';
@@ -21,8 +21,8 @@ import { environment } from '../../../../../environments/environment';
   selector: 'app-users-page',
   standalone: true,
   imports: [
-    DataTableComponent, PaginatorComponent, InputFieldComponent,
-    SelectFieldComponent, ComboboxComponent, ButtonComponent, AlertComponent,
+    DataTableComponent, PaginatorComponent,
+    ComboboxComponent, ButtonComponent, AlertComponent,
     AddUserModalComponent, UserActionsMenuComponent, TableSkeletonComponent,
     ApoloIcons,
   ],
@@ -58,6 +58,14 @@ import { environment } from '../../../../../environments/environment';
       color: var(--color-primary-button);
       border: 1px solid color-mix(in srgb, var(--color-primary-button) 30%, transparent);
     }
+
+    /* Header filter icon — keep th div as flex-row, make the icon span block so
+       when expanded the input fills available space rather than overflowing. */
+    :host ::ng-deep lib-data-table thead th > div > span:last-child {
+      display: flex;
+      align-items: center;
+      flex: 1;
+    }
   `],
 })
 export class UsersPageComponent implements AfterViewInit {
@@ -67,6 +75,12 @@ export class UsersPageComponent implements AfterViewInit {
   @ViewChild('parentCellTpl')     private parentCellTpl!:     TemplateRef<{ $implicit: UserRow }>;
   @ViewChild('selectCellTpl')     private selectCellTpl!:     TemplateRef<{ $implicit: UserRow }>;
 
+  // Header filter templates (injected via headerIconTemplate per column)
+  @ViewChild('nameHeaderTpl')   private nameHeaderTpl!:   TemplateRef<void>;
+  @ViewChild('emailHeaderTpl')  private emailHeaderTpl!:  TemplateRef<void>;
+  @ViewChild('roleHeaderTpl')   private roleHeaderTpl!:   TemplateRef<void>;
+  @ViewChild('parentHeaderTpl') private parentHeaderTpl!: TemplateRef<void>;
+
   private userService   = inject(UserService);
   private platformId    = inject(PLATFORM_ID);
   private globalLoading = inject(GlobalLoadingService);
@@ -74,12 +88,11 @@ export class UsersPageComponent implements AfterViewInit {
   private alertService  = inject(AlertService);
 
   // icons
-  readonly searchIcon:   UiIconSource = { type: 'apolo', icon: SearchIcon,   size: 16 };
-  readonly filterIcon:   UiIconSource = { type: 'apolo', icon: filterIcon,   size: 16 };
-  readonly starIcon:     UiIconSource = { type: 'apolo', icon: StarIcon,     size: 16 };
-  readonly downloadIcon: UiIconSource = { type: 'apolo', icon: DownloadIcon, size: 16 };
-  readonly xIcon:        UiIconSource = { type: 'apolo', icon: XIcon,        size: 16 };
-  readonly dateIconSrc:  UiIconSource = { type: 'apolo', icon: DateIcon,     size: 16 };
+  readonly colFilterIcon: UiIconSource = { type: 'apolo', icon: filterIcon,   size: 12 };
+  readonly starIcon:      UiIconSource = { type: 'apolo', icon: StarIcon,     size: 16 };
+  readonly downloadIcon:  UiIconSource = { type: 'apolo', icon: DownloadIcon, size: 16 };
+  readonly xIcon:         UiIconSource = { type: 'apolo', icon: XIcon,        size: 16 };
+  readonly dateIconSrc:   UiIconSource = { type: 'apolo', icon: DateIcon,     size: 16 };
 
   // filters
   readonly filterName         = signal('');
@@ -113,6 +126,11 @@ export class UsersPageComponent implements AfterViewInit {
 
   readonly isApolo  = environment.features.userDetail;
   readonly isMaster = computed(() => getUserRoles(this.auth.currentUser()).includes('Master'));
+
+  /** Display name of the currently active parent filter. */
+  readonly parentLabel = computed(() =>
+    this.potentialParents().find(p => p.id === this.filterParentUserId())?.fullName ?? '…'
+  );
 
   /** Combobox options for the table-level "Asignado a" filter (includes an "All" entry). */
   readonly parentComboboxOptions = computed<ComboboxOption[]>(() => [
@@ -180,17 +198,17 @@ export class UsersPageComponent implements AfterViewInit {
       }
 
       cols.push(
-        { key: 'fullName',                label: 'Razón Social' },
+        { key: 'fullName',                label: 'Razón Social',    headerIconTemplate: this.nameHeaderTpl },
         { key: 'customer',                label: 'SIPS/DNI',        format: row => {
             const c = row.customer;
             if (!c) return '-';
             return c.personType === 'Individual' ? (c.dni ?? '-') : (c.cif ?? '-');
           }
         },
-        { key: 'email',                   label: 'Email' },
+        { key: 'email',                   label: 'Email',           headerIconTemplate: this.emailHeaderTpl },
         { key: 'phone',                   label: 'Teléfono',        format: row => row.phone || '-' },
-        { key: 'role',                    label: 'Rol',             align: 'center', format: row => getRoleLabel(row.role) },
-        { key: 'parentFullName',          label: 'Asignado a',      align: 'center', cellTemplate: this.parentCellTpl },
+        { key: 'role',                    label: 'Rol',             align: 'center', format: row => getRoleLabel(row.role), headerIconTemplate: this.roleHeaderTpl },
+        { key: 'parentFullName',          label: 'Asignado a',      align: 'center', cellTemplate: this.parentCellTpl, headerIconTemplate: this.parentHeaderTpl },
         { key: 'contractSignatureStatus', label: 'Estado Contrato', align: 'center', cellTemplate: this.contractStatusTpl },
         { key: 'isEnergyExpert',          label: 'Energy Expert',   align: 'center', format: row => row.isEnergyExpert ? 'Sí' : 'No' },
         { key: 'commissions',             label: 'Comisión',        align: 'center', format: row => row.commissions?.find(c => c.isActive)?.commissionType?.name ?? '-' },
@@ -282,6 +300,69 @@ export class UsersPageComponent implements AfterViewInit {
     this.filterEmail.set('');
     this.filterRole.set('');
     this.filterParentUserId.set('');
+    this.currentPage.set(1);
+    this.load();
+  }
+
+  // ─── Header filter handlers ──────────────────────────────────────────────────
+
+  /** Which column's filter popover is open. */
+  readonly openFilter = signal<string | null>(null);
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.openFilter.set(null);
+  }
+
+  toggleFilter(col: string, e: MouseEvent): void {
+    e.stopPropagation();
+    const next = this.openFilter() === col ? null : col;
+    this.openFilter.set(next);
+    if (next) {
+      setTimeout(() => {
+        (document.querySelector(`[data-col-filter="${col}"]`) as HTMLElement | null)?.focus();
+      }, 30);
+    }
+  }
+
+  closeFilter(): void {
+    this.openFilter.set(null);
+  }
+
+  clearFilter(col: 'name' | 'email' | 'role' | 'parent'): void {
+    if (col === 'name')   this.filterName.set('');
+    if (col === 'email')  this.filterEmail.set('');
+    if (col === 'role')   this.filterRole.set('');
+    if (col === 'parent') this.filterParentUserId.set('');
+    this.openFilter.set(null);
+    this.currentPage.set(1);
+    this.load();
+  }
+
+  applyFilter(): void {
+    this.openFilter.set(null);
+    this.currentPage.set(1);
+    this.load();
+  }
+
+  onHeaderNameInput(e: Event): void {
+    this.filterName.set((e.target as HTMLInputElement).value);
+  }
+
+  onHeaderEmailInput(e: Event): void {
+    this.filterEmail.set((e.target as HTMLInputElement).value);
+  }
+
+  onHeaderRoleChange(e: Event): void {
+    this.filterRole.set((e.target as HTMLSelectElement).value);
+    this.openFilter.set(null);
+    this.currentPage.set(1);
+    this.load();
+  }
+
+  onHeaderParentChange(e: Event): void {
+    this.filterParentUserId.set((e.target as HTMLSelectElement).value);
+    this.openFilter.set(null);
     this.currentPage.set(1);
     this.load();
   }

@@ -1,5 +1,166 @@
 <ui-alert />
 
+<!-- Header filter templates — icon + active chip in header, popover with Aplicar -->
+
+<ng-template #nameHeaderTpl>
+  <div class="relative flex items-center gap-1.5" (click)="$event.stopPropagation()">
+    <button
+      class="inline-flex items-center transition-colors cursor-pointer shrink-0"
+      [class]="filterName() || openFilter() === 'name' ? 'text-primary-button' : 'text-muted-foreground hover:text-primary-button'"
+      (click)="toggleFilter('name', $event)">
+      <lib-apolo-icons [icon]="colFilterIcon" class="flex items-center" />
+    </button>
+    @if (filterName()) {
+      <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-primary-button/10 text-primary-button text-[10px] font-medium max-w-20">
+        <span class="truncate">{{ filterName() }}</span>
+        <button class="shrink-0 opacity-70 hover:opacity-100" (click)="clearFilter('name')">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </span>
+    }
+    @if (openFilter() === 'name') {
+      <div class="absolute top-full left-0 mt-2 z-50 w-56 bg-card border border-border rounded-lg shadow-xl p-3 flex flex-col gap-3">
+        <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Razón Social</p>
+        <input
+          data-col-filter="name"
+          type="text"
+          class="w-full text-xs bg-input border border-border rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground/60"
+          placeholder="Buscar por nombre..."
+          [value]="filterName()"
+          (input)="onHeaderNameInput($event)"
+          (keydown.escape)="closeFilter()"
+          (keydown.enter)="applyFilter()"
+        />
+        <div class="flex items-center justify-between gap-2">
+          @if (filterName()) {
+            <button class="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+              (click)="clearFilter('name')">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Limpiar
+            </button>
+          } @else { <span></span> }
+          <button class="text-xs px-3 py-1.5 bg-primary-button text-white rounded-md hover:opacity-90 transition-opacity font-medium cursor-pointer"
+            (click)="applyFilter()">Aplicar</button>
+        </div>
+      </div>
+    }
+  </div>
+</ng-template>
+
+<ng-template #emailHeaderTpl>
+  <div class="relative flex items-center gap-1.5" (click)="$event.stopPropagation()">
+    <button
+      class="inline-flex items-center transition-colors cursor-pointer shrink-0"
+      [class]="filterEmail() || openFilter() === 'email' ? 'text-primary-button' : 'text-muted-foreground hover:text-primary-button'"
+      (click)="toggleFilter('email', $event)">
+      <lib-apolo-icons [icon]="colFilterIcon" class="flex items-center" />
+    </button>
+    @if (filterEmail()) {
+      <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-primary-button/10 text-primary-button text-[10px] font-medium max-w-20">
+        <span class="truncate">{{ filterEmail() }}</span>
+        <button class="shrink-0 opacity-70 hover:opacity-100" (click)="clearFilter('email')">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </span>
+    }
+    @if (openFilter() === 'email') {
+      <div class="absolute top-full left-0 mt-2 z-50 w-56 bg-card border border-border rounded-lg shadow-xl p-3 flex flex-col gap-3">
+        <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Email</p>
+        <input
+          data-col-filter="email"
+          type="text"
+          class="w-full text-xs bg-input border border-border rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground/60"
+          placeholder="Buscar por email..."
+          [value]="filterEmail()"
+          (input)="onHeaderEmailInput($event)"
+          (keydown.escape)="closeFilter()"
+          (keydown.enter)="applyFilter()"
+        />
+        <div class="flex items-center justify-between gap-2">
+          @if (filterEmail()) {
+            <button class="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+              (click)="clearFilter('email')">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Limpiar
+            </button>
+          } @else { <span></span> }
+          <button class="text-xs px-3 py-1.5 bg-primary-button text-white rounded-md hover:opacity-90 transition-opacity font-medium cursor-pointer"
+            (click)="applyFilter()">Aplicar</button>
+        </div>
+      </div>
+    }
+  </div>
+</ng-template>
+
+<ng-template #roleHeaderTpl>
+  <div class="relative flex items-center gap-1.5" (click)="$event.stopPropagation()">
+    <button
+      class="inline-flex items-center transition-colors cursor-pointer shrink-0"
+      [class]="filterRole() || openFilter() === 'role' ? 'text-primary-button' : 'text-muted-foreground hover:text-primary-button'"
+      (click)="toggleFilter('role', $event)">
+      <lib-apolo-icons [icon]="colFilterIcon" class="flex items-center" />
+    </button>
+    @if (filterRole()) {
+      <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-primary-button/10 text-primary-button text-[10px] font-medium max-w-20">
+        <span class="truncate">{{ filterRole() }}</span>
+        <button class="shrink-0 opacity-70 hover:opacity-100" (click)="clearFilter('role')">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </span>
+    }
+    @if (openFilter() === 'role') {
+      <div class="absolute top-full left-0 mt-2 z-50 w-48 bg-card border border-border rounded-lg shadow-xl p-3 flex flex-col gap-3">
+        <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Rol</p>
+        <select
+          data-col-filter="role"
+          class="w-full text-xs bg-input border border-border rounded-md px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary text-foreground cursor-pointer"
+          [value]="filterRole()"
+          (change)="onHeaderRoleChange($event)">
+          <option value="">Todos</option>
+          <option value="Master">Master</option>
+          <option value="Colaborador">Colaborador</option>
+          <option value="Referenciador">Referenciador</option>
+          <option value="Tester">Tester</option>
+        </select>
+      </div>
+    }
+  </div>
+</ng-template>
+
+<ng-template #parentHeaderTpl>
+  <div class="relative flex items-center gap-1.5" (click)="$event.stopPropagation()">
+    <button
+      class="inline-flex items-center transition-colors cursor-pointer shrink-0"
+      [class]="filterParentUserId() || openFilter() === 'parent' ? 'text-primary-button' : 'text-muted-foreground hover:text-primary-button'"
+      (click)="toggleFilter('parent', $event)">
+      <lib-apolo-icons [icon]="colFilterIcon" class="flex items-center" />
+    </button>
+    @if (filterParentUserId()) {
+      <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-primary-button/10 text-primary-button text-[10px] font-medium max-w-24">
+        <span class="truncate">{{ parentLabel() }}</span>
+        <button class="shrink-0 opacity-70 hover:opacity-100" (click)="clearFilter('parent')">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </span>
+    }
+    @if (openFilter() === 'parent') {
+      <div class="absolute top-full left-0 mt-2 z-50 w-56 bg-card border border-border rounded-lg shadow-xl p-3 flex flex-col gap-3">
+        <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Asignado a</p>
+        <select
+          data-col-filter="parent"
+          class="w-full text-xs bg-input border border-border rounded-md px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary text-foreground cursor-pointer"
+          [value]="filterParentUserId()"
+          (change)="onHeaderParentChange($event)">
+          <option value="">Todos</option>
+          @for (p of potentialParents(); track p.id) {
+            <option [value]="p.id">{{ p.fullName }}</option>
+          }
+        </select>
+      </div>
+    }
+  </div>
+</ng-template>
+
 <!-- Cell templates -->
 <ng-template #createdAtCellTpl let-row>
   <span class="inline-flex items-center gap-1.5">
@@ -21,47 +182,13 @@
 <div class="border border-border rounded-lg overflow-hidden shadow-sm">
 
   <!-- Header -->
-  <div class="bg-card px-6 py-5">
-    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-      <ui-input
-        label="Nombre"
-        placeholder="Buscar por nombre..."
-        [value]="filterName()"
-        [leadingIcon]="searchIcon"
-        (valueChange)="filterName.set($event)"
-      />
-      <ui-input
-        label="Email"
-        placeholder="Buscar por email..."
-        [value]="filterEmail()"
-        [leadingIcon]="searchIcon"
-        (valueChange)="filterEmail.set($event)"
-      />
-      <ui-select
-        label="Rol"
-        [options]="roleOptions"
-        [value]="filterRole()"
-        [leadingIcon]="filterIcon"
-        (valueChange)="filterRole.set($event)"
-      />
-      <div class="space-y-1">
-        <label class="block text-xs font-medium text-muted-foreground uppercase tracking-wide">Asignado a</label>
-        <ui-combobox
-          placeholder="Buscar Master..."
-          [options]="parentComboboxOptions()"
-          [value]="filterParentUserId()"
-          (valueChange)="filterParentUserId.set($any($event))"
-        />
-      </div>
-      <div class="flex gap-2 justify-end">
-        <ui-button label="Limpiar" variant="secondary" size="md" [leadingIcon]="xIcon"        (click)="onClearFilters()" />
-        <ui-button label="Buscar"  variant="secondary" size="md" [leadingIcon]="searchIcon"   (click)="onSearch()" />
-      </div>
-    </div>
-
-    <div class="flex gap-2 justify-between items-center mt-4">
+  <div class="bg-card px-6 py-4">
+    <div class="flex gap-2 justify-between items-center">
       <ui-button label="Exportar"        variant="secondary" size="md" [leadingIcon]="downloadIcon" (click)="onExport()" />
-      <ui-button label="Agregar Usuario" variant="default"   size="md" [leadingIcon]="starIcon" (click)="modalOpen.set(true)" />
+      <div class="flex items-center gap-2">
+        <ui-button label="Limpiar filtros" variant="secondary" size="md" [leadingIcon]="xIcon" (click)="onClearFilters()" />
+        <ui-button label="Agregar Usuario" variant="default"   size="md" [leadingIcon]="starIcon" (click)="modalOpen.set(true)" />
+      </div>
     </div>
   </div>
 

@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { ContractDetail } from '../entities/user-detail.model';
-import { ContratoListItem } from '../entities/contrato.model';
+import { ContratosPageResponse } from '../entities/contrato.model';
 import { ServicioListItem } from '../entities/servicio.model';
 
 export interface EeTown {
@@ -189,21 +189,27 @@ export class ContractService {
     );
   }
 
+  getContratoArchivo(idArchivo: number): Observable<Blob> {
+    return this.http.get(
+      `${environment.apiUrl}/energy-expert/archivo/${idArchivo}`,
+      { responseType: 'blob' },
+    );
+  }
+
   getContratos(params: {
     filter?:  string;
     orderBy?: string;
     offset?:  number;
     limit?:   number;
-  }): Observable<ContratoListItem[]> {
+  }): Observable<ContratosPageResponse> {
     const httpParams = new HttpParams()
       .set('filter',  params.filter  ?? '')
       .set('orderBy', params.orderBy ?? 'NombreCliente')
       .set('offset',  String(params.offset  ?? 0))
       .set('limit',   String(params.limit   ?? 10));
 
-    return this.http.post<ContratoListItem[]>(
-      `${environment.apiUrl}/energy-expert/contracts`,
-      {},
+    return this.http.get<ContratosPageResponse>(
+      `${environment.apiUrl}/energy-expert/contratos`,
       { params: httpParams },
     );
   }
