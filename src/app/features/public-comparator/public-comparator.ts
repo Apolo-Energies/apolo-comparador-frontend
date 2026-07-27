@@ -29,10 +29,15 @@ import { EFFICIENCY_TIPS_LEAD, pickRandomEfficiencyTip } from '../../shared/cons
 
 // Candidatos a "producto fijo ganador" por tarifa. Al recibir un OCR se simula el cálculo con
 // cada uno y se ofrece al cliente solo el que produce mayor ahorroEstudio.
+// const FIXED_CANDIDATES: Record<string, string[]> = {
+//   '2.0TD': ['Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi'],
+//   '3.0TD': ['Fijo Fácil', 'Fijo Estable', 'Fijo Dyn'],
+//   '6.1TD': ['Fijo Fácil', 'Fijo Estable', 'Fijo Dyn'],
+// };
 const FIXED_CANDIDATES: Record<string, string[]> = {
-  '2.0TD': ['Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi'],
-  '3.0TD': ['Fijo Fácil', 'Fijo Estable', 'Fijo Dyn'],
-  '6.1TD': ['Fijo Fácil', 'Fijo Estable', 'Fijo Dyn'],
+  '2.0TD': ['Apolo Terra', 'Apolo Polar', 'Apolo Luna'],
+  '3.0TD': ['Apolo Terra', 'Apolo Polar', 'Apolo Luna'],
+  '6.1TD': ['Apolo Terra', 'Apolo Polar', 'Apolo Luna'],
 };
 
 @Component({

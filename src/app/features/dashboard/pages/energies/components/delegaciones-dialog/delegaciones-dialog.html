@@ -1,0 +1,141 @@
+@if (open()) {
+  <div
+    class="deleg-backdrop fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center overflow-y-auto p-6"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="deleg-dialog-title"
+    (click)="onBackdropClick($event)">
+
+    <div class="deleg-panel bg-card border border-border rounded-2xl w-full max-w-5xl flex flex-col max-h-[90vh] shadow-xl">
+
+      <header class="flex items-center justify-between gap-4 px-6 py-4 border-b border-border/60">
+        <div class="min-w-0">
+          <h2 id="deleg-dialog-title" class="text-base font-semibold text-foreground leading-tight">Seleccionar delegación</h2>
+          <p class="text-xs text-muted-foreground mt-0.5" style="font-variant-numeric: tabular-nums;">
+            {{ delegaciones().length }} delegaciones disponibles
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="close.emit()"
+          class="text-muted-foreground hover:text-foreground p-1.5 rounded-md hover:bg-muted/40 active:scale-[0.96] transition-[background-color,transform] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          aria-label="Cerrar diálogo">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </header>
+
+      <div class="px-6 py-3 border-b border-border/60">
+        <div class="flex items-center gap-3 bg-muted/30 rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-primary/30 focus-within:bg-muted/50 transition-[background-color,box-shadow]">
+          <svg class="w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/>
+            <path d="m21 21-4.3-4.3"/>
+          </svg>
+          <input
+            #searchInput
+            type="text"
+            placeholder="Buscar por nombre…"
+            [value]="query()"
+            (input)="onQueryInput($event)"
+            class="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none" />
+          @if (query()) {
+            <button
+              type="button"
+              (click)="query.set('')"
+              class="text-muted-foreground hover:text-foreground text-xs"
+              aria-label="Limpiar búsqueda">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-6">
+        @if (loading()) {
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            @for (_ of [1,2,3,4,5,6,7,8,9]; track _) {
+              <div class="h-[52px] rounded-lg bg-muted/30 animate-pulse"></div>
+            }
+          </div>
+        } @else {
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+
+            <!-- Todos option -->
+            <button
+              type="button"
+              (click)="onSelectTodos()"
+              [attr.aria-pressed]="isTodosSelected()"
+              class="group relative flex items-center gap-3 border rounded-lg px-4 py-3 text-left transition-[background-color,border-color,transform] active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              [class.border-primary]="isTodosSelected()"
+              [class.bg-primary]="isTodosSelected()"
+              [class.text-primary-foreground]="isTodosSelected()"
+              [class.border-border]="!isTodosSelected()"
+              [class.hover:border-muted-foreground/40]="!isTodosSelected()"
+              [class.hover:bg-muted/30]="!isTodosSelected()">
+              <span
+                class="w-8 h-8 shrink-0 rounded-md flex items-center justify-center"
+                [class.bg-primary-foreground]="isTodosSelected()"
+                [class.text-primary]="isTodosSelected()"
+                [class.bg-muted]="!isTodosSelected()"
+                [class.text-muted-foreground]="!isTodosSelected()"
+                aria-hidden="true">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                  <path d="M3 12h18M3 6h18M3 18h18"/>
+                </svg>
+              </span>
+              <span class="text-sm font-medium truncate flex-1">Todos</span>
+              @if (isTodosSelected()) {
+                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                  <path d="M20 6 9 17l-5-5"/>
+                </svg>
+              }
+            </button>
+
+            @for (d of filtered(); track d.id) {
+              <button
+                type="button"
+                (click)="onSelect(d)"
+                [attr.aria-pressed]="isSelected(d.id)"
+                class="group relative flex items-center gap-3 border rounded-lg px-4 py-3 text-left transition-[background-color,border-color,transform] active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                [class.border-primary]="isSelected(d.id)"
+                [class.bg-primary]="isSelected(d.id)"
+                [class.text-primary-foreground]="isSelected(d.id)"
+                [class.border-border]="!isSelected(d.id)"
+                [class.hover:border-muted-foreground/40]="!isSelected(d.id)"
+                [class.hover:bg-muted/30]="!isSelected(d.id)">
+                @if (d.logoUrl) {
+                  <img
+                    [src]="'https://ee.apoloenergies.es' + d.logoUrl"
+                    alt=""
+                    class="w-8 h-8 shrink-0 object-contain rounded-md bg-white p-0.5"
+                    style="outline: 1px solid rgba(0,0,0,0.06); outline-offset: -1px;" />
+                } @else {
+                  <span class="w-8 h-8 shrink-0 rounded-md bg-muted flex items-center justify-center text-muted-foreground text-[10px] font-semibold" aria-hidden="true">
+                    {{ d.nombre.charAt(0).toUpperCase() }}
+                  </span>
+                }
+                <span class="text-sm font-medium truncate flex-1" style="text-wrap: balance;">{{ d.nombre }}</span>
+                @if (isSelected(d.id)) {
+                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                    <path d="M20 6 9 17l-5-5"/>
+                  </svg>
+                }
+              </button>
+            } @empty {
+              <div class="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
+                <svg class="w-8 h-8 text-muted-foreground/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7"/>
+                  <path d="m21 21-4.3-4.3"/>
+                </svg>
+                <p class="text-sm">No hay coincidencias para <span class="font-medium text-foreground">"{{ query() }}"</span>.</p>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
