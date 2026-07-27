@@ -1,12 +1,12 @@
 import {
   AfterViewInit, ChangeDetectionStrategy, Component, computed,
-  inject, signal, PLATFORM_ID, TemplateRef, ViewChild,
+  HostListener, inject, signal, PLATFORM_ID, TemplateRef, ViewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
-import { AlertComponent, AlertService, ButtonComponent, ComboboxComponent, ComboboxOption, InputFieldComponent, SelectFieldComponent, SelectOption } from '@apolo-energies/ui';
+import { AlertComponent, AlertService, ButtonComponent, ComboboxComponent, ComboboxOption, SelectOption } from '@apolo-energies/ui';
 import { AuthService } from '@apolo-energies/auth';
-import { ApoloIcons, DateIcon, DownloadIcon, filterIcon, SearchIcon, StarIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
+import { ApoloIcons, DateIcon, DownloadIcon, filterIcon, StarIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
 import { UserService } from '../../../../services/user.service';
 import { SubUsersService } from '../../../../services/sub-users.service';
 import { PotentialParent } from '../../../../entities/user.model';
@@ -24,8 +24,8 @@ import { environment } from '../../../../../environments/environment';
   selector: 'app-users-page',
   standalone: true,
   imports: [
-    DataTableComponent, PaginatorComponent, InputFieldComponent,
-    SelectFieldComponent, ComboboxComponent, ButtonComponent, AlertComponent,
+    DataTableComponent, PaginatorComponent,
+    ComboboxComponent, ButtonComponent, AlertComponent,
     AddUserModalComponent, AddCommercialModalComponent, ManageCommissionsModalComponent,
     UserActionsMenuComponent, TableSkeletonComponent,
     ApoloIcons,
@@ -61,6 +61,14 @@ import { environment } from '../../../../../environments/environment';
       background-color: color-mix(in srgb, var(--color-primary-button) 15%, transparent);
       color: var(--color-primary-button);
       border: 1px solid color-mix(in srgb, var(--color-primary-button) 30%, transparent);
+    }
+
+    /* Header filter icon — keep th div as flex-row, make the icon span block so
+       when expanded the input fills available space rather than overflowing. */
+    :host ::ng-deep lib-data-table thead th > div > span:last-child {
+      display: flex;
+      align-items: center;
+      flex: 1;
     }
 
     /* "Añadir comercial" contextual CTA at the bottom of an expanded collaborator. */
@@ -113,20 +121,25 @@ export class UsersPageComponent implements AfterViewInit {
   @ViewChild('parentCellTpl')     private parentCellTpl!:     TemplateRef<{ $implicit: UserRow }>;
   @ViewChild('selectCellTpl')     private selectCellTpl!:     TemplateRef<{ $implicit: UserRow }>;
 
+  // Header filter templates (injected via headerIconTemplate per column)
+  @ViewChild('nameHeaderTpl')   private nameHeaderTpl!:   TemplateRef<void>;
+  @ViewChild('emailHeaderTpl')  private emailHeaderTpl!:  TemplateRef<void>;
+  @ViewChild('roleHeaderTpl')   private roleHeaderTpl!:   TemplateRef<void>;
+  @ViewChild('parentHeaderTpl') private parentHeaderTpl!: TemplateRef<void>;
+
   private userService     = inject(UserService);
   private subUsersService = inject(SubUsersService);
   private platformId      = inject(PLATFORM_ID);
-  private globalLoading = inject(GlobalLoadingService);
-  private auth          = inject(AuthService);
-  private alertService  = inject(AlertService);
+  private globalLoading   = inject(GlobalLoadingService);
+  private auth            = inject(AuthService);
+  private alertService    = inject(AlertService);
 
   // icons
-  readonly searchIcon:   UiIconSource = { type: 'apolo', icon: SearchIcon,   size: 16 };
-  readonly filterIcon:   UiIconSource = { type: 'apolo', icon: filterIcon,   size: 16 };
-  readonly starIcon:     UiIconSource = { type: 'apolo', icon: StarIcon,     size: 16 };
-  readonly downloadIcon: UiIconSource = { type: 'apolo', icon: DownloadIcon, size: 16 };
-  readonly xIcon:        UiIconSource = { type: 'apolo', icon: XIcon,        size: 16 };
-  readonly dateIconSrc:  UiIconSource = { type: 'apolo', icon: DateIcon,     size: 16 };
+  readonly colFilterIcon: UiIconSource = { type: 'apolo', icon: filterIcon,   size: 12 };
+  readonly starIcon:      UiIconSource = { type: 'apolo', icon: StarIcon,     size: 16 };
+  readonly downloadIcon:  UiIconSource = { type: 'apolo', icon: DownloadIcon, size: 16 };
+  readonly xIcon:         UiIconSource = { type: 'apolo', icon: XIcon,        size: 16 };
+  readonly dateIconSrc:   UiIconSource = { type: 'apolo', icon: DateIcon,     size: 16 };
 
   // filters
   readonly filterName         = signal('');
@@ -173,6 +186,11 @@ export class UsersPageComponent implements AfterViewInit {
   readonly isApolo  = environment.features.userDetail;
   readonly isMaster = computed(() => getUserRoles(this.auth.currentUser()).includes('Master'));
 
+  /** Display name of the currently active parent filter. */
+  readonly parentLabel = computed(() =>
+    this.potentialParents().find(p => p.id === this.filterParentUserId())?.fullName ?? '…'
+  );
+
   /** Combobox options for the table-level "Asignado a" filter (includes an "All" entry). */
   readonly parentComboboxOptions = computed<ComboboxOption[]>(() => [
     { id: '', name: 'Todos' },
@@ -204,13 +222,6 @@ export class UsersPageComponent implements AfterViewInit {
     }
   }
 
-  /**
-   * Pre-filter rule on first load:
-   *   - Non-Master: no pre-filter, the backend already restricts visibility to their subtree.
-   *   - Master with a parent (Javi, Oscar, Gustavo, …): pre-filter by themselves ("mine").
-   *   - Root Master (apolo, the one with parentUserId == null): no pre-filter — they see everything
-   *     by default because they own the whole tree; they can still narrow down via the dropdown.
-   */
   private initFilterAndLoad(): void {
     const me = this.auth.currentUser();
     if (!me?.id || !this.isMaster()) {
@@ -239,17 +250,17 @@ export class UsersPageComponent implements AfterViewInit {
       }
 
       cols.push(
-        { key: 'fullName',                label: 'Razón Social' },
+        { key: 'fullName',                label: 'Razón Social',    headerIconTemplate: this.nameHeaderTpl },
         { key: 'customer',                label: 'SIPS/DNI',        format: row => {
             const c = row.customer;
             if (!c) return '-';
             return c.personType === 'Individual' ? (c.dni ?? '-') : (c.cif ?? '-');
           }
         },
-        { key: 'email',                   label: 'Email' },
+        { key: 'email',                   label: 'Email',           headerIconTemplate: this.emailHeaderTpl },
         { key: 'phone',                   label: 'Teléfono',        format: row => row.phone || '-' },
-        { key: 'role',                    label: 'Rol',             align: 'center', format: row => getRoleLabel(row.role) },
-        { key: 'parentFullName',          label: 'Asignado a',      align: 'center', cellTemplate: this.parentCellTpl },
+        { key: 'role',                    label: 'Rol',             align: 'center', format: row => getRoleLabel(row.role), headerIconTemplate: this.roleHeaderTpl },
+        { key: 'parentFullName',          label: 'Asignado a',      align: 'center', cellTemplate: this.parentCellTpl, headerIconTemplate: this.parentHeaderTpl },
         { key: 'contractSignatureStatus', label: 'Estado Contrato', align: 'center', cellTemplate: this.contractStatusTpl },
         { key: 'isEnergyExpert',          label: 'Energy Expert',   align: 'center', format: row => row.isEnergyExpert ? 'Sí' : 'No' },
         { key: 'commissions',             label: 'Comisión',        align: 'center', format: row => row.commissions?.find(c => c.isActive)?.commissionType?.name ?? '-' },
@@ -327,7 +338,6 @@ export class UsersPageComponent implements AfterViewInit {
   onSaved() {
     this.modalOpen.set(false);
     this.load();
-    // Refresh parents list — a newly created Master/Comercial can also be a parent.
     this.loadPotentialParents();
   }
 
@@ -424,6 +434,68 @@ export class UsersPageComponent implements AfterViewInit {
     this.load();
   }
 
+  // ─── Header filter handlers ──────────────────────────────────────────────────
+
+  readonly openFilter = signal<string | null>(null);
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.openFilter.set(null);
+  }
+
+  toggleFilter(col: string, e: MouseEvent): void {
+    e.stopPropagation();
+    const next = this.openFilter() === col ? null : col;
+    this.openFilter.set(next);
+    if (next) {
+      setTimeout(() => {
+        (document.querySelector(`[data-col-filter="${col}"]`) as HTMLElement | null)?.focus();
+      }, 30);
+    }
+  }
+
+  closeFilter(): void {
+    this.openFilter.set(null);
+  }
+
+  clearFilter(col: 'name' | 'email' | 'role' | 'parent'): void {
+    if (col === 'name')   this.filterName.set('');
+    if (col === 'email')  this.filterEmail.set('');
+    if (col === 'role')   this.filterRole.set('');
+    if (col === 'parent') this.filterParentUserId.set('');
+    this.openFilter.set(null);
+    this.currentPage.set(1);
+    this.load();
+  }
+
+  applyFilter(): void {
+    this.openFilter.set(null);
+    this.currentPage.set(1);
+    this.load();
+  }
+
+  onHeaderNameInput(e: Event): void {
+    this.filterName.set((e.target as HTMLInputElement).value);
+  }
+
+  onHeaderEmailInput(e: Event): void {
+    this.filterEmail.set((e.target as HTMLInputElement).value);
+  }
+
+  onHeaderRoleChange(e: Event): void {
+    this.filterRole.set((e.target as HTMLSelectElement).value);
+    this.openFilter.set(null);
+    this.currentPage.set(1);
+    this.load();
+  }
+
+  onHeaderParentChange(e: Event): void {
+    this.filterParentUserId.set((e.target as HTMLSelectElement).value);
+    this.openFilter.set(null);
+    this.currentPage.set(1);
+    this.load();
+  }
+
   onExport(): void {
     this.userService.downloadExcel().subscribe({
       next: (blob) => {
@@ -511,7 +583,6 @@ export class UsersPageComponent implements AfterViewInit {
         this.load();
       },
       error: (err) => {
-        // Surface the actual server error so we can diagnose 401 / 403 / 500 / validation issues.
         console.error('[bulk-assign-parent] error', err);
         const serverMsg =
           err?.error?.detail ||
@@ -526,11 +597,6 @@ export class UsersPageComponent implements AfterViewInit {
     });
   }
 
-  /**
-   * Masters never expand: their children already appear as top-level rows.
-   * Colaboradores always expand (even without commercials yet) so the master can add the first one.
-   * Other non-master roles only expand when they actually have sub-users to show.
-   */
   readonly rowIsExpandable = (row: UserRow) => {
     if (this.isMasterRow(row)) return false;
     if (this.canReceiveCommercials(row)) return true;
@@ -547,7 +613,6 @@ export class UsersPageComponent implements AfterViewInit {
     return row.role === UserRole.MASTER || row.role === 'Master';
   }
 
-  /** A row that can host commercials (colaborador or colaborador-referenciador). */
   canReceiveCommercials(row: UserRow): boolean {
     return row.role === UserRole.COLLABORATOR
         || row.role === UserRole.COLLABORATOR_REFERRER

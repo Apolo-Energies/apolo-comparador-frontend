@@ -16,4 +16,12 @@ export interface ContratoListItem {
   EstadoServicio:         string;
   FechaInicio:            string | null;
   FechaFin:               string | null;
+  idArchivo:              number | null;
+}
+
+export interface ContratosPageResponse {
+  page:     number;
+  pageSize: number;
+  hasMore:  boolean;
+  data:     ContratoListItem[];
 }

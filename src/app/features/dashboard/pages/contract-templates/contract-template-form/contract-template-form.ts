@@ -48,6 +48,13 @@ const CONTRACT_SCHEMA = new Schema({
       parseDOM: [{ tag: 'table', getAttrs: (dom: Element) => ({ style: (dom as HTMLElement).getAttribute('style') }) }],
       toDOM:    (node: any) => { const a: Record<string, unknown> = {}; if (node.attrs['style']) a['style'] = node.attrs['style']; return ['table', a, ['tbody', 0]] as any; },
     },
+    // Preserve tr inline styles (e.g. alternating row background colors from Word/HTML imports)
+    table_row: {
+      ...CONTRACT_TABLE_NODES.table_row,
+      attrs:    { style: { default: null } },
+      parseDOM: [{ tag: 'tr', getAttrs: (dom: Element) => ({ style: (dom as HTMLElement).getAttribute('style') || null }) }],
+      toDOM:    (node: any) => { const a: Record<string, unknown> = {}; if (node.attrs['style']) a['style'] = node.attrs['style']; return ['tr', a, 0] as any; },
+    },
   }),
   marks: (ngxSchema.spec.marks as any).addToEnd('font_size', FONT_SIZE_MARK),
 });
@@ -518,33 +525,183 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
   // ── Table commands ───────────────────────────────────────────────────────
 
   tableAddRowBefore(): void {
-    const { state, dispatch } = this.editor.view;
-    addRowBefore(state, dispatch);
-    this.editor.view.focus();
+    const view = this.editor.view;
+    if (!addRowBefore(view.state, view.dispatch)) {
+      this.alertService.show('Haz clic dentro de la tabla para agregar una fila', 'error');
+      return;
+    }
+    // prosemirror-tables v1.8.5 creates cells with createAndFill() — no attrs.
+    // Fix: copy inline styles from other rows into the newly inserted row.
+    this.fixNewRowStyles(false);
+    view.focus();
   }
 
   tableAddRowAfter(): void {
-    const { state, dispatch } = this.editor.view;
-    addRowAfter(state, dispatch);
-    this.editor.view.focus();
+    const view = this.editor.view;
+    if (!addRowAfter(view.state, view.dispatch)) {
+      this.alertService.show('Haz clic dentro de la tabla para agregar una fila', 'error');
+      return;
+    }
+    this.fixNewRowStyles(true);
+    view.focus();
   }
 
   tableDeleteRow(): void {
-    const { state, dispatch } = this.editor.view;
-    deleteRow(state, dispatch);
-    this.editor.view.focus();
+    const view = this.editor.view;
+    if (!deleteRow(view.state, view.dispatch)) {
+      this.alertService.show('Haz clic dentro de la tabla para eliminar la fila', 'error');
+      return;
+    }
+    view.focus();
   }
 
   tableDeleteColumn(): void {
-    const { state, dispatch } = this.editor.view;
-    deleteColumn(state, dispatch);
-    this.editor.view.focus();
+    const view = this.editor.view;
+    if (!deleteColumn(view.state, view.dispatch)) {
+      this.alertService.show('Haz clic dentro de la tabla para eliminar la columna', 'error');
+      return;
+    }
+    view.focus();
   }
 
   tableDeleteTable(): void {
+    const view = this.editor.view;
+    if (!deleteTable(view.state, view.dispatch)) {
+      this.alertService.show('Haz clic dentro de la tabla para eliminarla', 'error');
+      return;
+    }
+    view.focus();
+  }
+
+  // prosemirror-tables v1.8.5 creates new rows with createAndFill() — no attrs.
+  // Strategy:
+  //  1. Detect header rows (table_header cells OR first row when no <th> exists).
+  //  2. Collect per-column styles from body rows only, split by even/odd body index.
+  //  3. Apply the even or odd style to the new row based on its body-row position.
+  //     This handles alternating gray/white patterns automatically.
+  private fixNewRowStyles(after: boolean): void {
     const { state, dispatch } = this.editor.view;
-    deleteTable(state, dispatch);
-    this.editor.view.focus();
+    const { $from } = state.selection;
+
+    // Walk up the selection to find the enclosing table and current row
+    let tableDepth = -1, rowDepth = -1;
+    for (let d = $from.depth; d > 0; d--) {
+      const n = $from.node(d).type.name;
+      if (n === 'table_row' && rowDepth < 0)  rowDepth = d;
+      if (n === 'table'     && tableDepth < 0) tableDepth = d;
+      if (tableDepth >= 0 && rowDepth >= 0) break;
+    }
+    if (tableDepth < 0 || rowDepth < 0) return;
+
+    const table    = $from.node(tableDepth);
+    const tablePos = $from.before(tableDepth);
+    const curRowPos = $from.before(rowDepth);
+
+    // Resolve the cursor row's index in the table
+    let currentRowIdx = -1;
+    let scanPos = tablePos + 1;
+    for (let i = 0; i < table.childCount; i++) {
+      if (scanPos === curRowPos) { currentRowIdx = i; break; }
+      scanPos += table.child(i).nodeSize;
+    }
+    if (currentRowIdx < 0) return;
+
+    const newRowIdx = after ? currentRowIdx + 1 : currentRowIdx - 1;
+    if (newRowIdx < 0 || newRowIdx >= table.childCount) return;
+
+    // ── Header detection ──────────────────────────────────────────────────
+    // A row is a <th>-header if ALL its cells are table_header type.
+    const isThRow = (row: any): boolean => {
+      if (!row.childCount) return false;
+      for (let i = 0; i < row.childCount; i++) {
+        if (row.child(i).type.name !== 'table_header') return false;
+      }
+      return true;
+    };
+    // Does the table have any explicit <th> header row?
+    let hasThHeaders = false;
+    for (let i = 0; i < table.childCount; i++) {
+      if (isThRow(table.child(i))) { hasThHeaders = true; break; }
+    }
+    // isHeader: explicit <th> row OR (fallback) the very first row when no <th> exists.
+    // The fallback covers tables imported with <td>-styled headers (dark blue etc.).
+    const isHeader = (row: any, idx: number): boolean =>
+      isThRow(row) || (!hasThHeaders && idx === 0);
+
+    // ── Collect body-row styles split by even/odd position ────────────────
+    // We track both tr-level styles (background on <tr>) and td-level styles
+    // (background/padding etc. on <td>) separately so both are preserved.
+    let evenTr:  string | null = null;
+    let oddTr:   string | null = null;
+    const evenCellStyles: Record<number, string> = {};
+    const oddCellStyles:  Record<number, string> = {};
+    let newRowBodyIdx = -1;
+    let bodyCount = 0;
+
+    for (let i = 0; i < table.childCount; i++) {
+      if (isHeader(table.child(i), i)) continue;
+      const bodyIdx = bodyCount++;
+      if (i === newRowIdx) { newRowBodyIdx = bodyIdx; continue; }
+      const row = table.child(i);
+      const isEven = bodyIdx % 2 === 0;
+
+      // tr-level style (e.g. alternating background from Word imports)
+      const rowStyle: string | null = row.attrs['style'] ?? null;
+      if (rowStyle) {
+        if (isEven && !evenTr) evenTr = rowStyle;
+        if (!isEven && !oddTr)  oddTr  = rowStyle;
+      }
+
+      // td-level styles (per column)
+      const cellTarget = isEven ? evenCellStyles : oddCellStyles;
+      row.forEach((cell: any, _off: number, colIdx: number) => {
+        const s: string | null = cell.attrs['style'] ?? null;
+        if (s && !cellTarget[colIdx]) cellTarget[colIdx] = s;
+      });
+    }
+
+    if (newRowBodyIdx < 0) return;
+    const isNewEven  = newRowBodyIdx % 2 === 0;
+    const trStyle    = isNewEven ? evenTr  : oddTr;
+    const cellStyles = isNewEven ? evenCellStyles : oddCellStyles;
+
+    // ── Compute the new row's absolute doc position ───────────────────────
+    let newRowPos = tablePos + 1;
+    for (let i = 0; i < newRowIdx; i++) newRowPos += table.child(i).nodeSize;
+
+    const newRow = table.child(newRowIdx);
+    const tr = state.tr;
+    let changed = false;
+
+    // Apply tr-level style (skip if the table has no styled rows at all)
+    if (trStyle && !newRow.attrs['style']) {
+      tr.setNodeMarkup(newRowPos, null, { ...newRow.attrs, style: trStyle });
+      changed = true;
+    }
+
+    // Apply td-level styles cell by cell
+    newRow.forEach((cell: any, cellOffset: number, colIdx: number) => {
+      const s = cellStyles[colIdx];
+      if (!cell.attrs['style'] && s) {
+        tr.setNodeMarkup(newRowPos + 1 + cellOffset, null, { ...cell.attrs, style: s });
+        changed = true;
+      }
+    });
+
+    // Always move cursor into the new row — even when no styles were applied
+    // (e.g. white rows that need no inline style). This ensures the next
+    // "+ Fila ↓" click inserts after THIS row, not the original one, so the
+    // alternating even/odd pattern is maintained across consecutive insertions.
+    // TextSelection is not a direct dep; access it through the current selection's
+    // constructor (which IS a TextSelection after addRowAfter dispatches).
+    try {
+      const $pos = tr.doc.resolve(newRowPos + 2);
+      const Sel  = (state.selection as any).constructor as any;
+      const sel  = Sel.findFrom ? Sel.findFrom($pos, 1, true) : null;
+      if (sel) { tr.setSelection(sel); changed = true; }
+    } catch { /* ignore if position is out of range */ }
+
+    if (changed) dispatch(tr);
   }
 
   // ── Signature widgets ────────────────────────────────────────────────────
