@@ -187,6 +187,17 @@ export class Layout {
         ];
 
     const sections: SidebarSection[] = [
+      ...(isApolo ? [{
+        section: 'APOLO ENERGIES',
+        items: [
+          {
+            title: 'Facturación',
+            icon: { type: 'apolo' as const, icon: NoteIcon, size: 20 },
+            url: '/dashboard/energies/invoices',
+            access: ['analytics:view'],
+          },
+        ],
+      }] : []),
       {
         section: 'GENERAL',
         items: [
