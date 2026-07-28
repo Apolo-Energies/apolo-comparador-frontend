@@ -1,0 +1,373 @@
+<!-- Canvas oscuro para elevar visualmente las cards (Sigma pattern) -->
+<div class="rounded-2xl bg-[#0a0b0d] p-4 sm:p-5 border border-white/[0.03]">
+  <div class="space-y-4">
+
+    @if (error()) {
+      <div
+        class="rounded-xl border border-rose-500/20 bg-rose-500/[0.04] text-rose-400 px-4 py-3 text-sm flex items-center justify-between gap-4"
+        role="alert">
+        <div class="flex items-center gap-2.5">
+          <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>
+          </svg>
+          <span>{{ error() }}</span>
+        </div>
+        <button
+          type="button"
+          (click)="onRetry()"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-rose-500/30 hover:bg-rose-500/10 text-rose-400 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M3 12a9 9 0 0 1 15-6.7L21 8M3 12l3 3M21 8v6h-6M21 12a9 9 0 0 1-15 6.7L3 16"/>
+          </svg>
+          Reintentar
+        </button>
+      </div>
+    }
+
+    <!-- ═══ Top row: Welcome + 3 KPIs en grid-cols-4 ═══ -->
+    @let hasImpagadas = !loading() && (invoiceKpis()?.numImpagadas ?? 0) > 0;
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+      <!-- Welcome card -->
+      <article class="bg-card border border-white/[0.08] rounded-xl p-5 flex flex-col min-h-[136px]">
+        <div class="flex items-start justify-between gap-3">
+          <div class="shrink-0 w-9 h-9 rounded-lg bg-violet-500/10 ring-1 ring-violet-500/20 flex items-center justify-center text-violet-400" aria-hidden="true">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12l9-9 9 9"/>
+              <path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/>
+            </svg>
+          </div>
+          @if (isMaster()) {
+            <button
+              type="button"
+              (click)="onOpenDelegaciones()"
+              class="group inline-flex items-center gap-1.5 px-2 py-1 rounded-md border border-white/[0.08] bg-transparent hover:bg-white/[0.04] active:scale-[0.98] transition-[background-color,transform] text-[11px] font-medium text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
+              [attr.aria-label]="'Cambiar delegación (actual: ' + delegacionLabel() + ')'">
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                <path d="M3 21h18M6 21V9l6-4 6 4v12M9 21v-6h6v6"/>
+              </svg>
+              <span class="max-w-[76px] truncate">{{ delegacionLabel() }}</span>
+              <svg class="w-2.5 h-2.5 text-muted-foreground/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="m6 9 6 6 6-6"/>
+              </svg>
+            </button>
+          } @else {
+            <span
+              class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-violet-500/[0.08] text-[11px] font-medium text-violet-300"
+              [attr.title]="'Delegación asignada: ' + delegacionLabel()">
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                <path d="M3 21h18M6 21V9l6-4 6 4v12M9 21v-6h6v6"/>
+              </svg>
+              <span class="max-w-[96px] truncate">{{ delegacionLabel() }}</span>
+            </span>
+          }
+        </div>
+        <div class="mt-auto pt-4">
+          <p class="text-[11px] font-medium text-muted-foreground leading-tight">Bienvenido</p>
+          <p class="text-lg font-semibold text-foreground truncate leading-tight mt-1" style="text-wrap: balance;">
+            {{ userName() || 'Usuario' }}
+          </p>
+          <p class="text-[11px] text-muted-foreground truncate mt-0.5">{{ userMail() }}</p>
+        </div>
+      </article>
+
+      <!-- KPI: Nº Facturas Impagadas -->
+      <article class="bg-card border border-white/[0.08] rounded-xl p-5 flex flex-col min-h-[136px]" aria-labelledby="kpi-nfacturas-title">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0 flex-1">
+            <p id="kpi-nfacturas-title" class="text-sm font-medium text-muted-foreground leading-snug">
+              Nº Facturas <span class="text-muted-foreground/70">impagadas</span>
+            </p>
+          </div>
+          <div
+            class="shrink-0 w-9 h-9 rounded-lg ring-1 flex items-center justify-center transition-colors"
+            [class.bg-rose-500/10]="hasImpagadas"
+            [class.ring-rose-500/20]="hasImpagadas"
+            [class.text-rose-400]="hasImpagadas"
+            [class.bg-emerald-500/10]="!hasImpagadas && !loading()"
+            [class.ring-emerald-500/20]="!hasImpagadas && !loading()"
+            [class.text-emerald-400]="!hasImpagadas && !loading()"
+            [class.bg-muted/30]="loading()"
+            [class.ring-white/[0.06]]="loading()"
+            [class.text-muted-foreground]="loading()"
+            aria-hidden="true">
+            @if (hasImpagadas || loading()) {
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <path d="M14 2v6h6"/>
+                <path d="M9 15h6M9 11h6"/>
+              </svg>
+            } @else {
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 6 9 17l-5-5"/>
+              </svg>
+            }
+          </div>
+        </div>
+        <div class="mt-auto pt-4">
+          @if (loading()) {
+            <div class="h-10 w-20 rounded-md bg-muted/40 animate-pulse" role="status" aria-label="Cargando"></div>
+          } @else {
+            <div class="flex items-baseline gap-2 flex-wrap">
+              <p
+                class="text-4xl font-bold leading-none tracking-tight transition-colors"
+                [class.text-rose-400]="hasImpagadas"
+                [class.text-foreground]="!hasImpagadas"
+                style="font-variant-numeric: tabular-nums;">
+                {{ (invoiceKpis()?.numImpagadas ?? 0) | esNumber:0 }}
+              </p>
+              @if (!hasImpagadas) {
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[11px] font-semibold">
+                  <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                    <path d="M20 6 9 17l-5-5"/>
+                  </svg>
+                  Al día
+                </span>
+              }
+            </div>
+          }
+        </div>
+      </article>
+
+      <!-- KPI: Importe Impagado -->
+      <article class="bg-card border border-white/[0.08] rounded-xl p-5 flex flex-col min-h-[136px]" aria-labelledby="kpi-importe-title">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0 flex-1">
+            <p id="kpi-importe-title" class="text-sm font-medium text-muted-foreground leading-snug">
+              Importe <span class="text-muted-foreground/70">impagado</span>
+            </p>
+          </div>
+          <div
+            class="shrink-0 w-9 h-9 rounded-lg ring-1 flex items-center justify-center transition-colors"
+            [class.bg-rose-500/10]="hasImpagadas"
+            [class.ring-rose-500/20]="hasImpagadas"
+            [class.text-rose-400]="hasImpagadas"
+            [class.bg-emerald-500/10]="!hasImpagadas && !loading()"
+            [class.ring-emerald-500/20]="!hasImpagadas && !loading()"
+            [class.text-emerald-400]="!hasImpagadas && !loading()"
+            [class.bg-muted/30]="loading()"
+            [class.ring-white/[0.06]]="loading()"
+            [class.text-muted-foreground]="loading()"
+            aria-hidden="true">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"/>
+              <path d="M15 9h-4a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9M12 6v2m0 8v2"/>
+            </svg>
+          </div>
+        </div>
+        <div class="mt-auto pt-4">
+          @if (loading()) {
+            <div class="h-10 w-28 rounded-md bg-muted/40 animate-pulse" role="status" aria-label="Cargando"></div>
+          } @else {
+            <p
+              class="text-4xl font-bold leading-none tracking-tight whitespace-nowrap transition-colors"
+              [class.text-rose-400]="hasImpagadas"
+              [class.text-foreground]="!hasImpagadas"
+              style="font-variant-numeric: tabular-nums;">
+              {{ (invoiceKpis()?.importeImpagado ?? 0) | esNumber }}<span
+                class="text-2xl font-semibold ml-1"
+                [class.text-rose-400/70]="hasImpagadas"
+                [class.text-muted-foreground/60]="!hasImpagadas">€</span>
+            </p>
+          }
+        </div>
+      </article>
+
+      <!-- KPI: Nº Contratos (total) con subtitle Activos -->
+      <article class="bg-card border border-white/[0.08] rounded-xl p-5 flex flex-col min-h-[136px]" aria-labelledby="kpi-contratos-title">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0 flex-1">
+            <p id="kpi-contratos-title" class="text-sm font-medium text-muted-foreground leading-snug">
+              Nº Contratos
+            </p>
+          </div>
+          <div class="shrink-0 w-9 h-9 rounded-lg bg-violet-500/10 ring-1 ring-violet-500/20 flex items-center justify-center text-violet-400" aria-hidden="true">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <path d="M14 2v6h6M9 15h6M9 11h6"/>
+            </svg>
+          </div>
+        </div>
+        <div class="mt-auto pt-4">
+          @if (loading()) {
+            <div class="h-10 w-20 rounded-md bg-muted/40 animate-pulse" role="status" aria-label="Cargando"></div>
+          } @else {
+            <p class="text-4xl font-bold text-foreground leading-none tracking-tight" style="font-variant-numeric: tabular-nums;">
+              {{ contratosTotal() | esNumber:0 }}
+            </p>
+            @if (contratosActivos() > 0) {
+              <p class="text-[11px] text-muted-foreground mt-2">
+                <span class="text-emerald-400 font-medium" style="font-variant-numeric: tabular-nums;">{{ contratosActivos() | esNumber:0 }}</span>
+                activos
+              </p>
+            }
+          }
+        </div>
+      </article>
+
+    </div>
+
+    <!-- Bar charts (Meses + Días) -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-4" aria-label="Altas, bajas y renovaciones por período">
+      <app-altas-bajas-chart
+        title="Filtrado por Meses"
+        [loading]="loading()"
+        [data]="altasMeses()" />
+      <app-altas-bajas-chart
+        title="Filtrado por Días (Mes en Curso)"
+        [loading]="loading()"
+        [data]="altasDias()" />
+    </section>
+
+    <!-- Pies Contratos + Consumos -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-4" aria-label="Distribución de contratos y consumos por estado">
+      <app-status-pie-chart
+        title="Nº Contratos"
+        [loading]="loading()"
+        [data]="servicesKpis()?.contratos ?? null" />
+
+      <app-status-pie-chart
+        title="Consumos"
+        unit="MWh"
+        [loading]="loading()"
+        [data]="servicesKpis()?.consumos ?? null" />
+    </section>
+
+    <!-- Liquidaciones: barra stacked (izquierda) + KPI activas de la delegación (derecha) -->
+    @let liq = liquidaciones();
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-4" aria-label="Liquidaciones">
+
+      <!-- Bar chart stacked Activas/Emitidas -->
+      <div class="lg:col-span-2 bg-card border border-white/[0.08] rounded-xl p-5 flex flex-col min-h-[220px]">
+        <div class="flex items-center gap-2 mb-1">
+          <h3 class="text-sm font-medium text-muted-foreground leading-tight">Liquidaciones</h3>
+          <svg class="w-4 h-4 text-muted-foreground/50 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+          </svg>
+        </div>
+
+        @if (loading()) {
+          <div class="mt-4 space-y-3" role="status" aria-label="Cargando">
+            <div class="h-6 w-full rounded-md bg-muted/30 animate-pulse"></div>
+            <div class="h-6 w-full rounded-md bg-muted/30 animate-pulse"></div>
+          </div>
+        } @else if (liq && liq.numeroTotal > 0) {
+          <div class="flex items-baseline gap-4 flex-wrap mb-5">
+            <div>
+              <span class="text-2xl font-bold text-foreground tracking-tight" style="font-variant-numeric: tabular-nums;">
+                {{ liq.numeroTotal | esNumber:0 }}
+              </span>
+              <span class="text-xs text-muted-foreground ml-1">liquidaciones</span>
+            </div>
+            <div>
+              <span class="text-2xl font-bold text-foreground tracking-tight whitespace-nowrap" style="font-variant-numeric: tabular-nums;">
+                {{ liq.importeTotal | esNumber }}<span class="text-base font-semibold text-muted-foreground/70 ml-0.5">€</span>
+              </span>
+              <span class="text-xs text-muted-foreground ml-1">importe</span>
+            </div>
+          </div>
+
+          <div class="space-y-4 mt-auto">
+            <!-- Row Nº -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-[11px] font-medium text-muted-foreground">Nº</span>
+                <div class="flex items-center gap-3 text-[11px]" style="font-variant-numeric: tabular-nums;">
+                  <span class="text-emerald-400 font-medium">{{ liq.numeroActivas | esNumber:0 }}</span>
+                  <span class="text-sky-400 font-medium">{{ liq.numeroEmitidas | esNumber:0 }}</span>
+                </div>
+              </div>
+              <div class="flex h-2.5 rounded-full overflow-hidden bg-white/[0.04]" role="presentation">
+                <div class="bg-emerald-400 transition-all" [style.width.%]="liq.numeroActivas * 100 / liq.numeroTotal"></div>
+                <div class="bg-sky-400 transition-all" [style.width.%]="liq.numeroEmitidas * 100 / liq.numeroTotal"></div>
+              </div>
+            </div>
+
+            <!-- Row Importe -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-[11px] font-medium text-muted-foreground">Importe</span>
+                <div class="flex items-center gap-3 text-[11px]" style="font-variant-numeric: tabular-nums;">
+                  <span class="text-emerald-400 font-medium">{{ liq.importeActivas | esNumber:0 }} €</span>
+                  <span class="text-sky-400 font-medium">{{ liq.importeEmitidas | esNumber:0 }} €</span>
+                </div>
+              </div>
+              <div class="flex h-2.5 rounded-full overflow-hidden bg-white/[0.04]" role="presentation">
+                <div class="bg-emerald-400 transition-all" [style.width.%]="liq.importeActivas * 100 / liq.importeTotal"></div>
+                <div class="bg-sky-400 transition-all" [style.width.%]="liq.importeEmitidas * 100 / liq.importeTotal"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Legend -->
+          <div class="flex items-center justify-center gap-4 mt-4 pt-3 border-t border-white/[0.04] text-[11px] text-muted-foreground">
+            <span class="inline-flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 ring-1 ring-black/10"></span>
+              Activas
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-sky-400 ring-1 ring-black/10"></span>
+              Emitidas
+            </span>
+          </div>
+        } @else {
+          <div class="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-2 py-8">
+            <svg class="w-8 h-8 text-muted-foreground/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" aria-hidden="true">
+              <path d="M3 3v18h18M7 15v3M12 10v8M17 6v12"/>
+            </svg>
+            <p class="text-sm">Sin liquidaciones</p>
+          </div>
+        }
+      </div>
+
+      <!-- KPI card: Liquidaciones Activas de la Delegación -->
+      <article class="bg-card border border-white/[0.08] rounded-xl p-5 flex flex-col min-h-[220px]" aria-labelledby="kpi-activas-title">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0 flex-1">
+            <p id="kpi-activas-title" class="text-sm font-medium text-muted-foreground leading-snug">
+              Liquidaciones <span class="text-muted-foreground/70">activas de la delegación</span>
+            </p>
+          </div>
+          <div class="shrink-0 w-9 h-9 rounded-lg bg-emerald-500/10 ring-1 ring-emerald-500/20 flex items-center justify-center text-emerald-400" aria-hidden="true">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <path d="m9 11 3 3L22 4"/>
+            </svg>
+          </div>
+        </div>
+
+        @if (loading()) {
+          <div class="mt-auto pt-4 space-y-3">
+            <div class="h-8 w-24 rounded-md bg-muted/40 animate-pulse"></div>
+            <div class="h-8 w-32 rounded-md bg-muted/40 animate-pulse"></div>
+          </div>
+        } @else if (liq) {
+          <div class="mt-auto pt-4 space-y-3">
+            <div>
+              <p class="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground mb-1">Número</p>
+              <p class="text-3xl font-bold text-foreground leading-none tracking-tight" style="font-variant-numeric: tabular-nums;">
+                {{ liq.numeroActivas | esNumber:0 }}
+              </p>
+            </div>
+            <div>
+              <p class="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground mb-1">Importe</p>
+              <p class="text-3xl font-bold text-foreground leading-none tracking-tight whitespace-nowrap" style="font-variant-numeric: tabular-nums;">
+                {{ liq.importeActivas | esNumber }}<span class="text-lg font-semibold text-muted-foreground/70 ml-1">€</span>
+              </p>
+            </div>
+          </div>
+        } @else {
+          <div class="flex-1 flex items-center justify-center text-muted-foreground text-sm">Sin datos</div>
+        }
+      </article>
+    </section>
+
+    <app-delegaciones-dialog
+      [open]="delegacionesOpen()"
+      [loading]="delegacionesLoading()"
+      [delegaciones]="delegaciones()"
+      [selectedId]="selectedDelegacion()?.id ?? null"
+      (select)="onSelectDelegacion($event)"
+      (close)="onCloseDelegaciones()" />
+  </div>
+</div>

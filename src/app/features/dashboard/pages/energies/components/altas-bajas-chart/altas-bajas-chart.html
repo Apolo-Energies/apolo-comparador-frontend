@@ -1,0 +1,27 @@
+<section class="bg-card border border-white/[0.08] rounded-xl p-5 flex flex-col h-full" [attr.aria-label]="title()">
+  <div class="flex items-center gap-2 mb-4">
+    <h3 class="text-sm font-medium text-muted-foreground leading-tight">{{ title() }}</h3>
+    <svg class="w-4 h-4 text-muted-foreground/50 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+    </svg>
+  </div>
+
+  <div class="relative flex-1 min-h-[240px]">
+    @if (loading()) {
+      <div class="absolute inset-0 flex items-end justify-center gap-2 px-6 pb-8" role="status" aria-label="Cargando gráfico">
+        @for (h of [50, 80, 65, 90, 45, 70, 55]; track h) {
+          <div class="flex-1 rounded-t-md bg-muted/40 animate-pulse" [style.height.%]="h"></div>
+        }
+      </div>
+    } @else if (hasPoints()) {
+      <canvas #barCanvas class="max-h-full"></canvas>
+    } @else {
+      <div class="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground gap-2">
+        <svg class="w-8 h-8 text-muted-foreground/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" aria-hidden="true">
+          <path d="M3 3v18h18M7 15v3M12 10v8M17 6v12"/>
+        </svg>
+        <p class="text-sm">Sin datos</p>
+      </div>
+    }
+  </div>
+</section>
