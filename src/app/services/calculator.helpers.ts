@@ -6,7 +6,7 @@ const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
 
 // Spanish electricity tax rates (legal/regulatory — update here if they ever change)
-const IE_RATE  = 0.00511269632; // Impuesto Eléctrico 0.5 % (vigente España)
+const IE_RATE  = 0.0511269632; // Impuesto Eléctrico 5.11 % (vigente España)
 const IVA_RATE = 0.21;         // IVA 21 %
 
 const SNAP_PRODUCTS_SET = new Set(['Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi']);
