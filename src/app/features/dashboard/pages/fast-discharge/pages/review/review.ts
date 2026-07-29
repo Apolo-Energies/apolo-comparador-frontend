@@ -173,11 +173,9 @@ const TRAMITE_LABELS: Record<string, string> = {
           }
         </section>
 
-        <!-- Commission & savings cards -->
-        @if (product(); as pr) {
+        <!-- Summary cards -->
+        @if (product()) {
           <div class="grid grid-cols-2 gap-3">
-
-            <!-- Comisión comercial -->
             <div class="rounded-xl border border-border bg-card px-4 py-4 space-y-2">
               <p class="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Comisión comercial</p>
               <div class="flex items-end gap-1.5">
@@ -185,29 +183,38 @@ const TRAMITE_LABELS: Record<string, string> = {
                 <span class="text-sm text-muted-foreground mb-0.5">/ año</span>
               </div>
             </div>
-
-            <!-- Ahorro cliente -->
             <div class="rounded-xl border border-border bg-card px-4 py-4 space-y-2">
-              <p class="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Ahorro cliente</p>
-              <div class="space-y-0.5">
-                <p class="text-lg font-bold"
-                   [style.color]="pr.annualSavings >= 0 ? 'var(--color-accent,#12AFF0)' : '#f87171'">
-                  {{ monthlySavingsFmt() }} € <span class="text-xs font-normal text-muted-foreground">/ mes</span>
-                </p>
-                <p class="text-base font-semibold"
-                   [style.color]="pr.annualSavings >= 0 ? 'var(--color-accent,#12AFF0)' : '#f87171'">
-                  {{ annualSavingsFmt() }} € <span class="text-xs font-normal text-muted-foreground">/ año</span>
-                </p>
+              <p class="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Factura estimada</p>
+              <div class="flex items-end gap-1.5">
+                <span class="text-2xl font-bold text-foreground">{{ monthlySavingsFmt() }} €</span>
+                <span class="text-sm text-muted-foreground mb-0.5">/ mes</span>
               </div>
+              <p class="text-sm font-semibold text-foreground">
+                {{ annualSavingsFmt() }} € al año
+              </p>
             </div>
-
           </div>
         }
 
         <!-- Footer -->
         <div class="border-t border-border pt-4 flex items-center justify-between">
           <ui-button label="Volver"          variant="secondary" size="sm" type="button" (click)="onBack()" />
-          <ui-button label="Enviar contrato" size="sm"           type="button" [disabled]="sending()" (click)="onSend()" />
+          <button
+            type="button"
+            [disabled]="sending()"
+            (click)="onSend()"
+            class="inline-flex items-center justify-center gap-2 rounded-[8px] h-9 text-[13px] font-normal px-[14px] py-2 transition-colors bg-[#12AFF0] text-gray-950 hover:bg-[#0e8ec0] disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
+          >
+            @if (sending()) {
+              <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              </svg>
+              Enviando...
+            } @else {
+              Enviar contrato
+            }
+          </button>
         </div>
 
       </div>
@@ -323,6 +330,16 @@ export class ReviewPage {
     fd.append('ConsumoAnualP4', toEeDecimal(consumos[3]));
     fd.append('ConsumoAnualP5', toEeDecimal(consumos[4]));
     fd.append('ConsumoAnualP6', toEeDecimal(consumos[5]));
+
+    // Producto
+    const product = this.store.product();
+    if (product) {
+      fd.append('IdOferta',          product.tipoProducto);
+      fd.append('TipoCoste',         'T');
+      fd.append('TipoPrecioEnergia', product.tipoPrecioEnergia);
+      fd.append('IncPrecioEnergia',  toEeDecimal(product.feeEnergia));
+      fd.append('IncPrecioPotencia', toEeDecimal(product.feePotencia));
+    }
 
     // Documentos
     const docs = this.store.documents();

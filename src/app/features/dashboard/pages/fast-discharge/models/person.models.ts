@@ -60,15 +60,16 @@ export interface SupplyPoint {
 }
 
 export interface Product {
-  tramiteTypes:  TramiteType[];
-  tipoProducto:  string;
-  productName:   string;
-  tariffCode:    string;
-  feeEnergia:    number;
-  feePotencia:   number;
-  omiePrice:     number;
-  commission:    number;
-  annualSavings: number;
+  tramiteTypes:       TramiteType[];
+  tipoProducto:       string;
+  tipoPrecioEnergia:  string;
+  productName:        string;
+  tariffCode:         string;
+  feeEnergia:         number;
+  feePotencia:        number;
+  omiePrice:          number;
+  commission:         number;
+  annualSavings:      number;
 }
 
 export type DocumentKey =

@@ -100,7 +100,8 @@ const NUMBER_CLS = 'flex-1 min-w-0 px-4 py-2.5 text-sm rounded-r-lg border bg-ca
                   }
                 </select>
                 <input type="tel" placeholder="612 345 678" [class]="numberCls"
-                       [value]="phoneNumber()" (input)="phoneNumber.set($any($event.target).value)" />
+                       [attr.maxlength]="phoneMaxLength()"
+                       [value]="phoneNumber()" (input)="onPhoneInput($event)" />
               </div>
               @if (errors()['phone']) { <span class="text-red-500 text-xs">{{ errors()['phone'] }}</span> }
             </div>
@@ -245,6 +246,7 @@ export class DataPage {
   readonly email        = signal('');
   readonly countryCode  = signal('+34');
   readonly phoneNumber  = signal('');
+  readonly phoneMaxLength = computed(() => this.countryCode() === '+34' ? 9 : 15);
   readonly direccion    = signal('');
   readonly cp           = signal('');
   readonly iban         = signal('');
@@ -318,6 +320,14 @@ export class DataPage {
       iban:      ibanVal && ibanVal.length < 15 ? 'IBAN inválido' : null,
     };
   });
+
+  onPhoneInput(e: Event): void {
+    const el = e.target as HTMLInputElement;
+    const max = this.countryCode() === '+34' ? 9 : 15;
+    const digits = el.value.replace(/\D/g, '').slice(0, max);
+    el.value = digits;
+    this.phoneNumber.set(digits);
+  }
 
   private isValid(): boolean {
     return Object.values(this.errors()).every(e => !e);

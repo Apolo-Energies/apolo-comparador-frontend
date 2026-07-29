@@ -21,6 +21,7 @@ const COLABORADOR_PERMISSIONS = [
   'comparator:view',
   'sips:view',
   'markets:view',
+  'contratos:view',
   'settings:view',
   'settings.colaborador:view',
 ];
@@ -203,16 +204,15 @@ export class Layout {
               { title: 'Reportes · Gas',     url: '/dashboard/analytics/reports/gas',    access: ['analytics.statistics:view'] },
             ],
           },
-          // TODO: habilitar Contratos cuando esté listo (solo Apolo)
-          // ...(isApolo && environment.features.contracts ? [{
-          //   title: 'Contratos',
-          //   icon: { type: 'apolo' as const, icon: NoteIcon, size: 20 },
-          //   access: ['analytics:view'],
-          //   children: [
-          //     { title: 'Contratos', url: '/dashboard/contratos/contratos', access: ['analytics.history:view'] },
-          //     { title: 'Servicios', url: '/dashboard/contratos/servicios', access: ['analytics.history:view'] },
-          //   ],
-          // }] : []),
+          ...(isApolo && environment.features.contracts ? [{
+            title: 'Contratos',
+            icon: { type: 'apolo' as const, icon: NoteIcon, size: 20 },
+            access: ['contratos:view'],
+            children: [
+              { title: 'Contratos', url: '/dashboard/contratos/contratos', access: ['contratos:view'] },
+              { title: 'Servicios', url: '/dashboard/contratos/servicios', access: ['contratos:view'] },
+            ],
+          }] : []),
           ...(environment.features.opportunities ? [{
             title: 'Oportunidades',
             icon: { type: 'apolo' as const, icon: StarIcon, size: 20 },
