@@ -117,7 +117,7 @@ export const DASHBOARD_ROUTES: Routes = [
       {
         path: 'contratos',
         canActivate: [permissionGuard, featureGuard],
-        data: { roles: ['Master'], feature: 'contracts' },
+        data: { roles: ['Master', 'Colaborador', 'Colaborador - Referenciador'], feature: 'contracts' },
         children: [
           {
             path: 'contratos',

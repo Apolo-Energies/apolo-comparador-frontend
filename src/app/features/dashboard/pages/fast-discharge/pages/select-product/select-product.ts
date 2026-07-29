@@ -10,6 +10,7 @@ import { FastDischargeStore } from '../../store/fast-discharge.store';
 import { TramiteType } from '../../models/person.models';
 import { SipsConsumo } from '../../../../../../entities/sips.model';
 import { calcularFactura } from '../../../../../../services/calculator.helpers';
+import { LoadingOverlayComponent } from '../../../../../../shared/components/loading-overlay/loading-overlay.component';
 import {
   ComparadorFormValue,
   ComparadorResult,
@@ -39,18 +40,16 @@ const TRAMITE_OPTIONS: TramiteOption[] = [
 const SNAP_ENERGIA: Record<string, number> = {
   'Fijo Snap Mini': 50, 'Fijo Snap': 75, 'Fijo Snap Maxi': 100,
 };
-const INDEX_ENERGIA: Record<string, number> = {
-  'Index Coste': 0.5, 'Index Base': 0.55, 'Index Promo': 0.85,
-};
 
 const fmt2 = (n: number) =>
   n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 @Component({
   selector: 'app-fd-select-product',
-  imports: [DecimalPipe, ButtonComponent, InputFieldComponent, SelectFieldComponent, SliderComponent],
+  imports: [DecimalPipe, ButtonComponent, InputFieldComponent, SelectFieldComponent, SliderComponent, LoadingOverlayComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <app-loading-overlay [loading]="isLoading()" />
     <div class="flex items-center justify-center min-h-full px-4 py-8">
       <div class="w-full max-w-2xl bg-card border border-border rounded-lg shadow-xl px-8 py-8 space-y-6"
            style="max-height: 90vh; overflow-y: auto;">
@@ -128,8 +127,8 @@ const fmt2 = (n: number) =>
               <p class="text-sm font-medium text-foreground">Fee energía</p>
               <span class="text-sm font-bold text-primary-button">{{ feeEnergia() }}</span>
             </div>
-            <ui-slider [value]="feeEnergia()" [min]="0" [max]="100" (valueChange)="feeEnergia.set($event)" />
-            <div class="flex justify-between text-xs text-muted-foreground"><span>0</span><span>100</span></div>
+            <ui-slider [value]="feeEnergia()" [min]="0" [max]="25" (valueChange)="feeEnergia.set($event)" />
+            <div class="flex justify-between text-xs text-muted-foreground"><span>0</span><span>25</span></div>
           </div>
 
           <!-- Fee potencia -->
@@ -138,8 +137,8 @@ const fmt2 = (n: number) =>
               <p class="text-sm font-medium text-foreground">Fee potencia</p>
               <span class="text-sm font-bold text-primary-button">{{ feePotencia() }}</span>
             </div>
-            <ui-slider [value]="feePotencia()" [min]="0" [max]="100" (valueChange)="feePotencia.set($event)" />
-            <div class="flex justify-between text-xs text-muted-foreground"><span>0</span><span>100</span></div>
+            <ui-slider [value]="feePotencia()" [min]="0" [max]="5" (valueChange)="feePotencia.set($event)" />
+            <div class="flex justify-between text-xs text-muted-foreground"><span>0</span><span>5</span></div>
           </div>
 
           <!-- Price table -->
@@ -181,24 +180,23 @@ const fmt2 = (n: number) =>
                   <span class="text-2xl font-bold text-primary-button">{{ commissionFmt() }} €</span>
                   <span class="text-sm text-muted-foreground mb-0.5">/ año</span>
                 </div>
+                <p class="text-sm font-semibold text-foreground">
+                  {{ commissionMonthlyFmt() }} € / mes
+                </p>
                 <p class="text-xs text-muted-foreground">
-                  + {{ commissionPct() }}% · {{ periodosUsados() }} registros
+                  {{ commissionPct() }}% · {{ periodosUsados() }} registros SIPS
                 </p>
               </div>
 
-              <!-- Ahorro cliente -->
+              <!-- Factura estimada -->
               <div class="rounded-xl border border-border bg-card px-4 py-4 space-y-2">
-                <p class="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Ahorro cliente</p>
-                <div class="space-y-0.5">
-                  <p class="text-lg font-bold" [style.color]="annualSavings() >= 0 ? 'var(--color-accent,#12AFF0)' : '#f87171'">
-                    {{ monthlySavingsFmt() }} € <span class="text-xs font-normal text-muted-foreground">/ mes</span>
-                  </p>
-                  <p class="text-base font-semibold" [style.color]="annualSavings() >= 0 ? 'var(--color-accent,#12AFF0)' : '#f87171'">
-                    {{ annualSavingsFmt() }} € <span class="text-xs font-normal text-muted-foreground">/ año</span>
-                  </p>
+                <p class="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Factura estimada</p>
+                <div class="flex items-end gap-1.5">
+                  <span class="text-2xl font-bold text-foreground">{{ monthlyEstBillFmt() }} €</span>
+                  <span class="text-sm text-muted-foreground mb-0.5">/ mes</span>
                 </div>
-                <p class="text-xs font-medium" [style.color]="annualSavings() >= 0 ? 'var(--color-accent,#12AFF0)' : '#f87171'">
-                  {{ savingsPctFmt() }}% de variación
+                <p class="text-sm font-semibold text-foreground">
+                  {{ annualEstBillFmt() }} € al año
                 </p>
               </div>
 
@@ -242,14 +240,16 @@ export class SelectProductPage {
   readonly submitted       = signal(false);
   readonly tramites        = signal<TramiteType[]>([]);
   readonly selectedProduct = signal('');
-  readonly feeEnergia      = signal(50);
-  readonly feePotencia     = signal(50);
+  readonly feeEnergia      = signal(5);
+  readonly feePotencia     = signal(1);
   readonly omiePrice       = signal(50);
   readonly localTariffCode = signal('');
 
   readonly tramiteOptions = TRAMITE_OPTIONS;
 
   private readonly provider = toSignal(this.providerService.getByUser(), { initialValue: null });
+
+  readonly isLoading = computed(() => this.provider() === null);
 
   constructor() {
     const userId = this.auth.currentUser()?.id;
@@ -285,7 +285,7 @@ export class SelectProductPage {
     const source = tariff ? [tariff] : p.tariffs;
     return source.flatMap(t =>
       t.products
-        .filter(prod => prod.isAvailable !== false)
+        .filter(prod => prod.isAvailable)
         .map(prod => ({ value: prod.id.toString(), label: prod.name }))
     );
   });
@@ -344,15 +344,14 @@ export class SelectProductPage {
     const product = tariff?.products.find(p => p.name === name);
     if (product?.commissionPercentage != null) return product.commissionPercentage / 100;
     if (SNAP_ENERGIA[name] !== undefined) return SNAP_ENERGIA[name];
-    if (INDEX_ENERGIA[name] !== undefined) return INDEX_ENERGIA[name];
     return (this.commissionService.commission() || 0) / 100;
   }
 
-  private buildOcr(referenceTotal: number): OcrResult {
+  private buildOcr(): OcrResult {
     return {
-      total:    referenceTotal,
-      energia:  this.annualKwhByPeriod().map((kwh, i) => ({ p: i + 1, activa: { kwh } })),
-      potencia: this.contractedKwByPeriod().map(kw => ({ contratada: { kw } })),
+      total:    0,
+      energia:  this.annualKwhByPeriod().map((kwh) => ({ activa: { kwh } })),
+      potencia: this.contractedKwByPeriod().map(kw  => ({ contratada: { kw } })),
       periodo_facturacion:  { numero_dias: 365 },
       totales_electricidad: { energia: { activa: 0 }, potencia: { contratada: 0 } },
     };
@@ -371,13 +370,13 @@ export class SelectProductPage {
     if (!tariffs.length || !code || !name) return null;
 
     const commBase = this.commissionBase();
+    const ocr      = this.buildOcr();
 
     const formRef: ComparadorFormValue = {
       tariff: code, producto: name,
       precioMedio: this.omiePrice(), feeEnergia: 0, feePotencia: 0, comisionEnergia: 0,
     };
-    const ref = calcularFactura(formRef, this.buildOcr(0), tariffs);
-    const referenceTotal = -ref.ahorroEstudio;
+    const ref = calcularFactura(formRef, ocr, tariffs);
 
     const formActual: ComparadorFormValue = {
       tariff: code, producto: name,
@@ -386,7 +385,10 @@ export class SelectProductPage {
       feePotencia: this.feePotencia(),
       comisionEnergia: commBase,
     };
-    const result = calcularFactura(formActual, this.buildOcr(referenceTotal), tariffs);
+    const result = calcularFactura(formActual, ocr, tariffs);
+
+    // Annual estimated bill at offered prices (always positive, meaningful to show client)
+    const referenceTotal = ref.totalOferta;
     return { ref, result, referenceTotal };
   });
 
@@ -403,18 +405,39 @@ export class SelectProductPage {
     }));
   });
 
-  readonly commission    = computed(() => this.calcResult()?.comision      ?? 0);
-  readonly annualSavings = computed(() => this.calcResult()?.ahorroEstudio ?? 0);
-  readonly monthlySavings = computed(() => Math.round((this.annualSavings() / 12) * 100) / 100);
-  readonly savingsPct    = computed(() => this.calcResult()?.ahorro_porcent ?? 0);
-  readonly commissionPct = computed(() => this.commissionService.commission());
+  /** Annual estimated bill with the offered product (always positive). */
+  readonly annualEstBill  = computed(() => parseFloat((this.calcFull()?.result?.totalOferta ?? 0).toFixed(2)));
+  readonly monthlyEstBill = computed(() => parseFloat((this.annualEstBill() / 12).toFixed(2)));
+  readonly commissionPct  = computed(() => this.commissionService.commission());
 
-  readonly commissionFmt     = computed(() => fmt2(this.commission()));
-  readonly annualSavingsFmt  = computed(() => fmt2(this.annualSavings()));
-  readonly monthlySavingsFmt = computed(() => fmt2(this.monthlySavings()));
-  readonly savingsPctFmt     = computed(() =>
-    this.savingsPct().toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  // ── commission: consumoAnual × (feeEnergia / 1000) × comisionUsuario ──────
+  readonly commissionEnergy = computed(() => {
+    const name    = this.selectedProductName();
+    if (!name) return 0;
+    const commBase = this.commissionBase();
+    if (!commBase) return 0;
+    if (SNAP_ENERGIA[name] !== undefined) return commBase; // SNAP: importe fijo
+    return parseFloat(((this.feeEnergia() * commBase * this.annualKwh()) / 1000).toFixed(3));
+  });
+
+  // Potencia: feePotencia × 0.55 × potenciaContratada × comisionUsuario
+  readonly commissionPotencia = computed(() => {
+    const name    = this.selectedProductName();
+    if (!name || SNAP_ENERGIA[name] !== undefined) return 0;
+    const commBase = this.commissionBase();
+    return parseFloat((this.feePotencia() * 0.55 * this.totalKw() * commBase).toFixed(3));
+  });
+
+  // Total = energía + potencia (sin el coeficiente 0.50 del comparador)
+  readonly commission        = computed(() =>
+    parseFloat((this.commissionEnergy() + this.commissionPotencia()).toFixed(3))
   );
+  readonly commissionMonthly = computed(() => parseFloat((this.commission() / 12).toFixed(2)));
+
+  readonly commissionFmt        = computed(() => fmt2(this.commission()));
+  readonly commissionMonthlyFmt = computed(() => fmt2(this.commissionMonthly()));
+  readonly annualEstBillFmt     = computed(() => fmt2(this.annualEstBill()));
+  readonly monthlyEstBillFmt    = computed(() => fmt2(this.monthlyEstBill()));
 
   // ── actions ───────────────────────────────────────────────────────────────
 
@@ -433,16 +456,24 @@ export class SelectProductPage {
     this.submitted.set(true);
     if (this.tramites().length === 0) return;
 
+    const prodId = parseInt(this.selectedProduct());
+    let tipoPrecioEnergia = 'M';
+    for (const t of (this.provider()?.tariffs ?? [])) {
+      const p = t.products.find(p => p.id === prodId);
+      if (p) { tipoPrecioEnergia = p.type === 'Fixed' ? 'F' : p.type === 'Indexed' ? 'I' : 'M'; break; }
+    }
+
     this.store.setProduct({
-      tramiteTypes:  this.tramites(),
-      tipoProducto:  this.selectedProduct(),
-      productName:   this.selectedProductName(),
-      tariffCode:    this.localTariffCode(),
-      feeEnergia:    this.feeEnergia(),
-      feePotencia:   this.feePotencia(),
-      omiePrice:     this.omiePrice(),
-      commission:    this.commission(),
-      annualSavings: this.annualSavings(),
+      tramiteTypes:      this.tramites(),
+      tipoProducto:      this.selectedProduct(),
+      tipoPrecioEnergia,
+      productName:       this.selectedProductName(),
+      tariffCode:        this.localTariffCode(),
+      feeEnergia:        this.feeEnergia(),
+      feePotencia:       this.feePotencia(),
+      omiePrice:         this.omiePrice(),
+      commission:        this.commission(),
+      annualSavings:     this.annualEstBill(),
     });
 
     this.router.navigate(['/dashboard/fast-discharge/documents']);
