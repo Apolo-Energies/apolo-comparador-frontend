@@ -9,6 +9,7 @@ import { AuthService } from '@apolo-energies/auth';
 import { ApoloIcons, DateIcon, DownloadIcon, filterIcon, StarIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
 import { UserService } from '../../../../services/user.service';
 import { SubUsersService } from '../../../../services/sub-users.service';
+import { CommissionRow } from '../../../../services/commission.service';
 import { PotentialParent } from '../../../../entities/user.model';
 import { AddUserModalComponent } from './add-user-modal/add-user-modal';
 import { AddCommercialModalComponent, CommercialFormValue, CommercialParent } from './add-commercial-modal/add-commercial-modal';
@@ -122,10 +123,13 @@ export class UsersPageComponent implements AfterViewInit {
   @ViewChild('selectCellTpl')     private selectCellTpl!:     TemplateRef<{ $implicit: UserRow }>;
 
   // Header filter templates (injected via headerIconTemplate per column)
-  @ViewChild('nameHeaderTpl')   private nameHeaderTpl!:   TemplateRef<void>;
-  @ViewChild('emailHeaderTpl')  private emailHeaderTpl!:  TemplateRef<void>;
-  @ViewChild('roleHeaderTpl')   private roleHeaderTpl!:   TemplateRef<void>;
-  @ViewChild('parentHeaderTpl') private parentHeaderTpl!: TemplateRef<void>;
+  @ViewChild('nameHeaderTpl')       private nameHeaderTpl!:       TemplateRef<void>;
+  @ViewChild('emailHeaderTpl')      private emailHeaderTpl!:      TemplateRef<void>;
+  @ViewChild('roleHeaderTpl')       private roleHeaderTpl!:       TemplateRef<void>;
+  @ViewChild('parentHeaderTpl')     private parentHeaderTpl!:     TemplateRef<void>;
+  @ViewChild('identifierHeaderTpl') private identifierHeaderTpl!: TemplateRef<void>;
+  @ViewChild('phoneHeaderTpl')      private phoneHeaderTpl!:      TemplateRef<void>;
+  @ViewChild('commissionHeaderTpl') private commissionHeaderTpl!: TemplateRef<void>;
 
   private userService     = inject(UserService);
   private subUsersService = inject(SubUsersService);
@@ -142,10 +146,13 @@ export class UsersPageComponent implements AfterViewInit {
   readonly dateIconSrc:   UiIconSource = { type: 'apolo', icon: DateIcon,     size: 16 };
 
   // filters
-  readonly filterName         = signal('');
-  readonly filterEmail        = signal('');
-  readonly filterRole         = signal('');
-  readonly filterParentUserId = signal('');
+  readonly filterName           = signal('');
+  readonly filterEmail          = signal('');
+  readonly filterRole           = signal('');
+  readonly filterParentUserId   = signal('');
+  readonly filterIdentifier     = signal('');
+  readonly filterPhone          = signal('');
+  readonly filterCommissionName = signal('');
 
   // pagination
   readonly currentPage = signal(1);
@@ -169,6 +176,7 @@ export class UsersPageComponent implements AfterViewInit {
   private static readonly ROLE_COMERCIAL = 16;
 
   readonly potentialParents = signal<PotentialParent[]>([]);
+  readonly allCommissions   = signal<CommissionRow[]>([]);
 
   // bulk selection
   readonly selectedIds        = signal<ReadonlySet<string>>(new Set());
@@ -217,7 +225,7 @@ export class UsersPageComponent implements AfterViewInit {
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
-      this.loadPotentialParents();
+      this.loadPageInit();
       this.initFilterAndLoad();
     }
   }
@@ -251,19 +259,19 @@ export class UsersPageComponent implements AfterViewInit {
 
       cols.push(
         { key: 'fullName',                label: 'Razón Social',    headerIconTemplate: this.nameHeaderTpl },
-        { key: 'customer',                label: 'SIPS/DNI',        format: row => {
+        { key: 'customer',                label: 'SIPS/DNI',        headerIconTemplate: this.identifierHeaderTpl, format: row => {
             const c = row.customer;
             if (!c) return '-';
             return c.personType === 'Individual' ? (c.dni ?? '-') : (c.cif ?? '-');
           }
         },
         { key: 'email',                   label: 'Email',           headerIconTemplate: this.emailHeaderTpl },
-        { key: 'phone',                   label: 'Teléfono',        format: row => row.phone || '-' },
+        { key: 'phone',                   label: 'Teléfono',        headerIconTemplate: this.phoneHeaderTpl, format: row => row.phone || '-' },
         { key: 'role',                    label: 'Rol',             align: 'center', format: row => getRoleLabel(row.role), headerIconTemplate: this.roleHeaderTpl },
         { key: 'parentFullName',          label: 'Asignado a',      align: 'center', cellTemplate: this.parentCellTpl, headerIconTemplate: this.parentHeaderTpl },
         { key: 'contractSignatureStatus', label: 'Estado Contrato', align: 'center', cellTemplate: this.contractStatusTpl },
         { key: 'isEnergyExpert',          label: 'Energy Expert',   align: 'center', format: row => row.isEnergyExpert ? 'Sí' : 'No' },
-        { key: 'commissions',             label: 'Comisión',        align: 'center', format: row => row.commissions?.find(c => c.isActive)?.commissionType?.name ?? '-' },
+        { key: 'commissions',             label: 'Comisión',        align: 'center', headerIconTemplate: this.commissionHeaderTpl, format: row => row.commissions?.find(c => c.isActive)?.commissionType?.name ?? '-' },
         { key: 'provider',                label: 'Proveedor',       align: 'center', format: row => row.provider?.name ?? '-' },
         { key: 'isActive',                label: 'Estado Usuario',  align: 'center', format: row => row.isActive ? 'Activo' : 'Inactivo' },
         { key: 'createdAt',               label: 'Fecha de alta',   cellTemplate: this.createdAtCellTpl },
@@ -311,12 +319,15 @@ export class UsersPageComponent implements AfterViewInit {
     this.loading.set(true);
     this.globalLoading.start();
     this.userService.getByFilters({
-      fullName:     this.filterName()         || undefined,
-      email:        this.filterEmail()        || undefined,
-      role:         this.filterRole()         || undefined,
-      parentUserId: this.filterParentUserId() || undefined,
-      page:         this.currentPage(),
-      pageSize:     this.pageSize(),
+      fullName:       this.filterName()           || undefined,
+      email:          this.filterEmail()          || undefined,
+      role:           this.filterRole()           || undefined,
+      parentUserId:   this.filterParentUserId()   || undefined,
+      identifier:     this.filterIdentifier()     || undefined,
+      phone:          this.filterPhone()          || undefined,
+      commissionName: this.filterCommissionName() || undefined,
+      page:           this.currentPage(),
+      pageSize:       this.pageSize(),
     }).subscribe({
       next: res => {
         this.data.set(res.items as unknown as UserRow[]);
@@ -328,17 +339,23 @@ export class UsersPageComponent implements AfterViewInit {
     });
   }
 
-  private loadPotentialParents(): void {
-    this.userService.getPotentialParents().subscribe({
-      next: list => this.potentialParents.set(list),
-      error: () => this.potentialParents.set([]),
+  private loadPageInit(): void {
+    this.userService.pageInit().subscribe({
+      next: res => {
+        this.potentialParents.set(res.potentialParents ?? []);
+        this.allCommissions.set(res.commissions ?? []);
+      },
+      error: () => {
+        this.potentialParents.set([]);
+        this.allCommissions.set([]);
+      },
     });
   }
 
   onSaved() {
     this.modalOpen.set(false);
     this.load();
-    this.loadPotentialParents();
+    this.loadPageInit();
   }
 
   openAddCommercialFor(parent: UserRow): void {
@@ -430,6 +447,9 @@ export class UsersPageComponent implements AfterViewInit {
     this.filterEmail.set('');
     this.filterRole.set('');
     this.filterParentUserId.set('');
+    this.filterIdentifier.set('');
+    this.filterPhone.set('');
+    this.filterCommissionName.set('');
     this.currentPage.set(1);
     this.load();
   }
@@ -458,11 +478,14 @@ export class UsersPageComponent implements AfterViewInit {
     this.openFilter.set(null);
   }
 
-  clearFilter(col: 'name' | 'email' | 'role' | 'parent'): void {
-    if (col === 'name')   this.filterName.set('');
-    if (col === 'email')  this.filterEmail.set('');
-    if (col === 'role')   this.filterRole.set('');
-    if (col === 'parent') this.filterParentUserId.set('');
+  clearFilter(col: 'name' | 'email' | 'role' | 'parent' | 'identifier' | 'phone' | 'commission'): void {
+    if (col === 'name')       this.filterName.set('');
+    if (col === 'email')      this.filterEmail.set('');
+    if (col === 'role')       this.filterRole.set('');
+    if (col === 'parent')     this.filterParentUserId.set('');
+    if (col === 'identifier') this.filterIdentifier.set('');
+    if (col === 'phone')      this.filterPhone.set('');
+    if (col === 'commission') this.filterCommissionName.set('');
     this.openFilter.set(null);
     this.currentPage.set(1);
     this.load();
@@ -491,6 +514,21 @@ export class UsersPageComponent implements AfterViewInit {
 
   onHeaderParentChange(e: Event): void {
     this.filterParentUserId.set((e.target as HTMLSelectElement).value);
+    this.openFilter.set(null);
+    this.currentPage.set(1);
+    this.load();
+  }
+
+  onHeaderIdentifierInput(e: Event): void {
+    this.filterIdentifier.set((e.target as HTMLInputElement).value);
+  }
+
+  onHeaderPhoneInput(e: Event): void {
+    this.filterPhone.set((e.target as HTMLInputElement).value);
+  }
+
+  onHeaderCommissionChange(e: Event): void {
+    this.filterCommissionName.set((e.target as HTMLSelectElement).value);
     this.openFilter.set(null);
     this.currentPage.set(1);
     this.load();
