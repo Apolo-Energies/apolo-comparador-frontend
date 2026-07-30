@@ -5,6 +5,11 @@ import { UserDetail } from '../entities/user-detail.model';
 import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs';
 
+export interface UserPageInit {
+  potentialParents: PotentialParent[];
+  commissions:      { id: string; name: string; percentage: number; userCommissions: unknown[] }[];
+}
+
 export interface CreateUserRequest {
   personType:           number;   // 0 = Individual, 1 = Company
   email:               string;
@@ -62,12 +67,19 @@ export class UserService {
       .set('page',     String(filters.page     ?? 1))
       .set('pageSize', String(filters.pageSize ?? 10));
 
-    if (filters.fullName)     params = params.set('fullName',     filters.fullName);
-    if (filters.email)        params = params.set('email',        filters.email);
-    if (filters.role)         params = params.set('role',         filters.role);
-    if (filters.parentUserId) params = params.set('parentUserId', filters.parentUserId);
+    if (filters.fullName)       params = params.set('fullName',       filters.fullName);
+    if (filters.email)          params = params.set('email',          filters.email);
+    if (filters.role)           params = params.set('role',           filters.role);
+    if (filters.parentUserId)   params = params.set('parentUserId',   filters.parentUserId);
+    if (filters.identifier)     params = params.set('identifier',     filters.identifier);
+    if (filters.phone)          params = params.set('phone',          filters.phone);
+    if (filters.commissionName) params = params.set('commissionName', filters.commissionName);
 
     return this.http.get<UserPaged>(`${environment.apiUrl}/user/user-filter`, { params });
+  }
+
+  pageInit(): Observable<UserPageInit> {
+    return this.http.get<UserPageInit>(`${environment.apiUrl}/user/page-init`);
   }
 
   getPotentialParents(): Observable<PotentialParent[]> {

@@ -54,8 +54,11 @@ const NUMBER_CLS = 'flex-1 min-w-0 px-4 py-2.5 text-sm rounded-r-lg border bg-ca
 
             <div class="space-y-1">
               <label class="text-sm font-medium text-muted-foreground">Correo</label>
-              <input formControlName="email" type="email" readonly
-                class="w-full px-4 py-2.5 text-sm rounded-lg border bg-muted border-border text-muted-foreground cursor-not-allowed" />
+              <input formControlName="email" type="email" placeholder="correo@ejemplo.com"
+                [class]="inputCls" [class.border-red-500]="err('email')" />
+              @if (err('email')) {
+                <p class="text-xs text-red-500">{{ errMsg('email') }}</p>
+              }
             </div>
 
             <div class="space-y-1">
@@ -111,7 +114,7 @@ export class EditUserModalComponent {
 
   readonly form = this.fb.nonNullable.group({
     fullName:    ['', [Validators.required, Validators.maxLength(100)]],
-    email:       [{ value: '', disabled: true }],
+    email:       ['', [Validators.email, Validators.maxLength(200)]],
     dialCode:    ['+34'],
     phoneNumber: ['', [Validators.maxLength(20)]],
   });
@@ -140,6 +143,7 @@ export class EditUserModalComponent {
     const errors = this.form.get(field)?.errors;
     if (!errors) return '';
     if (errors['required'])  return 'Este campo es obligatorio';
+    if (errors['email'])     return 'Introduce un correo válido';
     if (errors['maxlength']) return `Máximo ${errors['maxlength'].requiredLength} caracteres`;
     return 'Campo inválido';
   }
