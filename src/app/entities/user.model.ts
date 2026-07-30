@@ -35,10 +35,13 @@ export interface UserPaged {
 }
 
 export interface UserFilters {
-  fullName?:     string;
-  email?:        string;
-  role?:         string;
-  parentUserId?: string;
-  page?:         number;
-  pageSize?:     number;
+  fullName?:        string;
+  email?:           string;
+  role?:            string;
+  parentUserId?:    string;
+  identifier?:      string;
+  phone?:           string;
+  commissionName?:  string;
+  page?:            number;
+  pageSize?:        number;
 }
