@@ -46,9 +46,10 @@ export interface AltaRapidaRequest {
 }
 
 export interface AltaRapidaResponse {
-  success:    boolean;
-  message:    string;
-  statusCode: number;
+  success:             boolean;
+  message:             string;
+  statusCode:          number;
+  idContratoServicio?: number;
 }
 
 export interface QuickRegistrationFields {
@@ -150,6 +151,14 @@ export class ContractService {
       `${environment.apiUrl}/energy-expert/services`,
       {},
       { params: httpParams },
+    );
+  }
+
+  enviarFirma(idContratoServicio: number): Observable<void> {
+    return this.http.post<void>(
+      `${environment.apiUrl}/energy-expert/firma/enviar`,
+      {},
+      { params: { idContratoServicio: String(idContratoServicio) } },
     );
   }
 
