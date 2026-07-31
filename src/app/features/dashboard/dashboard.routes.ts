@@ -51,16 +51,14 @@ export const DASHBOARD_ROUTES: Routes = [
             .then(m => m.MarketsPageComponent),
       },
 
-      // Master only
+      // Analytics — variantes Luz también accesibles para Colaboradores; Gas queda Master only.
       {
         path: 'analytics',
-        canActivate: [permissionGuard],
-        data: { roles: ['Master'] },
         children: [
-          { path: 'history',        component: HistoryPageComponent },
-          { path: 'history/gas',    component: ComingSoonComponent, data: { title: 'Historial de gas' } },
-          { path: 'statistics',     component: StatisticsPageComponent },
-          { path: 'statistics/gas', component: ComingSoonComponent, data: { title: 'Estadísticas de gas' } },
+          { path: 'history',        component: HistoryPageComponent,      canActivate: [permissionGuard], data: { roles: ['Master', 'Colaborador', 'Colaborador - Referenciador'] } },
+          { path: 'history/gas',    component: ComingSoonComponent,       canActivate: [permissionGuard], data: { roles: ['Master'], title: 'Historial de gas' } },
+          { path: 'statistics',     component: StatisticsPageComponent,   canActivate: [permissionGuard], data: { roles: ['Master', 'Colaborador', 'Colaborador - Referenciador'] } },
+          { path: 'statistics/gas', component: ComingSoonComponent,       canActivate: [permissionGuard], data: { roles: ['Master'], title: 'Estadísticas de gas' } },
           {
             path: 'opportunities',
             redirectTo: 'opportunities/luz',
@@ -68,30 +66,32 @@ export const DASHBOARD_ROUTES: Routes = [
           },
           {
             path: 'opportunities/luz',
-            data: { energyType: 0 }, // EnergyType.Electricity
+            canActivate: [permissionGuard],
+            data: { energyType: 0, roles: ['Master', 'Colaborador', 'Colaborador - Referenciador'] },
             loadComponent: () =>
               import('./pages/opportunities/opportunities-page')
                 .then(m => m.OpportunitiesPageComponent),
           },
           {
             path: 'opportunities/gas',
-            data: { energyType: 1 }, // EnergyType.Gas
+            canActivate: [permissionGuard],
+            data: { energyType: 1, roles: ['Master', 'Colaborador', 'Colaborador - Referenciador'] },
             loadComponent: () =>
               import('./pages/opportunities/opportunities-page')
                 .then(m => m.OpportunitiesPageComponent),
           },
           {
             path: 'reports',
-            canActivate: [featureGuard],
-            data: { feature: 'reports' },
+            canActivate: [permissionGuard, featureGuard],
+            data: { roles: ['Master', 'Colaborador', 'Colaborador - Referenciador'], feature: 'reports' },
             loadComponent: () =>
               import('./pages/reports/reports-page')
                 .then(m => m.ReportsPageComponent),
           },
           {
             path: 'reports/gas',
-            canActivate: [featureGuard],
-            data: { feature: 'reports', title: 'Reportes de gas' },
+            canActivate: [permissionGuard, featureGuard],
+            data: { roles: ['Master'], feature: 'reports', title: 'Reportes de gas' },
             component: ComingSoonComponent,
           },
         ],
