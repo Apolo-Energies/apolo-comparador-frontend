@@ -26,8 +26,34 @@ const TRAMITE_LABELS: Record<string, string> = {
     <ui-alert />
 
     <div class="flex items-center justify-center min-h-full px-4 py-8">
-      <div class="w-full max-w-2xl bg-card border border-border rounded-lg shadow-xl px-8 py-8 space-y-6"
+      <div class="w-full max-w-2xl bg-card border border-border rounded-lg shadow-xl px-8 py-8 space-y-6 relative"
            style="max-height: 90vh; overflow-y: auto;">
+
+        <!-- Overlay de estado: enviando / éxito -->
+        @if (phase() !== 'idle') {
+          <div class="absolute inset-0 rounded-lg bg-card/95 backdrop-blur-sm z-10 flex flex-col items-center justify-center gap-4">
+            @if (phase() === 'done') {
+              <div class="flex flex-col items-center gap-3 text-center px-8">
+                <div class="rounded-full bg-green-100 dark:bg-green-900/40 p-4">
+                  <svg class="h-10 w-10 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                  </svg>
+                </div>
+                <p class="text-lg font-semibold text-foreground">¡Contrato enviado!</p>
+                <p class="text-sm text-muted-foreground">El contrato se ha enviado correctamente al cliente.</p>
+              </div>
+            } @else {
+              <svg class="animate-spin h-10 w-10 text-primary-button" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              </svg>
+              <p class="text-sm font-medium text-foreground">
+                @if (phase() === 'alta') { Procesando alta rápida... }
+                @else { Enviando contrato al cliente... }
+              </p>
+            }
+          </div>
+        }
 
         <!-- Header -->
         <div class="space-y-1">
@@ -203,17 +229,9 @@ const TRAMITE_LABELS: Record<string, string> = {
             type="button"
             [disabled]="sending()"
             (click)="onSend()"
-            class="inline-flex items-center justify-center gap-2 rounded-[8px] h-9 text-[13px] font-normal px-[14px] py-2 transition-colors bg-[#12AFF0] text-gray-950 hover:bg-[#0e8ec0] disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
+            class="inline-flex items-center justify-center gap-2 rounded-lg h-9 text-[13px] font-normal px-3.5 py-2 transition-colors bg-primary-button text-gray-950 hover:bg-[#0e8ec0] disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
           >
-            @if (sending()) {
-              <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-              </svg>
-              Enviando...
-            } @else {
-              Enviar contrato
-            }
+            Enviar contrato
           </button>
         </div>
 
@@ -227,7 +245,8 @@ export class ReviewPage {
   private readonly alertService    = inject(AlertService);
   private readonly contractService = inject(ContractService);
 
-  readonly sending = signal(false);
+  readonly phase = signal<'idle' | 'alta' | 'firma' | 'done'>('idle');
+  readonly sending = () => this.phase() !== 'idle' && this.phase() !== 'done';
 
   readonly person      = computed(() => this.store.person());
   readonly supplyPoint = computed(() => this.store.supplyPoint());
@@ -352,22 +371,38 @@ export class ReviewPage {
       fd.append('UpCif', docs['dni_front'], docs['dni_front'].name);
     }
 
-    this.sending.set(true);
+    this.phase.set('alta');
 
     this.contractService.altaRapida(fd).subscribe({
       next: res => {
-        this.sending.set(false);
         if (!res.success) {
+          this.phase.set('idle');
           this.alertService.show(res.message || 'Error al enviar el alta', 'error');
           return;
         }
-        this.alertService.show('Alta enviada correctamente', 'success');
-        setTimeout(() => {
-          this.router.navigate(['/dashboard/fast-discharge']).then(() => this.store.reset());
-        }, 1500);
+
+        if (!res.idContratoServicio) {
+          this.phase.set('idle');
+          this.alertService.show('Alta enviada, pero no se recibió el id del contrato.', 'error');
+          return;
+        }
+
+        this.phase.set('firma');
+        this.contractService.enviarFirma(res.idContratoServicio).subscribe({
+          next: () => {
+            this.phase.set('done');
+            setTimeout(() => {
+              this.router.navigate(['/dashboard/fast-discharge']).then(() => this.store.reset());
+            }, 2500);
+          },
+          error: () => {
+            this.phase.set('idle');
+            this.alertService.show('Alta completada, pero no se pudo enviar el contrato.', 'error');
+          },
+        });
       },
       error: () => {
-        this.sending.set(false);
+        this.phase.set('idle');
         this.alertService.show('Error al enviar el alta. Inténtalo de nuevo.', 'error');
       },
     });
