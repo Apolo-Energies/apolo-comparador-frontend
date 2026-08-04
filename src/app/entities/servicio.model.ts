@@ -29,6 +29,9 @@ export interface ServicioListItem {
   CodigoCuentaDomiciliacion:    string;
   ImporteBaseComisiones:        number;
   Renovacion:                   boolean;
+  // Consumo anual del punto en kWh (mismo campo que el backend suma para el ConsumoTotal del cliente).
+  // OJO: ConsumoAnualContrato viene del CRM en MWh, no mezclar unidades.
+  ConsumoTotalNoEse:            number;
   ConsumoAnualContrato:         number;
   ConsumoAnualSuministro:       number;
   ConsumoAnualP1:               number;

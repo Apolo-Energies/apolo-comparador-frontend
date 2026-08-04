@@ -125,12 +125,6 @@ export const DASHBOARD_ROUTES: Routes = [
               import('./pages/contracts/contracts-page')
                 .then(m => m.ContractsPageComponent),
           },
-          {
-            path: 'servicios',
-            loadComponent: () =>
-              import('./pages/services/services-page')
-                .then(m => m.ServicesPageComponent),
-          },
         ],
       },
 

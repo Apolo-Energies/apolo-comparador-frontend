@@ -1,111 +1,75 @@
-<!-- PDF viewer modal -->
-@if (pdfUrl()) {
-  <div
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-    (click)="closePdf()">
-    <div
-      class="relative flex flex-col bg-card rounded-xl shadow-2xl w-full max-w-5xl h-[90vh] overflow-hidden"
-      (click)="$event.stopPropagation()">
-      <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-3 border-b border-border shrink-0">
-        <span class="text-sm font-medium text-foreground">Visor de archivo</span>
-        <div class="flex items-center gap-2">
-          <a
-            [href]="pdfUrl()"
-            download="archivo.pdf"
-            class="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-2.5 py-1.5 rounded-md hover:bg-accent">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            Descargar
-          </a>
-          <button
-            class="inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
-            (click)="closePdf()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-      <!-- PDF iframe -->
-      <iframe
-        [src]="safePdfUrl()"
-        class="flex-1 w-full border-0"
-        type="application/pdf">
-      </iframe>
-    </div>
-  </div>
-}
-
 <!-- Cell templates -->
 <ng-template #clienteTpl let-row>
   <div>
-    <p class="font-medium text-foreground">{{ row.NombreCliente || '—' }}</p>
-    <p class="text-xs text-muted-foreground mt-0.5">{{ row.NIF }}</p>
-  </div>
-</ng-template>
-
-<ng-template #cupsTpl let-row>
-  <div class="flex items-center gap-2 group">
-    <span class="font-mono text-xs text-muted-foreground">{{ row.CUPS || '—' }}</span>
-    @if (row.CUPS) {
-      <button
-        class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-muted-foreground hover:text-foreground"
-        [title]="copiedId() === row.Id ? 'Copiado' : 'Copiar CUPS'"
-        (click)="copyCups(row)">
-        @if (copiedId() === row.Id) {
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-[#1AD598]">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-        } @else {
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-          </svg>
-        }
-      </button>
+    <p class="font-medium text-foreground">{{ row.RazonSocialCliente || row.NombreCliente || '—' }}</p>
+    <p class="text-xs text-muted-foreground mt-0.5">{{ row.NIF || '—' }}</p>
+    @if (row.NombreComercialCliente) {
+      <p class="text-[11px] text-muted-foreground/70 mt-0.5">{{ row.NombreComercialCliente }}</p>
     }
   </div>
 </ng-template>
 
-<ng-template #estadoTpl let-row>
-  <span class="px-2 py-0.5 rounded-md text-xs font-semibold" [class]="estadoCls(row.EstadoContrato)">
-    {{ estadoLabel(row.EstadoContrato) }}
+<ng-template #serviciosTpl let-row>
+  <span class="inline-flex items-center justify-center min-w-[2.25rem] px-2 py-0.5 rounded-md text-xs font-semibold bg-violet-500/10 text-violet-300">
+    {{ row.NumServicios }}
   </span>
 </ng-template>
 
-<ng-template #fechaFinTpl let-row>
-  @let dias = calcDias(row.FechaFin);
-  <p class="text-sm text-muted-foreground">{{ fmtDate(row.FechaFin) }}</p>
-  @if (dias !== null) {
-    <p class="text-xs font-semibold mt-0.5"
-       [class.text-[#ef4444]]="dias <= 30"
-       [class.text-yellow-400]="dias > 30 && dias <= 90"
-       [class.text-[#1AD598]]="dias > 90">
-      {{ dias > 0 ? dias + ' días' : 'Vencido' }}
-    </p>
+<ng-template #consumoTpl let-row>
+  <span class="font-mono text-sm text-foreground">{{ fmtKwh(row.ConsumoTotal) }}</span>
+</ng-template>
+
+<ng-template #estadoTpl let-row>
+  @let single = singleEstado(row);
+  @if (single) {
+    <span class="px-2 py-0.5 rounded-md text-xs font-semibold" [class]="estadoCls(single)">
+      {{ estadoLabel(single) }}
+    </span>
+  } @else {
+    <div class="flex flex-wrap items-center justify-center gap-1">
+      @for (e of estadoEntries(row); track e.estado) {
+        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold"
+              [class]="estadoCls(e.estado)"
+              [title]="e.count + ' ' + estadoLabel(e.estado)">
+          {{ e.count }} · {{ estadoLabel(e.estado) }}
+        </span>
+      }
+    </div>
   }
 </ng-template>
 
-<ng-template #archivoTpl let-row>
-  @if (row.idArchivo) {
-    <button
-      class="inline-flex items-center gap-1.5 text-xs font-medium text-primary-button hover:underline disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-      [disabled]="downloadingId() === row.idArchivo"
-      (click)="openArchivo(row)">
-      @if (downloadingId() === row.idArchivo) {
-        <svg class="animate-spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-      } @else {
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-        </svg>
-      }
-      {{ downloadingId() === row.idArchivo ? 'Cargando…' : 'Ver archivo' }}
-    </button>
+<ng-template #vencimientoTpl let-row>
+  @if (row.ProximoVencimiento) {
+    @let dias = calcDias(row.ProximoVencimiento);
+    <p class="text-sm text-muted-foreground">{{ fmtDate(row.ProximoVencimiento) }}</p>
+    @if (dias !== null) {
+      <p class="text-xs font-semibold mt-0.5"
+         [class.text-[#ef4444]]="dias <= 30"
+         [class.text-yellow-400]="dias > 30 && dias <= 90"
+         [class.text-[#1AD598]]="dias > 90">
+        {{ dias > 0 ? dias + ' días' : 'Vencido' }}
+      </p>
+    }
   } @else {
-    <span class="text-xs text-muted-foreground">Sin archivo</span>
+    <span class="text-xs text-muted-foreground">—</span>
   }
+</ng-template>
+
+<ng-template #movimientoTpl let-row>
+  <span class="text-sm text-muted-foreground">{{ fmtDate(row.UltimoMovimiento) }}</span>
+</ng-template>
+
+<ng-template #detalleTpl let-row>
+  <button
+    type="button"
+    class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-primary-button bg-primary-button/10 hover:bg-primary-button/20 transition-colors cursor-pointer"
+    (click)="openDetail(row)"
+    title="Ver detalle del cliente y sus servicios">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+    </svg>
+    Ver detalle
+  </button>
 </ng-template>
 
 <div class="border border-border rounded-lg overflow-hidden shadow-sm">
@@ -133,7 +97,7 @@
   <!-- Table -->
   <div class="relative">
     @if (loading()) {
-      <app-table-skeleton [cols]="8" [rows]="10" />
+      <app-table-skeleton [cols]="7" [rows]="10" />
     } @else if (data().length === 0) {
       <div class="flex flex-col items-center justify-center py-16 text-muted-foreground">
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-3 opacity-40"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -143,7 +107,7 @@
       <lib-data-table
         [data]="data()"
         [columns]="columns()"
-        rowKey="Id"
+        rowKey="IdCliente"
         [borderTop]="false"
         [borderBottom]="true"
         [borderLeft]="false"
@@ -175,3 +139,9 @@
   />
 
 </div>
+
+<!-- Client detail drawer -->
+<app-contract-detail-drawer
+  [client]="selectedClient()"
+  (closed)="closeDetail()"
+/>
