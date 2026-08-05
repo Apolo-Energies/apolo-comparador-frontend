@@ -1,0 +1,253 @@
+<p-drawer
+  position="right"
+  [visible]="visible()"
+  (visibleChange)="onVisibleChange($event)"
+  styleClass="contract-drawer w-screen md:!w-[55vw] md:!max-w-3xl"
+  [dismissible]="true"
+  [showCloseIcon]="false"
+  [modal]="true"
+  [closeOnEscape]="true"
+>
+  @if (client(); as c) {
+    <!-- ===================== HEADER ===================== -->
+    <header
+      class="sticky top-0 z-10 px-6 py-5 bg-zinc-900/95 backdrop-blur border-b border-zinc-800"
+    >
+      <div class="flex items-start gap-3">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+            <span class="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">
+              Cliente
+            </span>
+            <span class="text-zinc-700">·</span>
+            <span class="text-[11px] text-zinc-400">
+              {{ c.NumServicios }} {{ c.NumServicios === 1 ? 'servicio' : 'servicios' }}
+            </span>
+          </div>
+          <h2 class="text-xl font-bold text-zinc-100 truncate">
+            {{ c.RazonSocialCliente || c.NombreCliente || 'Sin cliente' }}
+          </h2>
+          <p class="text-xs text-zinc-500 mt-0.5">{{ c.NIF || '—' }}</p>
+        </div>
+
+        <button
+          type="button"
+          class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors duration-200"
+          (click)="closeDrawer()"
+          aria-label="Cerrar"
+        >
+          <lib-apolo-icons [icon]="iconClose" class="flex items-center" />
+        </button>
+      </div>
+    </header>
+
+    <!-- ===================== CLIENT SUMMARY ===================== -->
+    <section class="px-6 pt-5">
+      <div class="rounded-xl border border-zinc-800/80 bg-zinc-950/50 p-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">
+              Servicios
+            </p>
+            <p class="text-sm text-zinc-200 font-mono">{{ c.NumServicios }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">
+              Consumo total
+            </p>
+            <p class="text-sm text-zinc-200 font-mono">{{ fmtKwh(c.ConsumoTotal) }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">
+              Próx. venc.
+            </p>
+            <p class="text-sm text-zinc-200">{{ fmtDate(c.ProximoVencimiento) }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">
+              Último mov.
+            </p>
+            <p class="text-sm text-zinc-200">{{ fmtDate(c.UltimoMovimiento) }}</p>
+          </div>
+
+          <div class="col-span-2 md:col-span-4 pt-3 border-t border-zinc-800/60">
+            <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-2">
+              Estado global
+            </p>
+            <div class="flex flex-wrap items-center gap-2">
+              @for (e of estadoEntries(c.EstadoBreakdown); track e.estado) {
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold"
+                      [class]="estadoCls(e.estado)">
+                  {{ e.count }} · {{ estadoLabel(e.estado) }}
+                </span>
+              }
+            </div>
+          </div>
+
+          @if (c.NombreComercialCliente) {
+            <div class="col-span-2 md:col-span-4 flex items-center gap-2 text-xs text-zinc-400">
+              <lib-apolo-icons [icon]="iconUser" class="flex items-center text-zinc-500" />
+              <span>Comercial: <span class="text-zinc-200">{{ c.NombreComercialCliente }}</span></span>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== SERVICES ===================== -->
+    <section class="px-6 pt-6 pb-2">
+      <div class="flex items-center justify-between">
+        <h3
+          class="text-sm font-semibold text-zinc-200 tracking-wide inline-flex items-center gap-2"
+        >
+          <lib-apolo-icons [icon]="iconNote" class="flex items-center text-zinc-500" />
+          Servicios
+        </h3>
+        <span class="text-[11px] text-zinc-500">
+          {{ services().length }}
+          {{ services().length === 1 ? 'servicio' : 'servicios' }}
+        </span>
+      </div>
+    </section>
+
+    <section class="px-6 pb-8">
+      @if (loading()) {
+        <div class="flex items-center justify-center py-10">
+          <app-brand-loader
+            [inline]="true"
+            [visible]="true"
+            [showBackdrop]="false"
+            [showWordmark]="false"
+            [showBar]="false"
+            [showDescription]="false"
+            [showMicrocopy]="false"
+            title="Cargando servicios…"
+            [size]="64"
+          />
+        </div>
+      } @else if (services().length === 0) {
+        <div
+          class="rounded-xl border-2 border-dashed border-zinc-800 bg-zinc-900/30 px-6 py-10 text-center"
+        >
+          <p class="text-sm font-medium text-zinc-300">Sin servicios asociados</p>
+          <p class="text-xs text-zinc-500 mt-1">
+            No se encontraron servicios para este cliente.
+          </p>
+        </div>
+      } @else {
+        <ol class="flex flex-col gap-4">
+          @for (s of services(); track trackByServicioId($index, s)) {
+            <li
+              class="group relative rounded-xl border border-zinc-700/50 bg-zinc-800/40 hover:bg-zinc-800/60 hover:border-zinc-600/60 transition-all duration-300"
+            >
+              <!-- Card header -->
+              <div
+                class="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-zinc-800/60"
+              >
+                <div class="inline-flex items-center gap-2 min-w-0 flex-wrap">
+                  <span
+                    class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset"
+                    [class]="estadoCls(s.Estado)"
+                  >
+                    {{ estadoLabel(s.Estado) }}
+                  </span>
+                  <span
+                    class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-violet-500/10 text-violet-300"
+                  >
+                    {{ s.Tarifa || '—' }}
+                  </span>
+                  @if (s.Renovacion) {
+                    <span
+                      class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/10 text-blue-400"
+                    >
+                      Renovación
+                    </span>
+                  }
+                </div>
+                <span class="text-[11px] text-zinc-500 shrink-0">
+                  <lib-apolo-icons [icon]="iconDate" class="inline-flex items-center mr-1" />
+                  {{ fmtDate(s.FechaEstado) }}
+                </span>
+              </div>
+
+              <!-- Card body: 2 columns of details -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 py-3">
+                <!-- Commercial info -->
+                <div class="rounded-lg bg-zinc-900/50 border border-zinc-800/60 p-3">
+                  <p
+                    class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-2 inline-flex items-center gap-1.5"
+                  >
+                    <lib-apolo-icons [icon]="iconUser" class="flex items-center" />
+                    Comercial
+                  </p>
+                  <dl class="space-y-1 text-[12px]">
+                    <div class="flex justify-between gap-2">
+                      <dt class="text-zinc-400">Comercial</dt>
+                      <dd class="text-zinc-200 truncate max-w-[10rem] text-right">
+                        {{ s.NombreComercial || '—' }}
+                      </dd>
+                    </div>
+                    <div class="flex justify-between gap-2">
+                      <dt class="text-zinc-400">Delegación</dt>
+                      <dd class="text-zinc-200 truncate max-w-[10rem] text-right">
+                        {{ s.NombreDelegacion || '—' }}
+                      </dd>
+                    </div>
+                    @if (s.NombreOfertaCTF) {
+                      <div class="flex justify-between gap-2">
+                        <dt class="text-zinc-400">Oferta</dt>
+                        <dd class="text-zinc-200 truncate max-w-[10rem] text-right">
+                          {{ s.NombreOfertaCTF }}
+                        </dd>
+                      </div>
+                    }
+                  </dl>
+                </div>
+
+                <!-- Location + consumption -->
+                <div class="rounded-lg bg-zinc-900/50 border border-zinc-800/60 p-3">
+                  <p
+                    class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-2 inline-flex items-center gap-1.5"
+                  >
+                    <lib-apolo-icons [icon]="iconHome" class="flex items-center" />
+                    Suministro
+                  </p>
+                  <dl class="space-y-1 text-[12px]">
+                    <div class="flex justify-between gap-2">
+                      <dt class="text-zinc-400">Localización</dt>
+                      <dd class="text-zinc-200 truncate max-w-[10rem] text-right">
+                        {{ localizacion(s) }}
+                      </dd>
+                    </div>
+                    <div class="flex justify-between gap-2">
+                      <dt class="text-zinc-400">Consumo anual</dt>
+                      <dd class="text-zinc-200 font-mono">
+                        {{ fmtKwh(consumoServicio(s)) }}
+                      </dd>
+                    </div>
+                    @if (s.FechaInicio || s.FechaFin) {
+                      <div class="flex justify-between gap-2">
+                        <dt class="text-zinc-400">Vigencia</dt>
+                        <dd class="text-zinc-200 text-right">
+                          {{ fmtDate(s.FechaInicio) }} – {{ fmtDate(s.FechaFin) }}
+                        </dd>
+                      </div>
+                    }
+                  </dl>
+                </div>
+              </div>
+
+              <!-- Footer: CUPS -->
+              <div
+                class="px-4 py-2 border-t border-zinc-800/60 flex items-center gap-2 text-[11px] text-zinc-500"
+              >
+                <lib-apolo-icons [icon]="iconBolt" class="flex items-center" />
+                <span class="font-mono text-zinc-400 truncate">{{ s.CUPS || '—' }}</span>
+              </div>
+            </li>
+          }
+        </ol>
+      }
+    </section>
+  }
+</p-drawer>

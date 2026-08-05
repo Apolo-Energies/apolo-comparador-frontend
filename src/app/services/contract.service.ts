@@ -1,10 +1,18 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { ContractDetail } from '../entities/user-detail.model';
 import { ContratosPageResponse } from '../entities/contrato.model';
 import { ServicioListItem } from '../entities/servicio.model';
+
+interface ServiciosPageResponse {
+  page:     number;
+  pageSize: number;
+  total:    number;
+  data:     ServicioListItem[];
+}
 
 export interface EeTown {
   IdProvincia: number;
@@ -135,23 +143,21 @@ export class ContractService {
     return this.http.post<void>(`${environment.apiUrl}/contracts/${contractId}/send`, {});
   }
 
-  getServicios(params: {
-    filter?:  string;
-    orderBy?: string;
-    offset?:  number;
-    limit?:   number;
-  }): Observable<ServicioListItem[]> {
+  /**
+   * Todos los servicios asociados a un cliente (por IdCliente). Usa el endpoint
+   * delegated-filtered `GET /servicios` con match exacto en memoria contra el
+   * cache del backend. Evita el filtro tipado de EE, que responde 500 para
+   * ciertos campos en Servicios.
+   */
+  getServiciosByCliente(idCliente: number, limit = 100): Observable<ServicioListItem[]> {
     const httpParams = new HttpParams()
-      .set('filter',  params.filter  ?? '')
-      .set('orderBy', params.orderBy ?? 'Id')
-      .set('offset',  String(params.offset  ?? 0))
-      .set('limit',   String(params.limit   ?? 10));
+      .set('idCliente', String(idCliente))
+      .set('limit',     String(limit));
 
-    return this.http.post<ServicioListItem[]>(
-      `${environment.apiUrl}/energy-expert/services`,
-      {},
+    return this.http.get<ServiciosPageResponse>(
+      `${environment.apiUrl}/energy-expert/servicios`,
       { params: httpParams },
-    );
+    ).pipe(map(res => res?.data ?? []));
   }
 
   enviarFirma(idContratoServicio: number): Observable<void> {
