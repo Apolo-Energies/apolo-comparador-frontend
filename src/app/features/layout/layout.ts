@@ -193,6 +193,11 @@ export class Layout {
           { title: 'Comisión',   url: '/dashboard/settings/commission', access: ['settings.commission:view'] },
           { title: 'Plantillas', url: '/dashboard/templates',           access: ['templates:view'] },
           { title: 'Tarifas',    url: '/dashboard/tariffs',             access: ['support:view'] },
+          { title: 'Gas · Tramos de acceso', url: '/dashboard/gas/access-tariffs',    access: ['analytics:view'] },
+          { title: 'Gas · Parámetros',       url: '/dashboard/gas/regulatory-params', access: ['analytics:view'] },
+          { title: 'Gas · Productos',        url: '/dashboard/gas/products',          access: ['analytics:view'] },
+          { title:'Landings Personalizadas', url: '/dashboard/landings', access: ['analytics:view'] },
+
         ];
 
     const sections: SidebarSection[] = [
@@ -206,6 +211,12 @@ export class Layout {
             url: '/dashboard/energies/invoices',
             access: ['analytics:view'],
           },
+           ...(environment.features.markets ? [{
+            title: 'Mercados',
+            icon: { type: 'apolo' as const, icon: PieIcon, size: 20 },
+            url: '/dashboard/markets',
+            access: ['markets:view'],
+          }] : []),
         ],
       }] : []),
       {
@@ -234,11 +245,8 @@ export class Layout {
           ...(isApolo && environment.features.contracts ? [{
             title: 'Contratos',
             icon: { type: 'apolo' as const, icon: NoteIcon, size: 20 },
+            url: '/dashboard/contratos/contratos',
             access: ['contratos:view'],
-            children: [
-              { title: 'Contratos', url: '/dashboard/contratos/contratos', access: ['contratos:view'] },
-              { title: 'Servicios', url: '/dashboard/contratos/servicios', access: ['contratos:view'] },
-            ],
           }] : []),
           ...(environment.features.opportunities ? [{
             title: 'Oportunidades',
@@ -270,12 +278,6 @@ export class Layout {
               { title: 'Gas', url: '/dashboard/sips/gas', access: ['sips:view'] },
             ],
           },
-          ...(environment.features.markets ? [{
-            title: 'Mercados',
-            icon: { type: 'apolo' as const, icon: PieIcon, size: 20 },
-            url: '/dashboard/markets',
-            access: ['markets:view'],
-          }] : []),
           // Landings y Gas regulatorio son Master-only; comparten analytics:view con Analítica
           // pero no deben aparecerle al Colaborador.
           ...(isColaborador ? [] : [

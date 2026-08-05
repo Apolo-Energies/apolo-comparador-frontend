@@ -11,49 +11,15 @@ import {
   ViewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
 import { ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
 import { SearchIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
 import { ContractService } from '../../../../services/contract.service';
-import { ContratoListItem } from '../../../../entities/contrato.model';
+import { ContratoClienteRow } from '../../../../entities/contrato.model';
 import { GlobalLoadingService } from '../../../../services/global-loading.service';
 import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
-
-const ESTADO_MAP: Record<string, { label: string; cls: string }> = {
-  F: { label: 'Firmado',   cls: 'bg-[#1AD5981A] text-[#1AD598]'   },
-  A: { label: 'Alta',      cls: 'bg-blue-500/10 text-blue-400'     },
-  P: { label: 'Pendiente', cls: 'bg-yellow-500/10 text-yellow-400' },
-  B: { label: 'Baja',      cls: 'bg-[#ef444440] text-[#ef4444]'   },
-  R: { label: 'Renovado',  cls: 'bg-violet-500/10 text-violet-400' },
-  C: { label: 'Cancelado', cls: 'bg-[#ef444440] text-[#ef4444]'   },
-};
-
-export function estadoCls(code: string): string {
-  return ESTADO_MAP[code?.toUpperCase()]?.cls ?? 'bg-accent/40 text-muted-foreground';
-}
-
-export function estadoLabel(code: string): string {
-  return ESTADO_MAP[code?.toUpperCase()]?.label ?? (code || '—');
-}
-
-export function fmtDate(iso?: string | null): string {
-  if (!iso) return '—';
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y}`;
-}
-
-export function calcDias(fechaFin?: string | null): number | null {
-  if (!fechaFin) return null;
-  return Math.ceil((new Date(fechaFin).getTime() - Date.now()) / 86_400_000);
-}
-
-export function fmtKwh(kwh: number): string {
-  if (!kwh) return '—';
-  if (kwh >= 1_000_000) return `${(kwh / 1_000_000).toFixed(2)} GWh`;
-  if (kwh >= 1_000)     return `${(kwh / 1_000).toFixed(2)} MWh`;
-  return `${kwh.toFixed(0)} kWh`;
-}
+import { ContractDetailDrawerComponent } from './components/contract-detail-drawer/contract-detail-drawer';
+import { calcDias, estadoCls, estadoLabel, fmtDate, fmtKwh } from './contracts-utils';
 
 @Component({
   selector: 'app-contracts-page',
@@ -62,6 +28,7 @@ export function fmtKwh(kwh: number): string {
     DataTableComponent, PaginatorComponent,
     InputFieldComponent, ButtonComponent,
     TableSkeletonComponent,
+    ContractDetailDrawerComponent,
   ],
   templateUrl: './contracts-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -85,37 +52,30 @@ export function fmtKwh(kwh: number): string {
   `],
 })
 export class ContractsPageComponent implements AfterViewInit {
-  @ViewChild('clienteTpl')  private clienteTpl!:  TemplateRef<{ $implicit: ContratoListItem }>;
-  @ViewChild('cupsTpl')     private cupsTpl!:     TemplateRef<{ $implicit: ContratoListItem }>;
-  @ViewChild('estadoTpl')   private estadoTpl!:   TemplateRef<{ $implicit: ContratoListItem }>;
-  @ViewChild('fechaFinTpl') private fechaFinTpl!: TemplateRef<{ $implicit: ContratoListItem }>;
-  @ViewChild('archivoTpl')  private archivoTpl!:  TemplateRef<{ $implicit: ContratoListItem }>;
+  @ViewChild('clienteTpl')      private clienteTpl!:      TemplateRef<{ $implicit: ContratoClienteRow }>;
+  @ViewChild('serviciosTpl')    private serviciosTpl!:    TemplateRef<{ $implicit: ContratoClienteRow }>;
+  @ViewChild('consumoTpl')      private consumoTpl!:      TemplateRef<{ $implicit: ContratoClienteRow }>;
+  @ViewChild('estadoTpl')       private estadoTpl!:       TemplateRef<{ $implicit: ContratoClienteRow }>;
+  @ViewChild('vencimientoTpl')  private vencimientoTpl!:  TemplateRef<{ $implicit: ContratoClienteRow }>;
+  @ViewChild('movimientoTpl')   private movimientoTpl!:   TemplateRef<{ $implicit: ContratoClienteRow }>;
+  @ViewChild('detalleTpl')      private detalleTpl!:      TemplateRef<{ $implicit: ContratoClienteRow }>;
 
   private readonly contractService = inject(ContractService);
   private readonly globalLoading   = inject(GlobalLoadingService);
   private readonly platformId      = inject(PLATFORM_ID);
   private readonly cdr             = inject(ChangeDetectorRef);
-  private readonly sanitizer       = inject(DomSanitizer);
 
   readonly searchIcon: UiIconSource = { type: 'apolo', icon: SearchIcon, size: 16 };
   readonly xIcon:      UiIconSource = { type: 'apolo', icon: XIcon,      size: 16 };
 
-  readonly filter       = signal('');
-  readonly copiedId     = signal<number | null>(null);
-  readonly downloadingId = signal<number | null>(null);
-  readonly pdfUrl        = signal<string | null>(null);
-  readonly safePdfUrl    = computed<SafeResourceUrl | null>(() => {
-    const url = this.pdfUrl();
-    return url ? this.sanitizer.bypassSecurityTrustResourceUrl(url) : null;
-  });
+  readonly filter      = signal('');
   readonly currentPage = signal(1);
   readonly pageSize    = signal(10);
   readonly loading     = signal(false);
-  readonly data        = signal<ContratoListItem[]>([]);
-  readonly hasMore = signal(false);
+  readonly data        = signal<ContratoClienteRow[]>([]);
+  readonly hasMore     = signal(false);
+  readonly selectedClient = signal<ContratoClienteRow | null>(null);
 
-  // Paginator requires totalPages + totalCount. With hasMore-based pagination
-  // we synthesise both: if hasMore, report at least one page beyond current.
   readonly totalPages = computed(() =>
     this.hasMore() ? this.currentPage() + 1 : this.currentPage()
   );
@@ -125,18 +85,14 @@ export class ContractsPageComponent implements AfterViewInit {
       : (this.currentPage() - 1) * this.pageSize() + this.data().length
   );
 
-  readonly columns = signal<TableColumn<ContratoListItem>[]>([
-    { key: 'NombreCliente',       label: 'Cliente'    },
-    { key: 'CUPS',                label: 'CUPS',        textColor: 'text-muted-foreground' },
-    { key: 'Tarifa',              label: 'Tarifa',      align: 'center' },
-    { key: 'EstadoContrato',      label: 'Estado',      align: 'center' },
-    { key: 'DireccionSuministro', label: 'Dirección',   textColor: 'text-muted-foreground' },
-    { key: 'ConsumoTotalNoEse',   label: 'Consumo',     align: 'right',
-      format: row => fmtKwh(row.ConsumoTotalNoEse) },
-    { key: 'FechaInicio',         label: 'Inicio',
-      format: row => fmtDate(row.FechaInicio) },
-    { key: 'FechaFin',            label: 'Fin · Días' },
-    { key: 'idArchivo',           label: 'Archivo',     align: 'center' },
+  readonly columns = signal<TableColumn<ContratoClienteRow>[]>([
+    { key: 'NombreCliente',      label: 'Cliente' },
+    { key: 'NumServicios',       label: 'Servicios',   align: 'center' },
+    { key: 'ConsumoTotal',       label: 'Consumo',     align: 'right' },
+    { key: 'EstadoResumen',      label: 'Estado',      align: 'center' },
+    { key: 'ProximoVencimiento', label: 'Próx. venc.', align: 'center' },
+    { key: 'UltimoMovimiento',   label: 'Último mov.', align: 'center' },
+    { key: '__detalle',          label: 'Detalle',     align: 'center' },
   ]);
 
   readonly estadoCls   = estadoCls;
@@ -153,41 +109,37 @@ export class ContractsPageComponent implements AfterViewInit {
 
   ngAfterViewInit(): void {
     this.columns.update(cols => cols.map(col => {
-      if (col.key === 'NombreCliente')  return { ...col, cellTemplate: this.clienteTpl  };
-      if (col.key === 'CUPS')           return { ...col, cellTemplate: this.cupsTpl     };
-      if (col.key === 'EstadoContrato') return { ...col, cellTemplate: this.estadoTpl   };
-      if (col.key === 'FechaFin')       return { ...col, cellTemplate: this.fechaFinTpl };
-      if (col.key === 'idArchivo')      return { ...col, cellTemplate: this.archivoTpl  };
+      if (col.key === 'NombreCliente')      return { ...col, cellTemplate: this.clienteTpl     };
+      if (col.key === 'NumServicios')       return { ...col, cellTemplate: this.serviciosTpl   };
+      if (col.key === 'ConsumoTotal')       return { ...col, cellTemplate: this.consumoTpl     };
+      if (col.key === 'EstadoResumen')      return { ...col, cellTemplate: this.estadoTpl      };
+      if (col.key === 'ProximoVencimiento') return { ...col, cellTemplate: this.vencimientoTpl };
+      if (col.key === 'UltimoMovimiento')   return { ...col, cellTemplate: this.movimientoTpl  };
+      if (col.key === '__detalle')          return { ...col, cellTemplate: this.detalleTpl     };
       return col;
     }));
     this.cdr.markForCheck();
   }
 
-  openArchivo(c: ContratoListItem): void {
-    if (!c.idArchivo || this.downloadingId() === c.idArchivo) return;
-    this.downloadingId.set(c.idArchivo);
-    this.contractService.getContratoArchivo(c.idArchivo).subscribe({
-      next: blob => {
-        this.closePdf();
-        const url = URL.createObjectURL(blob);
-        this.pdfUrl.set(url);
-        this.downloadingId.set(null);
-      },
-      error: () => this.downloadingId.set(null),
-    });
+  openDetail(c: ContratoClienteRow): void {
+    this.selectedClient.set(c);
   }
 
-  closePdf(): void {
-    const prev = this.pdfUrl();
-    if (prev) URL.revokeObjectURL(prev);
-    this.pdfUrl.set(null);
+  closeDetail(): void {
+    this.selectedClient.set(null);
   }
 
-  copyCups(c: ContratoListItem): void {
-    navigator.clipboard.writeText(c.CUPS).then(() => {
-      this.copiedId.set(c.Id);
-      setTimeout(() => this.copiedId.set(null), 2000);
-    });
+  /** Devuelve true si TODOS los servicios del cliente comparten un mismo estado. */
+  singleEstado(row: ContratoClienteRow): string | null {
+    const keys = Object.keys(row.EstadoBreakdown ?? {});
+    return keys.length === 1 ? keys[0] : null;
+  }
+
+  estadoEntries(row: ContratoClienteRow): { estado: string; count: number }[] {
+    const bd = row.EstadoBreakdown ?? {};
+    return Object.entries(bd)
+      .map(([estado, count]) => ({ estado, count }))
+      .sort((a, b) => b.count - a.count);
   }
 
   onSearch(): void {
