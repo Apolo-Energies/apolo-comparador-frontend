@@ -97,27 +97,21 @@ export const DASHBOARD_ROUTES: Routes = [
         ],
       },
 
-      // Master only — Apolo Energies external portal
+      // Comercial, Master — Mis clientes (oculto temporalmente para Colaborador/Colaborador - Referenciador)
       {
-        path: 'energies',
-        canActivate: [permissionGuard],
-        data: { roles: ['Master'] },
-        children: [
-          { path: '', redirectTo: 'invoices', pathMatch: 'full' },
-          {
-            path: 'invoices',
-            loadComponent: () =>
-              import('./pages/energies/invoices-page')
-                .then(m => m.EnergiesInvoicesPageComponent),
-          },
-        ],
+        path: 'my-clients',
+        canActivate: [permissionGuard, featureGuard],
+        data: { feature: 'myClients', roles: ['Master'] },
+        loadComponent: () =>
+          import('./pages/my-clients/my-clients-page')
+            .then(m => m.MyClientsPageComponent),
       },
 
-      // Master only — Contratos section
+      // Master only — Contratos section (oculto temporalmente para Colaborador/Colaborador - Referenciador)
       {
         path: 'contratos',
         canActivate: [permissionGuard, featureGuard],
-        data: { roles: ['Master', 'Colaborador', 'Colaborador - Referenciador'], feature: 'contracts' },
+        data: { roles: ['Master'], feature: 'contracts' },
         children: [
           {
             path: 'contratos',

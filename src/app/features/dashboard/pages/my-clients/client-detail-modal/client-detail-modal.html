@@ -1,0 +1,115 @@
+<ui-dialog [open]="open()" [closeable]="true" maxWidth="max-w-3xl" (openChange)="$event ? null : onClose()">
+
+  @if (client(); as c) {
+    <div class="px-6 pt-5 pb-3">
+      <p class="text-base font-semibold text-foreground">
+        {{ mode() === 'contratos' ? 'Contratos' : 'Servicios activos' }} de {{ c.nombreCliente }}
+      </p>
+      <p class="text-sm text-muted-foreground mt-0.5">NIF {{ c.nif }}</p>
+    </div>
+
+    <div class="px-6 pb-4">
+      @if (mode() === 'contratos') {
+        @if (c.contratos.length === 0) {
+          <div class="py-10 text-center text-sm text-muted-foreground">Este cliente no tiene contratos.</div>
+        } @else {
+          <div class="rounded-lg border border-border overflow-hidden">
+            <table class="w-full text-sm">
+              <thead class="bg-muted/30">
+                <tr class="text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                  <th class="px-4 py-2.5 font-semibold">CUPS</th>
+                  <th class="px-4 py-2.5 font-semibold text-center">Tarifa</th>
+                  <th class="px-4 py-2.5 font-semibold text-center">Estado</th>
+                  <th class="px-4 py-2.5 font-semibold">Fin · Días</th>
+                  <th class="px-4 py-2.5 font-semibold text-center">Archivo</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (ct of c.contratos; track ct.id; let last = $last) {
+                  <tr [class.border-b]="!last" class="border-border hover:bg-muted/10 transition-colors">
+                    <td class="px-4 py-2.5 font-mono text-xs text-muted-foreground">{{ ct.cups || '—' }}</td>
+                    <td class="px-4 py-2.5 text-center">{{ ct.tarifa || '—' }}</td>
+                    <td class="px-4 py-2.5 text-center">
+                      <span class="px-2 py-0.5 rounded-md text-xs font-semibold" [class]="estadoCls(ct.estadoContrato)">
+                        {{ estadoLabel(ct.estadoContrato) }}
+                      </span>
+                    </td>
+                    <td class="px-4 py-2.5">
+                      @let dias = calcDias(ct.fechaFin);
+                      <p class="text-sm text-muted-foreground">{{ fmtDate(ct.fechaFin) }}</p>
+                      @if (dias !== null) {
+                        <p class="text-xs font-semibold mt-0.5"
+                           [class.text-[#ef4444]]="dias <= 30"
+                           [class.text-yellow-400]="dias > 30 && dias <= 90"
+                           [class.text-[#1AD598]]="dias > 90">
+                          {{ dias > 0 ? dias + ' días' : 'Vencido' }}
+                        </p>
+                      }
+                    </td>
+                    <td class="px-4 py-2.5 text-center">
+                      @if (ct.idArchivo) {
+                        <button
+                          type="button"
+                          class="text-xs font-medium text-primary-button hover:underline disabled:opacity-40"
+                          [disabled]="downloadingId() === ct.idArchivo"
+                          (click)="downloadArchivo(ct.idArchivo)">
+                          {{ downloadingId() === ct.idArchivo ? 'Descargando…' : 'Descargar' }}
+                        </button>
+                      } @else {
+                        <span class="text-xs text-muted-foreground">Sin archivo</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      } @else {
+        @if (c.servicios.length === 0) {
+          <div class="py-10 text-center text-sm text-muted-foreground">Este cliente no tiene servicios activos.</div>
+        } @else {
+          <div class="rounded-lg border border-border overflow-hidden">
+            <table class="w-full text-sm">
+              <thead class="bg-muted/30">
+                <tr class="text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                  <th class="px-4 py-2.5 font-semibold">CUPS / Suministro</th>
+                  <th class="px-4 py-2.5 font-semibold text-center">Delegación</th>
+                  <th class="px-4 py-2.5 font-semibold text-center">Tarifa</th>
+                  <th class="px-4 py-2.5 font-semibold text-center">Consumo anual</th>
+                  <th class="px-4 py-2.5 font-semibold">Inicio</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (s of c.servicios; track s.Id; let last = $last) {
+                  @let suministro = findSuministro(s.CUPS);
+                  <tr [class.border-b]="!last" class="border-border hover:bg-muted/10 transition-colors">
+                    <td class="px-4 py-2.5">
+                      <p class="font-mono text-xs text-muted-foreground">{{ s.CUPS || '—' }}</p>
+                      @if (suministro?.Direccion) {
+                        <p class="text-xs text-muted-foreground/70 mt-0.5">
+                          {{ suministro?.Direccion }}{{ suministro?.Poblacion ? ' · ' + suministro?.Poblacion : '' }}
+                        </p>
+                      }
+                    </td>
+                    <td class="px-4 py-2.5 text-center text-muted-foreground">{{ s.NombreDelegacion || '—' }}</td>
+                    <td class="px-4 py-2.5 text-center">{{ suministro?.Tarifa || s.Tarifa || '—' }}</td>
+                    <td class="px-4 py-2.5 text-center text-muted-foreground">
+                      {{ suministro?.ConsumoAnual != null ? (suministro?.ConsumoAnual | number: '1.0-2':'es-ES') + ' kWh' : '—' }}
+                    </td>
+                    <td class="px-4 py-2.5 text-muted-foreground">{{ fmtDate(s.FechaInicio) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    </div>
+  }
+
+  <div class="px-6 pb-5 pt-2 flex justify-end border-t border-border">
+    <ui-button label="Cerrar" variant="outline" size="md" (click)="onClose()" />
+  </div>
+
+</ui-dialog>
