@@ -3,6 +3,7 @@ import {
   Component, computed, effect, inject, input, signal,
   TemplateRef, ViewChild,
 } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { Tariff, ProductType } from '../../../../../../entities/provider.model';
 import { RatesService } from '../../../../../../services/rates.service';
 import {
@@ -11,7 +12,7 @@ import {
   InputFieldComponent, SelectFieldComponent, SelectOption,
 } from '@apolo-energies/ui';
 import { DataTableComponent, TableColumn } from '@apolo-energies/table';
-import { LucideAngularModule, Percent, PackageOpen, Zap, Bolt } from 'lucide-angular';
+import { LucideAngularModule, Percent, PackageOpen, Zap, Bolt, Copy, Check } from 'lucide-angular';
 
 interface PeriodValue { period: string; value: number }
 
@@ -54,6 +55,7 @@ function toDecimalString(num: number): string {
     InputFieldComponent,
     SelectFieldComponent,
     DataTableComponent,
+    DecimalPipe,
   ],
   templateUrl: './products-tab.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -67,6 +69,8 @@ export class ProductsTabComponent implements AfterViewInit {
   readonly PackageOpenIcon = PackageOpen;
   readonly ZapIcon         = Zap;
   readonly BoltIcon        = Bolt;
+  readonly CopyIcon        = Copy;
+  readonly CheckIcon       = Check;
 
   readonly tariffs = input.required<Tariff[]>();
 
@@ -480,12 +484,22 @@ export class ProductsTabComponent implements AfterViewInit {
   }
 
   // ── View ───────────────────────────────────────────────────────
-  readonly viewDialog = signal(false);
-  readonly viewRow    = signal<ProductRow | null>(null);
+  readonly viewDialog     = signal(false);
+  readonly viewRow        = signal<ProductRow | null>(null);
+  readonly copiedPeriod   = signal<string | null>(null);
 
   openView(row: ProductRow): void {
     this.viewRow.set(row);
     this.viewDialog.set(true);
+  }
+
+  copyPeriodValue(key: string, value: number): void {
+    navigator.clipboard.writeText(String(value)).then(() => {
+      this.copiedPeriod.set(key);
+      setTimeout(() => {
+        if (this.copiedPeriod() === key) this.copiedPeriod.set(null);
+      }, 2000);
+    });
   }
 
   // ── Delete ─────────────────────────────────────────────────────

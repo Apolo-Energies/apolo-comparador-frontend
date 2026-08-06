@@ -1,0 +1,106 @@
+<app-client-detail-modal
+  [open]="detailModalOpen()"
+  [client]="detailModalClient()"
+  [mode]="detailModalMode()"
+  (closed)="onDetailModalClosed()"
+/>
+
+<!-- Cell templates -->
+<ng-template #clienteTpl let-row>
+  <div>
+    <p class="font-medium text-foreground">{{ row.nombreCliente || '—' }}</p>
+    <p class="text-xs text-muted-foreground mt-0.5">{{ row.nif }}</p>
+  </div>
+</ng-template>
+
+<ng-template #contratosBadgeTpl let-row>
+  @if (row.totalContratos > 0) {
+    <button
+      type="button"
+      class="inline-flex items-center px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors cursor-pointer"
+      (click)="openContratos(row)">
+      {{ row.totalContratos }}
+    </button>
+  } @else {
+    <span class="text-xs text-muted-foreground">—</span>
+  }
+</ng-template>
+
+<ng-template #serviciosBadgeTpl let-row>
+  @if ((row.servicios?.length ?? 0) > 0) {
+    <button
+      type="button"
+      class="inline-flex items-center px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors cursor-pointer"
+      (click)="openServicios(row)">
+      {{ row.servicios.length }}
+    </button>
+  } @else {
+    <span class="text-xs text-muted-foreground">—</span>
+  }
+</ng-template>
+
+<div class="border border-border rounded-lg overflow-hidden shadow-sm">
+
+  <!-- Header -->
+  <div class="bg-card px-6 py-5">
+    <h2 class="text-sm font-semibold text-foreground">Mis clientes</h2>
+    <p class="text-xs text-muted-foreground mt-0.5">
+      {{ total() }} cliente{{ total() === 1 ? '' : 's' }} · haz clic en Contratos o Servicios para ver el detalle
+    </p>
+  </div>
+
+  <!-- Table -->
+  <div class="relative">
+    @if (loading()) {
+      <app-table-skeleton [cols]="8" [rows]="10" />
+    } @else if (error()) {
+      <div class="flex flex-col items-center justify-center py-16 text-muted-foreground">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-3 opacity-40">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <p class="text-sm mb-3">No se pudieron cargar tus clientes</p>
+        <ui-button label="Reintentar" variant="secondary" size="sm" (click)="load()" />
+      </div>
+    } @else if (data().length === 0) {
+      <div class="flex flex-col items-center justify-center py-16 text-muted-foreground">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-3 opacity-40">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <p class="text-sm">Todavía no tienes clientes asignados</p>
+      </div>
+    } @else {
+      <lib-data-table
+        [data]="data()"
+        [columns]="columns()"
+        rowKey="idCliente"
+        [borderTop]="false"
+        [borderBottom]="true"
+        [borderLeft]="false"
+        [borderRight]="false"
+        [roundedTopLeft]="false"
+        [roundedTopRight]="false"
+        [roundedBottomLeft]="false"
+        [roundedBottomRight]="false"
+      />
+    }
+  </div>
+
+  <!-- Paginator -->
+  <lib-paginator
+    [currentPage]="currentPage()"
+    [totalPages]="totalPages()"
+    [totalCount]="total()"
+    [pageSize]="pageSize()"
+    [borderTop]="false"
+    [borderBottom]="false"
+    [borderLeft]="false"
+    [borderRight]="false"
+    [roundedTopLeft]="false"
+    [roundedTopRight]="false"
+    [roundedBottomLeft]="false"
+    [roundedBottomRight]="false"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+</div>
