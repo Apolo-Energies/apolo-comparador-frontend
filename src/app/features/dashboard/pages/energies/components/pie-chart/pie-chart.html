@@ -1,0 +1,50 @@
+<section
+  class="bg-card border border-white/[0.08] rounded-xl p-5 flex flex-col h-full"
+  [attr.aria-label]="title()">
+
+  <div class="flex items-center gap-2 mb-4">
+    <h3 class="text-sm font-medium text-muted-foreground leading-tight">{{ title() }}</h3>
+    <svg class="w-4 h-4 text-muted-foreground/50 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+    </svg>
+  </div>
+
+  <div class="relative flex-1 min-h-[260px]">
+    @if (loading()) {
+      <div class="absolute inset-0 flex items-center justify-center" role="status" aria-label="Cargando gráfico">
+        <div class="w-40 h-40 rounded-full border-[20px] border-muted/30 animate-pulse"></div>
+      </div>
+    } @else if (hasData()) {
+      <div class="flex flex-col md:flex-row items-stretch h-full gap-3">
+        <div class="relative flex-1 min-h-[220px]">
+          <canvas #pieCanvas class="max-h-full"></canvas>
+        </div>
+
+        <ul class="flex flex-col justify-center gap-1.5 md:w-[180px] text-[12px] pr-1">
+          @for (item of legendItems(); track item.label) {
+            <li class="flex items-center gap-2 py-0.5">
+              <span
+                class="w-2.5 h-2.5 rounded-full shrink-0 ring-1 ring-black/10"
+                [style.background-color]="item.color"
+                aria-hidden="true"></span>
+              <span class="flex-1 truncate text-muted-foreground">{{ item.label }}</span>
+              <span class="font-medium text-foreground" style="font-variant-numeric: tabular-nums;">
+                {{ item.value | esNumber:0 }}
+              </span>
+              <span class="text-muted-foreground/70 w-12 text-right" style="font-variant-numeric: tabular-nums;">
+                {{ item.percent }}
+              </span>
+            </li>
+          }
+        </ul>
+      </div>
+    } @else {
+      <div class="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground gap-2">
+        <svg class="w-8 h-8 text-muted-foreground/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 6"/>
+        </svg>
+        <p class="text-sm">Sin datos</p>
+      </div>
+    }
+  </div>
+</section>

@@ -39,6 +39,14 @@ export class RefreshTokenService {
     return (this.decodePayload()?.['parentUserId'] as string) ?? null;
   }
 
+  /** Delegation ID (EE portal IdDelegacion) del claim `delegationId` del JWT. */
+  getDelegationIdFromToken(): number | null {
+    const raw = this.decodePayload()?.['delegationId'];
+    if (raw == null) return null;
+    const n = typeof raw === 'number' ? raw : parseInt(String(raw), 10);
+    return Number.isFinite(n) ? n : null;
+  }
+
   decodePayload(): Record<string, unknown> | null {
     if (!isPlatformBrowser(this.platformId)) return null;
     const token = this.loadAccessToken();
