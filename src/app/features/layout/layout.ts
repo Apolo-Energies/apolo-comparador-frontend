@@ -24,6 +24,10 @@ const COLABORADOR_PERMISSIONS = [
   // 'contratos:view' y 'clients:view' ocultos temporalmente para Colaborador — Master sigue viéndolos (bypass en accessFn).
   'settings:view',
   'settings.colaborador:view',
+  'opportunities:view',
+  'analytics:view',
+  'analytics.history:view',
+  'analytics.statistics:view',
 ];
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -134,6 +138,10 @@ export class Layout {
       next: res => this.opportunitiesCountLuz.set(res.totalCount),
       error: () => { },
     });
+    // Gas de oportunidades aún no disponible para Colaboradores; evita sumar al badge total.
+    const roles = getUserRoles(this.auth.currentUser());
+    const isColaborador = (roles.includes('Colaborador') || roles.includes('Colaborador - Referenciador')) && !roles.includes('Master');
+    if (isColaborador) return;
     this.oppService.list({ pageSize: 1, status: OpportunityStatus.Pending, energyType: EnergyType.Gas }).subscribe({
       next: res => this.opportunitiesCountGas.set(res.totalCount),
       error: () => { },
@@ -185,9 +193,32 @@ export class Layout {
           { title: 'Comisión',   url: '/dashboard/settings/commission', access: ['settings.commission:view'] },
           { title: 'Plantillas', url: '/dashboard/templates',           access: ['templates:view'] },
           { title: 'Tarifas',    url: '/dashboard/tariffs',             access: ['support:view'] },
+          { title: 'Gas · Tramos de acceso', url: '/dashboard/gas/access-tariffs',    access: ['analytics:view'] },
+          { title: 'Gas · Parámetros',       url: '/dashboard/gas/regulatory-params', access: ['analytics:view'] },
+          { title: 'Gas · Productos',        url: '/dashboard/gas/products',          access: ['analytics:view'] },
+          { title:'Landings Personalizadas', url: '/dashboard/landings', access: ['analytics:view'] },
+
         ];
 
     const sections: SidebarSection[] = [
+      // APOLO ENERGIES > Facturación es Master-only (comparte analytics:view con Analítica).
+      ...(isApolo && !isColaborador ? [{
+        section: 'APOLO ENERGIES',
+        items: [
+          {
+            title: 'Facturación',
+            icon: { type: 'apolo' as const, icon: NoteIcon, size: 20 },
+            url: '/dashboard/energies/invoices',
+            access: ['analytics:view'],
+          },
+           ...(environment.features.markets ? [{
+            title: 'Mercados',
+            icon: { type: 'apolo' as const, icon: PieIcon, size: 20 },
+            url: '/dashboard/markets',
+            access: ['markets:view'],
+          }] : []),
+        ],
+      }] : []),
       {
         section: 'GENERAL',
         items: [
@@ -197,21 +228,25 @@ export class Layout {
             access: ['analytics:view'],
             children: [
               { title: 'Historial · Luz',    url: '/dashboard/analytics/history',        access: ['analytics.history:view'] },
-              { title: 'Historial · Gas',    url: '/dashboard/analytics/history/gas',    access: ['analytics.history:view'] },
+              // Gas de analítica aún no disponible para Colaboradores.
+              ...(isColaborador ? [] : [
+                { title: 'Historial · Gas',    url: '/dashboard/analytics/history/gas',    access: ['analytics.history:view'] },
+              ]),
               { title: 'Estadísticas · Luz', url: '/dashboard/analytics/statistics',     access: ['analytics.statistics:view'] },
-              { title: 'Estadísticas · Gas', url: '/dashboard/analytics/statistics/gas', access: ['analytics.statistics:view'] },
+              ...(isColaborador ? [] : [
+                { title: 'Estadísticas · Gas', url: '/dashboard/analytics/statistics/gas', access: ['analytics.statistics:view'] },
+              ]),
               { title: 'Reportes · Luz',     url: '/dashboard/analytics/reports',        access: ['analytics.statistics:view'] },
-              { title: 'Reportes · Gas',     url: '/dashboard/analytics/reports/gas',    access: ['analytics.statistics:view'] },
+              ...(isColaborador ? [] : [
+                { title: 'Reportes · Gas',     url: '/dashboard/analytics/reports/gas',    access: ['analytics.statistics:view'] },
+              ]),
             ],
           },
           ...(isApolo && environment.features.contracts ? [{
             title: 'Contratos',
             icon: { type: 'apolo' as const, icon: NoteIcon, size: 20 },
+            url: '/dashboard/contratos/contratos',
             access: ['contratos:view'],
-            children: [
-              { title: 'Contratos', url: '/dashboard/contratos/contratos', access: ['contratos:view'] },
-              { title: 'Servicios', url: '/dashboard/contratos/servicios', access: ['contratos:view'] },
-            ],
           }] : []),
           ...(environment.features.opportunities ? [{
             title: 'Oportunidades',
@@ -219,7 +254,10 @@ export class Layout {
             access: ['opportunities:view'],
             children: [
               { title: 'Luz', url: '/dashboard/analytics/opportunities/luz', access: ['opportunities:view'] },
-              { title: 'Gas', url: '/dashboard/analytics/opportunities/gas', access: ['opportunities:view'] },
+              // Gas de oportunidades aún no disponible para Colaboradores.
+              ...(isColaborador ? [] : [
+                { title: 'Gas', url: '/dashboard/analytics/opportunities/gas', access: ['opportunities:view'] },
+              ]),
             ],
           }] : []),
           {
@@ -246,28 +284,26 @@ export class Layout {
               { title: 'Gas', url: '/dashboard/sips/gas', access: ['sips:view'] },
             ],
           },
-          ...(environment.features.markets ? [{
-            title: 'Mercados',
-            icon: { type: 'apolo' as const, icon: PieIcon, size: 20 },
-            url: '/dashboard/markets',
-            access: ['markets:view'],
-          }] : []),
-          {
-            title: 'Landings personalizadas',
-            icon: { type: 'apolo' as const, icon: HomeIcon,size: 20 },
-            url: '/dashboard/landings',
-            access: ['analytics:view'],
-          },
-          {
-            title: 'Gas regulatorio',
-            icon: { type: 'apolo' as const, icon: NoteIcon, size: 20 },
-            access: ['analytics:view'],
-            children: [
-              { title: 'Tramos de acceso', url: '/dashboard/gas/access-tariffs',    access: ['analytics:view'] },
-              { title: 'Parámetros',       url: '/dashboard/gas/regulatory-params', access: ['analytics:view'] },
-              { title: 'Productos',        url: '/dashboard/gas/products',          access: ['analytics:view'] },
-            ],
-          },
+          // Landings y Gas regulatorio son Master-only; comparten analytics:view con Analítica
+          // pero no deben aparecerle al Colaborador.
+          ...(isColaborador ? [] : [
+            {
+              title: 'Landings personalizadas',
+              icon: { type: 'apolo' as const, icon: HomeIcon, size: 20 },
+              url: '/dashboard/landings',
+              access: ['analytics:view'],
+            },
+            {
+              title: 'Gas regulatorio',
+              icon: { type: 'apolo' as const, icon: NoteIcon, size: 20 },
+              access: ['analytics:view'],
+              children: [
+                { title: 'Tramos de acceso', url: '/dashboard/gas/access-tariffs',    access: ['analytics:view'] },
+                { title: 'Parámetros',       url: '/dashboard/gas/regulatory-params', access: ['analytics:view'] },
+                { title: 'Productos',        url: '/dashboard/gas/products',          access: ['analytics:view'] },
+              ],
+            },
+          ]),
         ],
       },
       {
