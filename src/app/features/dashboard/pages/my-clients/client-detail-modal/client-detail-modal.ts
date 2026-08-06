@@ -3,7 +3,7 @@ import { DecimalPipe } from '@angular/common';
 import { ButtonComponent, DialogComponent } from '@apolo-energies/ui';
 import { AssignedClient, AssignedClientSuministro } from '../../../../../entities/assigned-client.model';
 import { ContractService } from '../../../../../services/contract.service';
-import { estadoCls, estadoLabel, fmtDate, calcDias } from '../../contracts/contracts-page';
+import { estadoCls, estadoLabel, fmtDate, calcDias } from '../../contracts/contracts-utils';
 
 export type ClientDetailMode = 'contratos' | 'servicios';
 
