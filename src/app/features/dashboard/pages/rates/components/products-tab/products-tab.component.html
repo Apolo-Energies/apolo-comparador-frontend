@@ -473,7 +473,7 @@
 <ui-dialog
   [open]="viewDialog()"
   [closeable]="true"
-  maxWidth="max-w-lg"
+  maxWidth="max-w-2xl"
   (openChange)="viewDialog.set($event)"
 >
   @if (viewRow(); as row) {
@@ -521,11 +521,23 @@
           <p class="text-xs font-medium text-foreground">Energía (€/kWh)</p>
         </div>
         @if (row.energyPeriods.length > 0) {
-          <div class="grid gap-2" [class]="row.energyPeriods.length <= 3 ? 'grid-cols-3' : 'grid-cols-6'">
+          <div class="grid grid-cols-3 gap-2">
             @for (p of row.energyPeriods; track p.period) {
-              <div class="rounded-md bg-background border border-border px-3 py-2">
+              @let key = 'energy-' + p.period;
+              <div class="group relative rounded-md bg-background border border-border px-3 py-2 min-w-0">
                 <p class="text-xs text-muted-foreground">{{ p.period }}</p>
-                <p class="text-sm font-medium text-foreground mt-0.5">{{ p.value }}</p>
+                <button
+                  type="button"
+                  class="flex items-center justify-center gap-1.5 w-full mt-0.5 cursor-pointer"
+                  [title]="copiedPeriod() === key ? 'Copiado' : 'Copiar valor'"
+                  (click)="copyPeriodValue(key, p.value)">
+                  <span class="text-sm font-medium text-foreground break-all">{{ p.value | number: '1.0-6' }}</span>
+                  @if (copiedPeriod() === key) {
+                    <lucide-icon [img]="CheckIcon" [size]="12" class="shrink-0 text-[#1AD598]" />
+                  } @else {
+                    <lucide-icon [img]="CopyIcon" [size]="12" class="shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  }
+                </button>
               </div>
             }
           </div>
@@ -541,11 +553,23 @@
           <p class="text-xs font-medium text-foreground">Potencia (€/kW/día)</p>
         </div>
         @if (row.powerPeriods.length > 0) {
-          <div class="grid gap-2" [class]="row.powerPeriods.length <= 3 ? 'grid-cols-3' : 'grid-cols-6'">
+          <div class="grid grid-cols-3 gap-2">
             @for (p of row.powerPeriods; track p.period) {
-              <div class="rounded-md bg-background border border-border px-3 py-2">
+              @let key = 'power-' + p.period;
+              <div class="group relative rounded-md bg-background border border-border px-3 py-2 min-w-0">
                 <p class="text-xs text-muted-foreground">{{ p.period }}</p>
-                <p class="text-sm font-medium text-foreground mt-0.5">{{ p.value }}</p>
+                <button
+                  type="button"
+                  class="flex items-center justify-center gap-1.5 w-full mt-0.5 cursor-pointer"
+                  [title]="copiedPeriod() === key ? 'Copiado' : 'Copiar valor'"
+                  (click)="copyPeriodValue(key, p.value)">
+                  <span class="text-sm font-medium text-foreground break-all">{{ p.value | number: '1.0-6' }}</span>
+                  @if (copiedPeriod() === key) {
+                    <lucide-icon [img]="CheckIcon" [size]="12" class="shrink-0 text-[#1AD598]" />
+                  } @else {
+                    <lucide-icon [img]="CopyIcon" [size]="12" class="shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  }
+                </button>
               </div>
             }
           </div>

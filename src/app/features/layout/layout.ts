@@ -7,7 +7,7 @@ import { HttpClient } from '@angular/common/http';
 import { ApoloSidebar, SidebarChildItem, SidebarSection } from '@apolo-energies/sidebar';
 import { ApoloHeader, HeaderWelcomeContent, HeaderActionLink, UserMenuItem } from '@apolo-energies/header';
 import { AuthService } from '@apolo-energies/auth';
-import { ArrowDownBoxIcon, chevronDownIcon, chevronRightIcon, CircleIcon, CompassIcon, HomeIcon,InfoIcon, LogoutIcon, NoteIcon, PieIcon, SettingsIcon, StarIcon, SupportIcon, UiIconSource, UserIcon } from '@apolo-energies/icons';
+import { ArrowDownBoxIcon, chevronDownIcon, chevronRightIcon, CircleIcon, CompassIcon, HomeIcon,InfoIcon, LogoutIcon, NoteIcon, PieIcon, SettingsIcon, StarIcon, SupportIcon, UiIconSource, UserCircleIcon, UserIcon } from '@apolo-energies/icons';
 import { getUserRoles } from '../../utils/auth.utils';
 import { environment } from '../../../environments/environment';
 import { RefreshTokenService } from '../../services/refresh-token.service';
@@ -21,7 +21,7 @@ const COLABORADOR_PERMISSIONS = [
   'comparator:view',
   'sips:view',
   'markets:view',
-  'contratos:view',
+  // 'contratos:view' y 'clients:view' ocultos temporalmente para Colaborador — Master sigue viéndolos (bypass en accessFn).
   'settings:view',
   'settings.colaborador:view',
   'opportunities:view',
@@ -35,7 +35,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   'Colaborador - Referenciador': COLABORADOR_PERMISSIONS,
   'Referenciador': ['comparator:view', 'sips:view', 'markets:view'],
   'Tester':        ['comparator:view', 'sips:view', 'markets:view'],
-  'Comercial':     ['comparator:view'],
+  'Comercial':     ['comparator:view', 'clients:view'],
 };
 
 @Component({
@@ -269,6 +269,12 @@ export class Layout {
               { title: 'Gas', url: '/dashboard/comparator/gas', access: ['comparator:view'] },
             ],
           },
+          ...(environment.features.myClients ? [{
+            title: 'Mis clientes',
+            icon: { type: 'apolo' as const, icon: UserCircleIcon, size: 20 },
+            url: '/dashboard/my-clients',
+            access: ['clients:view'],
+          }] : []),
           {
             title: 'Consultas SIPS',
             icon: { type: 'apolo', icon: CompassIcon, size: 20 },
