@@ -13,6 +13,10 @@ interface FormState {
   storage: number | null;
   lossesPercentage: number | null;
   financialCostPercentage: number | null;
+  deviation: number | null;
+  marketTaxPercentage: number | null;
+  managementCost: number | null;
+  mibgasOverrideEurPerMwh: number | null;
   validFrom: string;
   validTo: string;
 }
@@ -46,6 +50,9 @@ export class GasRegulatoryParamsPageComponent {
           && f.storage != null && f.storage >= 0
           && f.lossesPercentage != null && f.lossesPercentage >= 0 && f.lossesPercentage < 1
           && f.financialCostPercentage != null && f.financialCostPercentage >= 0 && f.financialCostPercentage < 1
+          && f.deviation != null && f.deviation >= 0
+          && f.marketTaxPercentage != null && f.marketTaxPercentage >= 0 && f.marketTaxPercentage < 1
+          && f.managementCost != null && f.managementCost >= 0
           && !!f.validFrom;
     }
     return !!f.validTo;
@@ -104,6 +111,10 @@ export class GasRegulatoryParamsPageComponent {
         storage: f.storage!,
         lossesPercentage: f.lossesPercentage!,
         financialCostPercentage: f.financialCostPercentage!,
+        deviation: f.deviation!,
+        marketTaxPercentage: f.marketTaxPercentage!,
+        managementCost: f.managementCost!,
+        mibgasOverrideEurPerMwh: f.mibgasOverrideEurPerMwh,
         validFrom: f.validFrom,
         validTo: f.validTo || null,
       }).subscribe({ next: done, error: fail });
@@ -122,6 +133,10 @@ export class GasRegulatoryParamsPageComponent {
       storage: null,
       lossesPercentage: null,
       financialCostPercentage: null,
+      deviation: null,
+      marketTaxPercentage: null,
+      managementCost: null,
+      mibgasOverrideEurPerMwh: null,
       validFrom: new Date().toISOString().slice(0, 10),
       validTo: '',
     };

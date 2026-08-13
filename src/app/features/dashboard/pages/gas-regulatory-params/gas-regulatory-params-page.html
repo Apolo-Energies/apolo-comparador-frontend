@@ -19,6 +19,10 @@
         <tr>
           <th class="px-4 py-3 font-medium text-muted-foreground text-right">FNEE (€/MWh)</th>
           <th class="px-4 py-3 font-medium text-muted-foreground text-right">Almacenam. (€/MWh)</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground text-right">DS (€/MWh)</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground text-right">CG (€/MWh)</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground text-right">TM (%)</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground text-right">MIBGAS (€/MWh)</th>
           <th class="px-4 py-3 font-medium text-muted-foreground text-right">Pérdidas (%)</th>
           <th class="px-4 py-3 font-medium text-muted-foreground text-right">Coste fin. (%)</th>
           <th class="px-4 py-3 font-medium text-muted-foreground">Vigente desde</th>
@@ -29,14 +33,20 @@
       </thead>
       <tbody>
         @if (loading()) {
-          <tr><td colspan="8" class="px-4 py-6 text-center text-muted-foreground">Cargando…</td></tr>
+          <tr><td colspan="12" class="px-4 py-6 text-center text-muted-foreground">Cargando…</td></tr>
         } @else if (rows().length === 0) {
-          <tr><td colspan="8" class="px-4 py-6 text-center text-muted-foreground">Sin parámetros registrados.</td></tr>
+          <tr><td colspan="12" class="px-4 py-6 text-center text-muted-foreground">Sin parámetros registrados.</td></tr>
         } @else {
           @for (row of rows(); track row.id) {
             <tr class="border-t border-border hover:bg-muted/20">
               <td class="px-4 py-3 text-right text-foreground">{{ row.fnee | number:'1.2-4' }}</td>
               <td class="px-4 py-3 text-right text-foreground">{{ row.storage | number:'1.2-4' }}</td>
+              <td class="px-4 py-3 text-right text-foreground">{{ row.deviation | number:'1.2-4' }}</td>
+              <td class="px-4 py-3 text-right text-foreground">{{ row.managementCost | number:'1.2-4' }}</td>
+              <td class="px-4 py-3 text-right text-foreground">{{ (row.marketTaxPercentage * 100) | number:'1.2-2' }}</td>
+              <td class="px-4 py-3 text-right text-foreground">
+                {{ row.mibgasOverrideEurPerMwh !== null ? (row.mibgasOverrideEurPerMwh | number:'1.2-2') : 'auto' }}
+              </td>
               <td class="px-4 py-3 text-right text-foreground">{{ (row.lossesPercentage * 100) | number:'1.2-2' }}</td>
               <td class="px-4 py-3 text-right text-foreground">{{ (row.financialCostPercentage * 100) | number:'1.2-2' }}</td>
               <td class="px-4 py-3 text-foreground">{{ row.validFrom }}</td>
@@ -110,6 +120,39 @@
                      [value]="form().financialCostPercentage ?? ''"
                      (input)="updateField('financialCostPercentage', $any($event.target).valueAsNumber)" />
               <p class="text-[10px] text-muted-foreground mt-1">Ej.: 0.01 = 1%</p>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-muted-foreground mb-1">Desvíos DS (€/MWh)</label>
+              <input type="number" min="0" step="0.0001" class="w-full rounded border border-border px-3 py-2 text-sm"
+                     [value]="form().deviation ?? ''"
+                     (input)="updateField('deviation', $any($event.target).valueAsNumber)" />
+              <p class="text-[10px] text-muted-foreground mt-1">Excel: 1.5 (=0.0015 €/kWh)</p>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-muted-foreground mb-1">Coste gestión CG (€/MWh)</label>
+              <input type="number" min="0" step="0.0001" class="w-full rounded border border-border px-3 py-2 text-sm"
+                     [value]="form().managementCost ?? ''"
+                     (input)="updateField('managementCost', $any($event.target).valueAsNumber)" />
+              <p class="text-[10px] text-muted-foreground mt-1">Excel: 0.3 (=0.0003 €/kWh)</p>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-muted-foreground mb-1">Tasa mercado TM (0–0.99)</label>
+              <input type="number" min="0" max="0.99" step="0.0001" class="w-full rounded border border-border px-3 py-2 text-sm"
+                     [value]="form().marketTaxPercentage ?? ''"
+                     (input)="updateField('marketTaxPercentage', $any($event.target).valueAsNumber)" />
+              <p class="text-[10px] text-muted-foreground mt-1">Ej.: 0.015 = 1.5%</p>
+            </div>
+            <div class="col-span-2">
+              <label class="block text-xs font-medium text-muted-foreground mb-1">MIBGAS override (€/MWh)</label>
+              <input type="number" min="0" step="0.01" placeholder="Vacío = usar servicio automático"
+                     class="w-full rounded border border-border px-3 py-2 text-sm"
+                     [value]="form().mibgasOverrideEurPerMwh ?? ''"
+                     (input)="updateField('mibgasOverrideEurPerMwh', $any($event.target).valueAsNumber || null)" />
+              <p class="text-[10px] text-muted-foreground mt-1">
+                Precio spot MIBGAS manual. Consulta el valor de hoy en la app oficial MIBGAS y pégalo aquí.
+                Valor recomendado verano: ~25-35 €/MWh · invierno: ~40-60 €/MWh.
+                <span class="text-amber-400">Actualizar semanalmente hasta que se restaure el fetch automático.</span>
+              </p>
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3">

@@ -4,6 +4,10 @@ export interface GasRegulatoryParams {
   storage: number;
   lossesPercentage: number;
   financialCostPercentage: number;
+  deviation: number;
+  marketTaxPercentage: number;
+  managementCost: number;
+  mibgasOverrideEurPerMwh: number | null;
   validFrom: string;
   validTo: string | null;
 }
@@ -13,6 +17,10 @@ export interface CreateGasRegulatoryParamsPayload {
   storage: number;
   lossesPercentage: number;
   financialCostPercentage: number;
+  deviation: number;
+  marketTaxPercentage: number;
+  managementCost: number;
+  mibgasOverrideEurPerMwh: number | null;
   validFrom: string;
   validTo: string | null;
 }
