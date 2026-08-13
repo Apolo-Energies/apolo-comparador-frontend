@@ -43,10 +43,10 @@
       <tbody>
         @if (loading()) {
           <tr><td colspan="9" class="px-4 py-6 text-center text-muted-foreground">Cargando…</td></tr>
-        } @else if (visibleRows().length === 0) {
+        } @else if (rows().length === 0) {
           <tr><td colspan="9" class="px-4 py-6 text-center text-muted-foreground">Sin tramos registrados.</td></tr>
         } @else {
-          @for (row of visibleRows(); track row.id) {
+          @for (row of rows(); track row.id) {
             <tr class="border-t border-border hover:bg-muted/20">
               <td class="px-4 py-3 font-mono text-xs text-foreground">{{ row.code }}</td>
               <td class="px-4 py-3 text-foreground">
