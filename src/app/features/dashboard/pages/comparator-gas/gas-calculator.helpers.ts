@@ -1,118 +1,108 @@
-import {
-  GasFormValue,
-  GasOcrResult,
-  GasProductsByTariff,
-  GasResult,
-} from './comparator-gas.models';
+import { GasOcrResult, GasResult } from './comparator-gas.models';
 
 const IVA_DEFAULT = 0.21;
-// IH (Impuesto sobre Hidrocarburos): tasa por defecto cuando la factura no la trae.
-// 0.00234 €/kWh es la tarifa general; 0.00108 es la reducida para grandes consumidores.
+// IH (Impuesto Hidrocarburos): 0.00234 €/kWh general, 0.00108 reducida para grandes
+// consumidores. Fallback solo si el OCR no captura la tasa de la factura.
 const IH_TASA_DEFAULT = 0.00234;
 
-// Placeholder por si en el futuro se lanzan productos "Snap" en gas con comisión fija (mismo patrón que luz).
-const SNAP_GAS: Record<string, number> = {};
-const SNAP_GAS_PRODUCTS = new Set(Object.keys(SNAP_GAS));
+// Prorrateo a mes fiscal (30 días) para comparar clientes con ciclos distintos:
+// facturas Nedgia son bimestrales, otras mensuales, otras trimestrales.
+const DIAS_POR_MES = 30;
 
 const round = (n: number, d = 2) =>
   Math.round(n * Math.pow(10, d)) / Math.pow(10, d);
 
-export function calcularFacturaGas(
-  form: GasFormValue,
-  ocr: GasOcrResult,
-  productsByTariff: GasProductsByTariff,
+export interface CalcularFacturaGasOverrides {
   /**
-   * Consumo anual real del CUPS (SIPS/CNMC). Si viene > 0 se usa como
-   * `consumoAnualKwh` en vez de la proyección `kwhTotal × 365/dias`.
-   * Necesario en gas por la alta estacionalidad (una factura de invierno
-   * proyectada anualmente sobre-estima el consumo real ~5×).
+   * Slider del colaborador: margen del fijo Apolo como fracción sobre el BOE puro.
+   * Ausente = respeta el margen del bracket que vino del backend.
+   * 0 = solo BOE (loss leader), 1 = +100% (default Excel RL1).
    */
-  annualKwhOverride?: number,
-): GasResult | null {
-  const product = productsByTariff[form.tariff]?.find(p => p.name === form.producto);
-  if (!product) return null;
+  fijoMarginPct?: number;
+  /** Slider del colaborador: fee €/MWh sumado al variable base. */
+  feeEnergiaEurMwh?: number;
+}
 
+/**
+ * Comparativa Apolo vs factura del cliente.
+ *
+ * <c>apoloPricing</c> es obligatorio: viene de POST /gas/comparison (fórmula
+ * regulatoria oficial). El caller maneja el null → error UI. Total actual se
+ * toma de <c>ocr.total</c> (verdad terreno, no reconstruimos desde OCR).
+ */
+export function calcularFacturaGas(
+  ocr: GasOcrResult,
+  apoloPricing: { precioEnergiaEurKwh: number; precioFijoDiaEur: number; precioFijoBoeDia: number },
+  annualKwhOverride?: number,
+  overrides?: CalcularFacturaGasOverrides,
+): GasResult {
   const kwhTotal = ocr.consumo?.kwh_total ?? 0;
   const dias     = ocr.periodo_facturacion?.numero_dias ?? 30;
   const ihTasa   = ocr.ih?.tasa ?? IH_TASA_DEFAULT;
   const ivaPct   = (ocr.iva?.porcentaje ?? IVA_DEFAULT * 100) / 100;
 
-  // ── Precios (base + fee). feeEnergia llega en €/MWh, convertimos a €/kWh con /1000.
-  const precioEnergiaOferta = round(product.precioEnergia + form.feeEnergia / 1000, 6);
-  const precioFijoOferta    = round(product.precioFijoDia + form.feeFijo, 6);
+  const precioFijoBoeDia = round(apoloPricing.precioFijoBoeDia, 6);
+  const precioFijoOferta = overrides?.fijoMarginPct !== undefined
+    ? round(precioFijoBoeDia * (1 + overrides.fijoMarginPct), 6)
+    : round(apoloPricing.precioFijoDiaEur, 6);
+  const margenFijoDia    = round(precioFijoOferta - precioFijoBoeDia, 6);
 
-  // Precios actuales derivados del OCR (mismo criterio que buildReportPayload del service).
-  const precioEnergiaActual = kwhTotal > 0 && ocr.consumo?.importe_total
-    ? ocr.consumo.importe_total / kwhTotal
-    : (ocr.consumo?.lineas?.[0]?.precio_kwh ?? product.precioEnergia);
+  const feeEnergiaEurKwh    = (overrides?.feeEnergiaEurMwh ?? 0) / 1000;
+  const precioEnergiaOferta = round(apoloPricing.precioEnergiaEurKwh + feeEnergiaEurKwh, 6);
 
-  const diasFijoActual = ocr.disponibilidad?.dias_total ?? dias;
-  const precioFijoActual = diasFijoActual > 0 && ocr.disponibilidad?.importe_total
-    ? ocr.disponibilidad.importe_total / diasFijoActual
-    : (ocr.disponibilidad?.lineas?.[0]?.precio_dia ?? product.precioFijoDia);
-
-  // ── Costes comunes (idénticos en factura actual y en factura Apolo) ──────
+  // Costes que NO cobra la comercializadora (los cobra la distribuidora aparte):
+  // alquiler contador + bono social térmico. El resto de conceptos regulatorios
+  // (peajes, cuota GTS, tasa CNMC 0.14%) NO se suman aquí — Nedgia declara que ya
+  // vienen incluidos en su Término Fijo/Energía, y el backend los aplica vía
+  // peaje × 1.0014 y multiplicadores tm/pe/cfin. Sumarlos sería doble contabilidad.
   const alquilerEquipo    = ocr.equipos?.importe             ?? 0;
   const bonoSocialTermico = ocr.bono_social_termico?.importe ?? 0;
-  const servicios         = ocr.servicios?.base_imponible    ?? 0;
-  const otrosServicios    = (ocr.otros_servicios ?? []).reduce((s, o) => s + (o.importe ?? 0), 0);
-  const regulatorio       = (ocr.regulatorio?.peajes_canones ?? 0)
-                          + (ocr.regulatorio?.cargos         ?? 0)
-                          + (ocr.regulatorio?.tasa_cnmc      ?? 0)
-                          + (ocr.regulatorio?.cuota_gts      ?? 0);
-  const costesComunes = alquilerEquipo + bonoSocialTermico + servicios + otrosServicios + regulatorio;
+  const costesRegulados = alquilerEquipo + bonoSocialTermico;
 
-  // Descuentos: solo aplican a la factura actual (Apolo no los replica).
-  const descuentos = (ocr.descuentos ?? []).reduce((s, d) => s + (d.importe ?? 0), 0);
-
-  // IH: si el OCR lo trae, se respeta en la actual; en la oferta se recalcula con la tasa detectada.
-  const ihImporteActual = ocr.ih?.importe ?? (kwhTotal * ihTasa);
   const ihImporteOferta = kwhTotal * ihTasa;
 
-  // ── Factura OFERTA (Apolo) ──────────────────────────────────────────────
   const costeEnergiaOferta = kwhTotal * precioEnergiaOferta;
   const costeFijoOferta    = dias * precioFijoOferta;
-  const baseIvaOferta      = costeEnergiaOferta + costeFijoOferta + ihImporteOferta + costesComunes;
+  const baseIvaOferta      = costeEnergiaOferta + costeFijoOferta + ihImporteOferta + costesRegulados;
   const ivaImporteOferta   = baseIvaOferta * ivaPct;
   const totalOferta        = round(baseIvaOferta + ivaImporteOferta, 2);
 
-  // ── Factura ACTUAL (reconstruida con misma estructura) ──────────────────
-  const costeEnergiaActual = kwhTotal * precioEnergiaActual;
-  const costeFijoActual    = dias * precioFijoActual;
-  const baseIvaActual      = costeEnergiaActual + costeFijoActual + ihImporteActual + costesComunes - descuentos;
-  const ivaImporteActual   = baseIvaActual * ivaPct;
-  const totalActual        = round(baseIvaActual + ivaImporteActual, 2);
+  const totalActual = ocr.total && ocr.total > 0 ? round(ocr.total, 2) : 0;
 
-  // ── Ahorros ─────────────────────────────────────────────────────────────
-  const ahorroEstudio   = round(totalActual - totalOferta, 2);
-  // Consumo anual: SIPS si viene, sino fallback a proyección desde la factura.
+  const factorMensual = dias > 0 ? DIAS_POR_MES / dias : 1;
+  const totalActualMensual = round(totalActual * factorMensual, 2);
+  const totalOfertaMensual = round(totalOferta * factorMensual, 2);
+
+  // Ganancia Apolo = lo que se lleva sobre BOE puro. Cero cuando ambos sliders
+  // están al mínimo. Se muestra en la UI para que el colaborador ajuste hasta
+  // encontrar el punto donde gana sin perder al cliente.
+  const consumoMensualKwh    = kwhTotal * factorMensual;
+  const gananciaApoloMensual = round(margenFijoDia * DIAS_POR_MES + feeEnergiaEurKwh * consumoMensualKwh, 2);
+  const gananciaApoloAnual   = round(gananciaApoloMensual * 12, 2);
+
+  const ahorroEstudio   = round(totalActualMensual - totalOfertaMensual, 2);
   const consumoAnualKwh = annualKwhOverride && annualKwhOverride > 0
     ? annualKwhOverride
     : (dias > 0 ? kwhTotal * (365 / dias) : kwhTotal);
-  const ahorroXAnio     = dias > 0 ? round(ahorroEstudio * (365 / dias), 2) : ahorroEstudio;
-  const ahorroPorcent   = totalActual > 0
-    ? round((ahorroEstudio / totalActual) * 100, 2)
+  const ahorroXAnio   = round(ahorroEstudio * 12, 2);
+  const ahorroPorcent = totalActualMensual > 0
+    ? round((ahorroEstudio / totalActualMensual) * 100, 2)
     : 0;
 
-  // ── Comisión (misma fórmula que luz, sin ramas custom por producto) ─────
-  // - Snap → valor fijo (mapa SNAP_GAS, hoy vacío).
-  // - Cualquier otro → (feeEnergia × pct × consumoAnual) / 1000.
-  //   Si el producto tiene feeLocked=true, feeEnergia=0 y la comisión queda en 0.
-  //   Igual comportamiento que luz.
-  const comisionPct = form.comisionEnergia || 0;
-  const comision = SNAP_GAS_PRODUCTS.has(product.name)
-    ? comisionPct
-    : round((form.feeEnergia * comisionPct * consumoAnualKwh) / 1000, 2);
-
   return {
-    comision,
     ahorroEstudio,
     ahorroXAnio,
     ahorro_porcent: ahorroPorcent,
     precioEnergiaOferta,
     precioFijoOferta,
+    precioFijoBoeDia,
+    margenFijoDia,
     totalActual,
     totalOferta,
+    totalActualMensual,
+    totalOfertaMensual,
+    gananciaApoloMensual,
+    gananciaApoloAnual,
     baseIvaOferta:    round(baseIvaOferta, 2),
     ivaImporteOferta: round(ivaImporteOferta, 2),
     dias,
@@ -121,56 +111,7 @@ export function calcularFacturaGas(
   };
 }
 
-/**
- * Espejo de ComparatorService.getComisionBase para gas.
- * Devuelve la comisión "base" (fracción para no-snap, valor fijo para snap) que
- * consume el helper de cálculo. Si no llega commissionPct, cae a 0.
- */
-export function getComisionBaseGas(
-  producto: string,
-  _tariff: string,
-  _productsByTariff: GasProductsByTariff,
-  commissionPct: number | undefined,
-): number {
-  if (SNAP_GAS_PRODUCTS.has(producto)) return SNAP_GAS[producto] ?? 0;
-  return commissionPct ? commissionPct / 100 : 0;
-}
-
-// Productos por defecto mientras no haya admin para gestionarlos. Precios placeholder
-// realistas para que la calculadora produzca números coherentes. Editar aquí (o crear
-// admin de productos de gas) cuando se quiera ajustar.
-export const DEFAULT_GAS_PRODUCTS: GasProductsByTariff = {
-  'R1': [
-    { name: 'Fijo Gas Mini',  type: 'Fixed',   precioEnergia: 0.0650, precioFijoDia: 0.1500, feeLocked: true  },
-    { name: 'Fijo Gas',       type: 'Fixed',   precioEnergia: 0.0625, precioFijoDia: 0.1500, feeLocked: true  },
-    { name: 'Fijo Gas Maxi',  type: 'Fixed',   precioEnergia: 0.0600, precioFijoDia: 0.1500, feeLocked: true  },
-    { name: 'Indexado',       type: 'Indexed', precioEnergia: 0.0550, precioFijoDia: 0.1500, feeLocked: false },
-  ],
-  'R2': [
-    { name: 'Fijo Gas Mini',  type: 'Fixed',   precioEnergia: 0.0625, precioFijoDia: 0.2500, feeLocked: true  },
-    { name: 'Fijo Gas',       type: 'Fixed',   precioEnergia: 0.0600, precioFijoDia: 0.2500, feeLocked: true  },
-    { name: 'Fijo Gas Maxi',  type: 'Fixed',   precioEnergia: 0.0575, precioFijoDia: 0.2500, feeLocked: true  },
-    { name: 'Indexado',       type: 'Indexed', precioEnergia: 0.0525, precioFijoDia: 0.2500, feeLocked: false },
-  ],
-  'R3': [
-    { name: 'Fijo Gas Pyme',  type: 'Fixed',   precioEnergia: 0.0600, precioFijoDia: 0.6500, feeLocked: false },
-    { name: 'Indexado',       type: 'Indexed', precioEnergia: 0.0500, precioFijoDia: 0.6500, feeLocked: false },
-  ],
-  'R4': [
-    { name: 'Fijo Gas Empresa', type: 'Fixed',   precioEnergia: 0.0580, precioFijoDia: 1.4500, feeLocked: false },
-    { name: 'Indexado',         type: 'Indexed', precioEnergia: 0.0480, precioFijoDia: 1.4500, feeLocked: false },
-  ],
-  'R5': [
-    { name: 'Fijo Gas Industria', type: 'Fixed',   precioEnergia: 0.0560, precioFijoDia: 2.5000, feeLocked: false },
-    { name: 'Indexado',           type: 'Indexed', precioEnergia: 0.0460, precioFijoDia: 2.5000, feeLocked: false },
-  ],
-  'R6': [
-    { name: 'Fijo Gas Industria', type: 'Fixed',   precioEnergia: 0.0540, precioFijoDia: 3.8000, feeLocked: false },
-    { name: 'Indexado',           type: 'Indexed', precioEnergia: 0.0440, precioFijoDia: 3.8000, feeLocked: false },
-  ],
-};
-
-// Normaliza la tarifa detectada (R1, RL1, RL01) al formato Rn que usan los productos.
+// Normaliza "RL01"/"RL1"/"R1" → "R1" (el frontend usa R1..R6 sin el prefijo L).
 export function normalizeGasTariff(raw?: string): string {
   if (!raw) return '';
   const upper = raw.trim().toUpperCase();

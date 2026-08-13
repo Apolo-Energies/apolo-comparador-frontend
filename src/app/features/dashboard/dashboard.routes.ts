@@ -205,8 +205,8 @@ export const DASHBOARD_ROUTES: Routes = [
         canActivate: [permissionGuard],
         data: { roles: ['Master'] },
         loadComponent: () =>
-          import('./pages/gas-products/gas-products-page')
-            .then(m => m.GasProductsPageComponent),
+          import('./pages/gas-apolo-products/gas-apolo-products-page')
+            .then(m => m.GasApoloProductsPageComponent),
       },
 
       { path: 'forbidden', component: ForbiddenComponent },
