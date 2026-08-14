@@ -60,6 +60,16 @@ export class GasRegulatoryParamsPageComponent {
   readonly inlineForm         = signal<InlineEditForm>(this.emptyInlineForm());
   readonly inlineSaving       = signal(false);
 
+  // Clase compartida por los inputs numéricos inline. Foco anillado en primary,
+  // spinners nativos ocultos (feos y confunden en tablas densas), tabular-nums.
+  readonly cellInputCls =
+    'rounded-md border border-border/60 bg-background/60 px-2 py-1 text-sm text-right ' +
+    'text-foreground tabular-nums transition-colors placeholder:text-muted-foreground/60 ' +
+    'focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/25 ' +
+    '[appearance:textfield] ' +
+    '[&::-webkit-outer-spin-button]:appearance-none ' +
+    '[&::-webkit-inner-spin-button]:appearance-none';
+
   readonly canSubmit = computed(() => {
     const f = this.form();
     if (this.dialogMode() === 'create') {
