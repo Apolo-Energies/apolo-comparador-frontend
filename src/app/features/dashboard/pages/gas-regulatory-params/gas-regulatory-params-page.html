@@ -15,20 +15,20 @@
 
   <div class="rounded-lg border border-border bg-card overflow-x-auto">
     <table class="w-full text-sm">
-      <thead class="bg-muted/40 text-left">
-        <tr>
-          <th class="px-4 py-3 font-medium text-muted-foreground text-right">FNEE (€/MWh)</th>
-          <th class="px-4 py-3 font-medium text-muted-foreground text-right">Almacenam. (€/MWh)</th>
-          <th class="px-4 py-3 font-medium text-muted-foreground text-right">DS (€/MWh)</th>
-          <th class="px-4 py-3 font-medium text-muted-foreground text-right">CG (€/MWh)</th>
-          <th class="px-4 py-3 font-medium text-muted-foreground text-right">TM (%)</th>
-          <th class="px-4 py-3 font-medium text-muted-foreground text-right">MIBGAS (€/MWh)</th>
-          <th class="px-4 py-3 font-medium text-muted-foreground text-right">Pérdidas (%)</th>
-          <th class="px-4 py-3 font-medium text-muted-foreground text-right">Coste fin. (%)</th>
-          <th class="px-4 py-3 font-medium text-muted-foreground">Vigente desde</th>
-          <th class="px-4 py-3 font-medium text-muted-foreground">Hasta</th>
-          <th class="px-4 py-3 font-medium text-muted-foreground text-center">Estado</th>
-          <th class="px-4 py-3 font-medium text-muted-foreground text-right">Acciones</th>
+      <thead class="bg-muted/30 text-left">
+        <tr class="text-[11px] uppercase tracking-wider text-muted-foreground/80">
+          <th class="px-4 py-3 font-medium text-right">FNEE <span class="text-muted-foreground/50">€/MWh</span></th>
+          <th class="px-4 py-3 font-medium text-right">Almacen. <span class="text-muted-foreground/50">€/MWh</span></th>
+          <th class="px-4 py-3 font-medium text-right">DS <span class="text-muted-foreground/50">€/MWh</span></th>
+          <th class="px-4 py-3 font-medium text-right">CG <span class="text-muted-foreground/50">€/MWh</span></th>
+          <th class="px-4 py-3 font-medium text-right">TM <span class="text-muted-foreground/50">%</span></th>
+          <th class="px-4 py-3 font-medium text-right">MIBGAS <span class="text-muted-foreground/50">€/MWh</span></th>
+          <th class="px-4 py-3 font-medium text-right">Pérdidas <span class="text-muted-foreground/50">%</span></th>
+          <th class="px-4 py-3 font-medium text-right">Coste fin. <span class="text-muted-foreground/50">%</span></th>
+          <th class="px-4 py-3 font-medium">Vigente desde</th>
+          <th class="px-4 py-3 font-medium">Hasta</th>
+          <th class="px-4 py-3 font-medium text-center">Estado</th>
+          <th class="px-4 py-3 font-medium text-right">Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -38,39 +38,192 @@
           <tr><td colspan="12" class="px-4 py-6 text-center text-muted-foreground">Sin parámetros registrados.</td></tr>
         } @else {
           @for (row of rows(); track row.id) {
-            <tr class="border-t border-border hover:bg-muted/20">
-              <td class="px-4 py-3 text-right text-foreground">{{ row.fnee | number:'1.2-4' }}</td>
-              <td class="px-4 py-3 text-right text-foreground">{{ row.storage | number:'1.2-4' }}</td>
-              <td class="px-4 py-3 text-right text-foreground">{{ row.deviation | number:'1.2-4' }}</td>
-              <td class="px-4 py-3 text-right text-foreground">{{ row.managementCost | number:'1.2-4' }}</td>
-              <td class="px-4 py-3 text-right text-foreground">{{ (row.marketTaxPercentage * 100) | number:'1.2-2' }}</td>
+            @let editing = isEditingInline(row);
+            @let active  = isActive(row);
+            <tr
+              class="border-t border-border/60 transition-colors tabular-nums"
+              [class]="editing
+                ? 'bg-muted/40 shadow-[inset_2px_0_0_0_hsl(var(--primary)/0.7)]'
+                : active
+                  ? 'hover:bg-muted/15'
+                  : 'text-muted-foreground/80 hover:bg-muted/10'">
               <td class="px-4 py-3 text-right text-foreground">
-                {{ row.mibgasOverrideEurPerMwh !== null ? (row.mibgasOverrideEurPerMwh | number:'1.2-2') : 'auto' }}
-              </td>
-              <td class="px-4 py-3 text-right text-foreground">{{ (row.lossesPercentage * 100) | number:'1.2-2' }}</td>
-              <td class="px-4 py-3 text-right text-foreground">{{ (row.financialCostPercentage * 100) | number:'1.2-2' }}</td>
-              <td class="px-4 py-3 text-foreground">{{ row.validFrom }}</td>
-              <td class="px-4 py-3 text-foreground">{{ row.validTo ?? '—' }}</td>
-              <td class="px-4 py-3 text-center">
-                @if (isActive(row)) {
-                  <span class="inline-flex px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700">Vigente</span>
+                @if (editing) {
+                  <input type="number" min="0" step="0.0001"
+                         [class]="cellInputCls + ' w-24'"
+                         [value]="inlineForm().fnee ?? ''"
+                         (input)="updateInlineField('fnee', $any($event.target).valueAsNumber)" />
                 } @else {
-                  <span class="inline-flex px-2 py-0.5 rounded-full text-xs bg-muted text-muted-foreground">Cerrado</span>
+                  {{ row.fnee | number:'1.2-4' }}
+                }
+              </td>
+              <td class="px-4 py-3 text-right text-foreground">
+                @if (editing) {
+                  <input type="number" min="0" step="0.0001"
+                         [class]="cellInputCls + ' w-24'"
+                         [value]="inlineForm().storage ?? ''"
+                         (input)="updateInlineField('storage', $any($event.target).valueAsNumber)" />
+                } @else {
+                  {{ row.storage | number:'1.2-4' }}
+                }
+              </td>
+              <td class="px-4 py-3 text-right text-foreground">
+                @if (editing) {
+                  <input type="number" min="0" step="0.0001"
+                         [class]="cellInputCls + ' w-24'"
+                         [value]="inlineForm().deviation ?? ''"
+                         (input)="updateInlineField('deviation', $any($event.target).valueAsNumber)" />
+                } @else {
+                  {{ row.deviation | number:'1.2-4' }}
+                }
+              </td>
+              <td class="px-4 py-3 text-right text-foreground">
+                @if (editing) {
+                  <input type="number" min="0" step="0.0001"
+                         [class]="cellInputCls + ' w-24'"
+                         [value]="inlineForm().managementCost ?? ''"
+                         (input)="updateInlineField('managementCost', $any($event.target).valueAsNumber)" />
+                } @else {
+                  {{ row.managementCost | number:'1.2-4' }}
+                }
+              </td>
+              <td class="px-4 py-3 text-right text-foreground">
+                @if (editing) {
+                  <input type="number" min="0" max="99.9999" step="0.01"
+                         [class]="cellInputCls + ' w-20'"
+                         [value]="inlineForm().marketTaxPercent ?? ''"
+                         (input)="updateInlineField('marketTaxPercent', $any($event.target).valueAsNumber)" />
+                } @else {
+                  {{ (row.marketTaxPercentage * 100) | number:'1.2-2' }}
+                }
+              </td>
+              <td class="px-4 py-3 text-right text-foreground">
+                @if (editing) {
+                  <input type="number" min="0" step="0.01" placeholder="auto"
+                         [class]="cellInputCls + ' w-24'"
+                         [value]="inlineForm().mibgasOverrideEurPerMwh ?? ''"
+                         (input)="updateInlineField('mibgasOverrideEurPerMwh', $any($event.target).valueAsNumber || null)" />
+                } @else if (row.mibgasOverrideEurPerMwh !== null) {
+                  {{ row.mibgasOverrideEurPerMwh | number:'1.2-2' }}
+                } @else {
+                  <span class="text-muted-foreground/70 italic">auto</span>
+                }
+              </td>
+              <td class="px-4 py-3 text-right text-foreground">
+                @if (editing) {
+                  <input type="number" min="0" max="99.9999" step="0.01"
+                         [class]="cellInputCls + ' w-20'"
+                         [value]="inlineForm().lossesPercent ?? ''"
+                         (input)="updateInlineField('lossesPercent', $any($event.target).valueAsNumber)" />
+                } @else {
+                  {{ (row.lossesPercentage * 100) | number:'1.2-2' }}
+                }
+              </td>
+              <td class="px-4 py-3 text-right text-foreground">
+                @if (editing) {
+                  <input type="number" min="0" max="99.9999" step="0.01"
+                         [class]="cellInputCls + ' w-20'"
+                         [value]="inlineForm().financialCostPercent ?? ''"
+                         (input)="updateInlineField('financialCostPercent', $any($event.target).valueAsNumber)" />
+                } @else {
+                  {{ (row.financialCostPercentage * 100) | number:'1.2-2' }}
+                }
+              </td>
+              <td class="px-4 py-3 text-foreground/90">{{ row.validFrom }}</td>
+              <td class="px-4 py-3 text-foreground/90">{{ row.validTo ?? '—' }}</td>
+              <td class="px-4 py-3 text-center">
+                @if (active) {
+                  <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium
+                               bg-emerald-500/10 text-emerald-400 ring-1 ring-inset ring-emerald-500/25">
+                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                    Vigente
+                  </span>
+                } @else {
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium
+                               bg-muted/60 text-muted-foreground ring-1 ring-inset ring-border/50">
+                    Cerrada
+                  </span>
                 }
               </td>
               <td class="px-4 py-3 text-right whitespace-nowrap">
-                <button type="button"
-                  class="inline-flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  [disabled]="!isActive(row)"
-                  [title]="isActive(row) ? 'Cerrar versión (set ValidTo)' : 'Ya cerrada'"
-                  (click)="openClose(row)">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
-                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/>
-                    <line x1="6" y1="6" x2="18" y2="18"/>
-                  </svg>
-                  Cerrar
-                </button>
+                @if (editing) {
+                  <div class="inline-flex items-center gap-1.5">
+                    <button type="button"
+                      class="inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-medium
+                             bg-primary text-primary-foreground shadow-sm
+                             hover:bg-primary/90 active:scale-[0.98]
+                             transition-[background-color,transform] duration-150
+                             disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary
+                             focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      [disabled]="!canSaveInline() || inlineSaving()"
+                      (click)="saveInlineEdit()">
+                      @if (inlineSaving()) {
+                        <svg class="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.3" stroke-width="3"/>
+                          <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                        </svg>
+                        <span>Guardando</span>
+                      } @else {
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        <span>Guardar</span>
+                      }
+                    </button>
+                    <button type="button"
+                      class="inline-flex items-center h-8 px-3 rounded-md text-xs font-medium
+                             text-muted-foreground hover:text-foreground hover:bg-muted/50
+                             transition-colors duration-150
+                             disabled:opacity-40 disabled:cursor-not-allowed
+                             focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      [disabled]="inlineSaving()"
+                      (click)="cancelInlineEdit()">
+                      Cancelar
+                    </button>
+                  </div>
+                } @else if (active) {
+                  <div class="inline-flex items-center gap-1.5">
+                    <button type="button"
+                      class="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md text-xs font-medium
+                             text-foreground/80 border border-border/70 bg-background/40
+                             hover:text-foreground hover:border-border hover:bg-muted/50
+                             active:scale-[0.98]
+                             transition-[background-color,color,border-color,transform] duration-150
+                             disabled:opacity-40 disabled:cursor-not-allowed
+                             focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      [disabled]="inlineEditingRowId() !== null"
+                      title="Editar campos manuales"
+                      (click)="startInlineEdit(row)">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                           stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 20h9"/>
+                        <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                      </svg>
+                      Editar
+                    </button>
+                    <button type="button"
+                      class="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md text-xs font-medium
+                             text-red-400/90 border border-red-500/25 bg-red-500/5
+                             hover:text-red-300 hover:border-red-500/40 hover:bg-red-500/10
+                             active:scale-[0.98]
+                             transition-[background-color,color,border-color,transform] duration-150
+                             disabled:opacity-40 disabled:cursor-not-allowed
+                             focus:outline-none focus:ring-2 focus:ring-red-500/30"
+                      [disabled]="inlineEditingRowId() !== null"
+                      title="Cerrar versión (set ValidTo)"
+                      (click)="openClose(row)">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                           stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                      Cerrar
+                    </button>
+                  </div>
+                } @else {
+                  <span class="text-xs text-muted-foreground/60">—</span>
+                }
               </td>
             </tr>
           }
