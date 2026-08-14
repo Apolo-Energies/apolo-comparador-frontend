@@ -21,6 +21,19 @@ interface FormState {
   validTo: string;
 }
 
+// Inline edit shows percentages as 0-100 (matches column headers) instead of
+// the 0-1 fractions stored in the domain — we convert on save.
+interface InlineEditForm {
+  fnee: number | null;
+  storage: number | null;
+  lossesPercent: number | null;
+  financialCostPercent: number | null;
+  deviation: number | null;
+  marketTaxPercent: number | null;
+  managementCost: number | null;
+  mibgasOverrideEurPerMwh: number | null;
+}
+
 @Component({
   selector: 'app-gas-regulatory-params-page',
   standalone: true,
@@ -43,6 +56,20 @@ export class GasRegulatoryParamsPageComponent {
   readonly starIcon: UiIconSource = { type: 'apolo', icon: StarIcon, size: 16 };
   readonly form         = signal<FormState>(this.emptyForm());
 
+  readonly inlineEditingRowId = signal<number | null>(null);
+  readonly inlineForm         = signal<InlineEditForm>(this.emptyInlineForm());
+  readonly inlineSaving       = signal(false);
+
+  // Clase compartida por los inputs numéricos inline. Foco anillado en primary,
+  // spinners nativos ocultos (feos y confunden en tablas densas), tabular-nums.
+  readonly cellInputCls =
+    'rounded-md border border-border/60 bg-background/60 px-2 py-1 text-sm text-right ' +
+    'text-foreground tabular-nums transition-colors placeholder:text-muted-foreground/60 ' +
+    'focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/25 ' +
+    '[appearance:textfield] ' +
+    '[&::-webkit-outer-spin-button]:appearance-none ' +
+    '[&::-webkit-inner-spin-button]:appearance-none';
+
   readonly canSubmit = computed(() => {
     const f = this.form();
     if (this.dialogMode() === 'create') {
@@ -56,6 +83,18 @@ export class GasRegulatoryParamsPageComponent {
           && !!f.validFrom;
     }
     return !!f.validTo;
+  });
+
+  readonly canSaveInline = computed(() => {
+    const f = this.inlineForm();
+    return f.fnee != null && f.fnee >= 0
+        && f.storage != null && f.storage >= 0
+        && f.deviation != null && f.deviation >= 0
+        && f.managementCost != null && f.managementCost >= 0
+        && f.lossesPercent != null && f.lossesPercent >= 0 && f.lossesPercent < 100
+        && f.financialCostPercent != null && f.financialCostPercent >= 0 && f.financialCostPercent < 100
+        && f.marketTaxPercent != null && f.marketTaxPercent >= 0 && f.marketTaxPercent < 100
+        && (f.mibgasOverrideEurPerMwh == null || f.mibgasOverrideEurPerMwh >= 0);
   });
 
   constructor() {
@@ -125,6 +164,87 @@ export class GasRegulatoryParamsPageComponent {
 
   isActive(row: GasRegulatoryParams): boolean {
     return row.validTo == null;
+  }
+
+  isEditingInline(row: GasRegulatoryParams): boolean {
+    return this.inlineEditingRowId() === row.id;
+  }
+
+  startInlineEdit(row: GasRegulatoryParams): void {
+    if (!this.isActive(row)) return;
+    this.errorMessage.set(null);
+    this.inlineEditingRowId.set(row.id);
+    this.inlineForm.set({
+      fnee: row.fnee,
+      storage: row.storage,
+      lossesPercent: this.toPercent(row.lossesPercentage),
+      financialCostPercent: this.toPercent(row.financialCostPercentage),
+      deviation: row.deviation,
+      marketTaxPercent: this.toPercent(row.marketTaxPercentage),
+      managementCost: row.managementCost,
+      mibgasOverrideEurPerMwh: row.mibgasOverrideEurPerMwh,
+    });
+  }
+
+  cancelInlineEdit(): void {
+    if (this.inlineSaving()) return;
+    this.inlineEditingRowId.set(null);
+    this.inlineForm.set(this.emptyInlineForm());
+  }
+
+  updateInlineField<K extends keyof InlineEditForm>(key: K, value: InlineEditForm[K]): void {
+    this.inlineForm.update(f => ({ ...f, [key]: value }));
+  }
+
+  saveInlineEdit(): void {
+    const id = this.inlineEditingRowId();
+    if (id == null || !this.canSaveInline() || this.inlineSaving()) return;
+    const f = this.inlineForm();
+    this.inlineSaving.set(true);
+    this.errorMessage.set(null);
+
+    this.service.update(id, {
+      fnee: f.fnee!,
+      storage: f.storage!,
+      lossesPercentage: this.fromPercent(f.lossesPercent!),
+      financialCostPercentage: this.fromPercent(f.financialCostPercent!),
+      deviation: f.deviation!,
+      marketTaxPercentage: this.fromPercent(f.marketTaxPercent!),
+      managementCost: f.managementCost!,
+      mibgasOverrideEurPerMwh: f.mibgasOverrideEurPerMwh,
+    }).subscribe({
+      next: () => {
+        this.inlineSaving.set(false);
+        this.inlineEditingRowId.set(null);
+        this.inlineForm.set(this.emptyInlineForm());
+        this.reload();
+      },
+      error: err => {
+        this.inlineSaving.set(false);
+        this.errorMessage.set(this.errorOf(err));
+      },
+    });
+  }
+
+  private toPercent(fraction: number): number {
+    return Math.round(fraction * 100 * 10000) / 10000;
+  }
+
+  private fromPercent(percent: number): number {
+    return Math.round(percent / 100 * 1_000_000) / 1_000_000;
+  }
+
+  private emptyInlineForm(): InlineEditForm {
+    return {
+      fnee: null,
+      storage: null,
+      lossesPercent: null,
+      financialCostPercent: null,
+      deviation: null,
+      marketTaxPercent: null,
+      managementCost: null,
+      mibgasOverrideEurPerMwh: null,
+    };
   }
 
   private emptyForm(): FormState {

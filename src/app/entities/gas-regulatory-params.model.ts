@@ -28,3 +28,14 @@ export interface CreateGasRegulatoryParamsPayload {
 export interface CloseGasRegulatoryParamsPayload {
   validTo: string;
 }
+
+export interface UpdateGasRegulatoryParamsPayload {
+  fnee: number;
+  storage: number;
+  lossesPercentage: number;
+  financialCostPercentage: number;
+  deviation: number;
+  marketTaxPercentage: number;
+  managementCost: number;
+  mibgasOverrideEurPerMwh: number | null;
+}
