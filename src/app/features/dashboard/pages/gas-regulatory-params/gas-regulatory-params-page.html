@@ -38,17 +38,88 @@
           <tr><td colspan="12" class="px-4 py-6 text-center text-muted-foreground">Sin parámetros registrados.</td></tr>
         } @else {
           @for (row of rows(); track row.id) {
-            <tr class="border-t border-border hover:bg-muted/20">
-              <td class="px-4 py-3 text-right text-foreground">{{ row.fnee | number:'1.2-4' }}</td>
-              <td class="px-4 py-3 text-right text-foreground">{{ row.storage | number:'1.2-4' }}</td>
-              <td class="px-4 py-3 text-right text-foreground">{{ row.deviation | number:'1.2-4' }}</td>
-              <td class="px-4 py-3 text-right text-foreground">{{ row.managementCost | number:'1.2-4' }}</td>
-              <td class="px-4 py-3 text-right text-foreground">{{ (row.marketTaxPercentage * 100) | number:'1.2-2' }}</td>
+            @let editing = isEditingInline(row);
+            <tr class="border-t border-border hover:bg-muted/20" [class.bg-muted/10]="editing">
               <td class="px-4 py-3 text-right text-foreground">
-                {{ row.mibgasOverrideEurPerMwh !== null ? (row.mibgasOverrideEurPerMwh | number:'1.2-2') : 'auto' }}
+                @if (editing) {
+                  <input type="number" min="0" step="0.0001"
+                         class="w-24 rounded border border-border bg-transparent px-2 py-1 text-sm text-right"
+                         [value]="inlineForm().fnee ?? ''"
+                         (input)="updateInlineField('fnee', $any($event.target).valueAsNumber)" />
+                } @else {
+                  {{ row.fnee | number:'1.2-4' }}
+                }
               </td>
-              <td class="px-4 py-3 text-right text-foreground">{{ (row.lossesPercentage * 100) | number:'1.2-2' }}</td>
-              <td class="px-4 py-3 text-right text-foreground">{{ (row.financialCostPercentage * 100) | number:'1.2-2' }}</td>
+              <td class="px-4 py-3 text-right text-foreground">
+                @if (editing) {
+                  <input type="number" min="0" step="0.0001"
+                         class="w-24 rounded border border-border bg-transparent px-2 py-1 text-sm text-right"
+                         [value]="inlineForm().storage ?? ''"
+                         (input)="updateInlineField('storage', $any($event.target).valueAsNumber)" />
+                } @else {
+                  {{ row.storage | number:'1.2-4' }}
+                }
+              </td>
+              <td class="px-4 py-3 text-right text-foreground">
+                @if (editing) {
+                  <input type="number" min="0" step="0.0001"
+                         class="w-24 rounded border border-border bg-transparent px-2 py-1 text-sm text-right"
+                         [value]="inlineForm().deviation ?? ''"
+                         (input)="updateInlineField('deviation', $any($event.target).valueAsNumber)" />
+                } @else {
+                  {{ row.deviation | number:'1.2-4' }}
+                }
+              </td>
+              <td class="px-4 py-3 text-right text-foreground">
+                @if (editing) {
+                  <input type="number" min="0" step="0.0001"
+                         class="w-24 rounded border border-border bg-transparent px-2 py-1 text-sm text-right"
+                         [value]="inlineForm().managementCost ?? ''"
+                         (input)="updateInlineField('managementCost', $any($event.target).valueAsNumber)" />
+                } @else {
+                  {{ row.managementCost | number:'1.2-4' }}
+                }
+              </td>
+              <td class="px-4 py-3 text-right text-foreground">
+                @if (editing) {
+                  <input type="number" min="0" max="99.9999" step="0.01"
+                         class="w-20 rounded border border-border bg-transparent px-2 py-1 text-sm text-right"
+                         [value]="inlineForm().marketTaxPercent ?? ''"
+                         (input)="updateInlineField('marketTaxPercent', $any($event.target).valueAsNumber)" />
+                } @else {
+                  {{ (row.marketTaxPercentage * 100) | number:'1.2-2' }}
+                }
+              </td>
+              <td class="px-4 py-3 text-right text-foreground">
+                @if (editing) {
+                  <input type="number" min="0" step="0.01" placeholder="auto"
+                         class="w-24 rounded border border-border bg-transparent px-2 py-1 text-sm text-right"
+                         [value]="inlineForm().mibgasOverrideEurPerMwh ?? ''"
+                         (input)="updateInlineField('mibgasOverrideEurPerMwh', $any($event.target).valueAsNumber || null)" />
+                } @else {
+                  {{ row.mibgasOverrideEurPerMwh !== null ? (row.mibgasOverrideEurPerMwh | number:'1.2-2') : 'auto' }}
+                }
+              </td>
+              <td class="px-4 py-3 text-right text-foreground">
+                @if (editing) {
+                  <input type="number" min="0" max="99.9999" step="0.01"
+                         class="w-20 rounded border border-border bg-transparent px-2 py-1 text-sm text-right"
+                         [value]="inlineForm().lossesPercent ?? ''"
+                         (input)="updateInlineField('lossesPercent', $any($event.target).valueAsNumber)" />
+                } @else {
+                  {{ (row.lossesPercentage * 100) | number:'1.2-2' }}
+                }
+              </td>
+              <td class="px-4 py-3 text-right text-foreground">
+                @if (editing) {
+                  <input type="number" min="0" max="99.9999" step="0.01"
+                         class="w-20 rounded border border-border bg-transparent px-2 py-1 text-sm text-right"
+                         [value]="inlineForm().financialCostPercent ?? ''"
+                         (input)="updateInlineField('financialCostPercent', $any($event.target).valueAsNumber)" />
+                } @else {
+                  {{ (row.financialCostPercentage * 100) | number:'1.2-2' }}
+                }
+              </td>
               <td class="px-4 py-3 text-foreground">{{ row.validFrom }}</td>
               <td class="px-4 py-3 text-foreground">{{ row.validTo ?? '—' }}</td>
               <td class="px-4 py-3 text-center">
@@ -59,18 +130,61 @@
                 }
               </td>
               <td class="px-4 py-3 text-right whitespace-nowrap">
-                <button type="button"
-                  class="inline-flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  [disabled]="!isActive(row)"
-                  [title]="isActive(row) ? 'Cerrar versión (set ValidTo)' : 'Ya cerrada'"
-                  (click)="openClose(row)">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
-                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/>
-                    <line x1="6" y1="6" x2="18" y2="18"/>
-                  </svg>
-                  Cerrar
-                </button>
+                @if (editing) {
+                  <div class="inline-flex items-center gap-3">
+                    <button type="button"
+                      class="inline-flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      [disabled]="!canSaveInline() || inlineSaving()"
+                      (click)="saveInlineEdit()">
+                      @if (inlineSaving()) {
+                        <svg class="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.3" stroke-width="3"/>
+                          <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                        </svg>
+                        Guardando…
+                      } @else {
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Guardar
+                      }
+                    </button>
+                    <button type="button"
+                      class="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      [disabled]="inlineSaving()"
+                      (click)="cancelInlineEdit()">
+                      Cancelar
+                    </button>
+                  </div>
+                } @else {
+                  <div class="inline-flex items-center gap-3">
+                    <button type="button"
+                      class="inline-flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      [disabled]="!isActive(row) || inlineEditingRowId() !== null"
+                      [title]="isActive(row) ? 'Editar campos manuales' : 'Solo la fila vigente se puede editar'"
+                      (click)="startInlineEdit(row)">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 20h9"/>
+                        <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                      </svg>
+                      Editar
+                    </button>
+                    <button type="button"
+                      class="inline-flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      [disabled]="!isActive(row) || inlineEditingRowId() !== null"
+                      [title]="isActive(row) ? 'Cerrar versión (set ValidTo)' : 'Ya cerrada'"
+                      (click)="openClose(row)">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                      Cerrar
+                    </button>
+                  </div>
+                }
               </td>
             </tr>
           }
