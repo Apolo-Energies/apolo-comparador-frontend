@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Energía solar para la industria de Almansa · Apolo Energies</title>
+<meta name="description" content="Autoconsumo colectivo desde FV El Mugrón. Energía a 70 €/MWh con precio cerrado a 10 años para empresas del Polígono El Mugrón, Almansa.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cosmic:#06173D;      /* Azul Cósmico */
+  --void:#02070F;        /* Vacío Cósmico */
+  --solar:#F5901E;       /* Viento Solar — nosotros */
+  --solar-l:#FBD9A0;
+  --sky:#1591AD;         /* Azul Cielo — cliente */
+  --sky-l:#4FB8CE;
+  --paper:#EFF1F5;
+  --l1:#D8DEEA;
+  --l2:#A3AABB;
+  --l3:#6E7789;
+  --card:#0B1424;
+  --line:#16233A;
+  --max:1140px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--void);color:var(--l1);
+  font-family:'Space Grotesk',system-ui,sans-serif;
+  font-weight:400;line-height:1.55;-webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+h1,h2,h3{font-weight:700;line-height:1.1;color:#fff;letter-spacing:-.015em}
+h1{font-size:clamp(1.85rem,5.2vw,3.9rem)}
+h2{font-size:clamp(1.6rem,3.4vw,2.5rem)}
+h3{font-size:1.05rem}
+.eyebrow{
+  font-size:.72rem;font-weight:700;letter-spacing:.19em;text-transform:uppercase;
+  color:var(--solar-l);margin-bottom:14px;
+}
+.sky{color:var(--sky-l)}
+.sol{color:var(--solar)}
+.lede{font-size:clamp(1rem,1.5vw,1.16rem);color:var(--l2);max-width:60ch}
+.tiny{font-size:.76rem;color:var(--l3);line-height:1.6}
+
+/* ---------- barra ---------- */
+header{
+  position:fixed;top:0;left:0;right:0;z-index:50;
+  backdrop-filter:blur(14px);background:rgba(2,7,15,.72);
+  border-bottom:1px solid transparent;transition:border-color .3s;
+}
+header.on{border-bottom-color:var(--line)}
+.bar{max-width:var(--max);margin:0 auto;padding:15px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.mark{font-weight:700;font-size:1.06rem;color:#fff;letter-spacing:-.02em;text-decoration:none;white-space:nowrap}
+.mark em{font-style:normal;font-weight:300}
+.btn{
+  display:inline-block;border:0;cursor:pointer;text-decoration:none;
+  font-family:inherit;font-size:.9rem;font-weight:700;
+  padding:11px 22px;border-radius:999px;transition:transform .18s,box-shadow .18s,background .18s;
+}
+.btn-solar{background:var(--solar);color:var(--void)}
+.btn-solar:hover{background:#ffa63a;transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:#fff;box-shadow:inset 0 0 0 1px var(--line)}
+.btn-ghost:hover{box-shadow:inset 0 0 0 1px var(--sky)}
+.btn:focus-visible,a:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--sky-l);outline-offset:3px}
+
+/* ---------- aurora ---------- */
+.aurora{position:absolute;inset:0;overflow:hidden;z-index:0;pointer-events:none}
+.aurora b{
+  position:absolute;border-radius:50%;filter:blur(90px);display:block;
+  transition:opacity 1.1s ease, transform 1.1s ease;
+}
+.a1{width:70vw;height:70vw;left:-14vw;bottom:-38vw;background:var(--sky);opacity:.42}
+.a2{width:62vw;height:62vw;right:-6vw;bottom:-34vw;background:var(--solar);opacity:.40}
+.a3{width:34vw;height:34vw;left:44vw;bottom:-18vw;background:#FCE0AA;opacity:.30}
+@media(prefers-reduced-motion:no-preference){
+  .a1{animation:drift 22s ease-in-out infinite alternate}
+  .a3{animation:drift 17s ease-in-out infinite alternate-reverse}
+}
+@keyframes drift{from{transform:translate3d(0,0,0)}to{transform:translate3d(4vw,-3vw,0)}}
+
+/* ---------- hero ---------- */
+.hero{position:relative;padding:132px 0 76px;background:linear-gradient(180deg,var(--cosmic) 0%,#04101f 55%,var(--void) 100%)}
+.hero .wrap{position:relative;z-index:2}
+.hero-grid{display:grid;grid-template-columns:1.02fr .98fr;gap:56px;align-items:start}
+.hero h1{margin:6px 0 20px}
+.chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:26px}
+.chip{font-size:.78rem;color:var(--l1);padding:7px 14px;border-radius:999px;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px var(--line)}
+
+/* ---------- calculadora ---------- */
+.calc{background:rgba(6,23,61,.62);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:16px;padding:26px}
+.calc h3{font-size:.95rem;margin-bottom:2px}
+.field{margin-top:20px}
+.field>label{display:block;font-size:.79rem;color:var(--l2);margin-bottom:9px;font-weight:500}
+.seg{display:flex;gap:6px;background:rgba(0,0,0,.3);padding:4px;border-radius:10px}
+.seg button{
+  flex:1;background:transparent;border:0;cursor:pointer;color:var(--l2);
+  font-family:inherit;font-size:.86rem;font-weight:500;padding:9px 6px;border-radius:7px;transition:all .18s;
+}
+.seg button[aria-pressed="true"]{background:var(--sky);color:#001318;font-weight:700}
+.num{display:flex;align-items:baseline;gap:8px}
+.num input{
+  width:100%;background:rgba(0,0,0,.32);border:1px solid var(--line);border-radius:10px;
+  color:#fff;font-family:inherit;font-size:1.5rem;font-weight:700;padding:11px 14px;
+}
+.num span{font-size:.85rem;color:var(--l2);white-space:nowrap}
+.row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px;gap:12px}
+.row b{font-size:1.02rem;color:#fff}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:99px;
+  background:linear-gradient(90deg,var(--sky) 0%,var(--solar) 100%);outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;
+  cursor:grab;border:4px solid var(--cosmic);box-shadow:0 2px 10px rgba(0,0,0,.5);
+}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;cursor:grab;border:4px solid var(--cosmic)}
+.ticks{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px;margin-top:7px}
+.ticks button{background:none;border:0;color:var(--l3);font-family:inherit;font-size:.68rem;cursor:pointer;padding:3px 2px}
+.ticks button:hover{color:var(--sky-l)}
+.out{margin-top:24px;padding-top:22px;border-top:1px solid var(--line)}
+.out .big{font-size:clamp(2.2rem,5vw,3rem);font-weight:700;color:var(--sky-l);line-height:1;letter-spacing:-.02em}
+.out .sub{font-size:.82rem;color:var(--l2);margin-top:8px}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.mini div{background:rgba(0,0,0,.26);border-radius:10px;padding:13px 14px}
+.mini span{display:block;font-size:.7rem;color:var(--l3);margin-bottom:4px}
+.mini strong{font-size:1.08rem;color:#fff;font-weight:700;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+
+/* ---------- secciones ---------- */
+section{padding:84px 0}
+.light{background:var(--paper);color:#2A3242}
+.light h2,.light h3{color:var(--void)}
+.light .eyebrow{color:var(--l3)}
+.light .lede{color:#4A5568}
+.light .tiny{color:#7A8496}
+.head{max-width:62ch;margin-bottom:44px}
+
+/* factura */
+.bill{display:grid;grid-template-columns:1.25fr .75fr;gap:34px;align-items:start}
+.lines{display:flex;flex-direction:column;gap:7px}
+.line{display:flex;align-items:center;gap:14px;background:#E3E7EE;border-radius:9px;padding:12px 16px}
+.line .nm{flex:1;font-size:.92rem}
+.line .vl{font-weight:700;font-size:.95rem;font-variant-numeric:tabular-nums}
+.line .bar{width:88px;height:6px;border-radius:99px;background:#CBD2DE;overflow:hidden;flex:none}
+.line .bar i{display:block;height:100%;background:var(--solar);border-radius:99px;transition:width .7s cubic-bezier(.2,.7,.2,1)}
+.line.tot{background:var(--void);color:#fff;margin-top:7px}
+.line.tot .vl{color:var(--solar)}
+.offer{background:var(--cosmic);border-radius:16px;padding:30px;color:var(--l1);position:sticky;top:88px}
+.offer .p{font-size:clamp(2.4rem,5vw,3.2rem);font-weight:700;color:#fff;line-height:1;margin:10px 0 12px;letter-spacing:-.02em}
+.offer hr{border:0;border-top:1px solid #1E3560;margin:22px 0}
+.offer .s{font-size:1.8rem;font-weight:700;color:var(--sky-l);line-height:1.1}
+
+/* tabla periodos */
+.tbl{width:100%;border-collapse:collapse;font-size:.9rem}
+.tbl th{text-align:right;font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--l2);padding:0 12px 12px;font-weight:700}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl td{padding:13px 12px;border-top:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+.tbl tbody tr:hover{background:rgba(21,145,173,.07)}
+.tbl .pk{font-weight:700;color:#fff}
+.tbl .sv{color:var(--sky-l);font-weight:700}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+/* escenarios */
+.years{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+.yr{display:grid;grid-template-columns:96px 1fr;gap:16px;align-items:center}
+.yr .lb{font-size:.82rem;color:var(--l2);line-height:1.35}
+.yr .lb b{display:block;color:#fff;font-size:.95rem}
+.track{position:relative;height:34px;background:rgba(255,255,255,.04);border-radius:7px;overflow:hidden}
+.track .cost{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#B4680F,var(--solar));border-radius:7px;transition:width .8s cubic-bezier(.2,.7,.2,1);display:flex;align-items:center;justify-content:flex-end;padding-right:11px}
+.track .cost span{font-size:.79rem;font-weight:700;color:#2A1602;white-space:nowrap}
+.track .ours{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--sky-l);z-index:3}
+.legend{display:flex;flex-wrap:wrap;gap:20px;margin-top:26px;font-size:.79rem;color:var(--l2)}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:7px;vertical-align:-1px}
+
+/* pasos */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.step{background:#E3E7EE;border-radius:13px;padding:22px}
+.step .n{width:30px;height:30px;border-radius:50%;background:var(--sky);color:#001318;display:grid;place-items:center;font-weight:700;font-size:.88rem;margin-bottom:15px}
+.step:last-child .n{background:var(--solar);color:var(--void)}
+.step p{font-size:.87rem;color:#4A5568;margin-top:7px}
+
+/* condiciones */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.panel{border-radius:14px;padding:28px}
+.panel.a{background:var(--cosmic)}
+.panel.b{background:var(--card);border:1px solid var(--line)}
+.panel h3{margin-bottom:18px;font-size:1.15rem}
+.panel.a h3{color:var(--solar)}
+.panel.b h3{color:var(--sky-l)}
+.kv{display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-top:1px solid rgba(255,255,255,.07);font-size:.9rem}
+.kv:first-of-type{border-top:0}
+.kv span{color:var(--l2)}
+.kv b{color:#fff;text-align:right}
+
+/* cta */
+.cta{position:relative;background:linear-gradient(180deg,var(--void) 0%,var(--cosmic) 100%);overflow:hidden}
+.cta .wrap{position:relative;z-index:2}
+form{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:30px;max-width:620px}
+form label{display:block;font-size:.74rem;color:var(--l2);margin-bottom:6px}
+form input{width:100%;background:rgba(0,0,0,.34);border:1px solid var(--line);border-radius:10px;color:#fff;font-family:inherit;font-size:.94rem;padding:12px 14px}
+form input::placeholder{color:var(--l3)}
+.full{grid-column:1/-1}
+footer{border-top:1px solid var(--line);padding:34px 0;font-size:.8rem;color:var(--l3)}
+footer .fx{display:flex;flex-wrap:wrap;gap:10px 26px;justify-content:space-between}
+footer a{color:var(--l2);text-decoration:none}
+footer a:hover{color:#fff}
+
+.rv{opacity:0;transform:translateY(20px);transition:opacity .7s ease,transform .7s ease}
+.rv.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}}
+
+@media(max-width:980px){
+  .hero-grid,.bill,.two{grid-template-columns:1fr;gap:34px}
+  .steps{grid-template-columns:1fr 1fr}
+  .offer{position:static}
+  .hero{padding-top:112px}
+}
+@media(max-width:560px){
+  section{padding:60px 0}
+  .steps,form,.mini{grid-template-columns:1fr}
+  .yr{grid-template-columns:74px 1fr;gap:11px}
+  .line .bar{display:none}
+  .bar-cta{display:none}
+}
+</style>
+</head>
+<body>
+
+<header id="hd">
+  <div class="bar">
+    <a class="mark" href="#top">Apolo<em>Energies</em></a>
+    <a class="btn btn-solar bar-cta" href="#contacto">Pedir mi cálculo</a>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="top">
+  <div class="aurora" id="aur"><b class="a1"></b><b class="a2"></b><b class="a3"></b></div>
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <p class="eyebrow">FV El Mugrón · Almansa</p>
+        <h1>Tu nave está a 5 km<br>de una planta solar<br><span class="sky">de 2,61 MW</span></h1>
+        <p class="lede">Autoconsumo colectivo: recibes energía de la planta a <strong style="color:#fff">70 €/MWh</strong>, precio cerrado a 10 años. Sin invertir, sin obra y sin cambiar de comercializadora.</p>
+        <div class="chips">
+          <span class="chip">Sin inversión</span>
+          <span class="chip">Sin obra en tu nave</span>
+          <span class="chip">Precio fijo 10 años</span>
+          <span class="chip">Alta gestionada</span>
+        </div>
+        <p class="tiny" style="margin-top:30px;max-width:52ch">Mueve el precio de mercado y verás cómo cambia tu factura. El nuestro no cambia.</p>
+      </div>
+
+      <!-- CALCULADORA -->
+      <div class="calc">
+        <h3>Calcula tu ahorro</h3>
+        <p class="tiny">Tres datos y tienes la cifra.</p>
+
+        <div class="field">
+          <label id="lab-t">Tu tarifa de acceso</label>
+          <div class="seg" role="group" aria-labelledby="lab-t">
+            <button type="button" id="t61" aria-pressed="true">6.1TD</button>
+            <button type="button" id="t30" aria-pressed="false">3.0TD</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="cons">Consumo eléctrico anual</label>
+          <div class="num">
+            <input id="cons" type="number" value="1500" min="50" max="50000" step="50" inputmode="numeric">
+            <span>MWh/año</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="row">
+            <label for="omie" style="margin:0">Precio de mercado (OMIE)</label>
+            <b id="omie-v">40 €/MWh</b>
+          </div>
+          <input id="omie" type="range" min="0" max="170" step="1" value="40">
+          <div class="ticks">
+            <button type="button" data-o="40">Prudente 40</button>
+            <button type="button" data-o="53">2026 · 53</button>
+            <button type="button" data-o="64">2025 · 64</button>
+            <button type="button" data-o="168">2022 · 168</button>
+          </div>
+        </div>
+
+        <div class="out">
+          <div class="big" id="ahorro-anual">18.900 €</div>
+          <p class="sub">de ahorro al año en tu factura eléctrica</p>
+          <div class="mini">
+            <div><span>Tu coste hoy</span><strong id="c-hoy">97,01 €/MWh</strong></div>
+            <div><span>Con Apolo</span><strong style="color:var(--solar)">70,00 €/MWh</strong></div>
+            <div><span>Energía que recibes</span><strong id="c-asig">701 MWh/año</strong></div>
+            <div><span>Ahorro a 10 años</span><strong id="c-dec">189.000 €</strong></div>
+          </div>
+          <a class="btn btn-solar full" href="#contacto" style="display:block;text-align:center;margin-top:18px">Quiero el cálculo con mi factura</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FACTURA ============ -->
+<section class="light">
+  <div class="wrap">
+    <div class="head rv">
+      <p class="eyebrow">De dónde sale el ahorro</p>
+      <h2>La energía es lo barato.<br>Lo caro es todo lo demás.</h2>
+      <p class="lede">Esto es lo que pagas por cada MWh que te llega por la red. Solo el primer concepto es energía; el resto son peajes, cargos e impuestos que se calculan sobre ella.</p>
+    </div>
+    <div class="bill">
+      <div class="lines rv" id="lines"></div>
+      <div class="offer rv">
+        <p class="tiny" style="color:var(--l2)">Con autoconsumo colectivo</p>
+        <div class="p">70,00 €</div>
+        <p style="font-size:.9rem;color:var(--l1)">Un concepto, un precio. Esos kWh no pasan por la red como consumo, así que no arrastran peajes, cargos ni impuesto eléctrico.</p>
+        <hr>
+        <p class="tiny" style="color:var(--l2)">Tu ahorro por MWh</p>
+        <div class="s" id="ah-mwh">27,00 €</div>
+        <p class="tiny" id="ah-pct" style="margin-top:6px">un 28 % menos</p>
+      </div>
+    </div>
+    <p class="tiny" style="margin-top:26px">Media ponderada de las horas en que la planta genera. El término de potencia contratada con tu distribuidora no cambia. Importes sin IVA.</p>
+  </div>
+</section>
+
+<!-- ============ PERIODOS ============ -->
+<section>
+  <div class="wrap">
+    <div class="head rv">
+      <p class="eyebrow">Periodo a periodo</p>
+      <h2>Tu precio del kWh, hora por hora</h2>
+      <p class="lede">El coste regulado cambia mucho entre periodos: en punta puede triplicar al valle. Nuestro precio es el mismo las 8.760 horas del año.</p>
+    </div>
+    <div class="scroll rv">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Periodo</th><th>Peajes (ATR)</th><th>Pérdidas</th>
+            <th>Tu coste €/MWh</th><th>Tu coste €/kWh</th>
+            <th>Apolo €/kWh</th><th>Ahorro €/MWh</th><th>Ahorro</th>
+          </tr>
+        </thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+    <p class="tiny" style="margin-top:22px" id="tb-note"></p>
+  </div>
+</section>
+
+<!-- ============ ESCENARIOS ============ -->
+<section class="light">
+  <div class="wrap">
+    <div class="head rv">
+      <p class="eyebrow">Los seis últimos años</p>
+      <h2>No hace falta imaginar<br>escenarios. Mira los reales.</h2>
+      <p class="lede">Lo que habrías pagado por MWh en cada uno de los últimos seis años, con la media anual real del mercado, frente a nuestros 70 €/MWh.</p>
+    </div>
+    <div class="years rv" id="years"></div>
+    <div class="legend">
+      <span><i style="background:var(--solar)"></i>Tu coste con la red (6.1TD)</span>
+      <span><i style="background:var(--sky)"></i>Precio Apolo Energies: 70 €/MWh</span>
+    </div>
+    <p class="tiny" style="margin-top:26px">Medias anuales del mercado diario OMIE; 2026 es la media del año en curso. Para que el autoconsumo dejase de ahorrarte, la media anual tendría que bajar a unos 17 €/MWh: la más baja de estos seis años ha sido 53 €/MWh.</p>
+  </div>
+</section>
+
+<!-- ============ CÓMO FUNCIONA ============ -->
+<section>
+  <div class="wrap">
+    <div class="head rv">
+      <p class="eyebrow">Cómo funciona</p>
+      <h2>Cuatro pasos y no vuelves a tocarlo</h2>
+    </div>
+    <div class="steps rv">
+      <div class="step"><div class="n">1</div><h3>La planta genera</h3><p>FV El Mugrón produce unos 7.240 MWh al año en el Polígono 56, dentro del radio de 5 km del polígono industrial.</p></div>
+      <div class="step"><div class="n">2</div><h3>Recibes tu parte</h3><p>Un coeficiente de reparto te asigna una fracción de cada hora de producción, calculada sobre tu consumo real.</p></div>
+      <div class="step"><div class="n">3</div><h3>Se descuenta de tu factura</h3><p>Esos kWh salen de tu lectura de red. Tu distribuidora ya no te los factura, ni sus peajes ni sus impuestos.</p></div>
+      <div class="step"><div class="n">4</div><h3>Pagas solo la energía</h3><p>70 €/MWh a Apolo Energies. Un único concepto, sin término fijo y sin actualizaciones durante 10 años.</p></div>
+    </div>
+    <p class="tiny" style="margin-top:26px">Real Decreto 244/2019 y Real Decreto-ley 7/2026: el autoconsumo colectivo admite un radio de proximidad de 5 km para instalaciones de hasta 5 MW.</p>
+  </div>
+</section>
+
+<!-- ============ CONDICIONES ============ -->
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="head rv">
+      <p class="eyebrow">Condiciones</p>
+      <h2>Lo que te damos y lo que no te pedimos</h2>
+    </div>
+    <div class="two rv">
+      <div class="panel a">
+        <h3>Lo que recibes</h3>
+        <div class="kv"><span>Precio</span><b>70 €/MWh cerrado</b></div>
+        <div class="kv"><span>Plazo</span><b>10 años</b></div>
+        <div class="kv"><span>Término fijo</span><b>0 € al año</b></div>
+        <div class="kv"><span>Actualización de precio</span><b>Ninguna</b></div>
+        <div class="kv"><span>Tramitación del alta</span><b>La hacemos nosotros</b></div>
+      </div>
+      <div class="panel b">
+        <h3>Lo que no te pedimos</h3>
+        <div class="kv"><span>Inversión</span><b>Ninguna</b></div>
+        <div class="kv"><span>Obra en tu nave</span><b>Ninguna</b></div>
+        <div class="kv"><span>Cambiar de comercializadora</span><b>No hace falta</b></div>
+        <div class="kv"><span>Aval o garantía</span><b>No se pide</b></div>
+        <div class="kv"><span>Permanencia dura</span><b>Salida con preaviso</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA ============ -->
+<section class="cta" id="contacto">
+  <div class="aurora"><b class="a1" style="opacity:.28"></b><b class="a2" style="opacity:.26"></b></div>
+  <div class="wrap">
+    <div class="rv">
+      <p class="eyebrow">El siguiente paso</p>
+      <h2>Mándanos una factura.<br><span class="sky">Te damos el número exacto.</span></h2>
+      <p class="lede" style="margin-top:16px">Con tu curva de carga real calculamos tu coeficiente de reparto, la energía que te corresponde y tu ahorro anual exacto. En 48 horas y sin compromiso.</p>
+      <form id="f">
+        <div><label for="emp">Empresa</label><input id="emp" name="emp" placeholder="Razón social" required></div>
+        <div><label for="per">Persona de contacto</label><input id="per" name="per" placeholder="Nombre y apellidos" required></div>
+        <div><label for="mail">Correo electrónico</label><input id="mail" name="mail" type="email" placeholder="nombre@empresa.es" required></div>
+        <div><label for="tel">Teléfono</label><input id="tel" name="tel" type="tel" placeholder="600 000 000"></div>
+        <div class="full"><button class="btn btn-solar" type="submit" style="width:100%">Enviar y pedir mi cálculo</button></div>
+      </form>
+      <p class="tiny" style="margin-top:14px">Al enviar se abrirá tu correo con los datos y la simulación que has hecho arriba. También puedes escribirnos directamente a <a href="mailto:info@apoloenergies.es" style="color:var(--sky-l)">info@apoloenergies.es</a>.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap fx">
+    <span>Apolo Energies · Paseo Alameda 38, torre 2, puerta 2 · 46023 Valencia</span>
+    <span><a href="mailto:info@apoloenergies.es">info@apoloenergies.es</a> · <a href="tel:+34900801215">900 80 12 15</a></span>
+    <span>Planta FV El Mugrón · 2,61 MW · Polígono 56, Parcela 5352 · Almansa (Albacete)</span>
+  </div>
+</footer>
+
+<script>
+/* ---------- parámetros: idénticos al simulador en Excel ---------- */
+const P   = ['P1','P2','P3','P4','P5','P6'];
+const CAP = [0.465,0.213,0.140,0.110,0.110,0.110];
+const W   = [0.16,0.17,0.11,0.10,0.08,0.38];   // reparto estimado de la generación solar
+const T = {
+  '6.1TD': { atr:[46.27,26.72,12.93,6.68,2.62,1.59], per:[0.07,0.08,0.06,0.06,0.05,0.09] },
+  '3.0TD': { atr:[63.35,38.91,19.28,9.80,4.71,2.90], per:[0.18,0.19,0.19,0.15,0.16,0.22] }
+};
+const REE=28, FNEE=3, IE=0.0511, TAS=0.015;
+const PRECIO=70, SOLAR_SHARE=0.55, ACOPLE=0.85, YEARS=10;
+const HIST=[['2022',167.53],['2021',111.93],['2023',87.10],['2025',64.25],['2024',63.03],['2026',53.26]];
+
+const coste=(pmd,t,i)=>((pmd+REE+CAP[i])*(1+TAS)*(1+T[t].per[i])+T[t].atr[i]+FNEE)*(1+IE);
+const costeW=(pmd,t)=>W.reduce((a,w,i)=>a+w*coste(pmd,t,i),0);
+
+const eu=(n,d=2)=>n.toLocaleString('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d});
+const e0=n=>Math.round(n).toLocaleString('es-ES');
+
+let tar='6.1TD', pmd=40, cons=1500;
+
+/* ---------- desglose de la factura ---------- */
+function desglose(pmd,t){
+  const s={ene:0,ree:0,atr:0,per:0,ie:0,fnee:0,tas:0,cap:0};
+  W.forEach((w,i)=>{
+    const base=pmd+REE+CAP[i];
+    const tas=base*TAS, per=base*(1+TAS)*T[t].per[i];
+    const sub=base*(1+TAS)*(1+T[t].per[i])+T[t].atr[i]+FNEE;
+    s.ene+=w*pmd; s.ree+=w*REE; s.cap+=w*CAP[i]; s.tas+=w*tas;
+    s.per+=w*per; s.atr+=w*T[t].atr[i]; s.fnee+=w*FNEE; s.ie+=w*sub*IE;
+  });
+  return s;
+}
+
+function pintaFactura(){
+  const s=desglose(pmd,tar), tot=costeW(pmd,tar);
+  const items=[
+    ['Energía (mercado a '+e0(pmd)+' €/MWh)', s.ene],
+    ['Coste de red y sistema', s.ree],
+    ['Peajes de acceso y cargos', s.atr],
+    ['Pérdidas de red', s.per],
+    ['Impuesto eléctrico', s.ie],
+    ['Fondo de eficiencia (FNEE)', s.fnee],
+    ['Tasas municipales y capacidad', s.tas+s.cap]
+  ];
+  const max=Math.max(...items.map(i=>i[1]),1);
+  document.getElementById('lines').innerHTML=
+    items.map(([n,v])=>`<div class="line"><span class="nm">${n}</span>
+      <span class="bar"><i style="width:${Math.max(3,v/max*100)}%"></i></span>
+      <span class="vl">${eu(v)} €</span></div>`).join('')
+    + `<div class="line tot"><span class="nm"><strong>Tu coste actual por MWh</strong></span>
+       <span class="bar" style="background:#1E3560"><i style="width:100%"></i></span>
+       <span class="vl">${eu(tot)} €</span></div>`;
+  const ah=tot-PRECIO;
+  document.getElementById('ah-mwh').textContent=eu(ah)+' €';
+  document.getElementById('ah-pct').textContent= ah>0
+    ? 'un '+eu(ah/tot*100,0)+' % menos que por la red'
+    : 'a este precio de mercado no hay ahorro';
+}
+
+/* ---------- tabla por periodos ---------- */
+function pintaTabla(){
+  document.getElementById('tb').innerHTML=P.map((p,i)=>{
+    const c=coste(pmd,tar,i), a=c-PRECIO;
+    return `<tr>
+      <td class="pk">${p}</td>
+      <td>${eu(T[tar].atr[i])} €</td>
+      <td>${eu(T[tar].per[i]*100,0)} %</td>
+      <td>${eu(c)} €</td>
+      <td>${eu(c/1000,4)} €</td>
+      <td>${eu(PRECIO/1000,4)} €</td>
+      <td class="sv">${eu(a)} €</td>
+      <td class="sv">${a>0?eu(a/c*100,0)+' %':'—'}</td></tr>`;
+  }).join('');
+  document.getElementById('tb-note').textContent=
+    'Tarifa '+tar+' con el mercado a '+e0(pmd)+' €/MWh. P1 es punta y P6 valle; la planta genera sobre todo en P1, P2 y P6. Importes sin IVA.';
+}
+
+/* ---------- resultado principal ---------- */
+function pintaSalida(){
+  const tot=costeW(pmd,tar), ah=tot-PRECIO;
+  const asig=cons*SOLAR_SHARE*ACOPLE;
+  const anual=asig*ah;
+  const big=document.getElementById('ahorro-anual');
+  big.textContent=(anual>=0?'':'−')+e0(Math.abs(anual))+' €';
+  big.style.color = anual>=0 ? 'var(--sky-l)' : 'var(--solar)';
+  document.getElementById('c-hoy').textContent=eu(tot)+' €/MWh';
+  document.getElementById('c-asig').textContent=e0(asig)+' MWh/año';
+  document.getElementById('c-dec').textContent=(anual>=0?'':'−')+e0(Math.abs(anual*YEARS))+' €';
+}
+
+/* ---------- años reales ---------- */
+function pintaAños(){
+  const vals=HIST.map(([y,v])=>[y,v,costeW(v,'6.1TD')]);
+  const max=Math.max(...vals.map(v=>v[2]));
+  document.getElementById('years').innerHTML=vals.map(([y,v,c])=>`
+    <div class="yr">
+      <div class="lb"><b>${y}</b>OMIE ${eu(v)}</div>
+      <div class="track">
+        <div class="cost" style="width:0" data-w="${c/max*100}"><span>${eu(c,0)} €/MWh</span></div>
+        <div class="ours" style="left:${PRECIO/max*100}%"></div>
+      </div>
+    </div>`).join('');
+}
+
+/* ---------- aurora reactiva al precio ---------- */
+function aurora(){
+  const k=Math.min(1,pmd/120);
+  const a=document.getElementById('aur');
+  if(!a) return;
+  a.querySelector('.a2').style.opacity=(0.22+k*0.42).toFixed(2);
+  a.querySelector('.a3').style.opacity=(0.14+k*0.30).toFixed(2);
+}
+
+function render(){ pintaSalida(); pintaFactura(); pintaTabla(); aurora(); }
+
+/* ---------- controles ---------- */
+const b61=document.getElementById('t61'), b30=document.getElementById('t30');
+function setTar(t){
+  tar=t;
+  b61.setAttribute('aria-pressed', t==='6.1TD');
+  b30.setAttribute('aria-pressed', t==='3.0TD');
+  render();
+}
+b61.onclick=()=>setTar('6.1TD');
+b30.onclick=()=>setTar('3.0TD');
+
+const sl=document.getElementById('omie');
+sl.oninput=e=>{ pmd=+e.target.value; document.getElementById('omie-v').textContent=e0(pmd)+' €/MWh'; render(); };
+document.querySelectorAll('.ticks button').forEach(b=>b.onclick=()=>{
+  pmd=+b.dataset.o; sl.value=pmd;
+  document.getElementById('omie-v').textContent=e0(pmd)+' €/MWh'; render();
+});
+document.getElementById('cons').oninput=e=>{
+  const v=parseFloat(e.target.value);
+  cons=(isFinite(v)&&v>0)?v:0; pintaSalida();
+};
+
+/* ---------- formulario -> correo ---------- */
+document.getElementById('f').addEventListener('submit',ev=>{
+  ev.preventDefault();
+  const g=id=>document.getElementById(id).value.trim();
+  const tot=costeW(pmd,tar), asig=cons*SOLAR_SHARE*ACOPLE, anual=asig*(tot-PRECIO);
+  const cuerpo=
+`Empresa: ${g('emp')}
+Contacto: ${g('per')}
+Correo: ${g('mail')}
+Teléfono: ${g('tel')||'—'}
+
+Simulación realizada en la web:
+- Tarifa de acceso: ${tar}
+- Consumo anual: ${e0(cons)} MWh
+- Precio de mercado usado: ${e0(pmd)} €/MWh
+- Coste estimado por la red: ${eu(tot)} €/MWh
+- Precio Apolo Energies: ${eu(PRECIO)} €/MWh
+- Energía asignable estimada: ${e0(asig)} MWh/año
+- Ahorro anual estimado: ${e0(anual)} €
+
+Adjunto mi última factura eléctrica para el cálculo exacto.`;
+  window.location.href='mailto:info@apoloenergies.es'
+    +'?subject='+encodeURIComponent('Autoconsumo colectivo FV El Mugrón — '+(g('emp')||'solicitud de cálculo'))
+    +'&body='+encodeURIComponent(cuerpo);
+});
+
+/* ---------- reveal + barras ---------- */
+const io=new IntersectionObserver(es=>es.forEach(e=>{
+  if(!e.isIntersecting) return;
+  e.target.classList.add('in');
+  e.target.querySelectorAll?.('.cost').forEach(c=>{
+    requestAnimationFrame(()=>{ c.style.width=c.dataset.w+'%'; });
+  });
+  io.unobserve(e.target);
+}),{threshold:.15});
+document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+
+addEventListener('scroll',()=>{
+  document.getElementById('hd').classList.toggle('on',scrollY>20);
+},{passive:true});
+
+pintaAños();
+render();
+</script>
+</body>
+</html>
