@@ -5,10 +5,6 @@ const IVA_DEFAULT = 0.21;
 // consumidores. Fallback solo si el OCR no captura la tasa de la factura.
 const IH_TASA_DEFAULT = 0.00234;
 
-// Prorrateo a mes fiscal (30 días) para comparar clientes con ciclos distintos:
-// facturas Nedgia son bimestrales, otras mensuales, otras trimestrales.
-const DIAS_POR_MES = 30;
-
 const round = (n: number, d = 2) =>
   Math.round(n * Math.pow(10, d)) / Math.pow(10, d);
 
@@ -69,24 +65,29 @@ export function calcularFacturaGas(
 
   const totalActual = ocr.total && ocr.total > 0 ? round(ocr.total, 2) : 0;
 
-  const factorMensual = dias > 0 ? DIAS_POR_MES / dias : 1;
-  const totalActualMensual = round(totalActual * factorMensual, 2);
-  const totalOfertaMensual = round(totalOferta * factorMensual, 2);
+  // TODO cálculo se basa en los días REALES de la factura (no proyecta a mes ficticio).
+  // Los campos "*Mensual" se mantienen por compatibilidad con el interface pero
+  // ahora contienen el TOTAL DEL PERÍODO de la factura (66 días si es bimestral,
+  // 30 si es mensual, etc.). La UI etiqueta acordemente.
+  const totalActualMensual = totalActual;   // total del período real
+  const totalOfertaMensual = totalOferta;   // total del período real
 
-  // Ganancia Apolo = lo que se lleva sobre BOE puro. Cero cuando ambos sliders
-  // están al mínimo. Se muestra en la UI para que el colaborador ajuste hasta
-  // encontrar el punto donde gana sin perder al cliente.
-  const consumoMensualKwh    = kwhTotal * factorMensual;
-  const gananciaApoloMensual = round(margenFijoDia * DIAS_POR_MES + feeEnergiaEurKwh * consumoMensualKwh, 2);
-  const gananciaApoloAnual   = round(gananciaApoloMensual * 12, 2);
+  // Ganancia Apolo sobre BOE puro en el PERÍODO real de la factura.
+  const gananciaApoloMensual = round(margenFijoDia * dias + feeEnergiaEurKwh * kwhTotal, 2);
 
-  const ahorroEstudio   = round(totalActualMensual - totalOfertaMensual, 2);
+  const ahorroEstudio   = round(totalActual - totalOferta, 2);   // ahorro del período
   const consumoAnualKwh = annualKwhOverride && annualKwhOverride > 0
     ? annualKwhOverride
     : (dias > 0 ? kwhTotal * (365 / dias) : kwhTotal);
-  const ahorroXAnio   = round(ahorroEstudio * 12, 2);
-  const ahorroPorcent = totalActualMensual > 0
-    ? round((ahorroEstudio / totalActualMensual) * 100, 2)
+
+  // Escala a año calendario (365 días) desde el período real, sin pasar por
+  // un "mes de 30 días" que introducía un sesgo de ~1.4% (12×30=360 ≠ 365).
+  const escalaAnual        = dias > 0 ? 365 / dias : 12;
+  const ahorroXAnio        = round(ahorroEstudio * escalaAnual, 2);
+  const gananciaApoloAnual = round(gananciaApoloMensual * escalaAnual, 2);
+
+  const ahorroPorcent = totalActual > 0
+    ? round((ahorroEstudio / totalActual) * 100, 2)
     : 0;
 
   return {
