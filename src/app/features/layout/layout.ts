@@ -7,7 +7,7 @@ import { HttpClient } from '@angular/common/http';
 import { ApoloSidebar, SidebarChildItem, SidebarSection } from '@apolo-energies/sidebar';
 import { ApoloHeader, HeaderWelcomeContent, HeaderActionLink, UserMenuItem } from '@apolo-energies/header';
 import { AuthService } from '@apolo-energies/auth';
-import { ArrowDownBoxIcon, chevronDownIcon, chevronRightIcon, CircleIcon, CompassIcon, HomeIcon,InfoIcon, LogoutIcon, NoteIcon, PieIcon, SettingsIcon, StarIcon, SupportIcon, UiIconSource, UserCircleIcon, UserIcon } from '@apolo-energies/icons';
+import { ArrowDownBoxIcon, chevronDownIcon, chevronRightIcon, CircleIcon, CompassIcon, InfoIcon, LogoutIcon, NoteIcon, PieIcon, SettingsIcon, StarIcon, SupportIcon, UiIconSource, UserCircleIcon, UserIcon } from '@apolo-energies/icons';
 import { getUserRoles } from '../../utils/auth.utils';
 import { environment } from '../../../environments/environment';
 import { RefreshTokenService } from '../../services/refresh-token.service';
@@ -186,18 +186,22 @@ export class Layout {
     const ajustesChildren: SidebarChildItem[] = isColaborador && isApolo
       ? [
           { title: 'Comerciales', url: '/dashboard/settings/my-comercials',       access: ['settings.colaborador:view'] },
-          { title: 'Comisiones',    url: '/dashboard/settings/sub-user-commissions', access: ['settings.colaborador:view'] },
+          { title: 'Comisiones',  url: '/dashboard/settings/sub-user-commissions', access: ['settings.colaborador:view'] },
         ]
       : [
           { title: 'Usuarios',   url: '/dashboard/settings/users',      access: ['settings.users:view'] },
           { title: 'Comisión',   url: '/dashboard/settings/commission', access: ['settings.commission:view'] },
           { title: 'Plantillas', url: '/dashboard/templates',           access: ['templates:view'] },
           { title: 'Tarifas',    url: '/dashboard/tariffs',             access: ['support:view'] },
-          { title: 'Gas · Tramos de acceso', url: '/dashboard/gas/access-tariffs',    access: ['analytics:view'] },
-          { title: 'Gas · Parámetros',       url: '/dashboard/gas/regulatory-params', access: ['analytics:view'] },
-          { title: 'Gas · Productos',        url: '/dashboard/gas/products',          access: ['analytics:view'] },
-          { title:'Landings Personalizadas', url: '/dashboard/landings', access: ['analytics:view'] },
-
+          // Landings y Gas regulatorio son Master-only; comparten analytics:view con Analítica
+          // pero no deben aparecerle al Colaborador (defensa en profundidad para el edge case
+          // Colaborador en whitelabel no-Apolo, donde el ternario externo no lo excluye).
+          ...(isColaborador ? [] : [
+            { title: 'Landings',         url: '/dashboard/landings',              access: ['analytics:view'] },
+            { title: 'Gas · Tramos',     url: '/dashboard/gas/access-tariffs',    access: ['analytics:view'] },
+            { title: 'Gas · Parámetros', url: '/dashboard/gas/regulatory-params', access: ['analytics:view'] },
+            { title: 'Gas · Productos',  url: '/dashboard/gas/products',          access: ['analytics:view'] },
+          ]),
         ];
 
     const sections: SidebarSection[] = [
@@ -284,26 +288,6 @@ export class Layout {
               { title: 'Gas', url: '/dashboard/sips/gas', access: ['sips:view'] },
             ],
           },
-          // Landings y Gas regulatorio son Master-only; comparten analytics:view con Analítica
-          // pero no deben aparecerle al Colaborador.
-          ...(isColaborador ? [] : [
-            {
-              title: 'Landings personalizadas',
-              icon: { type: 'apolo' as const, icon: HomeIcon, size: 20 },
-              url: '/dashboard/landings',
-              access: ['analytics:view'],
-            },
-            {
-              title: 'Gas regulatorio',
-              icon: { type: 'apolo' as const, icon: NoteIcon, size: 20 },
-              access: ['analytics:view'],
-              children: [
-                { title: 'Tramos de acceso', url: '/dashboard/gas/access-tariffs',    access: ['analytics:view'] },
-                { title: 'Parámetros',       url: '/dashboard/gas/regulatory-params', access: ['analytics:view'] },
-                { title: 'Productos',        url: '/dashboard/gas/products',          access: ['analytics:view'] },
-              ],
-            },
-          ]),
         ],
       },
       {
