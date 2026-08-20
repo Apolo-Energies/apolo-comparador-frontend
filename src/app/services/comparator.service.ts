@@ -91,8 +91,8 @@ export class ComparatorService {
     return this.http.post<BatchFileResult[]>(`${environment.apiUrl}/files/batch-process`, form);
   }
 
-  calculate(form: ComparadorFormValue, ocr: OcrResult): ComparadorResult {
-    return calcularFactura(form, ocr, this.tariffs());
+  calculate(form: ComparadorFormValue, ocr: OcrResult, annualKwhOverride?: number): ComparadorResult {
+    return calcularFactura(form, ocr, this.tariffs(), annualKwhOverride);
   }
 
   /**
@@ -105,6 +105,7 @@ export class ComparatorService {
     result: ComparadorResult,
     ocr: OcrResult,
     fileId: string,
+    annualKwhOverride?: number,
   ): ReportPayload {
     const dias = result.dias ?? ocr.periodo_facturacion?.numero_dias ?? 0;
     const alquilerEquipo = ocr.equipos?.importe ?? 0;
@@ -150,7 +151,11 @@ export class ComparatorService {
     ];
 
     const totalKwhFactura = ocr.energia?.reduce((a, e) => a + (e.activa?.kwh ?? 0), 0) ?? 0;
-    const consumoAnual = dias > 0 ? Math.round(totalKwhFactura * (365 / dias)) : 0;
+    // Preferir SIPS (histórico real) sobre la extrapolación de la factura, que sesga
+    // por estacionalidad. Mismo fallback que calcularFactura → resolveAnnualKwh.
+    const consumoAnual = annualKwhOverride && annualKwhOverride > 0
+      ? Math.round(annualKwhOverride)
+      : (dias > 0 ? Math.round(totalKwhFactura * (365 / dias)) : 0);
 
     const payload = {
       fileId,
@@ -217,8 +222,9 @@ export class ComparatorService {
     ocr: OcrResult,
     fileId: string,
     targetUserId?: string,
+    annualKwhOverride?: number,
   ): Observable<SaveComparisonResponse> {
-    const snapshot = this.buildReportPayload(form, result, ocr, fileId);
+    const snapshot = this.buildReportPayload(form, result, ocr, fileId, annualKwhOverride);
     const cliente = ocr.cliente;
     const direccionParts = [
       cliente?.direccion?.tipo_via,
@@ -267,10 +273,11 @@ export class ComparatorService {
     ocr: OcrResult | null,
     fileId: string,
     targetUserId?: string,
+    annualKwhOverride?: number,
   ): Observable<SaveComparisonResponse> | undefined {
     if (!result || !ocr) return undefined;
 
-    return this.saveComparison(form, result, ocr, fileId, targetUserId).pipe(
+    return this.saveComparison(form, result, ocr, fileId, targetUserId, annualKwhOverride).pipe(
       tap(saved => {
         this.downloadPdfFromHistory(saved.id).subscribe(blob => {
           this.triggerBlobDownload(blob, `Comparacion_${saved.id}.pdf`);
@@ -284,9 +291,10 @@ export class ComparatorService {
     result: ComparadorResult | null,
     ocr: OcrResult | null,
     fileId: string,
+    annualKwhOverride?: number,
   ) {
     if (!result || !ocr) return;
-    const payload = this.buildReportPayload(form, result, ocr, fileId);
+    const payload = this.buildReportPayload(form, result, ocr, fileId, annualKwhOverride);
 
     return this.http.post(
       `${environment.apiUrl}/provider/excel`, payload, { responseType: 'blob' }
@@ -306,9 +314,9 @@ export class ComparatorService {
    * @deprecated Use saveAndDownloadPdf for PDFs and downloadExcel for Excel.
    * Mantenido temporalmente para que callers existentes no se rompan.
    */
-  download(type: 'pdf' | 'excel', form: ComparadorFormValue, result: ComparadorResult | null, ocr: OcrResult | null, fileId: string, targetUserId?: string) {
-    if (type === 'excel') return this.downloadExcel(form, result, ocr, fileId);
-    return this.saveAndDownloadPdf(form, result, ocr, fileId, targetUserId)?.subscribe();
+  download(type: 'pdf' | 'excel', form: ComparadorFormValue, result: ComparadorResult | null, ocr: OcrResult | null, fileId: string, targetUserId?: string, annualKwhOverride?: number) {
+    if (type === 'excel') return this.downloadExcel(form, result, ocr, fileId, annualKwhOverride);
+    return this.saveAndDownloadPdf(form, result, ocr, fileId, targetUserId, annualKwhOverride)?.subscribe();
   }
 
   private triggerBlobDownload(blob: Blob, filename: string) {
