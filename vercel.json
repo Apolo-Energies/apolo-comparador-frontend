@@ -3,6 +3,7 @@
   "installCommand": "NODE_ENV=development npm install",
   "outputDirectory": "dist/r-comparator-frontend/browser",
   "rewrites": [
+    { "source": "/apolo-mugron-landing", "destination": "/apolo-mugron-landing.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

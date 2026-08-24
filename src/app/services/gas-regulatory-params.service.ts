@@ -6,6 +6,7 @@ import {
   CloseGasRegulatoryParamsPayload,
   CreateGasRegulatoryParamsPayload,
   GasRegulatoryParams,
+  UpdateGasRegulatoryParamsPayload,
 } from '../entities/gas-regulatory-params.model';
 
 @Injectable({ providedIn: 'root' })
@@ -33,5 +34,9 @@ export class GasRegulatoryParamsService {
 
   close(id: number, payload: CloseGasRegulatoryParamsPayload): Observable<void> {
     return this.http.post<void>(`${this.base}/${id}/close`, payload);
+  }
+
+  update(id: number, payload: UpdateGasRegulatoryParamsPayload): Observable<GasRegulatoryParams> {
+    return this.http.put<GasRegulatoryParams>(`${this.base}/${id}`, payload);
   }
 }

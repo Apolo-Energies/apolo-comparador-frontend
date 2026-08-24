@@ -99,6 +99,22 @@ export const DASHBOARD_ROUTES: Routes = [
         ],
       },
 
+      // Master only — Apolo Energies external portal
+      {
+        path: 'energies',
+        canActivate: [permissionGuard],
+        data: { roles: ['Master'] },
+        children: [
+          { path: '', redirectTo: 'invoices', pathMatch: 'full' },
+          {
+            path: 'invoices',
+            loadComponent: () =>
+              import('./pages/energies/invoices-page')
+                .then(m => m.EnergiesInvoicesPageComponent),
+          },
+        ],
+      },
+
       // Comercial, Master — Mis clientes (oculto temporalmente para Colaborador/Colaborador - Referenciador)
       {
         path: 'my-clients',
@@ -207,8 +223,8 @@ export const DASHBOARD_ROUTES: Routes = [
         canActivate: [permissionGuard],
         data: { roles: ['Master'] },
         loadComponent: () =>
-          import('./pages/gas-products/gas-products-page')
-            .then(m => m.GasProductsPageComponent),
+          import('./pages/gas-apolo-products/gas-apolo-products-page')
+            .then(m => m.GasApoloProductsPageComponent),
       },
       {
         path: 'gas/quixotic-contracts',

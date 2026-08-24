@@ -1,11 +1,9 @@
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AuthService } from '@apolo-energies/auth';
-import { ComparatorGasService } from '../../../../services/comparator-gas.service';
-import { CommissionService } from '../../../../services/commission.service';
+import { ApoloGasPricing, ComparatorGasService } from '../../../../services/comparator-gas.service';
 import { GasSipsService } from '../../../../services/gas-sips.service';
 import { UserService } from '../../../../services/user.service';
-import { GasProductService } from '../../../../services/gas-product.service';
 import { ComparatorUploadComponent } from '../comparator/components/comparator-upload/comparator-upload';
 import { ComparatorGasModalComponent } from './components/comparator-gas-modal/comparator-gas-modal';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
@@ -13,13 +11,11 @@ import { BrandLoaderComponent } from '../../../../shared/components/brand-loader
 import { ComparadorCompareEvent, ComparadorUser } from '../comparator/comparator.models';
 import {
   GasDownloadEvent,
-  GasFormValue,
   GasOcrResult,
-  GasProductsByTariff,
   GasResult,
 } from './comparator-gas.models';
-import { calcularFacturaGas, DEFAULT_GAS_PRODUCTS, getComisionBaseGas } from './gas-calculator.helpers';
-import { GasProductType } from '../../../../entities/gas-product.model';
+import { calcularFacturaGas, CalcularFacturaGasOverrides } from './gas-calculator.helpers';
+import { GasModalOverrides } from './components/comparator-gas-modal/comparator-gas-modal';
 import { environment } from '../../../../../environments/environment';
 import { getUserRoles } from '../../../../utils/auth.utils';
 
@@ -36,83 +32,41 @@ import { getUserRoles } from '../../../../utils/auth.utils';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ComparatorGas {
-  private readonly auth              = inject(AuthService);
-  private readonly gasService        = inject(ComparatorGasService);
-  private readonly commissionService = inject(CommissionService);
-  private readonly sipsService       = inject(GasSipsService);
-  private readonly userService       = inject(UserService);
-  private readonly productService    = inject(GasProductService);
-  private readonly platformId        = inject(PLATFORM_ID);
+  private readonly auth        = inject(AuthService);
+  private readonly gasService  = inject(ComparatorGasService);
+  private readonly sipsService = inject(GasSipsService);
+  private readonly userService = inject(UserService);
+  private readonly platformId  = inject(PLATFORM_ID);
 
-  // ── state ──────────────────────────────────────────────────────────────────
-  readonly isApolo  = environment.clientName === 'apolo';
-  readonly loading  = signal(false);
+  readonly isApolo   = environment.clientName === 'apolo';
+  readonly loading   = signal(false);
   readonly modalOpen = signal(false);
-  readonly ocrData  = signal<GasOcrResult | null>(null);
-  readonly result   = signal<GasResult | null>(null);
-  readonly fileId   = signal<string>('');
-  readonly errorMsg = signal<string | null>(null);
-  readonly comisionBase = signal(0);
+  readonly ocrData   = signal<GasOcrResult | null>(null);
+  readonly result    = signal<GasResult | null>(null);
+  readonly fileId    = signal<string>('');
+  readonly errorMsg  = signal<string | null>(null);
+  /** Si /gas/comparison falla, mostramos error en modal en vez de fallback estático. */
+  readonly pricingError   = signal<string | null>(null);
+  readonly pricingInfo    = signal<ApoloGasPricing | null>(null);
+  readonly overrides      = signal<CalcularFacturaGasOverrides | undefined>(undefined);
+  /** Override MIBGAS del input del modal. null = usa el del admin/backend. */
+  readonly mibgasOverride = signal<number | null>(null);
   readonly selectedUserId = signal<string>('');
   readonly users          = signal<ComparadorUser[]>([]);
   readonly usersLoading   = signal(false);
   /**
-   * Consumo anual real del CUPS traído del SIPS (backend `POST /sips-gas`).
-   * En gas es preferible a la proyección `kwh × 365/dias` por la estacionalidad
-   * (invierno consume ~5× lo del verano). Fallback a proyección si el CUPS no
-   * está en el SIPS o `annualKwh = 0`.
+   * Consumo anual del CUPS vía SIPS (CNMC). Preferido sobre la proyección de la
+   * factura por la estacionalidad del gas (invierno ~5× verano). Fallback a
+   * proyección kwh × 365/dias si el CUPS no está en SIPS.
    */
   readonly sipsAnnualKwh = signal(0);
-  /** Último form emitido por el modal — permite recalcular cuando llega el SIPS. */
-  private readonly lastForm = signal<GasFormValue | null>(null);
 
-  // ── roles ──────────────────────────────────────────────────────────────────
   readonly currentUser = this.auth.currentUser;
   readonly isMaster    = computed(() => getUserRoles(this.currentUser()).includes('Master'));
 
-  /** Productos cargados del backend (admin en /dashboard/gas/products). Si la
-      request falla o devuelve vacio, cae al hardcoded para no romper el comparador. */
-  private readonly remoteProducts = signal<GasProductsByTariff | null>(null);
-  readonly productsByTariff = computed<GasProductsByTariff>(() =>
-    this.remoteProducts() ?? DEFAULT_GAS_PRODUCTS);
-
-  // Derivado de la flag feeLocked de cada producto (admin la setea en /dashboard/gas/products).
-  readonly feeLockedProducts = computed<string[]>(() => {
-    const grouped = this.productsByTariff();
-    const names = new Set<string>();
-    for (const tariff of Object.keys(grouped)) {
-      for (const p of grouped[tariff]) {
-        if (p.feeLocked) names.add(p.name);
-      }
-    }
-    return Array.from(names);
-  });
-
   constructor() {
     if (!isPlatformBrowser(this.platformId)) return;
-    const userId = this.auth.currentUser()?.id;
-    if (userId) this.commissionService.loadForUser(String(userId));
     if (this.isMaster()) this.loadUsers();
-    this.loadProducts();
-  }
-
-  private loadProducts(): void {
-    this.productService.list(undefined, true).subscribe({
-      next: products => {
-        const grouped: GasProductsByTariff = {};
-        for (const p of products) {
-          (grouped[p.tariffCode] ??= []).push({
-            name: p.name,
-            type: p.type === GasProductType.Indexed ? 'Indexed' : 'Fixed',
-            precioEnergia: p.precioEnergia,
-            precioFijoDia: p.precioFijoDia,
-            feeLocked: p.feeLocked,
-          });
-        }
-        if (Object.keys(grouped).length > 0) this.remoteProducts.set(grouped);
-      },
-      error: () => { /* fallback al hardcoded sin romper la UI */ },
-    });
   }
 
   private loadUsers(): void {
@@ -132,15 +86,16 @@ export class ComparatorGas {
     });
   }
 
-  // ── handlers ───────────────────────────────────────────────────────────────
-
   onCompare(event: ComparadorCompareEvent): void {
     this.loading.set(true);
     this.errorMsg.set(null);
+    this.pricingError.set(null);
+    this.pricingInfo.set(null);
+    this.overrides.set(undefined);
+    this.mibgasOverride.set(null);
     this.result.set(null);
     this.ocrData.set(null);
     this.sipsAnnualKwh.set(0);
-    this.lastForm.set(null);
 
     const userId = this.isMaster() ? event.userId : '';
     this.selectedUserId.set(userId);
@@ -152,6 +107,7 @@ export class ComparatorGas {
         this.loading.set(false);
         this.modalOpen.set(true);
         this.loadSipsAnnualKwh(res.ocrData.cliente?.cups);
+        this.recompute();
       },
       error: (err) => {
         this.errorMsg.set(err?.error?.message ?? err?.message ?? 'Error al procesar la factura.');
@@ -160,46 +116,85 @@ export class ComparatorGas {
     });
   }
 
-  /**
-   * Consulta el SIPS con el CUPS del OCR y guarda el consumo anual real.
-   * Si el CUPS no está en el SIPS o la request falla, queda en 0 y el helper
-   * cae al fallback (proyección de la factura). Al llegar el dato se recalcula
-   * el resultado con el último form emitido por el modal.
-   */
+  /** Al llegar el SIPS, recomputa: cambia el annualKwh y con eso el bracket RL. */
   private loadSipsAnnualKwh(cups: string | undefined): void {
     if (!cups) return;
     this.sipsService.getByCups(cups).subscribe({
       next: (sips) => {
         this.sipsAnnualKwh.set(sips.annualKwh ?? 0);
-        const form = this.lastForm();
-        if (form) this.onFormChange(form);
+        this.recompute();
       },
       error: () => this.sipsAnnualKwh.set(0),
     });
   }
 
-  onFormChange(form: GasFormValue): void {
+  private recompute(): void {
     const ocr = this.ocrData();
     if (!ocr) return;
 
-    this.lastForm.set(form);
+    const sipsAnnual = this.sipsAnnualKwh();
+    const kwhTotal   = ocr.consumo?.kwh_total ?? 0;
+    const dias       = ocr.periodo_facturacion?.numero_dias ?? 0;
+    const annualKwh  = sipsAnnual > 0
+      ? sipsAnnual
+      : (dias > 0 ? kwhTotal * (365 / dias) : kwhTotal);
 
-    const selectedUser  = this.isMaster()
-      ? this.users().find(u => u.id === this.selectedUserId())
-      : undefined;
-    const commissionPct = this.isMaster()
-      ? (selectedUser?.commissionPct ?? undefined)
-      : (this.commissionService.commission() || undefined);
+    if (annualKwh <= 0) {
+      this.pricingError.set('No se pudo determinar el consumo anual de la factura.');
+      this.result.set(null);
+      return;
+    }
 
-    const base = getComisionBaseGas(form.producto, form.tariff, this.productsByTariff(), commissionPct);
-    this.comisionBase.set(base);
-
-    const correctedForm: GasFormValue = { ...form, comisionEnergia: base };
-    const annualKwh = this.sipsAnnualKwh() || undefined;
-    this.result.set(calcularFacturaGas(correctedForm, ocr, this.productsByTariff(), annualKwh));
+    this.gasService.getApoloPricing(annualKwh, this.mibgasOverride()).subscribe({
+      next: (pricing) => {
+        if (!pricing) {
+          this.pricingError.set('No se pudo calcular el precio Apolo ahora mismo. Reintenta en unos minutos o contacta a soporte.');
+          this.pricingInfo.set(null);
+          this.result.set(null);
+          return;
+        }
+        this.pricingError.set(null);
+        this.pricingInfo.set(pricing);
+        this.result.set(calcularFacturaGas(ocr, pricing, annualKwh, this.overrides()));
+      },
+      error: () => {
+        this.pricingError.set('No se pudo calcular el precio Apolo ahora mismo. Reintenta en unos minutos o contacta a soporte.');
+        this.pricingInfo.set(null);
+        this.result.set(null);
+      },
+    });
   }
 
   onDownload(event: GasDownloadEvent): void {
-    this.gasService.download(event.type, event.formValue, this.result(), this.ocrData(), this.fileId());
+    this.gasService.download(event.type, this.result(), this.ocrData(), this.fileId());
+  }
+
+  // MIBGAS override requiere ida al backend (afecta al pricing base). Los otros
+  // sliders (margen fijo, fee energía) solo aplican overrides locales sobre el
+  // pricing ya cacheado — más rápido y sin costo de red.
+  onOverridesChange(overrides: GasModalOverrides): void {
+    this.overrides.set({
+      fijoMarginPct:    overrides.fijoMarginPct,
+      feeEnergiaEurMwh: overrides.feeEnergiaEurMwh,
+    });
+    const mibgasChanged = overrides.mibgasOverride !== this.mibgasOverride();
+    this.mibgasOverride.set(overrides.mibgasOverride);
+
+    const ocr = this.ocrData();
+    if (!ocr) return;
+
+    if (mibgasChanged) {
+      this.recompute();
+      return;
+    }
+
+    const pricing = this.pricingInfo();
+    if (!pricing) return;
+    const annualKwh = this.sipsAnnualKwh() > 0
+      ? this.sipsAnnualKwh()
+      : ((ocr.periodo_facturacion?.numero_dias ?? 0) > 0
+          ? (ocr.consumo?.kwh_total ?? 0) * (365 / (ocr.periodo_facturacion?.numero_dias ?? 30))
+          : (ocr.consumo?.kwh_total ?? 0));
+    this.result.set(calcularFacturaGas(ocr, pricing, annualKwh, this.overrides()));
   }
 }

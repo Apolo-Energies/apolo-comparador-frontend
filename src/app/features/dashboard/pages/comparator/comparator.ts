@@ -7,6 +7,7 @@ import { ComparatorService } from '../../../../services/comparator.service';
 import { CommissionService } from '../../../../services/commission.service';
 import { UserService } from '../../../../services/user.service';
 import { SubUsersService } from '../../../../services/sub-users.service';
+import { SipsService, sumAnnualKwh } from '../../../../services/sips.service';
 import { ComparatorUploadComponent } from './components/comparator-upload/comparator-upload';
 import { ComparatorModalComponent } from './components/comparator-modal/comparator-modal';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
@@ -35,6 +36,7 @@ export class Comparator {
   private commissionService = inject(CommissionService);
   private userService       = inject(UserService);
   private subUsersService   = inject(SubUsersService);
+  private sipsService       = inject(SipsService);
   private platformId        = inject(PLATFORM_ID);
 
   constructor() {
@@ -72,6 +74,14 @@ export class Comparator {
   readonly comisionBase   = signal(0);
   readonly subUserPoolPct = signal<number | null>(null);
   readonly users          = signal<ComparadorUser[]>([]);
+  /**
+   * Consumo anual del CUPS vía SIPS (histórico real 12 meses). Preferido sobre la
+   * extrapolación de la factura porque una factura de invierno/verano sesga el anual
+   * hasta ±50%. Fallback a extrapolación (kwh × 365/dias) si el CUPS no está en SIPS.
+   */
+  readonly sipsAnnualKwh  = signal(0);
+  /** Último form emitido por el modal — permite recomputar si SIPS llega después. */
+  private readonly lastForm = signal<ComparadorFormValue | null>(null);
 
   // ── computed roles ─────────────────────────────────────────────────────────
 
@@ -118,6 +128,8 @@ export class Comparator {
     this.loading.set(true);
     this.result.set(null);
     this.ocrResult.set(null);
+    this.sipsAnnualKwh.set(0);
+    this.lastForm.set(null);
 
     const selectedId = this.isMaster() ? (event.userId || '') : '';
     this.selectedUserId.set(selectedId);
@@ -129,8 +141,26 @@ export class Comparator {
         this.ocrResult.set(res.ocrData);
         this.loading.set(false);
         this.modalOpen.set(true);
+        this.loadSipsAnnualKwh(res.ocrData.cliente?.cups);
       },
       error: () => this.loading.set(false),
+    });
+  }
+
+  /**
+   * Consulta SIPS por CUPS y guarda el consumo anual real (suma últimos 12 meses).
+   * Si el modal ya empezó a emitir formValues, recomputa con el nuevo dato para que
+   * ahorro anual, comisión y PDF queden consistentes.
+   */
+  private loadSipsAnnualKwh(cups: string | undefined): void {
+    if (!cups) return;
+    this.sipsService.getByCups(cups).subscribe({
+      next: (sips) => {
+        this.sipsAnnualKwh.set(sumAnnualKwh(sips.consumos));
+        const form = this.lastForm();
+        if (form) this.onFormChange(form);
+      },
+      error: () => this.sipsAnnualKwh.set(0),
     });
   }
 
@@ -150,7 +180,8 @@ export class Comparator {
       ? form
       : { ...form, comisionEnergia: base };
 
-    const calculated = this.comparatorService.calculate(correctedForm, ocr);
+    this.lastForm.set(correctedForm);
+    const calculated = this.comparatorService.calculate(correctedForm, ocr, this.sipsAnnualKwh());
 
     // Sub-user: scale the full commission (energy + potencia) by their pool percentage
     const poolPct = this.subUserPoolPct();
@@ -170,6 +201,7 @@ export class Comparator {
       this.ocrResult(),
       this.fileId(),
       targetUserId,
+      this.sipsAnnualKwh(),
     );
   }
 

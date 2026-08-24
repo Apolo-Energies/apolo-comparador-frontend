@@ -43,8 +43,6 @@ export class GasAccessTariffsPageComponent {
 
   readonly starIcon: UiIconSource = { type: 'apolo', icon: StarIcon, size: 16 };
 
-  readonly visibleRows = computed(() => this.rows());
-
   readonly canSubmit = computed(() => {
     const mode = this.dialogMode();
     const f = this.form();

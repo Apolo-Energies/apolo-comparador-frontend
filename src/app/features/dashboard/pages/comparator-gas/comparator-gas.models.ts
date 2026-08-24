@@ -188,44 +188,35 @@ export interface GasUploadResponse {
   ocrData:       GasOcrResult;
 }
 
-// ── Formulario, productos y resultado del comparador ─────────────────────────
-
-export interface GasFormValue {
-  tariff:          string;  // R1..R6 o RL1..RL6
-  producto:        string;
-  feeEnergia:      number;  // €/MWh (similar a luz)
-  feeFijo:         number;  // €/día sobre el término fijo
-  comisionEnergia: number;  // comisión comercial (fija para snap o pct)
-}
-
-export interface GasProduct {
-  name:          string;
-  type:          'Fixed' | 'Indexed';
-  precioEnergia: number;    // €/kWh base
-  precioFijoDia: number;    // €/día base (término fijo)
-  feeLocked:     boolean;   // si true, el comparador bloquea el fee
-}
-
-export type GasProductsByTariff = Record<string, GasProduct[]>;
+// ── Resultado del comparador ────────────────────────────────────────────────
 
 export interface GasResult {
-  comision:            number;
-  ahorroEstudio:       number;   // ahorro mensual
-  ahorroXAnio:         number;   // ahorro anualizado
+  /** Ahorro cliente €/mes (totalActualMensual − totalOfertaMensual). Negativo = Apolo pierde. */
+  ahorroEstudio:       number;
+  ahorroXAnio:         number;
   ahorro_porcent:      number;
-  precioEnergiaOferta: number;   // €/kWh aplicado
-  precioFijoOferta:    number;   // €/día aplicado
+  /** €/kWh Apolo con overrides aplicados — listo para facturar al cliente. */
+  precioEnergiaOferta: number;
+  /** €/día Apolo con overrides aplicados. */
+  precioFijoOferta:    number;
+  /** €/día peaje BOE puro — sirve para mostrar el desglose (BOE + margen). */
+  precioFijoBoeDia:    number;
+  margenFijoDia:       number;
+  /** Ground truth: total impreso en la factura del cliente por su período real. */
   totalActual:         number;
+  /** Total Apolo reconstruido para el mismo período que la factura del cliente. */
   totalOferta:         number;
+  /** Prorrateados a 30 días para comparar clientes con ciclos distintos. */
+  totalActualMensual:  number;
+  totalOfertaMensual:  number;
+  /** Lo que Apolo se lleva por encima del BOE puro. 0 si ambos sliders al mínimo. */
+  gananciaApoloMensual: number;
+  gananciaApoloAnual:   number;
   baseIvaOferta:       number;
   ivaImporteOferta:    number;
   dias:                number;
   kwhTotal:            number;
-  /**
-   * Consumo anual efectivo usado en el cálculo de comisión y proyecciones.
-   * Origen: SIPS por CUPS si estaba disponible; si no, proyección `kwh × 365/dias`.
-   * Se expone para que el reporte descargado use el mismo valor que se muestra en el modal.
-   */
+  /** SIPS si disponible, si no proyección kwh × 365/dias. Usado en el reporte descargado. */
   consumoAnualKwh:     number;
 }
 
@@ -235,6 +226,5 @@ export interface GasCompareEvent {
 }
 
 export interface GasDownloadEvent {
-  type:      'pdf' | 'excel';
-  formValue: GasFormValue;
+  type: 'pdf' | 'excel';
 }

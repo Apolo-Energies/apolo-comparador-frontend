@@ -1,0 +1,100 @@
+<div class="p-6 space-y-6">
+  <header>
+    <h1 class="text-2xl font-bold text-foreground">Productos gas Apolo</h1>
+    <p class="text-sm text-muted-foreground">
+      Productos comerciales que Apolo ofrece en gas. Hoy hay uno solo (Indexado, ligado a MIBGAS).
+      El margen aquí se aplica sobre la parte <strong>variable</strong> del precio (€/MWh).
+      El margen del término <strong>fijo</strong> se configura por tramo en
+      <em>Tramos de acceso</em>.
+    </p>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="rounded-md border border-red-300 bg-red-50 text-red-700 px-4 py-3 text-sm">
+      {{ errorMessage() }}
+    </div>
+  }
+
+  <div class="rounded-lg border border-border bg-card overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-muted/40 text-left">
+        <tr>
+          <th class="px-4 py-3 font-medium text-muted-foreground">Producto</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground text-right">Margen variable (€/MWh)</th>
+          <th class="px-4 py-3 font-medium text-muted-foreground text-right">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr><td colspan="3" class="px-4 py-6 text-center text-muted-foreground">Cargando…</td></tr>
+        } @else if (rows().length === 0) {
+          <tr><td colspan="3" class="px-4 py-6 text-center text-muted-foreground">Sin productos Apolo activos.</td></tr>
+        } @else {
+          @for (row of rows(); track row.productId) {
+            <tr class="border-t border-border hover:bg-muted/20">
+              <td class="px-4 py-3 text-foreground font-medium">{{ row.productName }}</td>
+              <td class="px-4 py-3 text-right text-foreground font-mono">{{ row.marginEurPerMwh }}</td>
+              <td class="px-4 py-3 text-right whitespace-nowrap space-x-3">
+                <button type="button"
+                  class="inline-flex items-center gap-1 text-xs text-primary hover:opacity-80 transition-opacity"
+                  (click)="openEditName(row)">Editar nombre</button>
+                <button type="button"
+                  class="inline-flex items-center gap-1 text-xs text-primary hover:opacity-80 transition-opacity"
+                  (click)="openEditMargin(row)">Editar margen</button>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@if (dialogOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" (click)="closeDialog()">
+    <div class="bg-card rounded-lg shadow-xl border border-border w-full max-w-md mx-4" (click)="$event.stopPropagation()">
+      <header class="px-5 py-4 border-b border-border">
+        <h2 class="text-lg font-semibold text-foreground">
+          @switch (dialogMode()) {
+            @case ('editMargin') { Editar margen variable }
+            @case ('editName')   { Editar nombre del producto }
+          }
+        </h2>
+      </header>
+
+      <div class="p-5 space-y-4">
+        @if (dialogMode() === 'editMargin') {
+          <div>
+            <label class="block text-xs font-medium text-muted-foreground mb-1">Margen (€/MWh)</label>
+            <input type="number" min="0" step="0.01"
+                   class="w-full rounded border border-border px-3 py-2 text-sm"
+                   [value]="form().marginEurPerMwh ?? ''"
+                   (input)="updateField('marginEurPerMwh', $any($event.target).valueAsNumber)" />
+            <p class="text-[10px] text-muted-foreground mt-1">
+              0 = pass-through puro (Apolo no gana margen sobre variable, solo por término fijo).
+              Compara con competidores: IGNIS 30, Naturgy 28, Endesa 26, Repsol 25, Galp 22, Gana 24 €/MWh.
+            </p>
+          </div>
+        } @else {
+          <div>
+            <label class="block text-xs font-medium text-muted-foreground mb-1">Nombre comercial</label>
+            <input type="text"
+                   class="w-full rounded border border-border px-3 py-2 text-sm"
+                   [value]="form().name"
+                   (input)="updateField('name', $any($event.target).value)" />
+            <p class="text-[10px] text-muted-foreground mt-1">
+              Este nombre se muestra al colaborador en el modal de comparativa.
+            </p>
+          </div>
+        }
+      </div>
+
+      <footer class="px-5 py-4 border-t border-border flex justify-end gap-2">
+        <ui-button label="Cancelar" variant="secondary" size="md" (click)="closeDialog()" />
+        <ui-button label="Guardar" variant="default" size="md"
+                   [disabled]="!canSubmit() || saving()"
+                   (click)="submit()" />
+      </footer>
+    </div>
+  </div>
+}

@@ -11,6 +11,14 @@ const IVA_RATE = 0.21;         // IVA 21 %
 
 const SNAP_PRODUCTS_SET = new Set(['Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi']);
 
+// Preferir SIPS (histórico real 12 meses) sobre la extrapolación de la factura,
+// que sesga por estacionalidad (una factura de invierno puede sobreestimar +50%).
+// Ver comparator.ts:loadSipsAnnualKwh y sumAnnualKwh en sips.service.ts.
+const resolveAnnualKwh = (override: number | undefined, kwhTotal: number, dias: number): number =>
+  override && override > 0
+    ? override
+    : (dias > 0 ? kwhTotal * (365 / dias) : kwhTotal);
+
 // Devuelve la fee efectiva a usar en fórmulas escalares (comisión). En modo
 // 'periods' hace media ponderada por consumo/potencia para representar de
 // forma coherente lo que realmente se cobrará al cliente.
@@ -32,7 +40,11 @@ const resolveEffectiveFeePotencia = (form: ComparadorFormValue, ocr: OcrResult):
   return weighted / totalKw;
 };
 
-const calculateComision = (form: ComparadorFormValue, ocr: OcrResult): number => {
+const calculateComision = (
+  form: ComparadorFormValue,
+  ocr: OcrResult,
+  annualKwhOverride?: number,
+): number => {
   if (!ocr.energia || !ocr.potencia) return 0;
 
   const { producto, comisionEnergia } = form;
@@ -56,7 +68,7 @@ const calculateComision = (form: ComparadorFormValue, ocr: OcrResult): number =>
   }
 
   const diasFactura        = ocr.periodo_facturacion?.numero_dias || 1;
-  const consumoAnual       = consumoPeriodo * (365 / diasFactura);
+  const consumoAnual       = resolveAnnualKwh(annualKwhOverride, consumoPeriodo, diasFactura);
   const energia            = (feeEnergia * comisionEnergia * consumoAnual) / 1000;
   const potencia           = feePotencia * coeficientePotencia * potenciaContratada * comisionEnergia;
   return round3(energia + potencia);
@@ -165,7 +177,8 @@ const calcularPotencia = (
 export const calcularFactura = (
   form: ComparadorFormValue,
   ocr: OcrResult,
-  tariffs: Tariff[]
+  tariffs: Tariff[],
+  annualKwhOverride?: number,
 ): ComparadorResult => {
   const PS = PERIOD_NUMBERS;
 
@@ -254,7 +267,7 @@ export const calcularFactura = (
   // kwhTotal: sum directly from OCR (avoids nested find; same result as periodos sum)
   const kwhTotal       = round6((ocr.energia ?? []).reduce((s, e) => s + (e.activa?.kwh ?? 0), 0));
   const diasFacturados = dias || 1;
-  const consumoAnual   = kwhTotal * (365 / diasFacturados);
+  const consumoAnual   = resolveAnnualKwh(annualKwhOverride, kwhTotal, diasFacturados);
 
   const deltaEnergia  = (kwhTotal > 0)
     ? ((totalEnergiaActual  - totalEnergia)  / kwhTotal) * consumoAnual
@@ -265,7 +278,7 @@ export const calcularFactura = (
   const ahorroAnio = (deltaEnergia + deltaPotencia + deltaOtros) * (1 + IE_RATE + IVA_RATE);
 
   return {
-    comision:       calculateComision(form, ocr),
+    comision:       calculateComision(form, ocr, annualKwhOverride),
     ahorroEstudio,
     ahorro_porcent,
     ahorroXAnio:    Number(ahorroAnio.toFixed(2)),
