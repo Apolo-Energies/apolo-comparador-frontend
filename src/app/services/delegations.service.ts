@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Delegation } from '../entities/delegation.model';
@@ -41,6 +41,13 @@ export class DelegationsService {
         { params },
       )
       .pipe(map(res => normalize(res).map(toDelegation)));
+  }
+
+  exportExcel(): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${environment.apiUrl}/energy-expert/delegations/export-excel`, {
+      responseType: 'blob',
+      observe: 'response',
+    });
   }
 }
 

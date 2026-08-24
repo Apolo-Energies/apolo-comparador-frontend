@@ -7,7 +7,7 @@ import { HttpClient } from '@angular/common/http';
 import { ApoloSidebar, SidebarChildItem, SidebarSection } from '@apolo-energies/sidebar';
 import { ApoloHeader, HeaderWelcomeContent, HeaderActionLink, UserMenuItem } from '@apolo-energies/header';
 import { AuthService } from '@apolo-energies/auth';
-import { ArrowDownBoxIcon, chevronDownIcon, chevronRightIcon, CircleIcon, CompassIcon, InfoIcon, LogoutIcon, NoteIcon, PieIcon, SettingsIcon, StarIcon, SupportIcon, UiIconSource, UserCircleIcon, UserIcon } from '@apolo-energies/icons';
+import { ArrowDownBoxIcon, chevronDownIcon, chevronRightIcon, CircleIcon, CompassIcon, HomeIcon, InfoIcon, LightningIcon, LogoutIcon, NoteIcon, PieIcon, SettingsIcon, StarIcon, SupportIcon, UiIconSource, UserCircleIcon, UserIcon } from '@apolo-energies/icons';
 import { getUserRoles } from '../../utils/auth.utils';
 import { environment } from '../../../environments/environment';
 import { RefreshTokenService } from '../../services/refresh-token.service';
@@ -249,8 +249,11 @@ export class Layout {
           ...(isApolo && environment.features.contracts ? [{
             title: 'Contratos',
             icon: { type: 'apolo' as const, icon: NoteIcon, size: 20 },
-            url: '/dashboard/contratos/contratos',
             access: ['contratos:view'],
+            children: [
+              { title: 'Luz', url: '/dashboard/contratos/contratos',       access: ['contratos:view'] },
+              { title: 'Gas', url: '/dashboard/gas/quixotic-contracts',    access: ['contratos:view'] },
+            ],
           }] : []),
           ...(environment.features.opportunities ? [{
             title: 'Oportunidades',
@@ -350,6 +353,29 @@ export class Layout {
       icon: { type: 'apolo', icon: StarIcon, className: 'text-current', size: 14, strokeWidth: 0.2 },
     } : null
   );
+
+  // Dropdown de "Alta Rápida": Luz sigue al flujo de siempre; Gas va al wizard
+  // de alta rápida Quixotic (ver gas-quixotic-contracts/alta-rapida).
+  readonly quickActionItems = signal<HeaderActionLink[] | null>(
+    environment.features.quickAction ? [
+      {
+        label: 'Luz',
+        type: 'internal',
+        url: '/dashboard/fast-discharge/data',
+        icon: { type: 'apolo', icon: LightningIcon, size: 16 },
+      },
+      {
+        label: 'Gas',
+        type: 'internal',
+        url: '/dashboard/gas/quixotic-contracts/new',
+        icon: { type: 'apolo', icon: NoteIcon, size: 16 },
+      },
+    ] : null
+  );
+
+  onQuickActionItemSelected(_item: HeaderActionLink): void {
+    // Hook para analítica si se necesita más adelante.
+  }
 
   readonly menuItems = computed<UserMenuItem[]>(() => {
     const items: UserMenuItem[] = [];

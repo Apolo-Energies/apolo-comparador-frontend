@@ -64,4 +64,18 @@ export interface AssignedClientsPageResponse {
   total:    number;
   hasMore:  boolean;
   data:     AssignedClient[];
+
+  /**
+   * Totales agregados sobre TODOS los clientes del alcance del usuario (no solo
+   * los de la página actual) — misma delegación, o todas si es Master. Opcionales
+   * porque backend aún no los devuelve; hasta que los envíe, el frontend no debe
+   * mostrarlos en vez de mostrar 0 (ver my-clients-page.ts).
+   *
+   * totalClients:   equivalente a `total` — mismo alcance, mismo número.
+   * totalContracts: suma de totalContratos de cada cliente del alcance.
+   * totalServices:  suma de servicios activos de cada cliente del alcance.
+   */
+  totalClients?:   number;
+  totalContracts?: number;
+  totalServices?:  number;
 }

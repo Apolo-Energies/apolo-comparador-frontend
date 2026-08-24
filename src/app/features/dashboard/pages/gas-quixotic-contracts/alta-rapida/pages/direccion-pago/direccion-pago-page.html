@@ -1,0 +1,96 @@
+<div class="flex items-center justify-center min-h-full px-4 py-8">
+  <div class="w-full max-w-xl bg-card border border-border rounded-lg shadow-xl px-8 py-8 space-y-6">
+
+    <div>
+      <p class="text-xl font-bold text-foreground">Dirección de facturación y pago</p>
+      <p class="text-sm text-muted-foreground">Todos estos campos son opcionales para esta prueba.</p>
+    </div>
+
+    <form (submit)="$event.preventDefault(); next()" class="space-y-5">
+
+      <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground border-b border-border pb-1">
+        Dirección de facturación
+      </p>
+
+      <div class="grid grid-cols-3 gap-4">
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">Tipo de vía</label>
+          <select [class]="selectCls" (change)="updateField('billingAddressStreetType', $any($event.target).value)">
+            @for (t of streetTypes; track t) {
+              <option [value]="t" [selected]="draft().billingAddressStreetType === t">{{ t }}</option>
+            }
+          </select>
+        </div>
+        <div class="flex flex-col gap-1 col-span-2">
+          <label class="text-sm font-medium text-muted-foreground">Calle</label>
+          <input [class]="inputCls" placeholder="Mayor"
+                 [value]="draft().billingAddressStreet" (input)="updateField('billingAddressStreet', $any($event.target).value)" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">Número</label>
+          <input [class]="inputCls" placeholder="10"
+                 [value]="draft().billingAddressNumber" (input)="updateField('billingAddressNumber', $any($event.target).value)" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">Código postal</label>
+          <input [class]="inputCls" placeholder="28001" maxlength="5"
+                 [value]="draft().billingAddressPostalCode" (input)="onCpChange($any($event.target).value)" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">Ciudad</label>
+          <input [class]="inputCls" placeholder="Madrid"
+                 [value]="draft().billingAddressCityName" (input)="updateField('billingAddressCityName', $any($event.target).value)" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">Provincia</label>
+          <div class="px-4 py-2.5 text-sm rounded-lg border bg-muted border-border text-foreground min-h-[2.6rem] flex items-center">
+            @if (loadingProvincia()) {
+              <span class="text-muted-foreground">Buscando...</span>
+            } @else if (provinceName()) {
+              <span>{{ provinceName() }}</span>
+            } @else {
+              <span class="text-muted-foreground">Introduce el CP</span>
+            }
+          </div>
+          @if (provinceError()) { <span class="text-red-500 text-xs">{{ provinceError() }}</span> }
+        </div>
+      </div>
+
+      <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground border-b border-border pb-1 pt-2">
+        Método de pago
+      </p>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">Tipo de pago</label>
+          <input [class]="inputCls" placeholder="Opcional, ej. direct_debit"
+                 [value]="draft().paymentMethodType" (input)="updateField('paymentMethodType', $any($event.target).value)" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">Nombre del banco</label>
+          <input [class]="inputCls" placeholder="Opcional"
+                 [value]="draft().bankName" (input)="updateField('bankName', $any($event.target).value)" />
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-muted-foreground">IBAN</label>
+        <input [class]="inputCls" placeholder="ES83 0182 6517 7302 0197 5760" maxlength="29"
+               [value]="draft().bankAccountNumber" (input)="onIbanInput($event)" />
+        @if (ibanError()) { <span class="text-red-500 text-xs">{{ ibanError() }}</span> }
+      </div>
+
+      <div class="border-t border-border pt-4 flex items-center justify-between">
+        <ui-button label="Volver" variant="outline" size="sm" type="button" (click)="back()" />
+        <ui-button label="Siguiente" size="sm" type="submit" [disabled]="!!ibanError()" />
+      </div>
+
+    </form>
+  </div>
+</div>

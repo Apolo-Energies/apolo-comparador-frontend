@@ -1,0 +1,86 @@
+<div class="flex items-center justify-center min-h-full px-4 py-8">
+  <div class="w-full max-w-xl bg-card border border-border rounded-lg shadow-xl px-8 py-8 space-y-6">
+
+    <div>
+      <p class="text-xl font-bold text-foreground">Producto y activación</p>
+      <p class="text-sm text-muted-foreground">
+        Sin ProductId el contrato se crea pero no facturará hasta completarlo — es el comportamiento esperado en esta prueba.
+      </p>
+    </div>
+
+    <form (submit)="$event.preventDefault(); next()" class="space-y-5">
+
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-muted-foreground">Producto (Quixotic)</label>
+        @if (loadingProducts()) {
+          <div class="px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-muted-foreground">Cargando productos...</div>
+        } @else {
+          <select [class]="selectCls" (change)="updateField('productId', $any($event.target).value)">
+            <option value="" [selected]="!draft().productId">Sin producto (opcional)</option>
+            @for (p of products(); track p.id) {
+              <option [value]="p.id" [selected]="draft().productId === p.id">{{ p.name }}</option>
+            }
+          </select>
+          @if (productsError()) { <span class="text-red-500 text-xs">No se pudo cargar el listado de productos</span> }
+        }
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">Tarifa ATR</label>
+          <select [class]="selectCls" (change)="updateField('contractAtrRate', $any($event.target).value)">
+            @for (r of atrRateOptions; track r) {
+              <option [value]="r" [selected]="draft().contractAtrRate === r">{{ r }}</option>
+            }
+          </select>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">Tipo de activación</label>
+          <select [class]="selectCls" (change)="updateField('activationType', $any($event.target).value)">
+            @for (opt of activationTypeOptions; track opt.value) {
+              <option [value]="opt.value" [selected]="draft().activationType === opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-4">
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">Qa (caudal anual, kWh/año)</label>
+          <input [class]="inputCls" type="number" placeholder="Ej. 2500"
+                 [value]="draft().contractQa" (input)="updateField('contractQa', $any($event.target).value)" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">Qd (caudal diario)</label>
+          <input [class]="inputCls" type="number" placeholder="Opcional — casi nunca se envía"
+                 [value]="draft().contractQd" (input)="updateField('contractQd', $any($event.target).value)" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">Qh (caudal horario)</label>
+          <input [class]="inputCls" type="number" placeholder="Opcional — casi nunca se envía"
+                 [value]="draft().contractQh" (input)="updateField('contractQh', $any($event.target).value)" />
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-muted-foreground">Fecha estimada de activación</label>
+        <input [class]="inputCls" type="date"
+               [value]="draft().expectedActivationDate" (input)="updateField('expectedActivationDate', $any($event.target).value)" />
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-muted-foreground">Parámetros de contrato (JSON)</label>
+        <textarea [class]="textareaCls" rows="4" placeholder='Opcional, ej. {"clave": "valor"}'
+                  [value]="draft().contractParamsJson"
+                  (input)="updateField('contractParamsJson', $any($event.target).value)"></textarea>
+        @if (contractParamsError()) { <span class="text-red-500 text-xs">{{ contractParamsError() }}</span> }
+      </div>
+
+      <div class="border-t border-border pt-4 flex items-center justify-between">
+        <ui-button label="Volver" variant="outline" size="sm" type="button" (click)="back()" />
+        <ui-button label="Siguiente" size="sm" type="submit" [disabled]="!!contractParamsError()" />
+      </div>
+
+    </form>
+  </div>
+</div>

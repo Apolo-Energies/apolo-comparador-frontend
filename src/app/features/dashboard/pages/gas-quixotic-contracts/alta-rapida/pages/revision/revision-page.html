@@ -1,0 +1,130 @@
+<ui-alert />
+
+<div class="flex items-center justify-center min-h-full px-4 py-8">
+  <div class="w-full max-w-2xl bg-card border border-border rounded-lg shadow-xl px-8 py-8 space-y-6"
+       style="max-height: 90vh; overflow-y: auto;">
+
+    @if (result(); as res) {
+      <!-- Éxito -->
+      <div class="flex flex-col items-center gap-3 text-center py-4">
+        <div class="rounded-full bg-green-100 dark:bg-green-900/40 p-4">
+          <svg class="h-10 w-10 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+          </svg>
+        </div>
+        <p class="text-lg font-semibold text-foreground">Alta rápida completada</p>
+        <p class="text-sm text-muted-foreground">Cuenta, punto de suministro y contrato creados en Quixotic.</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+        <div>
+          <p class="text-xs text-muted-foreground">Account Id {{ res.accountWasExisting ? '(ya existía)' : '(nueva)' }}</p>
+          <p class="font-medium font-mono text-foreground text-xs">{{ res.accountId }}</p>
+        </div>
+        <div>
+          <p class="text-xs text-muted-foreground">Supply Point Id {{ res.supplyPointWasExisting ? '(ya existía)' : '(nuevo)' }}</p>
+          <p class="font-medium font-mono text-foreground text-xs">{{ res.supplyPointId }}</p>
+        </div>
+        <div>
+          <p class="text-xs text-muted-foreground">Contract Id</p>
+          <p class="font-medium font-mono text-foreground text-xs">{{ res.contractId }}</p>
+        </div>
+        <div>
+          <p class="text-xs text-muted-foreground">Contracted Product Id</p>
+          <p class="font-medium font-mono text-foreground text-xs">{{ res.contractedProductId || '—' }}</p>
+        </div>
+        @if (res.paymentMethodId) {
+          <div class="col-span-2">
+            <p class="text-xs text-muted-foreground">Payment Method Id</p>
+            <p class="font-medium font-mono text-foreground text-xs">{{ res.paymentMethodId }}</p>
+          </div>
+        }
+      </div>
+
+      @if (res.warnings.length) {
+        <div class="rounded-lg border border-amber-300/50 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 space-y-1.5">
+          <p class="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">Avisos</p>
+          <ul class="list-disc list-inside space-y-1">
+            @for (w of res.warnings; track w) {
+              <li class="text-xs text-amber-800 dark:text-amber-300">{{ w }}</li>
+            }
+          </ul>
+        </div>
+      }
+
+      <div class="border-t border-border pt-4 flex items-center justify-between">
+        <ui-button label="Nueva alta" variant="outline" size="sm" type="button" (click)="newAlta()" />
+        <ui-button [label]="isMaster() ? 'Ir al listado' : 'Volver'" size="sm" type="button" (click)="finish()" />
+      </div>
+
+    } @else {
+      <!-- Revisión previa al envío -->
+      <div>
+        <p class="text-xl font-bold text-foreground">Revisión</p>
+        <p class="text-sm text-muted-foreground">Comprueba los datos antes de enviarlos a Quixotic.</p>
+      </div>
+
+      @if (errorInfo(); as err) {
+        <div class="rounded-lg border border-red-300/50 bg-red-50 dark:bg-red-900/20 px-4 py-3 space-y-2">
+          <p class="text-sm font-semibold text-red-700 dark:text-red-400">{{ err.error }}</p>
+          @if (err.step) {
+            <p class="text-xs text-red-600 dark:text-red-300">Paso: {{ err.step }}</p>
+          }
+          @if (partialJson(); as pj) {
+            <details class="text-xs">
+              <summary class="cursor-pointer text-red-600 dark:text-red-300">Ver datos parciales creados</summary>
+              <pre class="mt-2 whitespace-pre-wrap font-mono text-[11px] text-foreground bg-card border border-border rounded-md p-2">{{ pj }}</pre>
+            </details>
+          }
+        </div>
+      }
+
+      <section class="space-y-2">
+        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground border-b border-border pb-1">Cliente</p>
+        <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+          <div><p class="text-xs text-muted-foreground">Nombre</p><p class="font-medium text-foreground">{{ draft().fullName || '—' }}</p></div>
+          <div><p class="text-xs text-muted-foreground">Documento</p><p class="font-medium text-foreground">{{ draft().documentType }} {{ draft().documentNumber || '—' }}</p></div>
+          <div><p class="text-xs text-muted-foreground">Email</p><p class="font-medium text-foreground">{{ draft().email || '—' }}</p></div>
+          <div><p class="text-xs text-muted-foreground">Teléfono</p><p class="font-medium text-foreground">{{ draft().phoneNumber || '—' }}</p></div>
+        </div>
+      </section>
+
+      <section class="space-y-2">
+        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground border-b border-border pb-1">Dirección y pago</p>
+        <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+          <div class="col-span-2">
+            <p class="text-xs text-muted-foreground">Dirección de facturación</p>
+            <p class="font-medium text-foreground">
+              {{ draft().billingAddressStreetType }} {{ draft().billingAddressStreet }} {{ draft().billingAddressNumber }}, {{ draft().billingAddressPostalCode }} {{ draft().billingAddressCityName }}
+            </p>
+          </div>
+          <div><p class="text-xs text-muted-foreground">Método de pago</p><p class="font-medium text-foreground">{{ draft().paymentMethodType || '—' }}</p></div>
+          <div><p class="text-xs text-muted-foreground">IBAN</p><p class="font-medium text-foreground">{{ draft().bankAccountNumber || '—' }}</p></div>
+        </div>
+      </section>
+
+      <section class="space-y-2">
+        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground border-b border-border pb-1">Suministro y contrato</p>
+        <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+          <div class="col-span-2"><p class="text-xs text-muted-foreground">CUPS</p><p class="font-medium font-mono text-foreground text-xs">{{ draft().cups || '—' }}</p></div>
+          <div><p class="text-xs text-muted-foreground">Contrato</p><p class="font-medium text-foreground">{{ draft().contractName || '—' }}</p></div>
+          <div><p class="text-xs text-muted-foreground">Inicio / Duración</p><p class="font-medium text-foreground">{{ draft().contractStartDate || '—' }} / {{ draft().contractDuration || '—' }} meses</p></div>
+        </div>
+      </section>
+
+      <section class="space-y-2">
+        <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground border-b border-border pb-1">Producto y activación</p>
+        <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+          <div><p class="text-xs text-muted-foreground">Product Id</p><p class="font-medium text-foreground">{{ draft().productId || '—' }}</p></div>
+          <div><p class="text-xs text-muted-foreground">Tarifa ATR / Activación</p><p class="font-medium text-foreground">{{ draft().contractAtrRate || '—' }} / {{ draft().activationType || '—' }}</p></div>
+        </div>
+      </section>
+
+      <div class="border-t border-border pt-4 flex items-center justify-between">
+        <ui-button label="Volver" variant="outline" size="sm" type="button" [disabled]="sending()" (click)="back()" />
+        <ui-button [label]="sending() ? 'Enviando...' : 'Enviar alta rápida'" size="sm" type="button" [disabled]="sending()" (click)="submit()" />
+      </div>
+    }
+
+  </div>
+</div>
