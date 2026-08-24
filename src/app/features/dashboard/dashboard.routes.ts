@@ -15,6 +15,8 @@ import { SipsPageComponent } from './pages/sips/sips-page';
 import { SipsGasPageComponent } from './pages/sips-gas/sips-gas-page';
 import { FastDischarge } from './pages/fast-discharge/fast-discharge';
 import { FAST_DISCHARGE_ROUTES } from './pages/fast-discharge/fast-discharge.routes';
+import { AltaRapidaGas } from './pages/gas-quixotic-contracts/alta-rapida/alta-rapida-gas';
+import { ALTA_RAPIDA_GAS_ROUTES } from './pages/gas-quixotic-contracts/alta-rapida/alta-rapida-gas.routes';
 import { SubUserCommissionsPage } from './pages/sub-user-commissions/sub-user-commissions';
 import { MyComercialsPage } from './pages/my-commercials/my-commercials';
 import { SupportPageComponent } from './pages/support/support-page';
@@ -207,6 +209,21 @@ export const DASHBOARD_ROUTES: Routes = [
         loadComponent: () =>
           import('./pages/gas-products/gas-products-page')
             .then(m => m.GasProductsPageComponent),
+      },
+      {
+        path: 'gas/quixotic-contracts',
+        canActivate: [permissionGuard],
+        data: { roles: ['Master'] },
+        loadComponent: () =>
+          import('./pages/gas-quixotic-contracts/gas-quixotic-contracts-page')
+            .then(m => m.GasQuixoticContractsPageComponent),
+      },
+      // Todos los roles — es el destino de "Alta Rápida" > Gas en el header.
+      // Wizard completo contra POST /quixotic/alta-rapida (cuenta + punto de suministro + contrato).
+      {
+        path: 'gas/quixotic-contracts/new',
+        component: AltaRapidaGas,
+        children: ALTA_RAPIDA_GAS_ROUTES,
       },
 
       { path: 'forbidden', component: ForbiddenComponent },

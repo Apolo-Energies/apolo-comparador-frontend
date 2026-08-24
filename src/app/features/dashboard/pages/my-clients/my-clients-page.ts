@@ -11,13 +11,18 @@ import {
   ViewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { HttpResponse } from '@angular/common/http';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
 import { ButtonComponent } from '@apolo-energies/ui';
+import { FileSpreadsheetIcon, UiIconSource } from '@apolo-energies/icons';
+import { AuthService } from '@apolo-energies/auth';
 import { AssignedClientsService } from '../../../../services/assigned-clients.service';
+import { DelegationsService } from '../../../../services/delegations.service';
 import { AssignedClient } from '../../../../entities/assigned-client.model';
 import { GlobalLoadingService } from '../../../../services/global-loading.service';
 import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
 import { ClientDetailModalComponent, ClientDetailMode } from './client-detail-modal/client-detail-modal';
+import { getUserRoles } from '../../../../utils/auth.utils';
 
 @Component({
   selector: 'app-my-clients-page',
@@ -35,10 +40,14 @@ export class MyClientsPageComponent implements AfterViewInit {
   @ViewChild('contratosBadgeTpl')  private contratosBadgeTpl!:  TemplateRef<{ $implicit: AssignedClient }>;
   @ViewChild('serviciosBadgeTpl')  private serviciosBadgeTpl!:  TemplateRef<{ $implicit: AssignedClient }>;
 
-  private readonly clientsService = inject(AssignedClientsService);
-  private readonly globalLoading  = inject(GlobalLoadingService);
-  private readonly platformId     = inject(PLATFORM_ID);
-  private readonly cdr            = inject(ChangeDetectorRef);
+  private readonly clientsService     = inject(AssignedClientsService);
+  private readonly delegationsService = inject(DelegationsService);
+  private readonly globalLoading      = inject(GlobalLoadingService);
+  private readonly platformId         = inject(PLATFORM_ID);
+  private readonly cdr                = inject(ChangeDetectorRef);
+  private readonly auth               = inject(AuthService);
+
+  readonly isMaster = computed(() => getUserRoles(this.auth.currentUser()).includes('Master'));
 
   readonly currentPage = signal(1);
   readonly pageSize    = signal(20);
@@ -47,7 +56,16 @@ export class MyClientsPageComponent implements AfterViewInit {
   readonly data        = signal<AssignedClient[]>([]);
   readonly total       = signal(0);
 
+  // Totales agregados sobre todo el alcance del usuario (no solo la página actual).
+  // null mientras backend no los envíe — así el header no muestra "0" engañoso.
+  readonly totalContracts = signal<number | null>(null);
+  readonly totalServices  = signal<number | null>(null);
+
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize())));
+
+  readonly exportingExcel      = signal(false);
+  readonly exportingDelegations = signal(false);
+  readonly excelIcon: UiIconSource = { type: 'apolo', icon: FileSpreadsheetIcon, size: 14 };
 
   readonly detailModalOpen   = signal(false);
   readonly detailModalClient = signal<AssignedClient | null>(null);
@@ -94,6 +112,51 @@ export class MyClientsPageComponent implements AfterViewInit {
     this.detailModalOpen.set(false);
   }
 
+  exportExcel(): void {
+    if (this.exportingExcel()) return;
+    this.exportingExcel.set(true);
+    this.clientsService.exportExcel().subscribe({
+      next: response => {
+        this.exportingExcel.set(false);
+        this.downloadBlobResponse(response, 'mis-clientes.xlsx');
+      },
+      error: () => this.exportingExcel.set(false),
+    });
+  }
+
+  exportDelegationsExcel(): void {
+    if (this.exportingDelegations()) return;
+    this.exportingDelegations.set(true);
+    this.delegationsService.exportExcel().subscribe({
+      next: response => {
+        this.exportingDelegations.set(false);
+        this.downloadBlobResponse(response, 'delegaciones.xlsx');
+      },
+      error: () => this.exportingDelegations.set(false),
+    });
+  }
+
+  private downloadBlobResponse(response: HttpResponse<Blob>, fallbackFilename: string): void {
+    const blob = response.body;
+    if (!blob) return;
+
+    let filename = fallbackFilename;
+    const cd = response.headers.get('content-disposition');
+    if (cd) {
+      const match = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(cd);
+      if (match?.[1]) filename = match[1].replace(/['"]/g, '');
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   onPageChange(page: number): void {
     this.currentPage.set(page);
     this.load();
@@ -116,12 +179,16 @@ export class MyClientsPageComponent implements AfterViewInit {
       next: res => {
         this.data.set(res?.data ?? []);
         this.total.set(res?.total ?? 0);
+        this.totalContracts.set(res?.totalContracts ?? null);
+        this.totalServices.set(res?.totalServices ?? null);
         this.loading.set(false);
         this.globalLoading.stop();
       },
       error: () => {
         this.data.set([]);
         this.total.set(0);
+        this.totalContracts.set(null);
+        this.totalServices.set(null);
         this.error.set(true);
         this.loading.set(false);
         this.globalLoading.stop();

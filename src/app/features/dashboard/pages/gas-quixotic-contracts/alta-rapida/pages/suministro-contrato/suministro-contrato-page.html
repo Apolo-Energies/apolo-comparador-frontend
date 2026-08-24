@@ -1,0 +1,97 @@
+<div class="flex items-center justify-center min-h-full px-4 py-8">
+  <div class="w-full max-w-xl bg-card border border-border rounded-lg shadow-xl px-8 py-8 space-y-6">
+
+    <div>
+      <p class="text-xl font-bold text-foreground">Punto de suministro y contrato</p>
+      <p class="text-sm text-muted-foreground">El punto de suministro debe existir o se creará nuevo en Quixotic con estos datos.</p>
+    </div>
+
+    <form (submit)="$event.preventDefault(); next()" class="space-y-5">
+
+      <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground border-b border-border pb-1">
+        Punto de suministro
+      </p>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-muted-foreground">CUPS *</label>
+        <div class="flex gap-3 items-start">
+          <input [class]="inputCls" class="flex-1" placeholder="ES0000000001234567AB"
+                 [value]="draft().cups" (input)="onCupsChange($any($event.target).value)" />
+          @if (validated()) {
+            <ui-button label="Consultar otro" variant="secondary" size="sm" type="button" (click)="onReset()" />
+          } @else {
+            <ui-button label="Validar" size="sm" type="button" [disabled]="validating()" (click)="onValidate()" />
+          }
+        </div>
+        @if (errors()['cups']) { <span class="text-red-500 text-xs">{{ errors()['cups'] }}</span> }
+        @if (validated()) {
+          <span class="text-green-500 text-xs mt-1 flex items-center gap-1">
+            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            CUPS validado — tarifa ATR, caudales y CNAE autorrellenados
+          </span>
+        }
+        @if (notFound()) {
+          <div class="mt-1 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+            No se encontró ese CUPS en el SIPS de gas. Puedes rellenar los datos manualmente.
+          </div>
+        }
+        @if (validationError()) {
+          <div class="mt-1 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 px-3 py-2 text-xs text-red-700 dark:text-red-400 space-y-0.5">
+            <p class="font-semibold">No se pudo validar el CUPS</p>
+            <p>El SIPS no está disponible. Completa los campos manualmente.</p>
+          </div>
+        }
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-muted-foreground">Nombre del punto de suministro *</label>
+        <input [class]="inputCls" placeholder="Ej. Vivienda - Calle Mayor 10"
+               [value]="draft().supplyPointName" (input)="updateField('supplyPointName', $any($event.target).value)" />
+        @if (errors()['supplyPointName']) { <span class="text-red-500 text-xs">{{ errors()['supplyPointName'] }}</span> }
+      </div>
+
+      <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground border-b border-border pb-1 pt-2">
+        Contrato
+      </p>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-muted-foreground">Nombre del contrato *</label>
+        <input [class]="inputCls" placeholder="Ej. Suministro Gas - Calle Mayor 10"
+               [value]="draft().contractName" (input)="updateField('contractName', $any($event.target).value)" />
+        @if (errors()['contractName']) { <span class="text-red-500 text-xs">{{ errors()['contractName'] }}</span> }
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">Código de contrato</label>
+          <input [class]="inputCls" placeholder="Opcional"
+                 [value]="draft().contractCode" (input)="updateField('contractCode', $any($event.target).value)" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">Fecha de inicio</label>
+          <input [class]="inputCls" type="date"
+                 [value]="draft().contractStartDate" (input)="updateField('contractStartDate', $any($event.target).value)" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">Duración (meses)</label>
+          <input [class]="inputCls" type="number" placeholder="Opcional"
+                 [value]="draft().contractDuration" (input)="updateField('contractDuration', $any($event.target).value)" />
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">Días de vencimiento de factura</label>
+          <input [class]="inputCls" type="number" placeholder="Opcional"
+                 [value]="draft().invoiceDueDays" (input)="updateField('invoiceDueDays', $any($event.target).value)" />
+        </div>
+      </div>
+
+      <div class="border-t border-border pt-4 flex items-center justify-between">
+        <ui-button label="Volver" variant="outline" size="sm" type="button" (click)="back()" />
+        <ui-button label="Siguiente" size="sm" type="submit" />
+      </div>
+
+    </form>
+  </div>
+</div>

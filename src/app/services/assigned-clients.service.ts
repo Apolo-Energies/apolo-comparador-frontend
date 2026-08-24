@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AssignedClientFilters, AssignedClientsPageResponse } from '../entities/assigned-client.model';
@@ -20,5 +20,9 @@ export class AssignedClientsService {
       .set('pageSize', String(filters.pageSize ?? 20));
 
     return this.http.get<AssignedClientsPageResponse>(this.base, { params });
+  }
+
+  exportExcel(): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.base}/export-excel`, { responseType: 'blob', observe: 'response' });
   }
 }
