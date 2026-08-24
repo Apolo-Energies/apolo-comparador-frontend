@@ -1,0 +1,83 @@
+<div class="flex items-center justify-center min-h-full px-4 py-8">
+  <div class="w-full max-w-xl bg-card border border-border rounded-lg shadow-xl px-8 py-8 space-y-6">
+
+    <div>
+      <p class="text-xl font-bold text-foreground">Alta rápida de gas — Cliente</p>
+      <p class="text-sm text-muted-foreground">Datos personales del cliente que se dará de alta en Quixotic.</p>
+    </div>
+
+    <form (submit)="$event.preventDefault(); next()" class="space-y-5">
+
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-muted-foreground">Nombre completo *</label>
+        <input [class]="inputCls" placeholder="Nombre y apellidos / razón social"
+               [value]="draft().fullName" (input)="updateField('fullName', $any($event.target).value)" />
+        @if (errors()['fullName']) { <span class="text-red-500 text-xs">{{ errors()['fullName'] }}</span> }
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">Tipo de persona</label>
+          <select [class]="selectCls" (change)="onPersonTypeChange($any($event.target).value)">
+            @for (opt of personTypeOptions; track opt.value) {
+              <option [value]="opt.value" [selected]="draft().personType === opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">Tipo de documento</label>
+          <select [class]="selectCls" (change)="updateField('documentType', $any($event.target).value)">
+            @for (opt of documentTypeOptions; track opt) {
+              <option [value]="opt" [selected]="draft().documentType === opt">{{ opt }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-muted-foreground">Número de documento *</label>
+        <input [class]="inputCls" [placeholder]="documentPlaceholder()"
+               [value]="draft().documentNumber" (input)="updateField('documentNumber', $any($event.target).value)" />
+        @if (errors()['documentNumber']) { <span class="text-red-500 text-xs">{{ errors()['documentNumber'] }}</span> }
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">Email *</label>
+          <input [class]="inputCls" type="email" placeholder="cliente@ejemplo.es"
+                 [value]="draft().email" (input)="updateField('email', $any($event.target).value)" />
+          @if (errors()['email']) { <span class="text-red-500 text-xs">{{ errors()['email'] }}</span> }
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">Teléfono *</label>
+          <div class="flex">
+            <select [class]="phoneSelectCls" [value]="phoneCountryCode()"
+                    (change)="onPhoneCountryChange($any($event.target).value)">
+              @for (c of phoneCountries; track c.code) {
+                <option [value]="c.code">{{ c.flag }} {{ c.code }}</option>
+              }
+            </select>
+            <input type="tel" placeholder="612 345 678" [class]="phoneNumberCls"
+                   [attr.maxlength]="phoneMaxLength()"
+                   [value]="phoneLocalNumber()" (input)="onPhoneInput($event)" />
+          </div>
+          @if (errors()['phone']) { <span class="text-red-500 text-xs">{{ errors()['phone'] }}</span> }
+        </div>
+      </div>
+
+      @if (isLegalPerson()) {
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-medium text-muted-foreground">CNAE</label>
+          <input [class]="inputCls" placeholder="Opcional"
+                 [value]="draft().cnae" (input)="updateField('cnae', $any($event.target).value)" />
+        </div>
+      }
+
+      <div class="border-t border-border pt-4 flex items-center justify-between">
+        <ui-button label="Cancelar" variant="outline" size="sm" type="button" (click)="cancel()" />
+        <ui-button label="Siguiente" size="sm" type="submit" />
+      </div>
+
+    </form>
+  </div>
+</div>

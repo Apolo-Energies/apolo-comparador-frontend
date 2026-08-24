@@ -7,7 +7,7 @@ import { ReviewPage } from './pages/review/review';
 import { SignaturePage } from './pages/signature/signature';
 
 export const FAST_DISCHARGE_ROUTES: Routes = [
-  { path: '', redirectTo: 'data', pathMatch: 'full' },
+  { path: '',              redirectTo: 'data', pathMatch: 'full' },
   { path: 'data',          component: DataPage },
   { path: 'supply-point',  component: SupplyPointPage },
   { path: 'select-product', component: SelectProductPage },

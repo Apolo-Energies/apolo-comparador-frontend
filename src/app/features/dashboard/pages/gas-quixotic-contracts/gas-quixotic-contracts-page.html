@@ -1,0 +1,79 @@
+<ui-alert />
+
+<div class="border border-border rounded-lg overflow-hidden shadow-sm">
+
+  <!-- Header -->
+  <div class="bg-card px-6 py-5">
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <h2 class="text-sm font-semibold text-foreground">Contratos Quixotic (Gas)</h2>
+        <p class="text-xs text-muted-foreground mt-0.5">
+          Contratos ya registrados en Quixotic
+        </p>
+      </div>
+      <ui-button label="Nuevo contrato" variant="secondary" size="sm" (click)="goToNew()" />
+    </div>
+
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-end gap-4 mt-4">
+      <div class="flex-1 max-w-sm">
+        <ui-input
+          label="Código de contrato"
+          placeholder="Ej. CT-00123"
+          [value]="filterCode()"
+          [leadingIcon]="searchIcon"
+          (valueChange)="filterCode.set($event)"
+          (keydown.enter)="onSearch()"
+        />
+      </div>
+      <div class="flex-1 max-w-sm">
+        <ui-select
+          label="Estado"
+          [value]="filterStatus()"
+          [options]="statusOptions"
+          (valueChange)="filterStatus.set($event)"
+        />
+      </div>
+      <div class="flex items-center gap-2">
+        <ui-button label="Limpiar" variant="secondary" size="md" [leadingIcon]="xIcon"      (click)="onClear()" />
+        <ui-button label="Buscar"  variant="secondary" size="md" [leadingIcon]="searchIcon" (click)="onSearch()" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="relative">
+    @if (loading()) {
+      <app-table-skeleton [cols]="5" [rows]="10" />
+    } @else if (error()) {
+      <div class="flex flex-col items-center justify-center py-16 text-muted-foreground">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-3 opacity-40">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <p class="text-sm mb-3">No se pudieron cargar los contratos</p>
+        <ui-button label="Reintentar" variant="secondary" size="sm" (click)="load()" />
+      </div>
+    } @else if (data().length === 0) {
+      <div class="flex flex-col items-center justify-center py-16 text-muted-foreground">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-3 opacity-40">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <p class="text-sm">Sin resultados</p>
+      </div>
+    } @else {
+      <lib-data-table
+        [data]="data()"
+        [columns]="columns"
+        rowKey="id"
+        [borderTop]="false"
+        [borderBottom]="false"
+        [borderLeft]="false"
+        [borderRight]="false"
+        [roundedTopLeft]="false"
+        [roundedTopRight]="false"
+        [roundedBottomLeft]="false"
+        [roundedBottomRight]="false"
+      />
+    }
+  </div>
+
+</div>
