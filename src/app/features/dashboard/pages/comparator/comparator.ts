@@ -156,7 +156,8 @@ export class Comparator {
     if (!cups) return;
     this.sipsService.getByCups(cups).subscribe({
       next: (sips) => {
-        this.sipsAnnualKwh.set(sumAnnualKwh(sips.consumos));
+        const annualKwh = sumAnnualKwh(sips.consumos);
+        this.sipsAnnualKwh.set(annualKwh);
         const form = this.lastForm();
         if (form) this.onFormChange(form);
       },

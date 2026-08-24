@@ -49,13 +49,14 @@ export function sumAnnualKwh(consumos: SipsConsumo[] | undefined): number {
   });
   if (!inRange.length) return 0;
 
+  // CNMC devuelve energiaP1..P6 en Wh (igual que potenciaContratada en W) — convertir a kWh.
   const sumaKwh = inRange.reduce(
     (sum, c) =>
       sum +
       (c.energiaP1 ?? 0) + (c.energiaP2 ?? 0) + (c.energiaP3 ?? 0) +
       (c.energiaP4 ?? 0) + (c.energiaP5 ?? 0) + (c.energiaP6 ?? 0),
     0,
-  );
+  ) / 1000;
   if (sumaKwh <= 0) return 0;
 
   // Días efectivamente cubiertos (suma de duraciones de cada registro). Clamp a 365
