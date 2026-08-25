@@ -4,6 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { AlertComponent, AlertService } from '@apolo-energies/ui';
 import { AuthService } from '@apolo-energies/auth';
 import { PasswordService } from '../../services/password.service';
+import { passwordStrengthValidator, matchPasswordsValidator } from '../../utils/password.utils';
 
 @Component({
   selector: 'app-reset-password',
@@ -28,24 +29,9 @@ export class ResetPasswordComponent implements OnInit {
   private token  = '';
 
   readonly form = this.fb.group({
-    newPassword:     ['', [Validators.required, Validators.minLength(8), this.passwordStrength]],
+    newPassword:     ['', [Validators.required, Validators.minLength(8), passwordStrengthValidator]],
     confirmPassword: ['', [Validators.required]],
-  }, { validators: this.matchPasswords });
-
-  private passwordStrength(control: import('@angular/forms').AbstractControl) {
-    const v = control.value ?? '';
-    if (!/[A-Z]/.test(v)) return { noUppercase: true };
-    if (!/[a-z]/.test(v)) return { noLowercase: true };
-    if (!/[0-9]/.test(v)) return { noDigit: true };
-    if (!/[^a-zA-Z0-9]/.test(v)) return { noSpecial: true };
-    return null;
-  }
-
-  private matchPasswords(group: import('@angular/forms').AbstractControl) {
-    const pw  = group.get('newPassword')?.value;
-    const cpw = group.get('confirmPassword')?.value;
-    return pw === cpw ? null : { mismatch: true };
-  }
+  }, { validators: matchPasswordsValidator });
 
   ngOnInit() {
     this.userId = this.route.snapshot.queryParamMap.get('userId') ?? '';

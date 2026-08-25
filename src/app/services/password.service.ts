@@ -20,6 +20,11 @@ export interface ResetPasswordResponse {
   message: string;
 }
 
+export interface AdminSetPasswordRequest {
+  newPassword:     string;
+  confirmPassword: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PasswordService {
   private http = inject(HttpClient);
@@ -34,6 +39,17 @@ export class PasswordService {
   resetPassword(data: ResetPasswordRequest) {
     return this.http.post<ResetPasswordResponse>(
       `${environment.apiUrl}/auth/reset-password`,
+      data
+    );
+  }
+
+  /**
+   * Master fija directamente la contraseña de otro usuario, sin pasar por el email de recuperación.
+   * Éxito = 204 sin body. Invalida la sesión anterior del usuario afectado (revoca su refresh token).
+   */
+  adminSetPassword(id: string, data: AdminSetPasswordRequest) {
+    return this.http.post<void>(
+      `${environment.apiUrl}/user/reset-password/${id}`,
       data
     );
   }
