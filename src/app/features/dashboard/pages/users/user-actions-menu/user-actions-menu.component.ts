@@ -212,6 +212,7 @@ const ACTION_BTN_CLS = [
 
     <app-restore-password-modal
       [open]="passwordModalOpen()"
+      [userId]="user().id"
       [userEmail]="user().email"
       [userName]="user().fullName"
       (closed)="passwordModalOpen.set(false)"
