@@ -145,7 +145,8 @@ export class ComparatorGas {
       return;
     }
 
-    this.gasService.getApoloPricing(annualKwh, this.mibgasOverride()).subscribe({
+    const invoiceDate = ocr.periodo_facturacion?.fecha_fin;
+    this.gasService.getApoloPricing(annualKwh, this.mibgasOverride(), invoiceDate).subscribe({
       next: (pricing) => {
         if (!pricing) {
           this.pricingError.set('No se pudo calcular el precio Apolo ahora mismo. Reintenta en unos minutos o contacta a soporte.');

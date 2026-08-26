@@ -31,6 +31,8 @@ export interface ApoloGasPricing {
   precioFijoBoeDia:    number;
   mibgasEurPerMwh:     number;
   mibgasDate:          string;
+  /** Fuente del precio MIBGAS: 'invoice-date' | 'override-request' | 'override-admin' | 'Mibgas'. */
+  mibgasSource:        string;
   bracketCode:         string;
   bracketMinKwh:       number;
   /** null = tramo sin horquilla superior (RL industrial más grande). */
@@ -54,6 +56,7 @@ interface GasComparisonBackendResponse {
   };
   mibgasEurPerMwh: number;
   mibgasDate: string;
+  mibgasSource: string;
   regulatory: {
     fneeEurPerMwh: number;
     storageEurPerMwh: number;
@@ -131,8 +134,15 @@ export class ComparatorGasService {
    * Devuelve null si el request falla o no hay producto Apolo activo; el caller
    * debe mostrar error (no hay fallback estático a propósito, ver comparator-gas.ts).
    * `mibgasOverride` pisa temporalmente el spot del backend para simular escenarios.
+   * `invoiceDate` (ISO YYYY-MM-DD o dd/MM/yyyy) hace que el backend use el MIBGAS
+   * histórico de esa fecha en vez del spot actual — comparativa consistente con el
+   * momento en que se emitió la factura.
    */
-  getApoloPricing(annualKwh: number, mibgasOverride?: number | null): Observable<ApoloGasPricing | null> {
+  getApoloPricing(
+    annualKwh: number,
+    mibgasOverride?: number | null,
+    invoiceDate?: string | null,
+  ): Observable<ApoloGasPricing | null> {
     if (!annualKwh || annualKwh <= 0) {
       return new Observable<ApoloGasPricing | null>(s => { s.next(null); s.complete(); });
     }
@@ -140,6 +150,8 @@ export class ComparatorGasService {
     if (mibgasOverride !== null && mibgasOverride !== undefined && mibgasOverride > 0) {
       body['mibgasOverrideEurPerMwh'] = mibgasOverride;
     }
+    const normalizedDate = normalizeInvoiceDate(invoiceDate);
+    if (normalizedDate) body['invoiceDate'] = normalizedDate;
     return new Observable<ApoloGasPricing | null>(subscriber => {
       this.http.post<GasComparisonBackendResponse>(
         `${environment.apiUrl}/gas/comparison`,
@@ -155,6 +167,7 @@ export class ComparatorGasService {
             precioFijoBoeDia:       res.bracket.fixedTermPerYearEur / 365,  // BOE puro
             mibgasEurPerMwh:        res.mibgasEurPerMwh,
             mibgasDate:             res.mibgasDate,
+            mibgasSource:           res.mibgasSource,
             bracketCode:            res.bracket.code,
             bracketMinKwh:          res.bracket.minAnnualKwh,
             bracketMaxKwh:          res.bracket.maxAnnualKwh,
@@ -298,4 +311,25 @@ export class ComparatorGasService {
     a.click();
     URL.revokeObjectURL(url);
   }
+}
+
+/**
+ * Normaliza la fecha de factura del OCR a formato ISO `YYYY-MM-DD` que espera el
+ * backend (`DateOnly?`). Acepta ISO (con o sin timezone) o formato español
+ * `d/M/yyyy` con separadores `/`, `-` o `.`. Tolera día/mes sin cero delante
+ * (Matil a veces devuelve "1/2/2026"). Devuelve undefined si no reconoce el
+ * formato — en ese caso el backend cae a su prioridad anterior.
+ */
+export function normalizeInvoiceDate(raw: string | undefined | null): string | undefined {
+  if (!raw) return undefined;
+  const trimmed = raw.trim();
+  const iso = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const es = trimmed.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
+  if (es) {
+    const day = es[1].padStart(2, '0');
+    const month = es[2].padStart(2, '0');
+    return `${es[3]}-${month}-${day}`;
+  }
+  return undefined;
 }
