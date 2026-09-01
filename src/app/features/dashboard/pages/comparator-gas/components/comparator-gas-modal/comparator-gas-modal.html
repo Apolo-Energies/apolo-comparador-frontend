@@ -55,7 +55,14 @@
                 Margen fijo Apolo
                 <span class="text-xs font-normal text-muted-foreground ml-1">% sobre BOE</span>
               </span>
-              <span class="text-sm font-mono font-semibold text-primary">+{{ fijoMarginDisplay() }}%</span>
+              <span class="text-sm font-mono font-semibold text-primary">
+                +{{ fijoMarginDisplay() }}%
+                @if (result(); as r) {
+                  <span class="text-xs font-normal text-muted-foreground ml-1">
+                    (+{{ formatEur(fijoMarginEurPeriodo()) }} · {{ r.dias }} días)
+                  </span>
+                }
+              </span>
             </div>
             <ui-slider
               [value]="fijoMarginDisplay()"
@@ -67,6 +74,53 @@
             <p class="text-xs text-muted-foreground">
               Partimos de 0% (precio BOE puro). Sube el margen viendo dónde puedes ganar sin perder al cliente.
             </p>
+
+            <!-- 4 cuadritos: desglose del fijo € del período (24d, 56d, etc.), no €/día -->
+            @if (pricingInfo(); as p) {
+              @if (result(); as r) {
+                <div class="grid grid-cols-4 gap-2 mt-2">
+                  <!-- Precio BOE (peaje regulado sin margen) del período -->
+                  <div class="p-2 rounded-md bg-card border border-border">
+                    <p class="text-[10px] uppercase tracking-wide text-muted-foreground">Precio BOE</p>
+                    <p class="text-sm font-mono font-semibold text-foreground">
+                      {{ formatEur(p.precioFijoBoeDia * r.dias) }}
+                    </p>
+                    <p class="text-[10px] text-muted-foreground">{{ r.dias }} días</p>
+                  </div>
+
+                  <!-- Margen (lo que Apolo suma al BOE) del período -->
+                  <div class="p-2 rounded-md bg-primary/5 border border-primary/30">
+                    <p class="text-[10px] uppercase tracking-wide text-primary">Margen Apolo</p>
+                    <p class="text-sm font-mono font-semibold text-primary">
+                      +{{ formatEur(fijoMarginEurPeriodo()) }}
+                    </p>
+                    <p class="text-[10px] text-muted-foreground">{{ r.dias }} días</p>
+                  </div>
+
+                  <!-- Precio final para el cliente (BOE + margen) del período -->
+                  <div class="p-2 rounded-md bg-emerald-500/5 border border-emerald-500/30">
+                    <p class="text-[10px] uppercase tracking-wide text-emerald-400">Final Apolo</p>
+                    <p class="text-sm font-mono font-semibold text-emerald-300">
+                      {{ formatEur(r.precioFijoOferta * r.dias) }}
+                    </p>
+                    <p class="text-[10px] text-muted-foreground">{{ r.dias }} días</p>
+                  </div>
+
+                  <!-- Precio fijo actual que paga el cliente hoy con su comercializadora -->
+                  <div class="p-2 rounded-md bg-card border border-border">
+                    <p class="text-[10px] uppercase tracking-wide text-muted-foreground">Fijo actual</p>
+                    <p class="text-sm font-mono font-semibold text-foreground">
+                      @if (clientePrecioFijoDia() > 0) {
+                        {{ formatEur(clientePrecioFijoDia() * r.dias) }}
+                      } @else {
+                        —
+                      }
+                    </p>
+                    <p class="text-[10px] text-muted-foreground">{{ r.dias }} días (cliente)</p>
+                  </div>
+                </div>
+              }
+            }
           </div>
 
           <!-- Fee energía extra -->
