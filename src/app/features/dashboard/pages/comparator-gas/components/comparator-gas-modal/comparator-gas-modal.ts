@@ -66,6 +66,35 @@ export class ComparatorGasModalComponent {
 
   readonly fijoMarginDisplay = computed(() => Math.round(this.fijoMarginPct() * 100));
 
+  /** Margen fijo Apolo en €/día (BOE × fracción de margen). Base para todos los desgloses. */
+  readonly fijoMarginEurDia = computed<number>(() => {
+    const boe = this.pricingInfo()?.precioFijoBoeDia ?? 0;
+    return boe * this.fijoMarginPct();
+  });
+
+  /** Margen fijo Apolo en € del período real de la factura (día × dias). Es lo que el
+   *  colaborador razona ("cuánto voy a cobrar en esta factura de 56 días"), no €/día. */
+  readonly fijoMarginEurPeriodo = computed<number>(() => {
+    return this.fijoMarginEurDia() * (this.result()?.dias ?? 0);
+  });
+
+  /** Precio fijo €/día que paga HOY el cliente con su comercializadora, extraído del OCR.
+   *  Prioridad: (1) primera línea de disponibilidad con precio_dia y mayor importe (evita la
+   *  complementaria pequeña), (2) importe_total / dias_total retro-calculado. Devuelve 0 si no
+   *  se puede determinar — evita mostrar un cuadrito con dato falso. */
+  readonly clientePrecioFijoDia = computed<number>(() => {
+    const disp = this.ocrResult()?.disponibilidad;
+    if (!disp) return 0;
+    const lineaPrincipal = (disp.lineas ?? [])
+      .filter(l => (l.precio_dia ?? 0) > 0)
+      .sort((a, b) => (b.importe ?? 0) - (a.importe ?? 0))[0];
+    if (lineaPrincipal?.precio_dia && lineaPrincipal.precio_dia > 0) return lineaPrincipal.precio_dia;
+    if (disp.importe_total && disp.dias_total && disp.dias_total > 0) {
+      return disp.importe_total / disp.dias_total;
+    }
+    return 0;
+  });
+
   readonly mibgasDisplay = computed<number>(() =>
     this.mibgasOverride() ?? this.pricingInfo()?.mibgasEurPerMwh ?? 0);
 
