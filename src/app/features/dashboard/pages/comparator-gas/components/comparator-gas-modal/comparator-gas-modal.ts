@@ -54,8 +54,9 @@ export class ComparatorGasModalComponent {
   readonly pdfIcon:       UiIconSource = { type: 'apolo', icon: FileDownIcon,        size: 16 };
   readonly lightningIcon: UiIconSource = { type: 'apolo', icon: LightningIcon,       size: 36 };
 
-  readonly periodosOpen = signal(true);
-  readonly desgloseOpen = signal(false);
+  // Precios ofertados: plegado por defecto — el colaborador expande si quiere revisar
+  // el desglose €/kWh, €/día. Estado inicial (siempre plegado) porque es info de detalle.
+  readonly periodosOpen = signal(false);
 
   // Default: margen sugerido del bracket según Excel oficial (RL4=25%, RL5=15%, etc.).
   // Se rehidrata desde `pricingInfo.commercialMarginPct` en el effect al llegar el pricing.
@@ -267,57 +268,6 @@ export class ComparatorGasModalComponent {
         'Bundling luz + gas con descuento cruzado',
         'Pregunta cuándo vence su contrato — cuando venza, Apolo puede ser competitivo',
       ],
-    };
-  });
-
-  /** Reproduce la fórmula del backend paso a paso para que el usuario vea de
-   *  dónde sale cada número. Debe cuadrar con VariableEurPerMwh del response. */
-  readonly desgloseCalc = computed(() => {
-    const p = this.pricingInfo();
-    const r = this.result();
-    if (!p || !r) return null;
-
-    const reg    = p.regulatory;
-    const cnmc   = 1.0014;
-    const peajeCnmc = p.bracketAtrVariable * cnmc;
-    const sumaBase  = p.mibgasEurPerMwh + reg.deviationEurPerMwh + reg.managementCostEurPerMwh
-                    + p.marginProductEurPerMwh + reg.fneeEurPerMwh + peajeCnmc + reg.storageEurPerMwh;
-    const multTm    = sumaBase * (1 + reg.tasaMunicipal);
-    const multTmPe  = multTm * (1 + reg.lossesPercentage);
-    const multFinal = multTmPe * (1 + reg.financialCostPercentage);
-    const feeEurKwh = this.feeEnergiaEurMwh() / 1000;
-
-    return {
-      mibgas:      p.mibgasEurPerMwh,
-      ds:          reg.deviationEurPerMwh,
-      cg:          reg.managementCostEurPerMwh,
-      marginProd:  p.marginProductEurPerMwh,
-      fnee:        reg.fneeEurPerMwh,
-      peajeAtr:    p.bracketAtrVariable,
-      peajeCnmc,
-      storage:     reg.storageEurPerMwh,
-      sumaBase,
-      tmPct:       reg.tasaMunicipal,
-      pePct:       reg.lossesPercentage,
-      cfinPct:     reg.financialCostPercentage,
-      multTm, multTmPe, multFinal,
-      variableEurKwh: multFinal / 1000,
-      feeEurKwh,
-      variableFinalEurKwh: multFinal / 1000 + feeEurKwh,
-
-      fijoBoeAnual: p.precioFijoBoeDia * 365,
-      fijoBoeDia:   p.precioFijoBoeDia,
-      fijoMarginPct: this.fijoMarginPct(),
-      fijoConMargen: r.precioFijoOferta,
-
-      // Totales del período (para el consumo real)
-      kwhTotal:     r.kwhTotal,
-      dias:         r.dias,
-      costeEnergia: r.kwhTotal * r.precioEnergiaOferta,
-      costeFijo:    r.dias * r.precioFijoOferta,
-      baseIva:      r.baseIvaOferta,
-      iva:          r.ivaImporteOferta,
-      total:        r.totalOferta,
     };
   });
 
