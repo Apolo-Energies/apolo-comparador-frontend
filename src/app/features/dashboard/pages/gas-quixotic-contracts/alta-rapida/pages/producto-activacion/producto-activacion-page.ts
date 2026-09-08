@@ -44,12 +44,20 @@ export class ProductoActivacionPage {
   readonly contractParamsError = computed(() => {
     const raw = this.draft().contractParamsJson.trim();
     if (!raw) return null;
+    let parsed: unknown;
     try {
-      JSON.parse(raw);
-      return null;
+      parsed = JSON.parse(raw);
     } catch {
       return 'JSON inválido';
     }
+    if (!Array.isArray(parsed)) return 'Debe ser un array de objetos {code, name, value}';
+    const invalid = parsed.some(item =>
+      typeof item !== 'object' || item === null ||
+      typeof (item as Record<string, unknown>)['code']  !== 'string' ||
+      typeof (item as Record<string, unknown>)['name']  !== 'string' ||
+      typeof (item as Record<string, unknown>)['value'] !== 'string'
+    );
+    return invalid ? 'Cada elemento debe tener code, name y value (texto)' : null;
   });
 
   constructor() {

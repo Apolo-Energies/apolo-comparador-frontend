@@ -115,21 +115,22 @@ export const DASHBOARD_ROUTES: Routes = [
         ],
       },
 
-      // Comercial, Master — Mis clientes (oculto temporalmente para Colaborador/Colaborador - Referenciador)
+      // Comercial, Colaborador, Colaborador - Referenciador, Master — Mis clientes
       {
         path: 'my-clients',
         canActivate: [permissionGuard, featureGuard],
-        data: { feature: 'myClients', roles: ['Master'] },
+        data: { feature: 'myClients', roles: ['Master', 'Comercial', 'Colaborador', 'Colaborador - Referenciador'] },
         loadComponent: () =>
           import('./pages/my-clients/my-clients-page')
             .then(m => m.MyClientsPageComponent),
       },
 
-      // Master only — Contratos section (oculto temporalmente para Colaborador/Colaborador - Referenciador)
+      // Master, Colaborador, Colaborador - Referenciador — Contratos section.
+      // Colaborador solo ve sus propios contratos (según delegationId del JWT); ver contracts-page.ts.
       {
         path: 'contratos',
         canActivate: [permissionGuard, featureGuard],
-        data: { roles: ['Master'], feature: 'contracts' },
+        data: { roles: ['Master', 'Colaborador', 'Colaborador - Referenciador'], feature: 'contracts' },
         children: [
           {
             path: 'contratos',
@@ -226,6 +227,7 @@ export const DASHBOARD_ROUTES: Routes = [
           import('./pages/gas-apolo-products/gas-apolo-products-page')
             .then(m => m.GasApoloProductsPageComponent),
       },
+      // Master only — a diferencia de Contratos (Luz), esta todavía no está disponible para Colaborador.
       {
         path: 'gas/quixotic-contracts',
         canActivate: [permissionGuard],

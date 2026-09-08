@@ -18,27 +18,18 @@ export interface AltaRapidaGasDraft {
   billingAddressCityName:    string;
   billingAddressStateCode:   string;
 
-  paymentMethodType: string;
   bankAccountNumber: string;
-  bankName:          string;
 
   cups:            string;
   supplyPointName: string;
-
-  contractName:      string;
-  contractCode:      string;
-  contractStartDate: string;
-  contractDuration:  string;
-  invoiceDueDays:    string;
+  contractCode:    string;
 
   productId:               string;
   contractAtrRate:         string;
   contractQa:              string;
   contractQd:              string;
-  contractQh:              string;
   activationType:          string;
-  expectedActivationDate:  string;
-  /** JSON crudo opcional; se valida/parsea en la revisión. */
+  /** JSON crudo opcional; debe parsear a un array [{code, name, value}]. Se valida en producto-activacion. */
   contractParamsJson: string;
 }
 
@@ -51,33 +42,24 @@ export const EMPTY_ALTA_RAPIDA_GAS_DRAFT: AltaRapidaGasDraft = {
   phoneNumber:    '',
   cnae:           '',
 
-  billingAddressStreetType:  'CL',
+  billingAddressStreetType:  'Calle',
   billingAddressStreet:      '',
   billingAddressNumber:      '',
   billingAddressPostalCode:  '',
   billingAddressCityName:    '',
   billingAddressStateCode:   '',
 
-  paymentMethodType: '',
   bankAccountNumber: '',
-  bankName:          '',
 
   cups:            '',
   supplyPointName: '',
-
-  contractName:      '',
-  contractCode:      '',
-  contractStartDate: '',
-  contractDuration:  '',
-  invoiceDueDays:    '3',
+  contractCode:    '',
 
   productId:              '',
   contractAtrRate:        'R1',
   contractQa:             '',
   contractQd:             '',
-  contractQh:             '',
   activationType:         'A',
-  expectedActivationDate: '',
   contractParamsJson:     '',
 };
 

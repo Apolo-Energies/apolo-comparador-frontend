@@ -67,23 +67,24 @@ export class ClientePage {
 
   readonly personTypeOptions = [
     { value: 'natural_person', label: 'Persona física' },
-    { value: 'legal_person',   label: 'Persona jurídica' },
+    { value: 'legal_entity',   label: 'Persona jurídica' },
   ];
 
-  readonly documentTypeOptions = ['NIF', 'NIE', 'CIF', 'Pasaporte'];
+  readonly documentTypeOptions = ['NIF', 'NIE', 'Pasaporte', 'VAT', 'Otros'];
 
   private static readonly DOCUMENT_PLACEHOLDERS: Record<string, string> = {
     NIF:       '12345678A',
     NIE:       'X1234567L',
-    CIF:       'B12345678',
     Pasaporte: 'AB123456',
+    VAT:       'ESB12345678',
+    Otros:     '',
   };
 
   readonly documentPlaceholder = computed(() =>
     ClientePage.DOCUMENT_PLACEHOLDERS[this.draft().documentType] ?? '12345678A'
   );
 
-  readonly isLegalPerson = computed(() => this.draft().personType === 'legal_person');
+  readonly isLegalPerson = computed(() => this.draft().personType === 'legal_entity');
 
   readonly submitted = signal(false);
 
@@ -107,8 +108,8 @@ export class ClientePage {
 
   onPersonTypeChange(value: string): void {
     this.store.update({
-      personType: value as 'natural_person' | 'legal_person',
-      cnae: value === 'legal_person' ? this.draft().cnae : '',
+      personType: value as 'natural_person' | 'legal_entity',
+      cnae: value === 'legal_entity' ? this.draft().cnae : '',
     });
   }
 

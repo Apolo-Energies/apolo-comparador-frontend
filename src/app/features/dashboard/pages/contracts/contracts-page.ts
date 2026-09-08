@@ -14,12 +14,15 @@ import { isPlatformBrowser } from '@angular/common';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
 import { ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
 import { SearchIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
+import { AuthService } from '@apolo-energies/auth';
 import { ContractService } from '../../../../services/contract.service';
 import { ContratoClienteRow } from '../../../../entities/contrato.model';
 import { GlobalLoadingService } from '../../../../services/global-loading.service';
+import { RefreshTokenService } from '../../../../services/refresh-token.service';
 import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
 import { ContractDetailDrawerComponent } from './components/contract-detail-drawer/contract-detail-drawer';
 import { calcDias, estadoCls, estadoLabel, fmtDate, fmtKwh } from './contracts-utils';
+import { getUserRoles } from '../../../../utils/auth.utils';
 
 @Component({
   selector: 'app-contracts-page',
@@ -64,9 +67,16 @@ export class ContractsPageComponent implements AfterViewInit {
   private readonly globalLoading   = inject(GlobalLoadingService);
   private readonly platformId      = inject(PLATFORM_ID);
   private readonly cdr             = inject(ChangeDetectorRef);
+  private readonly auth            = inject(AuthService);
+  private readonly refreshToken    = inject(RefreshTokenService);
 
   readonly searchIcon: UiIconSource = { type: 'apolo', icon: SearchIcon, size: 16 };
   readonly xIcon:      UiIconSource = { type: 'apolo', icon: XIcon,      size: 16 };
+
+  readonly isMaster = computed(() => getUserRoles(this.auth.currentUser()).includes('Master'));
+  readonly delegationId = signal<number | null>(null);
+  /** Master ve todos los contratos; el resto necesita una delegación asignada (claim del JWT). */
+  readonly hasDelegation = computed(() => this.isMaster() || this.delegationId() !== null);
 
   readonly filter      = signal('');
   readonly currentPage = signal(1);
@@ -103,7 +113,8 @@ export class ContractsPageComponent implements AfterViewInit {
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
-      this.load();
+      this.delegationId.set(this.refreshToken.getDelegationIdFromToken());
+      if (this.hasDelegation()) this.load();
     }
   }
 

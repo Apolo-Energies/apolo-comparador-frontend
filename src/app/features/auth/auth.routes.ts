@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
-import { LoginPageComponent, LoginSlide } from '@apolo-energies/auth';
+import { LoginSlide } from '@apolo-energies/auth';
 import { AuthLayout } from './layout/auth-layout';
+import { LoginPage } from './pages/login-page';
 import { guestGuard } from '../../guards/guest.guard';
 
 const slides: LoginSlide[] = [
@@ -15,7 +16,7 @@ export const AUTH_ROUTES: Routes = [
     children: [
       {
         path: '',
-        component: LoginPageComponent,
+        component: LoginPage,
         data: {
           slides,
           titleLine1: 'Acceder al',

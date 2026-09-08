@@ -60,26 +60,17 @@ export class RevisionPage {
       billingAddressStateCode:   str(f.billingAddressStateCode),
       billingAddressCountryCode: 'ES',
 
-      paymentMethodType: str(f.paymentMethodType),
       bankAccountNumber: str(f.bankAccountNumber),
-      bankName:          str(f.bankName),
 
       cups:            f.cups.trim(),
       supplyPointName: f.supplyPointName.trim(),
+      contractCode:    str(f.contractCode),
 
-      contractName:      f.contractName.trim(),
-      contractCode:      str(f.contractCode),
-      contractStartDate: str(f.contractStartDate),
-      contractDuration:  num(f.contractDuration),
-      invoiceDueDays:    num(f.invoiceDueDays),
-
-      productId:              str(f.productId),
-      contractAtrRate:        str(f.contractAtrRate),
-      contractQa:             num(f.contractQa),
-      contractQd:             num(f.contractQd),
-      contractQh:             num(f.contractQh),
-      activationType:         str(f.activationType),
-      expectedActivationDate: str(f.expectedActivationDate),
+      productId:       str(f.productId),
+      contractAtrRate: str(f.contractAtrRate),
+      contractQa:      num(f.contractQa),
+      contractQd:      num(f.contractQd),
+      activationType:  str(f.activationType),
 
       contractParams: f.contractParamsJson.trim() ? JSON.parse(f.contractParamsJson) : null,
     };
