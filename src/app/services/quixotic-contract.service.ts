@@ -6,6 +6,7 @@ import {
   CreateQuixoticContractRequest,
   CreateQuixoticContractResponse,
   QuixoticContract,
+  QuixoticContractDocument,
   QuixoticContractFilters,
 } from '../entities/quixotic-contract.model';
 
@@ -24,5 +25,9 @@ export class QuixoticContractService {
 
   createContract(payload: CreateQuixoticContractRequest): Observable<CreateQuixoticContractResponse> {
     return this.http.post<CreateQuixoticContractResponse>(this.base, payload);
+  }
+
+  getDocument(id: string): Observable<QuixoticContractDocument> {
+    return this.http.get<QuixoticContractDocument>(`${this.base}/${id}/document`);
   }
 }

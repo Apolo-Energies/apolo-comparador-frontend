@@ -44,7 +44,7 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-3 gap-4">
+      <div class="grid grid-cols-2 gap-4">
         <div class="flex flex-col gap-1">
           <label class="text-sm font-medium text-muted-foreground">Qa (caudal anual, kWh/año)</label>
           <input [class]="inputCls" type="number" placeholder="Ej. 2500"
@@ -55,22 +55,11 @@
           <input [class]="inputCls" type="number" placeholder="Opcional — casi nunca se envía"
                  [value]="draft().contractQd" (input)="updateField('contractQd', $any($event.target).value)" />
         </div>
-        <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-muted-foreground">Qh (caudal horario)</label>
-          <input [class]="inputCls" type="number" placeholder="Opcional — casi nunca se envía"
-                 [value]="draft().contractQh" (input)="updateField('contractQh', $any($event.target).value)" />
-        </div>
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <label class="text-sm font-medium text-muted-foreground">Fecha estimada de activación</label>
-        <input [class]="inputCls" type="date"
-               [value]="draft().expectedActivationDate" (input)="updateField('expectedActivationDate', $any($event.target).value)" />
       </div>
 
       <div class="flex flex-col gap-1">
         <label class="text-sm font-medium text-muted-foreground">Parámetros de contrato (JSON)</label>
-        <textarea [class]="textareaCls" rows="4" placeholder='Opcional, ej. {"clave": "valor"}'
+        <textarea [class]="textareaCls" rows="4" placeholder='Opcional, array de objetos, ej. [{"code": "X", "name": "Y", "value": "Z"}]'
                   [value]="draft().contractParamsJson"
                   (input)="updateField('contractParamsJson', $any($event.target).value)"></textarea>
         @if (contractParamsError()) { <span class="text-red-500 text-xs">{{ contractParamsError() }}</span> }

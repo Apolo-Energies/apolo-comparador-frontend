@@ -1,4 +1,10 @@
-export type AltaRapidaPersonType = 'natural_person' | 'legal_person';
+export type AltaRapidaPersonType = 'natural_person' | 'legal_entity';
+
+export interface AltaRapidaContractParam {
+  code:  string;
+  name:  string;
+  value: string;
+}
 
 /** Body de POST /quixotic/alta-rapida — crea cuenta + punto de suministro + contrato en una sola llamada. */
 export interface AltaRapidaGasRequest {
@@ -18,18 +24,11 @@ export interface AltaRapidaGasRequest {
   billingAddressStateCode?:    string | null;
   billingAddressCountryCode?:  string | null;
 
-  paymentMethodType?:  string | null;
   bankAccountNumber?:  string | null;
-  bankName?:           string | null;
 
   cups:             string;
   supplyPointName:  string;
-
-  contractName:       string;
-  contractCode?:       string | null;
-  contractStartDate?:  string | null;
-  contractDuration?:   number | null;
-  invoiceDueDays?:     number | null;
+  contractCode?:    string | null;
 
   productId?:              string | null;
   /** Grupo tarifario de acceso de gas: "R1" (residencial) a "R8" (industrial alto). */
@@ -38,13 +37,10 @@ export interface AltaRapidaGasRequest {
   contractQa?:             number | null;
   /** Caudal diario — opcional, casi nunca se envía. */
   contractQd?:             number | null;
-  /** Caudal horario — opcional, casi nunca se envía. */
-  contractQh?:             number | null;
   /** "A" (cuanto antes) es el único valor usado en la práctica; "F"/"L" existen pero no se usan. */
   activationType?:         string | null;
-  expectedActivationDate?: string | null;
 
-  contractParams?: Record<string, unknown> | null;
+  contractParams?: AltaRapidaContractParam[] | null;
 }
 
 export interface AltaRapidaGasResponse {
