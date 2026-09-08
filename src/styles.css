@@ -237,6 +237,14 @@ lib-apolo-sidebar div.ml-4.mt-1 > a lib-sidebar-item button:hover > div::before 
   border-color: var(--color-foreground);
 }
 
+/* Hover legible en ambos temas (el default de la lib se pierde). */
+lib-data-table tbody tr {
+  transition: none !important;
+}
+lib-data-table tbody tr:hover {
+  background-color: color-mix(in oklab, var(--color-foreground) 6%, transparent) !important;
+}
+
 /* Activo: bullet relleno (misma clase que usa la librería en isSelected) */
 lib-apolo-sidebar div.ml-4.mt-1 > a lib-sidebar-item button.bg-accent > div::before {
   background-color: currentColor;
