@@ -62,7 +62,7 @@
     } @else {
       <lib-data-table
         [data]="data()"
-        [columns]="columns"
+        [columns]="columns()"
         rowKey="id"
         [borderTop]="false"
         [borderBottom]="false"
@@ -77,3 +77,19 @@
   </div>
 
 </div>
+
+<app-document-preview-modal
+  [open]="documentModalOpen()"
+  [document]="documentModalDoc()"
+  (closed)="onDocumentModalClosed()"
+/>
+
+<ng-template #actionsTpl let-row>
+  <ui-button
+    label="Ver documento"
+    variant="secondary"
+    size="sm"
+    [disabled]="loadingDocumentId() === row.id"
+    (click)="onViewDocument(row)"
+  />
+</ng-template>

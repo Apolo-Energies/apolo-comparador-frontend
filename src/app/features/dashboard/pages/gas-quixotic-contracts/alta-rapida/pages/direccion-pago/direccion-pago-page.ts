@@ -8,7 +8,10 @@ import { formatIbanES } from '../../../../fast-discharge/utils/format.utils';
 const INPUT_CLS  = 'px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all';
 const SELECT_CLS = 'px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all cursor-pointer';
 
-const STREET_TYPES = ['CL', 'AV', 'PZ', 'PS', 'CR', 'TR', 'UR'];
+const STREET_TYPES = [
+  'Calle', 'Avenida', 'AGREGADO', 'ARROYO', 'AUTOPISTA', 'BAJADA',
+  'BARRANCO', 'BARRIO', 'CALEYA', 'CAMPA',
+];
 
 /** IBAN español: ES + 2 dígitos de control + 20 dígitos de cuenta = 24 caracteres. */
 const IBAN_ES_LENGTH = 24;

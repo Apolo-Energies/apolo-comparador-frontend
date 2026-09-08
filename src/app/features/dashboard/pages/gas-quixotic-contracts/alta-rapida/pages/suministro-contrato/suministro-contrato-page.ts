@@ -31,13 +31,12 @@ export class SuministroContratoPage {
   readonly notFound        = signal(false);
 
   readonly errors = computed<Record<string, string | null>>(() => {
-    if (!this.submitted()) return { cups: null, supplyPointName: null, contractName: null };
+    if (!this.submitted()) return { cups: null, supplyPointName: null };
     const cups = this.draft().cups.trim();
     return {
       cups:            cups === ''                 ? 'Obligatorio'
                      : !CUPS_REGEX.test(cups)       ? 'Formato de CUPS inválido' : null,
       supplyPointName: this.draft().supplyPointName.trim() === '' ? 'Obligatorio' : null,
-      contractName:    this.draft().contractName.trim()    === '' ? 'Obligatorio' : null,
     };
   });
 

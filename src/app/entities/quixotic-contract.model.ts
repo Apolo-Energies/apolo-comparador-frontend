@@ -10,17 +10,14 @@ export const QUIXOTIC_CONTRACT_STATUSES = [
 
 export type QuixoticContractStatus = typeof QUIXOTIC_CONTRACT_STATUSES[number];
 
-/**
- * Contrato tal cual lo devuelve GET /quixotic/contracts — el backend no
- * normaliza el casing, viene en snake_case igual que la respuesta de Quixotic.
- */
+/** Contrato tal cual lo devuelve GET /quixotic/contracts — en camelCase. */
 export interface QuixoticContract {
-  id: string;
-  contract_code:       string | null;
-  contract_name:       string;
-  contract_status:     string;
-  contract_start_date: string | null;
-  supply_point_id:     string | null;
+  id:                string;
+  contractCode:      string | null;
+  contractName:      string;
+  contractStatus:    string;
+  contractStartDate: string | null;
+  supplyPointId:     string | null;
 }
 
 export interface QuixoticContractFilters {
@@ -46,4 +43,11 @@ export interface CreateQuixoticContractRequest {
 export interface CreateQuixoticContractResponse {
   id:  string;
   raw: unknown;
+}
+
+/** Respuesta de GET /quixotic/contracts/{id}/document */
+export interface QuixoticContractDocument {
+  fileName:    string;
+  contentType: string | null;
+  publicUrl:   string;
 }

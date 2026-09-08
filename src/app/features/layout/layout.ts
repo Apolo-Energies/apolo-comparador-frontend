@@ -21,13 +21,15 @@ const COLABORADOR_PERMISSIONS = [
   'comparator:view',
   'sips:view',
   'markets:view',
-  // 'contratos:view' y 'clients:view' ocultos temporalmente para Colaborador — Master sigue viéndolos (bypass en accessFn).
+  'contratos:view',
+  'clients:view',
   'settings:view',
   'settings.colaborador:view',
   'opportunities:view',
   'analytics:view',
   'analytics.history:view',
   'analytics.statistics:view',
+  'support:view',
 ];
 
 const ROLE_PERMISSIONS: Record<string, string[]> = {
@@ -251,8 +253,11 @@ export class Layout {
             icon: { type: 'apolo' as const, icon: NoteIcon, size: 20 },
             access: ['contratos:view'],
             children: [
-              { title: 'Luz', url: '/dashboard/contratos/contratos',       access: ['contratos:view'] },
-              { title: 'Gas', url: '/dashboard/gas/quixotic-contracts',    access: ['contratos:view'] },
+              { title: 'Luz', url: '/dashboard/contratos/contratos', access: ['contratos:view'] },
+              // Gas de contratos (Quixotic) todavía no disponible para Colaboradores.
+              ...(isColaborador ? [] : [
+                { title: 'Gas', url: '/dashboard/gas/quixotic-contracts', access: ['contratos:view'] },
+              ]),
             ],
           }] : []),
           ...(environment.features.opportunities ? [{
@@ -302,12 +307,14 @@ export class Layout {
             access: ['settings:view'],
             children: ajustesChildren,
           },
-          {
+          // "Soporte" para Colaborador es exclusivo de Apolo — en otros tenants (coexpal/renova/prod)
+          // no debe aparecerle, aunque COLABORADOR_PERMISSIONS (compartido entre ambientes) lo incluya.
+          ...(isColaborador && !isApolo ? [] : [{
             title: 'Soporte',
-            icon: { type: 'apolo', icon: SupportIcon, size: 20 },
+            icon: { type: 'apolo' as const, icon: SupportIcon, size: 20 },
             url: '/dashboard/support',
             access: ['support:view'],
-          }
+          }]),
         ],
       },
     ];

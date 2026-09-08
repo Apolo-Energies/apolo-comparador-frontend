@@ -55,36 +55,9 @@
       </p>
 
       <div class="flex flex-col gap-1">
-        <label class="text-sm font-medium text-muted-foreground">Nombre del contrato *</label>
-        <input [class]="inputCls" placeholder="Ej. Suministro Gas - Calle Mayor 10"
-               [value]="draft().contractName" (input)="updateField('contractName', $any($event.target).value)" />
-        @if (errors()['contractName']) { <span class="text-red-500 text-xs">{{ errors()['contractName'] }}</span> }
-      </div>
-
-      <div class="grid grid-cols-2 gap-4">
-        <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-muted-foreground">Código de contrato</label>
-          <input [class]="inputCls" placeholder="Opcional"
-                 [value]="draft().contractCode" (input)="updateField('contractCode', $any($event.target).value)" />
-        </div>
-        <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-muted-foreground">Fecha de inicio</label>
-          <input [class]="inputCls" type="date"
-                 [value]="draft().contractStartDate" (input)="updateField('contractStartDate', $any($event.target).value)" />
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-4">
-        <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-muted-foreground">Duración (meses)</label>
-          <input [class]="inputCls" type="number" placeholder="Opcional"
-                 [value]="draft().contractDuration" (input)="updateField('contractDuration', $any($event.target).value)" />
-        </div>
-        <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-muted-foreground">Días de vencimiento de factura</label>
-          <input [class]="inputCls" type="number" placeholder="Opcional"
-                 [value]="draft().invoiceDueDays" (input)="updateField('invoiceDueDays', $any($event.target).value)" />
-        </div>
+        <label class="text-sm font-medium text-muted-foreground">Código de contrato</label>
+        <input [class]="inputCls" placeholder="Opcional"
+               [value]="draft().contractCode" (input)="updateField('contractCode', $any($event.target).value)" />
       </div>
 
       <div class="border-t border-border pt-4 flex items-center justify-between">

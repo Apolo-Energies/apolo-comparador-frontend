@@ -98,7 +98,6 @@
               {{ draft().billingAddressStreetType }} {{ draft().billingAddressStreet }} {{ draft().billingAddressNumber }}, {{ draft().billingAddressPostalCode }} {{ draft().billingAddressCityName }}
             </p>
           </div>
-          <div><p class="text-xs text-muted-foreground">Método de pago</p><p class="font-medium text-foreground">{{ draft().paymentMethodType || '—' }}</p></div>
           <div><p class="text-xs text-muted-foreground">IBAN</p><p class="font-medium text-foreground">{{ draft().bankAccountNumber || '—' }}</p></div>
         </div>
       </section>
@@ -107,8 +106,8 @@
         <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground border-b border-border pb-1">Suministro y contrato</p>
         <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
           <div class="col-span-2"><p class="text-xs text-muted-foreground">CUPS</p><p class="font-medium font-mono text-foreground text-xs">{{ draft().cups || '—' }}</p></div>
-          <div><p class="text-xs text-muted-foreground">Contrato</p><p class="font-medium text-foreground">{{ draft().contractName || '—' }}</p></div>
-          <div><p class="text-xs text-muted-foreground">Inicio / Duración</p><p class="font-medium text-foreground">{{ draft().contractStartDate || '—' }} / {{ draft().contractDuration || '—' }} meses</p></div>
+          <div><p class="text-xs text-muted-foreground">Nombre del suministro</p><p class="font-medium text-foreground">{{ draft().supplyPointName || '—' }}</p></div>
+          <div><p class="text-xs text-muted-foreground">Código de contrato</p><p class="font-medium text-foreground">{{ draft().contractCode || '—' }}</p></div>
         </div>
       </section>
 
