@@ -12,7 +12,7 @@
 
   <div class="relative space-y-4">
 
-    <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <app-market-kpi-card
         label="Gas"
         subtitle="Precio Mibgas Spot"
@@ -25,12 +25,18 @@
         currentLabel="Media del último día - Hoy"
         [loading]="kpisLoading()"
         [spot]="electricitySpot()" />
+      <!-- CO2 oculto temporalmente por decisión de negocio (2026-09-07).
+           Los datos siguen llegando del backend; solo se oculta la tarjeta.
+           Para reactivar, descomentar este bloque. -->
+      <!--
       <app-market-kpi-card
         label="CO2"
         subtitle="Precio EU ETS"
         currentLabel="Último precio - Ayer"
         [loading]="kpisLoading()"
         [spot]="co2Spot()" />
+      -->
+
       <app-market-kpi-card
         label="Petróleo"
         subtitle="Precio Brent"

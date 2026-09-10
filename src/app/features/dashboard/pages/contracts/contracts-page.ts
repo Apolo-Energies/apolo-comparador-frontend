@@ -1,17 +1,13 @@
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
   computed,
   inject,
   PLATFORM_ID,
   signal,
-  TemplateRef,
-  ViewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
+import { PaginatorComponent } from '@apolo-energies/table';
 import { ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
 import { FileDownIcon, NoteIcon, SearchIcon, ShieldCheckIcon, SvgIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
 import { AuthService } from '@apolo-energies/auth';
@@ -54,7 +50,7 @@ const CARD_ACCENTS: Record<keyof ContratosCards, string> = {
   selector: 'app-contracts-page',
   standalone: true,
   imports: [
-    DataTableComponent, PaginatorComponent,
+    PaginatorComponent,
     InputFieldComponent, ButtonComponent,
     TableSkeletonComponent,
     ContractDetailDrawerComponent,
@@ -62,38 +58,11 @@ const CARD_ACCENTS: Record<keyof ContratosCards, string> = {
   ],
   templateUrl: './contracts-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: [`
-    :host ::ng-deep lib-data-table th:first-child,
-    :host ::ng-deep lib-data-table td:first-child {
-      position: sticky;
-      left: 0;
-      z-index: 2;
-      box-shadow: 4px 0 8px -4px rgba(0, 0, 0, 0.4);
-    }
-    :host ::ng-deep lib-data-table th:first-child {
-      background: var(--color-card);
-    }
-    :host ::ng-deep lib-data-table td:first-child {
-      background: var(--color-card);
-    }
-    :host ::ng-deep lib-data-table tr:hover td:first-child {
-      background: var(--color-body);
-    }
-  `],
 })
-export class ContractsPageComponent implements AfterViewInit {
-  @ViewChild('clienteTpl')      private clienteTpl!:      TemplateRef<{ $implicit: ContratoClienteRow }>;
-  @ViewChild('serviciosTpl')    private serviciosTpl!:    TemplateRef<{ $implicit: ContratoClienteRow }>;
-  @ViewChild('consumoTpl')      private consumoTpl!:      TemplateRef<{ $implicit: ContratoClienteRow }>;
-  @ViewChild('estadoTpl')       private estadoTpl!:       TemplateRef<{ $implicit: ContratoClienteRow }>;
-  @ViewChild('vencimientoTpl')  private vencimientoTpl!:  TemplateRef<{ $implicit: ContratoClienteRow }>;
-  @ViewChild('movimientoTpl')   private movimientoTpl!:   TemplateRef<{ $implicit: ContratoClienteRow }>;
-  @ViewChild('detalleTpl')      private detalleTpl!:      TemplateRef<{ $implicit: ContratoClienteRow }>;
-
+export class ContractsPageComponent {
   private readonly contractService = inject(ContractService);
   private readonly globalLoading   = inject(GlobalLoadingService);
   private readonly platformId      = inject(PLATFORM_ID);
-  private readonly cdr             = inject(ChangeDetectorRef);
   private readonly auth            = inject(AuthService);
   private readonly refreshToken    = inject(RefreshTokenService);
 
@@ -127,6 +96,9 @@ export class ContractsPageComponent implements AfterViewInit {
   readonly hasMore     = signal(false);
   readonly selectedClient = signal<ContratoClienteRow | null>(null);
 
+  /** Solo una fila expandida a la vez. */
+  readonly expandedId = signal<number | null>(null);
+
   readonly totalPages = computed(() =>
     this.hasMore() ? this.currentPage() + 1 : this.currentPage()
   );
@@ -135,16 +107,6 @@ export class ContractsPageComponent implements AfterViewInit {
       ? this.currentPage() * this.pageSize() + 1
       : (this.currentPage() - 1) * this.pageSize() + this.data().length
   );
-
-  readonly columns = signal<TableColumn<ContratoClienteRow>[]>([
-    { key: 'NombreCliente',      label: 'Cliente' },
-    { key: 'NumServicios',       label: 'Servicios',   align: 'center' },
-    { key: 'ConsumoTotal',       label: 'Consumo',     align: 'right' },
-    { key: 'EstadoResumen',      label: 'Estado',      align: 'center' },
-    { key: 'ProximoVencimiento', label: 'Próx. venc.', align: 'center' },
-    { key: 'UltimoMovimiento',   label: 'Último mov.', align: 'center' },
-    { key: '__detalle',          label: 'Detalle',     align: 'center' },
-  ]);
 
   readonly estadoCls   = estadoCls;
   readonly estadoLabel = estadoLabel;
@@ -196,6 +158,32 @@ export class ContractsPageComponent implements AfterViewInit {
 
   closeDetail(): void {
     this.selectedClient.set(null);
+  }
+
+  toggleExpand(id: number): void {
+    this.expandedId.update(curr => curr === id ? null : id);
+  }
+
+  /** Campos ausentes en ContratoClienteRow van como pendientes hasta cablear backend. */
+  getChecklist(row: ContratoClienteRow): ContratoCheckItem[] {
+    const nombre    = row.RazonSocialCliente || row.NombreCliente || '';
+    const cupsFirst = row.CUPS?.[0] ?? '';
+    return [
+      { key: 'nif',       label: 'NIF / CIF',                 group: 'datos',         completed: !!row.NIF,   optional: false, currentValue: row.NIF || null },
+      { key: 'nombre',    label: 'Razón social',              group: 'datos',         completed: !!nombre,    optional: false, currentValue: nombre || null },
+      { key: 'comercial', label: 'Nombre comercial',          group: 'datos',         completed: !!row.NombreComercialCliente, optional: true, currentValue: row.NombreComercialCliente || null },
+      { key: 'iban',      label: 'IBAN',                      group: 'datos',         completed: false,       optional: false, currentValue: null },
+      { key: 'telefono',  label: 'Teléfono',                  group: 'datos',         completed: false,       optional: false, currentValue: null },
+      { key: 'email',     label: 'Email',                     group: 'datos',         completed: false,       optional: false, currentValue: null },
+      { key: 'cups',      label: 'CUPS',                      group: 'documentacion', completed: !!cupsFirst, optional: false, currentValue: cupsFirst || null },
+      { key: 'docs',      label: 'Documentación adjunta',     group: 'documentacion', completed: false,       optional: false, currentValue: null },
+      { key: 'firmaSms',  label: 'Firma SMS',                 group: 'firma',         completed: false,       optional: false, currentValue: null },
+      { key: 'llamada',   label: 'Verificación por llamada',  group: 'firma',         completed: false,       optional: true,  currentValue: null },
+    ];
+  }
+
+  groupItems(items: ContratoCheckItem[], group: ContratoCheckItem['group']): ContratoCheckItem[] {
+    return items.filter(i => i.group === group);
   }
 
   /** Devuelve true si TODOS los servicios del cliente comparten un mismo estado. */
