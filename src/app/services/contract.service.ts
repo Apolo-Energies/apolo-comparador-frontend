@@ -5,6 +5,7 @@ import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { ContractDetail } from '../entities/user-detail.model';
 import { ContratosCards, ContratosPageResponse } from '../entities/contrato.model';
+import { ContratoIncidencia } from '../entities/contrato-incidencia.model';
 import { ServicioListItem } from '../entities/servicio.model';
 
 interface ServiciosPageResponse {
@@ -212,21 +213,44 @@ export class ContractService {
   }
 
   getContratos(params: {
-    filter?:  string;
-    orderBy?: string;
-    offset?:  number;
-    limit?:   number;
+    filter?:   string;
+    orderBy?:  string;
+    offset?:   number;
+    limit?:    number;
+    estado?:   string;
+    faltante?: string;
   }): Observable<ContratosPageResponse> {
-    const httpParams = new HttpParams()
+    let httpParams = new HttpParams()
       .set('filter',  params.filter  ?? '')
       .set('orderBy', params.orderBy ?? 'NombreCliente')
       .set('offset',  String(params.offset  ?? 0))
       .set('limit',   String(params.limit   ?? 10));
+    if (params.estado)   httpParams = httpParams.set('estado',   params.estado);
+    if (params.faltante) httpParams = httpParams.set('faltante', params.faltante);
 
     return this.http.get<ContratosPageResponse>(
       `${environment.apiUrl}/energy-expert/contratos`,
       { params: httpParams },
     );
+  }
+
+  getIncidencias(): Observable<ContratoIncidencia[]> {
+    return this.http.get<ContratoIncidencia[]>(`${environment.apiUrl}/energy-expert/incidencias`);
+  }
+
+  uploadAnexo(contratoId: string, file: File, descripcion?: string): Observable<unknown> {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    if (descripcion) form.append('descripcion', descripcion);
+    return this.http.post(`${environment.apiUrl}/energy-expert/contratos/${contratoId}/anexos`, form);
+  }
+
+  toggleValidado(contratoId: string): Observable<unknown> {
+    return this.http.patch(`${environment.apiUrl}/energy-expert/contratos/${contratoId}/validado`, {});
+  }
+
+  patchCliente(clienteId: string, patch: Record<string, string | null>): Observable<unknown> {
+    return this.http.patch(`${environment.apiUrl}/energy-expert/clientes/${clienteId}`, patch);
   }
 
   getContratosCards(idDelegacion: number | null): Observable<ContratosCards> {

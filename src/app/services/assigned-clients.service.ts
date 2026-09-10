@@ -15,9 +15,11 @@ export class AssignedClientsService {
   private base = `${environment.apiUrl}/energy-expert/clientes`;
 
   list(filters: AssignedClientFilters = {}): Observable<AssignedClientsPageResponse> {
-    const params = new HttpParams()
+    let params = new HttpParams()
       .set('page',     String(filters.page     ?? 1))
       .set('pageSize', String(filters.pageSize ?? 20));
+    if (filters.estado)   params = params.set('estado',   filters.estado);
+    if (filters.faltante) params = params.set('faltante', filters.faltante);
 
     return this.http.get<AssignedClientsPageResponse>(this.base, { params });
   }

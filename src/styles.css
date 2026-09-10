@@ -485,3 +485,47 @@ body.apolo-light * { font-family: 'Space Grotesk', system-ui, sans-serif; }
   white-space:      nowrap;
   pointer-events:   none;
 }
+
+/* PrimeNG p-dialog: forzamos tema del app (config usa .dark selector que no aplicamos). */
+.p-dialog {
+  background-color: var(--color-card) !important;
+  color:            var(--color-foreground) !important;
+  border:           1px solid var(--color-border) !important;
+  border-radius:    0.75rem !important;
+  box-shadow:       0 20px 40px rgba(0, 0, 0, 0.4) !important;
+}
+.p-dialog .p-dialog-header {
+  background-color: var(--color-card) !important;
+  color:            var(--color-foreground) !important;
+  border-bottom:    1px solid var(--color-border) !important;
+  padding:          1rem 1.25rem !important;
+}
+.p-dialog .p-dialog-title {
+  color:            var(--color-foreground) !important;
+  font-weight:      600 !important;
+  font-size:        0.875rem !important;
+}
+.p-dialog .p-dialog-content {
+  background-color: var(--color-card) !important;
+  color:            var(--color-foreground) !important;
+  padding:          1rem 1.25rem !important;
+}
+.p-dialog .p-dialog-footer {
+  background-color: var(--color-card) !important;
+  border-top:       1px solid var(--color-border) !important;
+  padding:          0.75rem 1.25rem !important;
+}
+/* Icono X del header */
+.p-dialog .p-dialog-header-icons .p-dialog-header-icon,
+.p-dialog .p-dialog-close-button {
+  color:            var(--color-muted-foreground) !important;
+}
+.p-dialog .p-dialog-header-icons .p-dialog-header-icon:hover,
+.p-dialog .p-dialog-close-button:hover {
+  color:            var(--color-foreground) !important;
+  background-color: color-mix(in oklab, var(--color-foreground) 8%, transparent) !important;
+}
+/* Backdrop del modal */
+.p-dialog-mask {
+  background-color: rgba(0, 0, 0, 0.55) !important;
+}
