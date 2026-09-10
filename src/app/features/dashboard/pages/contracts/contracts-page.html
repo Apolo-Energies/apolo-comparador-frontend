@@ -12,7 +12,7 @@
   } @else {
 
   <!-- Header -->
-  <div class="bg-card px-6 py-5">
+  <div class="bg-card px-6 py-5 space-y-3">
     <div class="flex flex-col sm:flex-row items-stretch sm:items-end gap-4">
       <div class="flex-1 max-w-sm">
         <ui-input
@@ -28,6 +28,58 @@
         <ui-button label="Limpiar" variant="secondary" size="md" [leadingIcon]="xIcon"      (click)="onClear()" />
         <ui-button label="Buscar"  variant="secondary" size="md" [leadingIcon]="searchIcon" (click)="onSearch()" />
       </div>
+    </div>
+
+    <!-- Filtros locales (mismo patrón que Incidencias de Control) -->
+    <div class="flex flex-wrap items-end gap-3">
+      <label class="flex flex-col gap-1">
+        <span class="text-xs text-muted-foreground">Estado</span>
+        <select [value]="filterEstado()"
+                (change)="onEstadoChange($any($event.target).value)"
+                class="rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 min-w-[10rem]">
+          <option value="">Todos</option>
+          <option value="previo">Previo</option>
+          <option value="para_estudio">Para estudio</option>
+          <option value="para_tramitar">Para tramitar</option>
+          <option value="para_firma">Para firma</option>
+          <option value="incidencia">Incidencia</option>
+        </select>
+      </label>
+
+      <label class="flex flex-col gap-1">
+        <span class="text-xs text-muted-foreground">Campo faltante</span>
+        <select [value]="filterFaltante()"
+                (change)="onFaltanteChange($any($event.target).value)"
+                class="rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 min-w-[12rem]">
+          <option value="">Todos</option>
+          <optgroup label="Datos del cliente">
+            <option value="nif">Sin NIF / CIF</option>
+            <option value="nombre">Sin nombre / razón social</option>
+            <option value="iban">Sin IBAN</option>
+            <option value="telefono">Sin teléfono</option>
+            <option value="email">Sin email</option>
+          </optgroup>
+          <optgroup label="Documentación">
+            <option value="cups">Sin CUPS</option>
+            <option value="documentacion">Sin documentación</option>
+          </optgroup>
+          <optgroup label="Firma y verificación">
+            <option value="firmaSms">Sin firma SMS</option>
+            <option value="verificacionLlamada">Sin verificación llamada</option>
+          </optgroup>
+        </select>
+      </label>
+
+      @if (hasFilters) {
+        <button type="button"
+                (click)="clearFilters()"
+                class="h-8 px-3 rounded-lg border border-border text-xs text-muted-foreground hover:bg-accent/40 transition-colors self-end">
+          Limpiar filtros
+        </button>
+        <span class="text-xs text-muted-foreground self-end ml-auto pb-1">
+          {{ totalCount() }} contrato(s) coinciden
+        </span>
+      }
     </div>
   </div>
 
@@ -58,15 +110,23 @@
           <tbody>
             @for (row of data(); track row.IdCliente) {
               @let expanded = expandedId() === row.IdCliente;
+              @let hasInc   = hasIncidencia(row);
 
-              <!-- Fila principal (clickable) -->
+              <!-- Fila principal: solo clickable si tiene incidencia (parity con Control). -->
               <tr
-                (click)="toggleExpand(row.IdCliente)"
-                class="border-b border-border cursor-pointer transition-colors"
-                [class]="expanded ? 'bg-primary/5' : 'hover:bg-accent/30'"
+                (click)="hasInc && toggleExpand(row.IdCliente)"
+                class="border-b border-border transition-colors"
+                [class.cursor-pointer]="hasInc"
+                [class.cursor-default]="!hasInc"
+                [class]="expanded ? 'bg-primary/5' : (hasInc ? 'hover:bg-accent/30' : '')"
               >
                 <td class="px-2 py-3 text-center text-muted-foreground">
-                  @if (expanded) {
+                  @if (!hasInc) {
+                    <!-- Contrato completo: check verde en vez de chevron. -->
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block text-green-500">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                  } @else if (expanded) {
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block">
                       <polyline points="6 9 12 15 18 9"/>
                     </svg>
@@ -159,8 +219,9 @@
               <!-- Panel expandido: mismo bg que la fila para leerse como un bloque. -->
               @if (expanded) {
                 @let checklist = getChecklist(row);
+                @let inc = firstIncidencia(row);
                 <tr class="border-b border-border bg-primary/5">
-                  <td colspan="8" class="px-6 py-5">
+                  <td colspan="8" class="px-6 py-5" (click)="$event.stopPropagation()">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
                       <!-- DATOS DEL CLIENTE -->
@@ -186,7 +247,13 @@
                                   <div class="text-xs text-muted-foreground truncate">{{ item.currentValue }}</div>
                                 }
                               </div>
-                              <!-- TODO: botón "Editar" (PATCH cliente). -->
+                              @if (!item.completed && item.entity === 'cliente' && item.field && inc) {
+                                <button type="button"
+                                        class="text-xs font-medium text-primary hover:underline shrink-0"
+                                        (click)="openEdit(inc, item)">
+                                  Editar
+                                </button>
+                              }
                             </div>
                           }
                         </div>
@@ -215,7 +282,16 @@
                                   <div class="text-xs text-muted-foreground truncate">{{ item.currentValue }}</div>
                                 }
                               </div>
-                              <!-- TODO: botón "Adjuntar" (upload docs). -->
+                              @if (!item.completed && inc) {
+                                <label class="text-xs font-medium text-primary hover:underline shrink-0 cursor-pointer"
+                                       [class.opacity-50]="saving()"
+                                       [class.pointer-events-none]="saving()">
+                                  Adjuntar
+                                  <input type="file"
+                                         class="hidden"
+                                         (change)="onAdjuntar(inc, $event)" />
+                                </label>
+                              }
                             </div>
                           }
                         </div>
@@ -260,7 +336,16 @@
                                   <div class="text-xs text-muted-foreground truncate">{{ item.currentValue }}</div>
                                 }
                               </div>
-                              <!-- TODO: botón "Marcar firmado / Desmarcar" (toggle firma). -->
+                              @if (item.field === 'validado' && inc) {
+                                <button type="button"
+                                        class="text-xs font-medium shrink-0 hover:underline disabled:opacity-50"
+                                        [class.text-primary]="!item.completed"
+                                        [class.text-muted-foreground]="item.completed"
+                                        [disabled]="saving()"
+                                        (click)="toggleFirma(inc)">
+                                  {{ item.completed ? 'Desmarcar' : 'Marcar firmado' }}
+                                </button>
+                              }
                             </div>
                           }
                         </div>
@@ -304,3 +389,40 @@
   [client]="selectedClient()"
   (closed)="closeDetail()"
 />
+
+<!-- Modal: Editar campo de cliente (paridad con FormDialog de Control/Incidencias) -->
+<p-dialog
+  [visible]="editOpen()"
+  (visibleChange)="$event ? null : closeEdit()"
+  [modal]="true"
+  [closable]="!saving()"
+  [style]="{ width: '32rem' }"
+  [header]="editItem()?.label ?? 'Editar campo'">
+  <div class="space-y-3">
+    <p class="text-xs text-muted-foreground">Introduce el valor para completar este dato del cliente.</p>
+    <input
+      type="text"
+      [formControl]="editValue"
+      class="w-full px-3 py-2 border border-border rounded-md text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+      [placeholder]="editItem()?.label ?? ''"
+      (keydown.enter)="canSaveEdit && !saving() && saveEdit()" />
+    @if (formError(); as err) {
+      <p class="text-xs text-red-500">{{ err }}</p>
+    }
+  </div>
+  <ng-template pTemplate="footer">
+    <div class="flex justify-end gap-2">
+      <button type="button"
+              class="px-3 py-1.5 text-sm rounded-md border border-border text-muted-foreground hover:bg-accent/40 disabled:opacity-50"
+              [disabled]="saving()"
+              (click)="closeEdit()">Cancelar</button>
+      <button type="button"
+              class="px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              [disabled]="!canSaveEdit || saving()"
+              (click)="saveEdit()">
+        {{ saving() ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </div>
+  </ng-template>
+</p-dialog>
+

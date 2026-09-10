@@ -56,6 +56,8 @@ export interface AssignedClient {
 export interface AssignedClientFilters {
   page?:     number;
   pageSize?: number;
+  estado?:   string;
+  faltante?: string;
 }
 
 export interface AssignedClientsPageResponse {
