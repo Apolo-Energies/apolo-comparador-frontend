@@ -72,6 +72,29 @@
   </button>
 </ng-template>
 
+@if (hasDelegation()) {
+  <!-- Nº Contratos -->
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+    @for (tile of cardTiles(); track tile.key) {
+      <div class="border border-border rounded-lg bg-card p-4 flex items-center gap-3">
+        <div class="shrink-0" [style.color]="tile.accent">
+          <lib-svg-icon [icon]="tile.icon" [size]="tile.size" cssClass="contratos-tile-icon" />
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs text-muted-foreground truncate">{{ tile.label }}</p>
+          @if (cardsLoading()) {
+            <div class="h-6 w-12 rounded bg-accent animate-pulse mt-1"></div>
+          } @else {
+            <p class="text-xl font-semibold text-foreground leading-tight">
+              {{ tile.value === null ? '—' : tile.value.toLocaleString('es-ES') }}
+            </p>
+          }
+        </div>
+      </div>
+    }
+  </div>
+}
+
 <div class="border border-border rounded-lg overflow-hidden shadow-sm">
 
   @if (!hasDelegation()) {
