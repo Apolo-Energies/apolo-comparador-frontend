@@ -114,7 +114,7 @@ export class ComparatorService {
     const {
       totalActual, ieActual, ivaActual, subTotalActual,
       extraSinIE, costesComunesConIEActual, otrosNoComunesActual,
-      totalOferta, ieOferta, ivaOferta, subTotalOferta,
+      totalOferta, ieOferta, ivaOferta, subTotalOferta, otrosNoComunesOferta,
     } = result;
 
     const lineas = [
@@ -199,7 +199,7 @@ export class ComparatorService {
         totalActual,
         totalOferta,
         otrosNoComunesActual,
-        otrosNoComunesOferta:    0,
+        otrosNoComunesOferta,
         otrosComunesSinIeActual: extraSinIE,
         otrosComunesSinIeOferta: extraSinIE,
         otrosComunesConIeActual: costesComunesConIEActual,
