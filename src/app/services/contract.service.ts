@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { ContractDetail } from '../entities/user-detail.model';
-import { ContratosPageResponse } from '../entities/contrato.model';
+import { ContratosCards, ContratosPageResponse } from '../entities/contrato.model';
 import { ContratoIncidencia } from '../entities/contrato-incidencia.model';
 import { ServicioListItem } from '../entities/servicio.model';
 
@@ -251,5 +251,15 @@ export class ContractService {
 
   patchCliente(clienteId: string, patch: Record<string, string | null>): Observable<unknown> {
     return this.http.patch(`${environment.apiUrl}/energy-expert/clientes/${clienteId}`, patch);
+  }
+
+  getContratosCards(idDelegacion: number | null): Observable<ContratosCards> {
+    let params = new HttpParams();
+    if (idDelegacion != null) params = params.set('idDelegacion', String(idDelegacion));
+
+    return this.http.get<ContratosCards>(
+      `${environment.apiUrl}/energy-expert/portal/contratos-cards`,
+      { params },
+    );
   }
 }

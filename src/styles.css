@@ -460,6 +460,15 @@ body.apolo-light * { font-family: 'Space Grotesk', system-ui, sans-serif; }
   background:     transparent !important;
 }
 
+/* Los íconos de @apolo-energies/icons traen stroke-width hardcodeado por-path
+   (varía entre 1.5 y 2.5 según el ícono), lo que los hace ver de peso visual
+   desparejo aunque se les pase el mismo [size]. Normalizamos con !important
+   (una attribute CSS siempre gana sobre el atributo de presentación SVG). */
+.contratos-tile-icon path,
+.contratos-tile-icon line {
+  stroke-width: 1.75px !important;
+}
+
 .NgxEditor__Content hr::after {
   content:          '— Salto de página —';
   position:         absolute;

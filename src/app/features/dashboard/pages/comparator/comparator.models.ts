@@ -123,6 +123,7 @@ export interface ComparadorResult {
   ieOferta:                 number;
   subTotalOferta:           number;
   ivaOferta:                number;
+  otrosNoComunesOferta:     number;
 }
 
 // ── Component-level types ──────────────────────────────────────────────────────
