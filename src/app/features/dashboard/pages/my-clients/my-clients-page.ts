@@ -1,16 +1,20 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   computed,
   inject,
   PLATFORM_ID,
   signal,
+  TemplateRef,
+  ViewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpResponse } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { Dialog } from 'primeng/dialog';
-import { PaginatorComponent } from '@apolo-energies/table';
+import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
 import { ButtonComponent } from '@apolo-energies/ui';
 import { FileSpreadsheetIcon, UiIconSource } from '@apolo-energies/icons';
 import { AuthService } from '@apolo-energies/auth';
@@ -28,7 +32,7 @@ import { getUserRoles } from '../../../../utils/auth.utils';
   selector: 'app-my-clients-page',
   standalone: true,
   imports: [
-    PaginatorComponent,
+    DataTableComponent, PaginatorComponent,
     ButtonComponent, TableSkeletonComponent,
     ClientDetailModalComponent,
     Dialog, FormsModule, ReactiveFormsModule,
@@ -36,13 +40,18 @@ import { getUserRoles } from '../../../../utils/auth.utils';
   templateUrl: './my-clients-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MyClientsPageComponent {
+export class MyClientsPageComponent implements AfterViewInit {
+  @ViewChild('clienteTpl')        private clienteTpl!:        TemplateRef<{ $implicit: AssignedClient }>;
+  @ViewChild('contratosBadgeTpl') private contratosBadgeTpl!: TemplateRef<{ $implicit: AssignedClient }>;
+  @ViewChild('serviciosBadgeTpl') private serviciosBadgeTpl!: TemplateRef<{ $implicit: AssignedClient }>;
+
   private readonly clientsService     = inject(AssignedClientsService);
   private readonly delegationsService = inject(DelegationsService);
   private readonly contractService    = inject(ContractService);
   private readonly globalLoading      = inject(GlobalLoadingService);
   private readonly platformId         = inject(PLATFORM_ID);
   private readonly auth               = inject(AuthService);
+  private readonly cdr                = inject(ChangeDetectorRef);
 
   readonly isMaster = computed(() => getUserRoles(this.auth.currentUser()).includes('Master'));
 
@@ -58,16 +67,13 @@ export class MyClientsPageComponent {
 
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize())));
 
-  readonly exportingExcel      = signal(false);
+  readonly exportingExcel       = signal(false);
   readonly exportingDelegations = signal(false);
   readonly excelIcon: UiIconSource = { type: 'apolo', icon: FileSpreadsheetIcon, size: 14 };
 
   readonly detailModalOpen   = signal(false);
   readonly detailModalClient = signal<AssignedClient | null>(null);
   readonly detailModalMode   = signal<ClientDetailMode>('contratos');
-
-  /** Fila expandida (por idCliente). */
-  readonly expandedId = signal<number | null>(null);
 
   /** Filtros de incidencia. Server-side — dispara reload al cambiar. */
   readonly filterEstado   = signal<string>('');
@@ -107,8 +113,29 @@ export class MyClientsPageComponent {
     return map;
   });
 
+  readonly columns = signal<TableColumn<AssignedClient>[]>([
+    { key: 'nombreCliente',          label: 'Cliente' },
+    { key: 'nombreComercialCliente', label: 'Comercial' },
+    { key: 'direccion',              label: 'Dirección', textColor: 'text-muted-foreground', format: row => row.direccion || '—' },
+    { key: 'cp',                     label: 'CP',         align: 'center', format: row => row.cp || '—' },
+    { key: 'provincia',              label: 'Provincia',  format: row => row.provincia || '—' },
+    { key: 'poblacion',              label: 'Población',  format: row => row.poblacion || '—' },
+    { key: 'totalContratos',         label: 'Contratos',  align: 'center' },
+    { key: 'servicios',              label: 'Servicios',  align: 'center' },
+  ]);
+
   constructor() {
     if (isPlatformBrowser(this.platformId)) this.load();
+  }
+
+  ngAfterViewInit(): void {
+    this.columns.update(cols => cols.map(col => {
+      if (col.key === 'nombreCliente')  return { ...col, cellTemplate: this.clienteTpl };
+      if (col.key === 'totalContratos') return { ...col, cellTemplate: this.contratosBadgeTpl };
+      if (col.key === 'servicios')      return { ...col, cellTemplate: this.serviciosBadgeTpl };
+      return col;
+    }));
+    this.cdr.markForCheck();
   }
 
   openContratos(row: AssignedClient): void {
@@ -127,10 +154,6 @@ export class MyClientsPageComponent {
     this.detailModalOpen.set(false);
   }
 
-  toggleExpand(id: number): void {
-    this.expandedId.update(curr => curr === id ? null : id);
-  }
-
   /** Solo items entity='cliente' (docs/firma viven en Contratos > Luz). */
   hasIncidencia(row: AssignedClient): boolean {
     const inc = this.incidenciasByNif().get(row.nif)?.[0];
@@ -147,6 +170,9 @@ export class MyClientsPageComponent {
     const items = this.incidenciasByNif().get(row.nif)?.[0]?.checklist ?? [];
     return items.filter(i => i.entity === 'cliente');
   }
+
+  readonly rowIsExpandable = (row: AssignedClient) => this.hasIncidencia(row);
+  readonly rowExpandBadge  = (_row: AssignedClient) => null;
 
   // ── Diálogos y acciones de escritura (paridad con Contratos → Luz) ─────
 
