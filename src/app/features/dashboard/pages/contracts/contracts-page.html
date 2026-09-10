@@ -109,7 +109,7 @@
   } @else {
 
   <!-- Header -->
-  <div class="bg-card px-6 py-5">
+  <div class="bg-card px-6 py-5 space-y-3">
     <div class="flex flex-col sm:flex-row items-stretch sm:items-end gap-4">
       <div class="flex-1 max-w-sm">
         <ui-input
@@ -126,6 +126,58 @@
         <ui-button label="Buscar"  variant="secondary" size="md" [leadingIcon]="searchIcon" (click)="onSearch()" />
       </div>
     </div>
+
+    <!-- Filtros locales (mismo patrón que Incidencias de Control) -->
+    <div class="flex flex-wrap items-end gap-3">
+      <label class="flex flex-col gap-1">
+        <span class="text-xs text-muted-foreground">Estado</span>
+        <select [value]="filterEstado()"
+                (change)="onEstadoChange($any($event.target).value)"
+                class="rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 min-w-[10rem]">
+          <option value="">Todos</option>
+          <option value="previo">Previo</option>
+          <option value="para_estudio">Para estudio</option>
+          <option value="para_tramitar">Para tramitar</option>
+          <option value="para_firma">Para firma</option>
+          <option value="incidencia">Incidencia</option>
+        </select>
+      </label>
+
+      <label class="flex flex-col gap-1">
+        <span class="text-xs text-muted-foreground">Campo faltante</span>
+        <select [value]="filterFaltante()"
+                (change)="onFaltanteChange($any($event.target).value)"
+                class="rounded-lg border border-border bg-background px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 min-w-[12rem]">
+          <option value="">Todos</option>
+          <optgroup label="Datos del cliente">
+            <option value="nif">Sin NIF / CIF</option>
+            <option value="nombre">Sin nombre / razón social</option>
+            <option value="iban">Sin IBAN</option>
+            <option value="telefono">Sin teléfono</option>
+            <option value="email">Sin email</option>
+          </optgroup>
+          <optgroup label="Documentación">
+            <option value="cups">Sin CUPS</option>
+            <option value="documentacion">Sin documentación</option>
+          </optgroup>
+          <optgroup label="Firma y verificación">
+            <option value="firmaSms">Sin firma SMS</option>
+            <option value="verificacionLlamada">Sin verificación llamada</option>
+          </optgroup>
+        </select>
+      </label>
+
+      @if (hasFilters) {
+        <button type="button"
+                (click)="clearFilters()"
+                class="h-8 px-3 rounded-lg border border-border text-xs text-muted-foreground hover:bg-accent/40 transition-colors self-end">
+          Limpiar filtros
+        </button>
+        <span class="text-xs text-muted-foreground self-end ml-auto pb-1">
+          {{ totalCount() }} contrato(s) coinciden
+        </span>
+      }
+    </div>
   </div>
 
   <!-- Table -->
@@ -138,19 +190,272 @@
         <p class="text-sm">Sin resultados</p>
       </div>
     } @else {
-      <lib-data-table
-        [data]="data()"
-        [columns]="columns()"
-        rowKey="IdCliente"
-        [borderTop]="false"
-        [borderBottom]="true"
-        [borderLeft]="false"
-        [borderRight]="false"
-        [roundedTopLeft]="false"
-        [roundedTopRight]="false"
-        [roundedBottomLeft]="false"
-        [roundedBottomRight]="false"
-      />
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-border bg-card text-muted-foreground text-xs font-semibold uppercase tracking-wide">
+              <th class="w-8 px-2 py-3"></th>
+              <th class="text-left px-4 py-3">Cliente</th>
+              <th class="text-center px-4 py-3">Servicios</th>
+              <th class="text-right px-4 py-3">Consumo</th>
+              <th class="text-center px-4 py-3">Estado</th>
+              <th class="text-center px-4 py-3">Próx. venc.</th>
+              <th class="text-center px-4 py-3">Último mov.</th>
+              <th class="text-center px-4 py-3">Detalle</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of data(); track row.IdCliente) {
+              @let expanded = expandedId() === row.IdCliente;
+              @let hasInc   = hasIncidencia(row);
+
+              <!-- Fila principal: solo clickable si tiene incidencia (parity con Control). -->
+              <tr
+                (click)="hasInc && toggleExpand(row.IdCliente)"
+                class="border-b border-border transition-colors"
+                [class.cursor-pointer]="hasInc"
+                [class.cursor-default]="!hasInc"
+                [class]="expanded ? 'bg-primary/5' : (hasInc ? 'hover:bg-accent/30' : '')"
+              >
+                <td class="px-2 py-3 text-center text-muted-foreground">
+                  @if (!hasInc) {
+                    <!-- Contrato completo: check verde en vez de chevron. -->
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block text-green-500">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                  } @else if (expanded) {
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  } @else {
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block">
+                      <polyline points="9 18 15 12 9 6"/>
+                    </svg>
+                  }
+                </td>
+
+                <!-- Cliente -->
+                <td class="px-4 py-3">
+                  <p class="font-medium text-foreground">{{ row.RazonSocialCliente || row.NombreCliente || '—' }}</p>
+                  <p class="text-xs text-muted-foreground mt-0.5">{{ row.NIF || '—' }}</p>
+                  @if (row.NombreComercialCliente) {
+                    <p class="text-[11px] text-muted-foreground/70 mt-0.5">{{ row.NombreComercialCliente }}</p>
+                  }
+                </td>
+
+                <!-- Servicios -->
+                <td class="px-4 py-3 text-center">
+                  <span class="inline-flex items-center justify-center min-w-[2.25rem] px-2 py-0.5 rounded-md text-xs font-semibold bg-violet-500/10 text-violet-300">
+                    {{ row.NumServicios }}
+                  </span>
+                </td>
+
+                <!-- Consumo -->
+                <td class="px-4 py-3 text-right">
+                  <span class="font-mono text-sm text-foreground">{{ fmtKwh(row.ConsumoTotal) }}</span>
+                </td>
+
+                <!-- Estado -->
+                <td class="px-4 py-3 text-center">
+                  @let single = singleEstado(row);
+                  @if (single) {
+                    <span class="px-2 py-0.5 rounded-md text-xs font-semibold" [class]="estadoCls(single)">
+                      {{ estadoLabel(single) }}
+                    </span>
+                  } @else {
+                    <div class="flex flex-wrap items-center justify-center gap-1">
+                      @for (e of estadoEntries(row); track e.estado) {
+                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold"
+                              [class]="estadoCls(e.estado)"
+                              [title]="e.count + ' ' + estadoLabel(e.estado)">
+                          {{ e.count }} · {{ estadoLabel(e.estado) }}
+                        </span>
+                      }
+                    </div>
+                  }
+                </td>
+
+                <!-- Próx. vencimiento -->
+                <td class="px-4 py-3 text-center">
+                  @if (row.ProximoVencimiento) {
+                    @let dias = calcDias(row.ProximoVencimiento);
+                    <p class="text-sm text-muted-foreground">{{ fmtDate(row.ProximoVencimiento) }}</p>
+                    @if (dias !== null) {
+                      <p class="text-xs font-semibold mt-0.5"
+                         [class.text-[#ef4444]]="dias <= 30"
+                         [class.text-yellow-400]="dias > 30 && dias <= 90"
+                         [class.text-[#1AD598]]="dias > 90">
+                        {{ dias > 0 ? dias + ' días' : 'Vencido' }}
+                      </p>
+                    }
+                  } @else {
+                    <span class="text-xs text-muted-foreground">—</span>
+                  }
+                </td>
+
+                <!-- Último movimiento -->
+                <td class="px-4 py-3 text-center">
+                  <span class="text-sm text-muted-foreground">{{ fmtDate(row.UltimoMovimiento) }}</span>
+                </td>
+
+                <!-- Detalle (botón — no propaga click a la fila) -->
+                <td class="px-4 py-3 text-center" (click)="$event.stopPropagation()">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-primary-button bg-primary-button/10 hover:bg-primary-button/20 transition-colors cursor-pointer"
+                    (click)="openDetail(row)"
+                    title="Ver detalle del cliente y sus servicios">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    Ver detalle
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Panel expandido: mismo bg que la fila para leerse como un bloque. -->
+              @if (expanded) {
+                @let checklist = getChecklist(row);
+                @let inc = firstIncidencia(row);
+                <tr class="border-b border-border bg-primary/5">
+                  <td colspan="8" class="px-6 py-5" (click)="$event.stopPropagation()">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                      <!-- DATOS DEL CLIENTE -->
+                      <div>
+                        <h4 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                          Datos del cliente
+                        </h4>
+                        <div class="space-y-2.5">
+                          @for (item of groupItems(checklist, 'datos'); track item.key) {
+                            <div class="flex items-start gap-2">
+                              @if (item.completed) {
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-green-500">
+                                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                                </svg>
+                              } @else {
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-red-500">
+                                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                              }
+                              <div class="flex-1 min-w-0">
+                                <div class="text-xs font-medium text-foreground">{{ item.label }}</div>
+                                @if (item.currentValue) {
+                                  <div class="text-xs text-muted-foreground truncate">{{ item.currentValue }}</div>
+                                }
+                              </div>
+                              @if (!item.completed && item.entity === 'cliente' && item.field && inc) {
+                                <button type="button"
+                                        class="text-xs font-medium text-primary hover:underline shrink-0"
+                                        (click)="openEdit(inc, item)">
+                                  Editar
+                                </button>
+                              }
+                            </div>
+                          }
+                        </div>
+                      </div>
+
+                      <!-- DOCUMENTACIÓN -->
+                      <div>
+                        <h4 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                          Documentación
+                        </h4>
+                        <div class="space-y-2.5">
+                          @for (item of groupItems(checklist, 'documentacion'); track item.key) {
+                            <div class="flex items-start gap-2">
+                              @if (item.completed) {
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-green-500">
+                                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                                </svg>
+                              } @else {
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-red-500">
+                                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                              }
+                              <div class="flex-1 min-w-0">
+                                <div class="text-xs font-medium text-foreground">{{ item.label }}</div>
+                                @if (item.currentValue) {
+                                  <div class="text-xs text-muted-foreground truncate">{{ item.currentValue }}</div>
+                                }
+                              </div>
+                              @if (!item.completed && inc) {
+                                <label class="text-xs font-medium text-primary hover:underline shrink-0 cursor-pointer"
+                                       [class.opacity-50]="saving()"
+                                       [class.pointer-events-none]="saving()">
+                                  Adjuntar
+                                  <input type="file"
+                                         class="hidden"
+                                         (change)="onAdjuntar(inc, $event)" />
+                                </label>
+                              }
+                            </div>
+                          }
+                        </div>
+
+                        @if (row.CUPS && row.CUPS.length > 0) {
+                          <div class="mt-4 pt-3 border-t border-border">
+                            <div class="text-xs text-muted-foreground font-medium mb-1">CUPS</div>
+                            @for (cup of row.CUPS; track cup) {
+                              <div class="text-xs font-mono text-foreground">{{ cup }}</div>
+                            }
+                          </div>
+                        }
+                      </div>
+
+                      <!-- FIRMA Y VERIFICACIÓN -->
+                      <div>
+                        <h4 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                          Firma y verificación
+                        </h4>
+                        <div class="space-y-2.5">
+                          @for (item of groupItems(checklist, 'firma'); track item.key) {
+                            <div class="flex items-start gap-2">
+                              @if (item.completed) {
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-green-500">
+                                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                                </svg>
+                              } @else if (item.optional) {
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-muted-foreground">
+                                  <circle cx="12" cy="12" r="10"/>
+                                </svg>
+                              } @else {
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-red-500">
+                                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                              }
+                              <div class="flex-1 min-w-0">
+                                <div class="text-xs font-medium text-foreground">{{ item.label }}</div>
+                                @if (item.optional && !item.completed) {
+                                  <div class="text-xs text-muted-foreground">Verificación manual</div>
+                                }
+                                @if (item.currentValue) {
+                                  <div class="text-xs text-muted-foreground truncate">{{ item.currentValue }}</div>
+                                }
+                              </div>
+                              @if (item.field === 'validado' && inc) {
+                                <button type="button"
+                                        class="text-xs font-medium shrink-0 hover:underline disabled:opacity-50"
+                                        [class.text-primary]="!item.completed"
+                                        [class.text-muted-foreground]="item.completed"
+                                        [disabled]="saving()"
+                                        (click)="toggleFirma(inc)">
+                                  {{ item.completed ? 'Desmarcar' : 'Marcar firmado' }}
+                                </button>
+                              }
+                            </div>
+                          }
+                        </div>
+                      </div>
+
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
     }
   </div>
 
@@ -181,3 +486,40 @@
   [client]="selectedClient()"
   (closed)="closeDetail()"
 />
+
+<!-- Modal: Editar campo de cliente (paridad con FormDialog de Control/Incidencias) -->
+<p-dialog
+  [visible]="editOpen()"
+  (visibleChange)="$event ? null : closeEdit()"
+  [modal]="true"
+  [closable]="!saving()"
+  [style]="{ width: '32rem' }"
+  [header]="editItem()?.label ?? 'Editar campo'">
+  <div class="space-y-3">
+    <p class="text-xs text-muted-foreground">Introduce el valor para completar este dato del cliente.</p>
+    <input
+      type="text"
+      [formControl]="editValue"
+      class="w-full px-3 py-2 border border-border rounded-md text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+      [placeholder]="editItem()?.label ?? ''"
+      (keydown.enter)="canSaveEdit && !saving() && saveEdit()" />
+    @if (formError(); as err) {
+      <p class="text-xs text-red-500">{{ err }}</p>
+    }
+  </div>
+  <ng-template pTemplate="footer">
+    <div class="flex justify-end gap-2">
+      <button type="button"
+              class="px-3 py-1.5 text-sm rounded-md border border-border text-muted-foreground hover:bg-accent/40 disabled:opacity-50"
+              [disabled]="saving()"
+              (click)="closeEdit()">Cancelar</button>
+      <button type="button"
+              class="px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              [disabled]="!canSaveEdit || saving()"
+              (click)="saveEdit()">
+        {{ saving() ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </div>
+  </ng-template>
+</p-dialog>
+
