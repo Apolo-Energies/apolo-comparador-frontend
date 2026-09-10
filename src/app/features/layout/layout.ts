@@ -193,17 +193,21 @@ export class Layout {
       : [
           { title: 'Usuarios',   url: '/dashboard/settings/users',      access: ['settings.users:view'] },
           { title: 'Comisión',   url: '/dashboard/settings/commission', access: ['settings.commission:view'] },
-          { title: 'Plantillas', url: '/dashboard/templates',           access: ['templates:view'] },
+          // Plantillas es de contratos (feature exclusiva de Apolo — Coexpal/Renovae no la usan).
+          ...(environment.features.contracts ? [
+            { title: 'Plantillas', url: '/dashboard/templates', access: ['templates:view'] },
+          ] : []),
           { title: 'Tarifas',    url: '/dashboard/tariffs',             access: ['support:view'] },
-          // Landings y Gas regulatorio son Master-only; comparten analytics:view con Analítica
-          // pero no deben aparecerle al Colaborador (defensa en profundidad para el edge case
-          // Colaborador en whitelabel no-Apolo, donde el ternario externo no lo excluye).
-          ...(isColaborador ? [] : [
+          // Landings y Gas regulatorio son exclusivos de Apolo (Coexpal/Renovae solo usan Luz) y
+          // Master-only dentro de Apolo; comparten analytics:view con Analítica pero no deben
+          // aparecerle al Colaborador (defensa en profundidad para el edge case Colaborador en
+          // whitelabel no-Apolo, donde el ternario externo no lo excluye).
+          ...(isApolo && !isColaborador ? [
             { title: 'Landings',         url: '/dashboard/landings',              access: ['analytics:view'] },
             { title: 'Gas · Tramos',     url: '/dashboard/gas/access-tariffs',    access: ['analytics:view'] },
             { title: 'Gas · Parámetros', url: '/dashboard/gas/regulatory-params', access: ['analytics:view'] },
             { title: 'Gas · Productos',  url: '/dashboard/gas/products',          access: ['analytics:view'] },
-          ]),
+          ] : []),
         ];
 
     const sections: SidebarSection[] = [
@@ -234,18 +238,19 @@ export class Layout {
             access: ['analytics:view'],
             children: [
               { title: 'Historial · Luz',    url: '/dashboard/analytics/history',        access: ['analytics.history:view'] },
-              // Gas de analítica aún no disponible para Colaboradores.
-              ...(isColaborador ? [] : [
+              // Gas de analítica es exclusivo de Apolo (Coexpal/Renovae solo usan Luz) y aún no
+              // disponible para Colaboradores dentro de Apolo.
+              ...(isApolo && !isColaborador ? [
                 { title: 'Historial · Gas',    url: '/dashboard/analytics/history/gas',    access: ['analytics.history:view'] },
-              ]),
+              ] : []),
               { title: 'Estadísticas · Luz', url: '/dashboard/analytics/statistics',     access: ['analytics.statistics:view'] },
-              ...(isColaborador ? [] : [
+              ...(isApolo && !isColaborador ? [
                 { title: 'Estadísticas · Gas', url: '/dashboard/analytics/statistics/gas', access: ['analytics.statistics:view'] },
-              ]),
+              ] : []),
               { title: 'Reportes · Luz',     url: '/dashboard/analytics/reports',        access: ['analytics.statistics:view'] },
-              ...(isColaborador ? [] : [
+              ...(isApolo && !isColaborador ? [
                 { title: 'Reportes · Gas',     url: '/dashboard/analytics/reports/gas',    access: ['analytics.statistics:view'] },
-              ]),
+              ] : []),
             ],
           },
           ...(isApolo && environment.features.contracts ? [{
@@ -277,8 +282,11 @@ export class Layout {
             icon: { type: 'apolo', icon: ArrowDownBoxIcon, size: 20 },
             access: ['comparator:view'],
             children: [
-              { title: 'Luz', url: '/dashboard/comparator',     access: ['comparator:view'] },
-              { title: 'Gas', url: '/dashboard/comparator/gas', access: ['comparator:view'] },
+              { title: 'Luz', url: '/dashboard/comparator', access: ['comparator:view'] },
+              // Comparador de Gas es exclusivo de Apolo — Coexpal/Renovae solo usan Luz.
+              ...(isApolo ? [
+                { title: 'Gas', url: '/dashboard/comparator/gas', access: ['comparator:view'] },
+              ] : []),
             ],
           },
           ...(environment.features.myClients ? [{
@@ -292,8 +300,11 @@ export class Layout {
             icon: { type: 'apolo', icon: CompassIcon, size: 20 },
             access: ['sips:view'],
             children: [
-              { title: 'Luz', url: '/dashboard/sips',     access: ['sips:view'] },
-              { title: 'Gas', url: '/dashboard/sips/gas', access: ['sips:view'] },
+              { title: 'Luz', url: '/dashboard/sips', access: ['sips:view'] },
+              // Consultas SIPS de Gas es exclusivo de Apolo — Coexpal/Renovae solo usan Luz.
+              ...(isApolo ? [
+                { title: 'Gas', url: '/dashboard/sips/gas', access: ['sips:view'] },
+              ] : []),
             ],
           },
         ],
