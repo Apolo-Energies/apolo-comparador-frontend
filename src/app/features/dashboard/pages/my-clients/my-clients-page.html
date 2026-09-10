@@ -5,6 +5,82 @@
   (closed)="onDetailModalClosed()"
 />
 
+<!-- Cell templates -->
+<ng-template #clienteTpl let-row>
+  <div>
+    <p class="font-medium text-foreground">{{ row.nombreCliente || '—' }}</p>
+    <p class="text-xs text-muted-foreground mt-0.5">{{ row.nif }}</p>
+  </div>
+</ng-template>
+
+<ng-template #contratosBadgeTpl let-row>
+  @if (row.totalContratos > 0) {
+    <button
+      type="button"
+      class="inline-flex items-center px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors cursor-pointer"
+      (click)="openContratos(row)">
+      {{ row.totalContratos }}
+    </button>
+  } @else {
+    <span class="text-xs text-muted-foreground">—</span>
+  }
+</ng-template>
+
+<ng-template #serviciosBadgeTpl let-row>
+  @if ((row.servicios?.length ?? 0) > 0) {
+    <button
+      type="button"
+      class="inline-flex items-center px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors cursor-pointer"
+      (click)="openServicios(row)">
+      {{ row.servicios.length }}
+    </button>
+  } @else {
+    <span class="text-xs text-muted-foreground">—</span>
+  }
+</ng-template>
+
+<!-- Fila expandida: SOLO datos del cliente (docs/firma son per-contrato, viven en Contratos > Luz). -->
+<ng-template #checklistTpl let-row>
+  @let clienteItems = getClienteChecklist(row);
+  @let inc = firstIncidencia(row);
+  <tr class="border-b border-border bg-primary/5">
+    <td [attr.colspan]="8" class="px-6 py-5">
+      <h4 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Datos del cliente</h4>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2.5">
+        @for (item of clienteItems; track item.key) {
+          <div class="flex items-start gap-2">
+            @if (item.completed) {
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-green-500">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+            } @else {
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-red-500">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            }
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-medium text-foreground">{{ item.label }}</div>
+              @if (item.currentValue) {
+                <div class="text-xs text-muted-foreground truncate">{{ item.currentValue }}</div>
+              }
+            </div>
+            @if (!item.completed && item.field && inc) {
+              <button type="button"
+                      class="text-xs font-medium text-primary hover:underline shrink-0"
+                      (click)="openEdit(inc, item)">
+                Editar
+              </button>
+            }
+          </div>
+        }
+      </div>
+      @if (clienteItems.length === 0) {
+        <p class="text-xs text-muted-foreground">Sin campos incompletos para este cliente.</p>
+      }
+    </td>
+  </tr>
+</ng-template>
+
 <div class="border border-border rounded-lg overflow-hidden shadow-sm">
 
   <!-- Header -->
@@ -101,7 +177,7 @@
   <!-- Table -->
   <div class="relative">
     @if (loading()) {
-      <app-table-skeleton [cols]="9" [rows]="10" />
+      <app-table-skeleton [cols]="8" [rows]="10" />
     } @else if (error()) {
       <div class="flex flex-col items-center justify-center py-16 text-muted-foreground">
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-3 opacity-40">
@@ -118,131 +194,22 @@
         <p class="text-sm">Todavía no tienes clientes asignados</p>
       </div>
     } @else {
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="border-b border-border bg-card text-muted-foreground text-xs font-semibold uppercase tracking-wide">
-              <th class="w-8 px-2 py-3"></th>
-              <th class="text-left px-4 py-3">Cliente</th>
-              <th class="text-left px-4 py-3">Comercial</th>
-              <th class="text-left px-4 py-3">Dirección</th>
-              <th class="text-center px-4 py-3">CP</th>
-              <th class="text-left px-4 py-3">Provincia</th>
-              <th class="text-left px-4 py-3">Población</th>
-              <th class="text-center px-4 py-3">Contratos</th>
-              <th class="text-center px-4 py-3">Servicios</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of data(); track row.idCliente) {
-              @let expanded = expandedId() === row.idCliente;
-              @let hasInc   = hasIncidencia(row);
-
-              <tr
-                (click)="hasInc && toggleExpand(row.idCliente)"
-                class="border-b border-border transition-colors"
-                [class.cursor-pointer]="hasInc"
-                [class.cursor-default]="!hasInc"
-                [class]="expanded ? 'bg-primary/5' : (hasInc ? 'hover:bg-accent/30' : '')"
-              >
-                <td class="px-2 py-3 text-center text-muted-foreground">
-                  @if (!hasInc) {
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block text-green-500">
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                    </svg>
-                  } @else if (expanded) {
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block">
-                      <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                  } @else {
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block">
-                      <polyline points="9 18 15 12 9 6"/>
-                    </svg>
-                  }
-                </td>
-
-                <td class="px-4 py-3">
-                  <p class="font-medium text-foreground">{{ row.nombreCliente || '—' }}</p>
-                  <p class="text-xs text-muted-foreground mt-0.5">{{ row.nif }}</p>
-                </td>
-
-                <td class="px-4 py-3 text-muted-foreground">{{ row.nombreComercialCliente || '—' }}</td>
-                <td class="px-4 py-3 text-muted-foreground">{{ row.direccion || '—' }}</td>
-                <td class="px-4 py-3 text-center text-muted-foreground">{{ row.cp || '—' }}</td>
-                <td class="px-4 py-3 text-muted-foreground">{{ row.provincia || '—' }}</td>
-                <td class="px-4 py-3 text-muted-foreground">{{ row.poblacion || '—' }}</td>
-
-                <td class="px-4 py-3 text-center" (click)="$event.stopPropagation()">
-                  @if (row.totalContratos > 0) {
-                    <button type="button"
-                            class="inline-flex items-center px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors cursor-pointer"
-                            (click)="openContratos(row)">
-                      {{ row.totalContratos }}
-                    </button>
-                  } @else {
-                    <span class="text-xs text-muted-foreground">—</span>
-                  }
-                </td>
-
-                <td class="px-4 py-3 text-center" (click)="$event.stopPropagation()">
-                  @if ((row.servicios?.length ?? 0) > 0) {
-                    <button type="button"
-                            class="inline-flex items-center px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors cursor-pointer"
-                            (click)="openServicios(row)">
-                      {{ row.servicios.length }}
-                    </button>
-                  } @else {
-                    <span class="text-xs text-muted-foreground">—</span>
-                  }
-                </td>
-              </tr>
-
-              <!-- Panel expandido: SOLO datos del cliente (docs/firma son per-contrato,
-                   viven en la pantalla de Contratos > Luz). -->
-              @if (expanded) {
-                @let clienteItems = getClienteChecklist(row);
-                @let inc = firstIncidencia(row);
-                <tr class="border-b border-border bg-primary/5">
-                  <td colspan="9" class="px-6 py-5" (click)="$event.stopPropagation()">
-                    <h4 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Datos del cliente</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2.5">
-                      @for (item of clienteItems; track item.key) {
-                        <div class="flex items-start gap-2">
-                          @if (item.completed) {
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-green-500">
-                              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                            </svg>
-                          } @else {
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-red-500">
-                              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                            </svg>
-                          }
-                          <div class="flex-1 min-w-0">
-                            <div class="text-xs font-medium text-foreground">{{ item.label }}</div>
-                            @if (item.currentValue) {
-                              <div class="text-xs text-muted-foreground truncate">{{ item.currentValue }}</div>
-                            }
-                          </div>
-                          @if (!item.completed && item.field && inc) {
-                            <button type="button"
-                                    class="text-xs font-medium text-primary hover:underline shrink-0"
-                                    (click)="openEdit(inc, item)">
-                              Editar
-                            </button>
-                          }
-                        </div>
-                      }
-                    </div>
-                    @if (clienteItems.length === 0) {
-                      <p class="text-xs text-muted-foreground">Sin campos incompletos para este cliente.</p>
-                    }
-                  </td>
-                </tr>
-              }
-            }
-          </tbody>
-        </table>
-      </div>
+      <lib-data-table
+        [data]="data()"
+        [columns]="columns()"
+        rowKey="idCliente"
+        [expandRowTemplate]="checklistTpl"
+        [isExpandable]="rowIsExpandable"
+        [expandBadge]="rowExpandBadge"
+        [borderTop]="false"
+        [borderBottom]="true"
+        [borderLeft]="false"
+        [borderRight]="false"
+        [roundedTopLeft]="false"
+        [roundedTopRight]="false"
+        [roundedBottomLeft]="false"
+        [roundedBottomRight]="false"
+      />
     }
   </div>
 

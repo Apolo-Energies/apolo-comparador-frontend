@@ -13,7 +13,7 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { Dialog } from 'primeng/dialog';
-import { PaginatorComponent, TableColumn } from '@apolo-energies/table';
+import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
 import { ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
 import { FileDownIcon, NoteIcon, SearchIcon, ShieldCheckIcon, SvgIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
 import { AuthService } from '@apolo-energies/auth';
@@ -57,7 +57,7 @@ const CARD_ACCENTS: Record<keyof ContratosCards, string> = {
   selector: 'app-contracts-page',
   standalone: true,
   imports: [
-    PaginatorComponent,
+    DataTableComponent, PaginatorComponent,
     InputFieldComponent, ButtonComponent,
     TableSkeletonComponent,
     ContractDetailDrawerComponent,
@@ -130,9 +130,6 @@ export class ContractsPageComponent implements AfterViewInit {
   readonly data        = signal<ContratoClienteRow[]>([]);
   readonly hasMore     = signal(false);
   readonly selectedClient = signal<ContratoClienteRow | null>(null);
-
-  /** Solo una fila expandida a la vez. */
-  readonly expandedId = signal<number | null>(null);
 
   /** Filtros de incidencia. Server-side — dispara reload al cambiar. */
   readonly filterEstado   = signal<string>('');
@@ -243,10 +240,6 @@ export class ContractsPageComponent implements AfterViewInit {
 
   closeDetail(): void {
     this.selectedClient.set(null);
-  }
-
-  toggleExpand(id: number): void {
-    this.expandedId.update(curr => curr === id ? null : id);
   }
 
   /** Si el cliente tiene N contratos pendientes, muestra el primero. */
@@ -372,6 +365,9 @@ export class ContractsPageComponent implements AfterViewInit {
   hasIncidencia(row: ContratoClienteRow): boolean {
     return (this.incidenciasByNif().get(row.NIF)?.length ?? 0) > 0;
   }
+
+  readonly rowIsExpandable = (row: ContratoClienteRow) => this.hasIncidencia(row);
+  readonly rowExpandBadge  = (_row: ContratoClienteRow) => null;
 
   /** Devuelve true si TODOS los servicios del cliente comparten un mismo estado. */
   singleEstado(row: ContratoClienteRow): string | null {
