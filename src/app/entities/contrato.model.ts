@@ -30,3 +30,12 @@ export interface ContratosPageResponse {
   hasMore:  boolean;
   data:     ContratoClienteRow[];
 }
+
+/** Respuesta de GET /energy-expert/portal/contratos-cards */
+export interface ContratosCards {
+  activos:       number;
+  paraFirma:     number;
+  paraTramitar:  number;
+  bajas:         number;
+  estudios:      number | null;
+}

@@ -1,6 +1,7 @@
 import { ComparadorFormValue, ComparadorPeriodo, ComparadorResult, FeeMode, OcrResult } from '../features/dashboard/pages/comparator/comparator.models';
 import { Tariff } from '../entities/provider.model';
 import { PERIOD_NUMBERS, PeriodNumber, numberToPeriod } from '../shared/constants/period';
+import { environment } from '../../environments/environment';
 
 const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
@@ -217,6 +218,14 @@ export const calcularFactura = (
   const energiaReactiva = ocr.totales_electricidad?.energia?.reactiva ?? 0;
   const excesoPotencia  = ocr.totales_electricidad?.potencia?.exceso  ?? 0;
 
+  // Totales de la factura ACTUAL (OCR) — se necesitan ya acá porque el cargo
+  // de "otros no comunes" de la oferta (más abajo) se calcula sobre el
+  // consumo de la factura actual, no sobre la energía de nuestra tarifa.
+  const totalEnergiaActual  = ocr.totales_electricidad?.energia?.activa      ?? 0;
+  const totalPotenciaActual = ocr.totales_electricidad?.potencia?.contratada ?? 0;
+  // kwhTotal: sum directly from OCR (avoids nested find; same result as periodos sum)
+  const kwhTotal            = round6((ocr.energia ?? []).reduce((s, e) => s + (e.activa?.kwh ?? 0), 0));
+
   // Clasifica cada concepto OCR según su flag en_base_ie
   const bonoSocialImporte = ocr.bono_social?.importe ?? 0;
   const bonoSocialEnIE    = ocr.bono_social?.en_base_ie ?? false;
@@ -241,13 +250,21 @@ export const calcularFactura = (
   const extraSinIE    = (bonoSocialEnIE ? 0 : bonoSocialImporte) + otrosSinIE;
   const alquilerSinIE = alquilerEnIE ? 0 : alquilerImporte;
 
-  const subTotal = baseIE + impuestoElectrico + extraSinIE + alquilerSinIE;
+  // Coste propio de la oferta (no viene de la tarifa que armamos, a diferencia de los
+  // "otros comunes" de arriba): en el tenant Apolo, los productos Fijo cargan
+  // 0,03 €/kWh sobre el consumo total de la factura ACTUAL (kwhTotal). Para
+  // cualquier otro tenant o tipo de producto no aplica.
+  const isApolo    = environment.features.userDetail;
+  const productType = getProductType(tariffs, form.tariff, form.producto);
+  const otrosNoComunesOferta = (isApolo && productType === 'Fixed')
+    ? round6(kwhTotal * 0.03)
+    : 0;
+
+  const subTotal = baseIE + impuestoElectrico + extraSinIE + alquilerSinIE + otrosNoComunesOferta;
   const iva      = subTotal * IVA_RATE;
   const total    = round6(subTotal + iva);
 
   // ── Factura ACTUAL (reconstruida con misma estructura) ────────────────────
-  const totalEnergiaActual  = ocr.totales_electricidad?.energia?.activa      ?? 0;
-  const totalPotenciaActual = ocr.totales_electricidad?.potencia?.contratada ?? 0;
   const otrosNoComunesActual = descuentosConIE + descuentosSinIE;
 
   const costesComunesConIEActual = energiaReactiva + excesoPotencia
@@ -264,8 +281,6 @@ export const calcularFactura = (
   const ahorroEstudio  = round3(totalActual - total);
   const ahorro_porcent = parseFloat(((ahorroEstudio / (totalActual || 1)) * 100).toFixed(2));
 
-  // kwhTotal: sum directly from OCR (avoids nested find; same result as periodos sum)
-  const kwhTotal       = round6((ocr.energia ?? []).reduce((s, e) => s + (e.activa?.kwh ?? 0), 0));
   const diasFacturados = dias || 1;
   const consumoAnual   = resolveAnnualKwh(annualKwhOverride, kwhTotal, diasFacturados);
 
@@ -273,7 +288,7 @@ export const calcularFactura = (
     ? ((totalEnergiaActual  - totalEnergia)  / kwhTotal) * consumoAnual
     : 0;
   const deltaPotencia = (totalPotenciaActual - totalPotencia)  / diasFacturados * 365;
-  const deltaOtros    = otrosNoComunesActual / diasFacturados * 365;
+  const deltaOtros    = (otrosNoComunesActual - otrosNoComunesOferta) / diasFacturados * 365;
 
   const ahorroAnio = (deltaEnergia + deltaPotencia + deltaOtros) * (1 + IE_RATE + IVA_RATE);
 
@@ -299,5 +314,6 @@ export const calcularFactura = (
     ieOferta:      impuestoElectrico,
     subTotalOferta: subTotal,
     ivaOferta:     iva,
+    otrosNoComunesOferta,
   };
 };

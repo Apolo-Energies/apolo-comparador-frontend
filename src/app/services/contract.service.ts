@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { ContractDetail } from '../entities/user-detail.model';
-import { ContratosPageResponse } from '../entities/contrato.model';
+import { ContratosCards, ContratosPageResponse } from '../entities/contrato.model';
 import { ServicioListItem } from '../entities/servicio.model';
 
 interface ServiciosPageResponse {
@@ -226,6 +226,16 @@ export class ContractService {
     return this.http.get<ContratosPageResponse>(
       `${environment.apiUrl}/energy-expert/contratos`,
       { params: httpParams },
+    );
+  }
+
+  getContratosCards(idDelegacion: number | null): Observable<ContratosCards> {
+    let params = new HttpParams();
+    if (idDelegacion != null) params = params.set('idDelegacion', String(idDelegacion));
+
+    return this.http.get<ContratosCards>(
+      `${environment.apiUrl}/energy-expert/portal/contratos-cards`,
+      { params },
     );
   }
 }
