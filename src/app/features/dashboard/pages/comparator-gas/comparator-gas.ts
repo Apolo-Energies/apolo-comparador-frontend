@@ -135,6 +135,15 @@ export class ComparatorGas {
     const sipsAnnual = this.sipsAnnualKwh();
     const kwhTotal   = ocr.consumo?.kwh_total ?? 0;
     const dias       = ocr.periodo_facturacion?.numero_dias ?? 0;
+
+    if (sipsAnnual <= 0 && kwhTotal < 0) {
+      this.pricingError.set(
+        'Esta factura es de abono (consumo negativo). Sube una factura con consumo positivo para generar la comparativa.'
+      );
+      this.result.set(null);
+      return;
+    }
+
     const annualKwh  = sipsAnnual > 0
       ? sipsAnnual
       : (dias > 0 ? kwhTotal * (365 / dias) : kwhTotal);
