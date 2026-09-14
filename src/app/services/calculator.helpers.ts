@@ -10,6 +10,10 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
 const IE_RATE  = 0.0511269632; // Impuesto Eléctrico 5.11 % (vigente España)
 const IVA_RATE = 0.21;         // IVA 21 %
 
+// Coste propio de Apolo en productos Fijo (tenant Apolo únicamente) — €/kWh sobre
+// el consumo total de la factura ACTUAL. Cambiar aquí si el valor se renegocia.
+const FIXED_PRODUCT_SURCHARGE_EUR_KWH = 0.012;
+
 const SNAP_PRODUCTS_SET = new Set(['Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi']);
 
 // Preferir SIPS (histórico real 12 meses) sobre la extrapolación de la factura,
@@ -252,12 +256,12 @@ export const calcularFactura = (
 
   // Coste propio de la oferta (no viene de la tarifa que armamos, a diferencia de los
   // "otros comunes" de arriba): en el tenant Apolo, los productos Fijo cargan
-  // 0,03 €/kWh sobre el consumo total de la factura ACTUAL (kwhTotal). Para
-  // cualquier otro tenant o tipo de producto no aplica.
+  // FIXED_PRODUCT_SURCHARGE_EUR_KWH €/kWh sobre el consumo total de la factura
+  // ACTUAL (kwhTotal). Para cualquier otro tenant o tipo de producto no aplica.
   const isApolo    = environment.features.userDetail;
   const productType = getProductType(tariffs, form.tariff, form.producto);
   const otrosNoComunesOferta = (isApolo && productType === 'Fixed')
-    ? round6(kwhTotal * 0.03)
+    ? round6(kwhTotal * FIXED_PRODUCT_SURCHARGE_EUR_KWH)
     : 0;
 
   const subTotal = baseIE + impuestoElectrico + extraSinIE + alquilerSinIE + otrosNoComunesOferta;
