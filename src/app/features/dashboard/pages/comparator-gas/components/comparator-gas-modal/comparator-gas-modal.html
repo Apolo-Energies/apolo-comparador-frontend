@@ -326,7 +326,7 @@
         variant="secondary"
         size="md"
         [leadingIcon]="excelIcon"
-        [disabled]="!result() || !!pricingError() || apoloLoses()"
+        [disabled]="!result() || !!pricingError()"
         (click)="onDownload('excel')"
       />
     }
@@ -344,7 +344,7 @@
       [variant]="pdfButtonVariant()"
       size="md"
       [leadingIcon]="pdfIcon"
-      [disabled]="!result() || !!pricingError() || apoloLoses()"
+      [disabled]="!result() || !!pricingError()"
       (click)="onDownload('pdf')"
     />
   </div>
