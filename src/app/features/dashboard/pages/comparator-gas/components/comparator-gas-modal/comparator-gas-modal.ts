@@ -84,15 +84,21 @@ export class ComparatorGasModalComponent {
    *  complementaria pequeña), (2) importe_total / dias_total retro-calculado. Devuelve 0 si no
    *  se puede determinar — evita mostrar un cuadrito con dato falso. */
   readonly clientePrecioFijoDia = computed<number>(() => {
-    const disp = this.ocrResult()?.disponibilidad;
-    if (!disp) return 0;
-    const lineaPrincipal = (disp.lineas ?? [])
-      .filter(l => (l.precio_dia ?? 0) > 0)
-      .sort((a, b) => (b.importe ?? 0) - (a.importe ?? 0))[0];
-    if (lineaPrincipal?.precio_dia && lineaPrincipal.precio_dia > 0) return lineaPrincipal.precio_dia;
-    if (disp.importe_total && disp.dias_total && disp.dias_total > 0) {
-      return disp.importe_total / disp.dias_total;
+    const ocr = this.ocrResult();
+    const disp = ocr?.disponibilidad;
+    if (disp) {
+      const lineaPrincipal = (disp.lineas ?? [])
+        .filter(l => (l.precio_dia ?? 0) > 0)
+        .sort((a, b) => (b.importe ?? 0) - (a.importe ?? 0))[0];
+      if (lineaPrincipal?.precio_dia && lineaPrincipal.precio_dia > 0) return lineaPrincipal.precio_dia;
+      if (disp.importe_total && disp.dias_total && disp.dias_total > 0) {
+        return disp.importe_total / disp.dias_total;
+      }
     }
+    // Fallback TUR: término fijo viene como €/mes en lugar de €/día en la sección "ENERGÍA".
+    const totalDisp = ocr?.totales_gas?.disponibilidad;
+    const dias = ocr?.periodo_facturacion?.numero_dias;
+    if (totalDisp && totalDisp > 0 && dias && dias > 0) return totalDisp / dias;
     return 0;
   });
 
