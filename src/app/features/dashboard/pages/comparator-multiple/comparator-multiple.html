@@ -1,0 +1,423 @@
+@if (isApolo) {
+<app-brand-loader [visible]="processing()" [fullscreen]="true" [showBar]="true" [showWordmark]="false"
+  [showTitle]="true" title="Procesando facturas..." [showDescription]="false" [showMicrocopy]="false"
+  [showBackdrop]="true" [showMicrocopyIcon]="false" [size]="100" />
+} @else {
+<app-loading-overlay [loading]="processing()" />
+}
+
+<div class="h-full flex flex-col">
+
+  <!-- ── FASE UPLOAD ──────────────────────────────────────────────── -->
+  @if (phase() === 'upload') {
+  <input #fileInput type="file" multiple class="hidden" (change)="onFilesSelected($event)" />
+
+  <div class="w-full h-full rounded-lg border border-border bg-card px-8 py-8 flex flex-col gap-6">
+
+    <!-- Selector de usuario (solo Master) -->
+    @if (isMaster()) {
+    @if (usersLoading()) {
+    <div class="flex items-center gap-2 h-10 px-3 rounded-md border border-border bg-muted/40 animate-pulse">
+      <div class="h-4 w-4 rounded-full bg-muted-foreground/20 shrink-0"></div>
+      <div class="h-3 w-40 rounded bg-muted-foreground/20"></div>
+    </div>
+    } @else {
+    <ui-combobox placeholder="Seleccionar usuario" [options]="usersAsOptions()" [value]="selectedUserId()"
+      (valueChange)="selectedUserId.set($event.toString())" />
+    }
+    }
+
+    <!-- Área de previsualización / dropzone -->
+    @if (previewFile(); as f) {
+    <div class="relative flex-1 min-h-0 rounded-lg overflow-hidden border border-border bg-muted/20"
+      (dragover)="onDragOver($event)" (dragleave)="isDragging.set(false)" (drop)="onDrop($event)">
+      @if (isImage(f)) {
+      <img [src]="getPreviewUrl(f)" [alt]="f.name" class="w-full h-full object-contain" />
+      } @else {
+      <iframe [src]="getPreviewUrl(f)" class="w-full h-full border-0"></iframe>
+      }
+      <div class="absolute bottom-0 left-0 right-0 px-3 py-2 bg-black/50 backdrop-blur-sm">
+        <p class="text-xs text-white truncate">{{ f.name }}</p>
+      </div>
+    </div>
+    } @else {
+    <div class="flex-1 flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed
+                         transition-colors cursor-pointer select-none text-center px-8 py-10 min-h-0"
+      [class.border-primary]="isDragging()" [class.bg-primary/5]="isDragging()" [class.border-border]="!isDragging()"
+      (click)="fileInput.click()" (dragover)="onDragOver($event)" (dragleave)="isDragging.set(false)"
+      (drop)="onDrop($event)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+        class="text-muted-foreground pointer-events-none">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="17 8 12 3 7 8" />
+        <line x1="12" y1="3" x2="12" y2="15" />
+      </svg>
+      <div class="pointer-events-none">
+        <p class="text-sm font-medium text-foreground">Arrastra las facturas aquí o haz click para seleccionar</p>
+        <p class="text-xs text-muted-foreground mt-1">JPG, PNG, WEBP, PDF · hasta {{ MAX_FILES }} archivos</p>
+      </div>
+    </div>
+    }
+
+    <!-- Lista de archivos -->
+    @if (pendingFiles().length > 0) {
+    <div class="shrink-0 space-y-2">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <p class="text-xs font-medium text-muted-foreground uppercase tracking-wide">Facturas</p>
+          <div class="flex items-center gap-0.5">
+            @for (n of filledSlots(); track $index) {
+            <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+            }
+            @for (n of emptySlots(); track $index) {
+            <span class="w-1.5 h-1.5 rounded-full bg-border"></span>
+            }
+          </div>
+          <span class="text-xs text-muted-foreground">{{ pendingFiles().length }}/{{ MAX_FILES }}</span>
+        </div>
+        @if (pendingFiles().length < MAX_FILES) { <button type="button"
+          class="inline-flex items-center gap-1 text-xs font-medium text-primary hover:opacity-70 transition-opacity"
+          (click)="fileInput.click()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Agregar más
+          </button>
+          }
+      </div>
+      <p class="text-xs text-muted-foreground">Haz clic en una factura para previsualizarla</p>
+      <div class="max-h-48 overflow-y-auto space-y-1.5 pr-0.5">
+        @for (f of pendingFiles(); let i = $index; track f.name + f.size) {
+        <button type="button"
+          class="w-full flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors text-left group"
+          [class.border-primary]="i === previewIndex()" [class.bg-primary/5]="i === previewIndex()"
+          [class.border-border]="i !== previewIndex()" [class.bg-muted/40]="i !== previewIndex()" [title]="f.name"
+          (click)="previewIndex.set(i)">
+          <span class="shrink-0 w-5 h-5 rounded-full text-center text-xs font-semibold leading-5"
+            [class.bg-primary]="i === previewIndex()" [class.text-primary-foreground]="i === previewIndex()"
+            [class.bg-muted]="i !== previewIndex()" [class.text-muted-foreground]="i !== previewIndex()">
+            {{ i + 1 }}
+          </span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="shrink-0 text-muted-foreground">
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+            <polyline points="14 2 14 8 20 8" />
+          </svg>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm text-foreground truncate">{{ f.name }}</p>
+            <p class="text-xs text-muted-foreground">{{ formatFileSize(f) }}</p>
+          </div>
+          <button type="button"
+            class="shrink-0 p-1 rounded text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all"
+            (click)="$event.stopPropagation(); removePending(f)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </button>
+        }
+      </div>
+    </div>
+    }
+
+    <div class="shrink-0 border-t border-border pt-4 flex justify-center">
+      <ui-button label="Procesar" variant="default" size="md" [disabled]="pendingFiles().length === 0"
+        (click)="onProcesar()" />
+    </div>
+  </div>
+  }
+
+  <!-- ── FASE RESULTADOS — modal grande ───────────────────────────── -->
+  <ui-dialog [open]="phase() === 'results'" [closeable]="true" maxWidth="max-w-6xl"
+    (openChange)="!$event && backToUpload()">
+
+    <div class="flex flex-col" style="height: min(90vh, 860px)">
+
+      <!-- Controles globales — solo visibles en el grid -->
+      @if (viewMode() === 'grid') {
+      <div class="shrink-0 border-b border-border bg-muted/20 px-5 pt-4 pb-3 pr-14 space-y-3">
+        <!-- Fila 1: Producto + OMIE -->
+        <div class="grid grid-cols-2 gap-3 items-end">
+          <ui-select label="Producto" placeholder="Seleccionar producto" [options]="globalProductoOptions()"
+            [value]="globalProducto()" (valueChange)="onGlobalProductoChange($event)" />
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-muted-foreground uppercase tracking-wide">Precio medio OMIE
+              (€/MWh)</label>
+            <input type="number" placeholder="0" min="0" max="60" [value]="globalPrecioMedio() || ''"
+              (change)="onGlobalPrecioMedioChange($any($event.target).value)" class="h-10 px-3 text-sm rounded-lg border border-border bg-card text-foreground
+                           focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+          </div>
+        </div>
+        <!-- Fila 2: Fee E | Fee P lado a lado -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-muted-foreground whitespace-nowrap shrink-0">Fee Energía</span>
+            <div class="flex-1">
+              <ui-slider [value]="globalFeeEnergia()" [min]="0" [max]="30" [step]="1"
+                (valueChange)="onGlobalFeeEnergiaChange($event)" />
+            </div>
+            <span class="text-xs font-mono font-semibold text-primary w-6 text-right shrink-0">{{ globalFeeEnergia()
+              }}</span>
+            <span class="text-xs text-muted-foreground shrink-0">€/MWh</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-muted-foreground whitespace-nowrap shrink-0">Fee Potencia</span>
+            <div class="flex-1">
+              <ui-slider [value]="globalFeePotencia()" [min]="0" [max]="5" [step]="1"
+                (valueChange)="onGlobalFeePotenciaChange($event)" />
+            </div>
+            <span class="text-xs font-mono font-semibold text-primary w-4 text-right shrink-0">{{ globalFeePotencia()
+              }}</span>
+            <span class="text-xs text-muted-foreground shrink-0">€/kW/año</span>
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- ─ Vista GRID ─────────────────────────────────────────────── -->
+      @if (viewMode() === 'grid') {
+      <div class="flex-1 min-h-0 overflow-y-auto p-5">
+
+        <!-- Encabezado + resumen totales -->
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <p class="text-base font-semibold text-foreground">
+            Todas las facturas
+            <span class="text-sm font-normal text-muted-foreground ml-1">({{ items().length }})</span>
+          </p>
+          @if (readyCount() > 0) {
+          <div class="flex items-center gap-3 text-xs flex-wrap">
+            <span class="text-muted-foreground">
+              Ahorro total:
+              <span class="font-semibold" [class.text-green-500]="totalAhorro() > 0"
+                [class.text-red-500]="totalAhorro() <= 0">
+                {{ truncate(totalAhorro()) }}€/año
+              </span>
+            </span>
+            @if (!isReferrer()) {
+            <span class="text-muted-foreground">·</span>
+            <span class="text-muted-foreground">
+              Comisión total:
+              <span class="font-semibold text-foreground">{{ truncate(totalComision()) }}€</span>
+            </span>
+            }
+          </div>
+          }
+        </div>
+
+        <!-- Grid de tarjetas — compactas, más columnas -->
+        <div class="grid gap-2 grid-cols-3 sm:grid-cols-4 lg:grid-cols-5">
+          @for (item of items(); let i = $index; track item.id) {
+          <div class="rounded-xl border border-border bg-card flex flex-col gap-1.5 p-3 transition-colors"
+            [class.cursor-pointer]="item.status === 'ready'" [class.hover:border-primary/60]="item.status === 'ready'"
+            [class.hover:bg-primary/5]="item.status === 'ready'"
+            (click)="item.status === 'ready' && openDetail(item.id)">
+
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-muted-foreground">#{{ i + 1 }}</span>
+              <span class="w-1.5 h-1.5 rounded-full shrink-0" [class.bg-green-500]="item.status === 'ready'"
+                [class.bg-red-500]="item.status === 'error'"></span>
+            </div>
+
+            @if (item.status === 'error') {
+            <p class="text-xs text-red-500">{{ item.error }}</p>
+            <button type="button" class="text-xs text-primary hover:opacity-70 transition-opacity text-left"
+              (click)="$event.stopPropagation(); retryItem(item)">↺ Reintentar</button>
+            } @else if (item.result) {
+            @if (getCups(item.ocrResult)) {
+            <p class="text-xs font-mono text-muted-foreground truncate leading-tight" [title]="getCups(item.ocrResult)">
+              {{ getCups(item.ocrResult) }}
+            </p>
+            }
+            <p class="text-xs text-muted-foreground truncate leading-tight">{{ item.form.tariff }} · {{
+              item.form.producto }}</p>
+            <div class="py-1.5 text-center">
+              <p class="text-xl font-bold leading-none" [class.text-green-500]="item.result.ahorroXAnio > 0"
+                [class.text-red-500]="item.result.ahorroXAnio <= 0">
+                {{ item.result.ahorroXAnio > 0 ? '+' : '' }}{{ truncate(item.result.ahorroXAnio) }}€
+              </p>
+              <p class="text-xs text-muted-foreground mt-0.5">ahorro/año</p>
+            </div>
+            @if (!isReferrer()) {
+            <div class="flex items-center justify-between text-xs border-t border-border pt-1.5">
+              <span class="text-muted-foreground">Com.</span>
+              <span class="font-semibold text-foreground">{{ truncate(item.result.comision) }}€</span>
+            </div>
+            }
+            <button type="button" class="w-full text-xs text-center text-primary hover:opacity-70 transition-opacity">
+              Ver detalle →
+            </button>
+            }
+          </div>
+          }
+        </div>
+      </div>
+      }
+
+      <!-- ─ Vista DETALLE ───────────────────────────────────────────── -->
+      @if (viewMode() === 'detail') {
+      @if (detailItem(); as item) {
+      <div class="flex-1 min-h-0 flex flex-col overflow-hidden">
+
+        <!-- Header — dos filas, pr-14 para la X del dialog -->
+        <div class="shrink-0 border-b border-border bg-muted/10 px-5 pt-4 pb-3 pr-14">
+          <!-- Fila 1: botón volver + separador + nombre archivo -->
+          <div class="flex items-center gap-2 min-w-0">
+            <button type="button"
+              class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0"
+              (click)="backToGrid()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+              Todas las facturas
+            </button>
+            <span class="text-muted-foreground/40 shrink-0">/</span>
+            <p class="text-sm font-semibold text-foreground truncate">{{ item.fileName }}</p>
+          </div>
+          <!-- Fila 2: tarifa + CUPS alineados a la izquierda debajo del nombre -->
+          <div class="flex items-center gap-2 mt-2">
+            <span class="text-xs font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-md shrink-0">
+              {{ item.form.tariff }}
+            </span>
+            @if (getCups(item.ocrResult)) {
+            <span class="text-xs font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
+              {{ getCups(item.ocrResult) }}
+            </span>
+            }
+          </div>
+        </div>
+
+        <!-- Contenido -->
+        <div class="flex-1 min-h-0 overflow-y-auto">
+          <div class="space-y-6 p-6">
+
+            <!-- Producto + OMIE lado a lado -->
+            <div class="grid grid-cols-2 gap-3">
+              <ui-select label="Producto" [options]="productoOptions(item.form.tariff)" [value]="item.form.producto"
+                (valueChange)="onDetailProductoChange(item, $event)" />
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-medium text-muted-foreground uppercase tracking-wide">Precio medio OMIE
+                  (€/MWh)</label>
+                <input type="number" placeholder="0" min="0" max="60" [value]="globalPrecioMedio() || ''"
+                  (change)="onGlobalPrecioMedioChange($any($event.target).value)" class="h-10 px-3 text-sm rounded-lg border border-border bg-card text-foreground
+                                 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+              </div>
+            </div>
+
+            <!-- Fee Energía y Fee Potencia — cards individuales -->
+            <div class="grid grid-cols-2 gap-3">
+              <div class="flex flex-col gap-2 p-4 rounded-lg bg-card border border-border">
+                <div class="flex justify-between items-center">
+                  <span class="text-sm font-medium text-foreground">Fee Energía</span>
+                  <div class="flex items-center gap-1">
+                    <span class="text-lg font-bold text-primary">{{ globalFeeEnergia() }}</span>
+                    <span class="text-xs text-muted-foreground">€/MWh</span>
+                  </div>
+                </div>
+                <ui-slider [value]="globalFeeEnergia()" [min]="0" [max]="30" [step]="1"
+                  (valueChange)="onGlobalFeeEnergiaChange($event)" />
+              </div>
+              <div class="flex flex-col gap-2 p-4 rounded-lg bg-card border border-border">
+                <div class="flex justify-between items-center">
+                  <span class="text-sm font-medium text-foreground">Fee Potencia</span>
+                  <div class="flex items-center gap-1">
+                    <span class="text-lg font-bold text-primary">{{ globalFeePotencia() }}</span>
+                    <span class="text-xs text-muted-foreground">€/kW/año</span>
+                  </div>
+                </div>
+                <ui-slider [value]="globalFeePotencia()" [min]="0" [max]="5" [step]="1"
+                  (valueChange)="onGlobalFeePotenciaChange($event)" />
+              </div>
+            </div>
+
+            <!-- KPI cards -->
+            <div class="grid gap-4" [class.grid-cols-2]="!isReferrer()" [class.grid-cols-1]="isReferrer()">
+              @if (!isReferrer()) {
+              <div class="p-4 rounded-lg bg-card border border-border">
+                <p class="text-sm font-medium text-foreground mb-1">Comisión comercial</p>
+                <p class="text-2xl font-bold text-foreground">{{ truncate(item.result!.comision) }}€</p>
+                <p class="text-sm text-green-400">+ 10% extra</p>
+              </div>
+              }
+              <div class="p-4 rounded-lg bg-card border border-border">
+                <p class="text-sm font-medium text-foreground mb-1">Ahorro cliente</p>
+                <p class="text-xl font-bold text-foreground">{{ truncate(item.result!.ahorroEstudio) }}€ al mes</p>
+                <p class="text-xl font-bold" [class.text-green-400]="item.result!.ahorroXAnio > 0"
+                  [class.text-red-400]="item.result!.ahorroXAnio <= 0">
+                  {{ truncate(item.result!.ahorroXAnio) }}€ al año
+                </p>
+                <p class="text-sm" [class.text-green-400]="item.result!.ahorro_porcent > 0"
+                  [class.text-red-400]="item.result!.ahorro_porcent <= 0">
+                  {{ item.result!.ahorro_porcent > 0 ? '+' : '' }}{{ item.result!.ahorro_porcent }}% de ahorro
+                </p>
+              </div>
+            </div>
+
+            <!-- Precios ofertados -->
+            <div class="bg-card border border-border rounded-xl p-3 transition-all duration-300">
+              <div class="flex items-center gap-3">
+                <lib-apolo-icons [icon]="lightningIcon" class="flex items-center shrink-0" />
+                <p class="flex-1 text-lg font-semibold text-foreground">Precios ofertados</p>
+                <button class="h-8 w-8 rounded-lg border border-border flex items-center justify-center
+                                       text-muted-foreground hover:bg-accent transition-colors"
+                  (click)="periodosOpen.update(v => !v)">
+                  <span class="inline-block text-lg font-bold transition-transform duration-300"
+                    [class.rotate-180]="!periodosOpen()">–</span>
+                </button>
+              </div>
+              <div class="overflow-hidden transition-all duration-300" [class.max-h-0]="!periodosOpen()"
+                [class.opacity-0]="!periodosOpen()" [class.max-h-96]="periodosOpen()"
+                [class.opacity-100]="periodosOpen()" [class.mt-2]="periodosOpen()">
+                <div class="grid grid-cols-2 gap-10 text-sm text-foreground pl-16">
+                  <div class="space-y-3">
+                    @for (p of PERIODOS; track p) {
+                    <p><span class="opacity-70">Energía P{{ p }}:</span>
+                      <span class="text-blue-300 ml-1">{{ getPrecioEnergia(item.result!.periodos, p) }}</span>
+                    </p>
+                    }
+                  </div>
+                  <div class="space-y-3">
+                    @for (p of PERIODOS; track p) {
+                    <p><span class="opacity-70">Potencia P{{ p }}:</span>
+                      <span class="text-blue-300 ml-1">{{ getPrecioPotencia(item.result!.periodos, p) }}</span>
+                    </p>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Footer detalle -->
+        <div class="shrink-0 border-t border-border px-5 py-4 flex items-center gap-2">
+          <ui-button label="← Todas las facturas" variant="outline" size="sm" (click)="backToGrid()" />
+          <div class="flex-1"></div>
+          <ui-button label="Excel" variant="secondary" size="sm" [leadingIcon]="excelIcon"
+            (click)="onDownload('excel')" />
+          <ui-button label="Descargar PDF" variant="default" size="sm" [leadingIcon]="pdfIcon"
+            (click)="onDownload('pdf')" />
+        </div>
+
+      </div>
+      }
+      }
+
+      <!-- Footer grid -->
+      @if (viewMode() === 'grid') {
+      <div class="shrink-0 border-t border-border px-5 py-4 flex items-center">
+        <ui-button label="← Nueva comparación" variant="outline" size="sm" (click)="backToUpload()" />
+      </div>
+      }
+
+    </div>
+  </ui-dialog>
+
+</div>
