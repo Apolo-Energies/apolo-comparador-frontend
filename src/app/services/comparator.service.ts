@@ -29,9 +29,10 @@ const SNAP_ENERGIA: Record<string, number> = {
   'Fijo Snap Mini': 50,
   'Fijo Snap': 75,
   'Fijo Snap Maxi': 100,
+  'Vibra': 100,
 };
 
-const SNAP_PRODUCTS = ['Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi'];
+const SNAP_PRODUCTS = ['Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi', 'Vibra'];
 
 @Injectable({ providedIn: 'root' })
 export class ComparatorService {
