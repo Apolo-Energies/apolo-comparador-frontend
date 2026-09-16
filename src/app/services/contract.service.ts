@@ -212,6 +212,30 @@ export class ContractService {
     );
   }
 
+  // Descarga el PDF del contrato de un servicio concreto. El backend resuelve
+  // internamente el idArchivo buscando la primera factura del contrato en EE.
+  downloadContratoPdf(idContrato: number): Observable<Blob> {
+    return this.http.get(
+      `${environment.apiUrl}/energy-expert/contratos/${idContrato}/archivo`,
+      { responseType: 'blob' },
+    );
+  }
+
+  // Facturas de un contrato concreto. Usa el endpoint genérico con filtro EE
+  // (sintaxis: "campo=valor && campo2=valor"). El controlador ya scopeó delegación.
+  getFacturasByContrato(idContrato: number, limit = 50): Observable<unknown> {
+    const params = new HttpParams()
+      .set('filter',  `IdContrato=${idContrato}`)
+      .set('orderBy', 'FechaFin')
+      .set('offset',  '0')
+      .set('limit',   String(limit));
+    return this.http.post<unknown>(
+      `${environment.apiUrl}/energy-expert/invoices`,
+      {},
+      { params },
+    );
+  }
+
   getContratos(params: {
     filter?:   string;
     orderBy?:  string;
