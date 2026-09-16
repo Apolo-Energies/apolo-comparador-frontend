@@ -61,6 +61,17 @@ export class ComparatorGas {
    */
   readonly sipsAnnualKwh = signal(0);
 
+  /** Si SIPS y extrapolación dan 0 (ej. factura de un piso sin consumo real en el periodo),
+   *  el modal pide al comercial que introduzca el consumo anual manualmente. */
+  readonly awaitingManualConsumption = signal(false);
+  readonly manualAnnualKwh           = signal<number | null>(null);
+
+  /** Sugerencia por defecto según el bracket CNMC de la tarifa detectada por OCR. */
+  readonly suggestedManualKwh = computed(() => {
+    const tarifa = this.ocrData()?.contrato?.tarifa;
+    return suggestedKwhFromTarifa(tarifa);
+  });
+
   readonly currentUser = this.auth.currentUser;
   readonly isMaster    = computed(() => getUserRoles(this.currentUser()).includes('Master'));
 
@@ -96,6 +107,8 @@ export class ComparatorGas {
     this.result.set(null);
     this.ocrData.set(null);
     this.sipsAnnualKwh.set(0);
+    this.awaitingManualConsumption.set(false);
+    this.manualAnnualKwh.set(null);
 
     const userId = this.isMaster() ? event.userId : '';
     this.selectedUserId.set(userId);
@@ -144,15 +157,23 @@ export class ComparatorGas {
       return;
     }
 
-    const annualKwh  = sipsAnnual > 0
-      ? sipsAnnual
-      : (dias > 0 ? kwhTotal * (365 / dias) : kwhTotal);
+    // Prioridad: manual del comercial → SIPS → extrapolación factura.
+    const manual     = this.manualAnnualKwh();
+    const annualKwh  = manual && manual > 0
+      ? manual
+      : sipsAnnual > 0
+        ? sipsAnnual
+        : (dias > 0 ? kwhTotal * (365 / dias) : kwhTotal);
 
     if (annualKwh <= 0) {
-      this.pricingError.set('No se pudo determinar el consumo anual de la factura.');
+      // Facturas con 0 kWh reales (piso vacío, alta reciente, etc): pedimos el
+      // consumo anual al comercial en lugar de mostrar solo error rojo.
+      this.awaitingManualConsumption.set(true);
+      this.pricingError.set(null);
       this.result.set(null);
       return;
     }
+    this.awaitingManualConsumption.set(false);
 
     const invoiceDate = ocr.periodo_facturacion?.fecha_fin;
     this.gasService.getApoloPricing(annualKwh, this.mibgasOverride(), invoiceDate).subscribe({
@@ -200,11 +221,48 @@ export class ComparatorGas {
 
     const pricing = this.pricingInfo();
     if (!pricing) return;
-    const annualKwh = this.sipsAnnualKwh() > 0
-      ? this.sipsAnnualKwh()
-      : ((ocr.periodo_facturacion?.numero_dias ?? 0) > 0
-          ? (ocr.consumo?.kwh_total ?? 0) * (365 / (ocr.periodo_facturacion?.numero_dias ?? 30))
-          : (ocr.consumo?.kwh_total ?? 0));
+    const manual = this.manualAnnualKwh();
+    const annualKwh = manual && manual > 0
+      ? manual
+      : this.sipsAnnualKwh() > 0
+        ? this.sipsAnnualKwh()
+        : ((ocr.periodo_facturacion?.numero_dias ?? 0) > 0
+            ? (ocr.consumo?.kwh_total ?? 0) * (365 / (ocr.periodo_facturacion?.numero_dias ?? 30))
+            : (ocr.consumo?.kwh_total ?? 0));
     this.result.set(calcularFacturaGas(ocr, pricing, annualKwh, this.overrides()));
   }
+
+  /** Handler del input manual del modal cuando SIPS + extrapolación dan 0. */
+  onManualConsumptionSubmit(kwh: number): void {
+    if (!Number.isFinite(kwh) || kwh <= 0) return;
+    this.manualAnnualKwh.set(Math.round(kwh));
+    this.awaitingManualConsumption.set(false);
+    this.recompute();
+  }
+}
+
+/**
+ * Sugerencia de consumo anual (kWh) a partir de la tarifa de gas.
+ * Bracket CNMC oficial:
+ *   RL.1 / TUR.1 (≤ 5.000)               → midpoint 2.500
+ *   RL.2 / TUR.2 (5.000 – 15.000)        → midpoint 10.000
+ *   RL.3 / TUR.3 (15.000 – 50.000)       → midpoint 32.500
+ *   RL.4         (50.000 – 100.000)      → midpoint 75.000
+ *   RL.5         (100.000 – 300.000)     → midpoint 200.000
+ *   RL.6         (> 300.000)             → default 500.000
+ * Devuelve null si la tarifa no se puede clasificar.
+ */
+function suggestedKwhFromTarifa(tarifa: string | undefined): number | null {
+  if (!tarifa) return null;
+  const digit = tarifa.match(/[1-6]/)?.[0];
+  if (!digit) return null;
+  const map: Record<string, number> = {
+    '1': 2500,
+    '2': 10000,
+    '3': 32500,
+    '4': 75000,
+    '5': 200000,
+    '6': 500000,
+  };
+  return map[digit] ?? null;
 }

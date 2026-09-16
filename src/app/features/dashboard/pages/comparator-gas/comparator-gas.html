@@ -40,9 +40,12 @@
     [result]="result()"
     [pricingError]="pricingError()"
     [pricingInfo]="pricingInfo()"
+    [awaitingManualConsumption]="awaitingManualConsumption()"
+    [suggestedManualKwh]="suggestedManualKwh()"
     (openChange)="modalOpen.set($event)"
     (download)="onDownload($event)"
     (overridesChange)="onOverridesChange($event)"
+    (manualConsumptionSubmit)="onManualConsumptionSubmit($event)"
   />
 
 </div>
