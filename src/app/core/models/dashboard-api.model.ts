@@ -146,4 +146,6 @@ export interface ConsolidatedDataParams {
   historySortDirection?:    'Asc' | 'Desc';
   historyPage?:             number;
   historyPageSize?:         number;
+  /** Colaborador seleccionado en el selector global de Analítica (Master). */
+  targetUserId?:            string;
 }

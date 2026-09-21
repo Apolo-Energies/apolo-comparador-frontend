@@ -1,0 +1,7 @@
+<app-collaborator-dialog
+  [open]="scope.dialogOpen()"
+  [loading]="scope.loading()"
+  [collaborators]="scope.options()"
+  [selectedId]="scope.selected()?.id ?? null"
+  (select)="onSelect($event)"
+  (close)="onClose()" />

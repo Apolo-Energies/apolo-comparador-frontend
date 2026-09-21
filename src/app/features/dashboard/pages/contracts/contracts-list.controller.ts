@@ -1,11 +1,13 @@
 import { computed, signal } from '@angular/core';
 import { ContractService } from '../../../../core/services/contract.service';
 import { GlobalLoadingService } from '../../../../core/services/global-loading.service';
+import { CollaboratorScopeService } from '../../../../core/services/collaborator-scope.service';
 import { ContratoClienteRow } from '../../../../core/models/contrato.model';
 
 export interface ContractsListDeps {
-  contractService: ContractService;
-  globalLoading:   GlobalLoadingService;
+  contractService:   ContractService;
+  globalLoading:     GlobalLoadingService;
+  collaboratorScope: CollaboratorScopeService;
   /** Called after every load() so the page can refresh dependent state (incidencias). */
   onLoaded: () => void;
 }
@@ -86,11 +88,12 @@ export class ContractsListController {
     this.loading.set(true);
     this.deps.globalLoading.start();
     this.deps.contractService.getContratos({
-      filter:   this.filter() || undefined,
-      offset:   (this.currentPage() - 1) * this.pageSize(),
-      limit:    this.pageSize(),
-      estado:   this.filterEstado() || undefined,
-      faltante: this.filterFaltante() || undefined,
+      filter:       this.filter() || undefined,
+      offset:       (this.currentPage() - 1) * this.pageSize(),
+      limit:        this.pageSize(),
+      estado:       this.filterEstado() || undefined,
+      faltante:     this.filterFaltante() || undefined,
+      targetUserId: this.deps.collaboratorScope.selected()?.id,
     }).subscribe({
       next: res => {
         this.data.set(res?.data ?? []);

@@ -1,6 +1,6 @@
 import {
   AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef,
-  Component, computed, inject, signal, TemplateRef, ViewChild, PLATFORM_ID,
+  Component, computed, effect, inject, signal, TemplateRef, ViewChild, PLATFORM_ID,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
@@ -8,6 +8,7 @@ import { ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
 import { ApoloIcons, DateIcon, DownloadIcon, EmailIcon, filterIcon, SearchIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
 import { HistoryService, HistoryItem } from '../../../../core/services/history.service';
 import { GlobalLoadingService } from '../../../../core/services/global-loading.service';
+import { CollaboratorScopeService } from '../../../../core/services/collaborator-scope.service';
 import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
 import { environment } from '../../../../../environments/environment';
 import { EsNumberPipe } from '../../../../shared/pipes/es-number.pipe';
@@ -20,11 +21,13 @@ import { EsNumberPipe } from '../../../../shared/pipes/es-number.pipe';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HistoryPageComponent implements AfterViewInit {
-  private historyService = inject(HistoryService);
-  private platformId     = inject(PLATFORM_ID);
-  private cdr            = inject(ChangeDetectorRef);
-  private globalLoading  = inject(GlobalLoadingService);
-  private esNumber       = new EsNumberPipe();
+  private historyService     = inject(HistoryService);
+  private platformId         = inject(PLATFORM_ID);
+  private cdr                = inject(ChangeDetectorRef);
+  private globalLoading      = inject(GlobalLoadingService);
+  private readonly collaboratorScope = inject(CollaboratorScopeService);
+  private esNumber           = new EsNumberPipe();
+  private isFirstLoad        = true;
 
   // icons
   readonly searchIcon:   UiIconSource = { type: 'apolo', icon: SearchIcon,   size: 16 };
@@ -66,6 +69,14 @@ export class HistoryPageComponent implements AfterViewInit {
     if (isPlatformBrowser(this.platformId)) {
       this.load();
     }
+    // Recarga al cambiar el colaborador seleccionado en Analítica (Master).
+    // Se salta la primera ejecución del effect: el load() de arriba ya cubre la carga inicial.
+    effect(() => {
+      this.collaboratorScope.selected();
+      if (this.isFirstLoad) { this.isFirstLoad = false; return; }
+      this.currentPage.set(1);
+      this.load();
+    });
   }
 
   ngAfterViewInit() {
@@ -94,6 +105,7 @@ export class HistoryPageComponent implements AfterViewInit {
       cups:      this.filterCups()  || undefined,
       page:      this.currentPage(),
       pageSize:  this.pageSize(),
+      targetUserId: this.collaboratorScope.selected()?.id,
     }).subscribe({
       next: res => {
         this.data.set(res.items);

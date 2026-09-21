@@ -78,6 +78,14 @@ export function buildSidebarSections(params: BuildSidebarSectionsParams): Sideba
           url: '/dashboard/markets',
           access: ['markets:view'],
         }] : []),
+        // Abre el modal "ver como colaborador" (Historial/Estadística) — no navega,
+        // ver openCollaboratorDialogGuard.
+        {
+          title: 'Colaborador',
+          icon: { type: 'apolo' as const, icon: UserCircleIcon, size: 20 },
+          url: '/dashboard/collaborator-scope',
+          access: ['analytics:view'],
+        },
       ],
     }] : []),
     {

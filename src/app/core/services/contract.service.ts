@@ -112,12 +112,14 @@ export class ContractService {
   }
 
   getContratos(params: {
-    filter?:   string;
-    orderBy?:  string;
-    offset?:   number;
-    limit?:    number;
-    estado?:   string;
-    faltante?: string;
+    filter?:       string;
+    orderBy?:      string;
+    offset?:       number;
+    limit?:        number;
+    estado?:       string;
+    faltante?:     string;
+    /** Colaborador seleccionado en el selector global "ver como" (Master, Apolo). */
+    targetUserId?: string;
   }): Observable<ContratosPageResponse> {
     let httpParams = new HttpParams()
       .set('filter',  params.filter  ?? '')
@@ -126,6 +128,7 @@ export class ContractService {
       .set('limit',   String(params.limit   ?? 10));
     if (params.estado)   httpParams = httpParams.set('estado',   params.estado);
     if (params.faltante) httpParams = httpParams.set('faltante', params.faltante);
+    if (params.targetUserId) httpParams = httpParams.set('targetUserId', params.targetUserId);
 
     return this.http.get<ContratosPageResponse>(
       `${environment.apiUrl}/energy-expert/contratos`,
@@ -152,9 +155,19 @@ export class ContractService {
     return this.http.patch(`${environment.apiUrl}/energy-expert/clientes/${clienteId}`, patch);
   }
 
-  getContratosCards(idDelegacion: number | null): Observable<ContratosCards> {
+  /**
+   * targetUserId: colaborador seleccionado en el selector global "ver como" (Master, Apolo).
+   * Mutuamente excluyente con idDelegacion — si hay colaborador seleccionado, se manda
+   * SOLO targetUserId (nunca los dos juntos); si no hay selección, se manda idDelegacion
+   * como siempre.
+   */
+  getContratosCards(idDelegacion: number | null, targetUserId?: string): Observable<ContratosCards> {
     let params = new HttpParams();
-    if (idDelegacion != null) params = params.set('idDelegacion', String(idDelegacion));
+    if (targetUserId) {
+      params = params.set('targetUserId', targetUserId);
+    } else if (idDelegacion != null) {
+      params = params.set('idDelegacion', String(idDelegacion));
+    }
 
     return this.http.get<ContratosCards>(
       `${environment.apiUrl}/energy-expert/portal/contratos-cards`,

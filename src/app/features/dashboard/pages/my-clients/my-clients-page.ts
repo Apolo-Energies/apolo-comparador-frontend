@@ -4,6 +4,7 @@ import {
   ChangeDetectorRef,
   Component,
   computed,
+  effect,
   inject,
   PLATFORM_ID,
   signal,
@@ -23,6 +24,7 @@ import { ContractService } from '../../../../core/services/contract.service';
 import { AssignedClient } from '../../../../core/models/assigned-client.model';
 import { ContratoIncidencia, ContratoCheckItem } from '../../../../core/models/contrato-incidencia.model';
 import { GlobalLoadingService } from '../../../../core/services/global-loading.service';
+import { CollaboratorScopeService } from '../../../../core/services/collaborator-scope.service';
 import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
 import { ClientDetailModalComponent, ClientDetailMode } from './client-detail-modal/client-detail-modal';
 import { getUserRoles } from '../../../../core/helpers/auth.utils';
@@ -51,9 +53,11 @@ export class MyClientsPageComponent implements AfterViewInit {
   private readonly delegationsService = inject(DelegationsService);
   private readonly contractService    = inject(ContractService);
   private readonly globalLoading      = inject(GlobalLoadingService);
+  private readonly collaboratorScope  = inject(CollaboratorScopeService);
   private readonly platformId         = inject(PLATFORM_ID);
   private readonly auth               = inject(AuthService);
   private readonly cdr                = inject(ChangeDetectorRef);
+  private isFirstLoad                 = true;
 
   readonly isMaster = computed(() => getUserRoles(this.auth.currentUser()).includes('Master'));
 
@@ -102,9 +106,10 @@ export class MyClientsPageComponent implements AfterViewInit {
   // Filtros, paginación y carga de la tabla — estado y llamada al servicio
   // viven en el controller (R1). Cada load() recarga incidencias en paralelo.
   private readonly list = new ClientListController({
-    clientsService: this.clientsService,
-    globalLoading:  this.globalLoading,
-    onLoaded:       () => this.incidencias.load(),
+    clientsService:    this.clientsService,
+    globalLoading:      this.globalLoading,
+    collaboratorScope:  this.collaboratorScope,
+    onLoaded:           () => this.incidencias.load(),
   });
 
   readonly currentPage    = this.list.currentPage;
@@ -149,6 +154,14 @@ export class MyClientsPageComponent implements AfterViewInit {
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) this.load();
+    // Recarga al cambiar el colaborador seleccionado en el sidebar (Master, Apolo).
+    // Se salta la primera ejecución del effect: el load() de arriba ya cubre la carga inicial.
+    effect(() => {
+      this.collaboratorScope.selected();
+      if (this.isFirstLoad) { this.isFirstLoad = false; return; }
+      this.list.currentPage.set(1);
+      this.load();
+    });
   }
 
   ngAfterViewInit(): void {

@@ -3,6 +3,7 @@ import { TableColumn } from '@apolo-energies/table';
 import { DashboardStatsService } from '../../../../core/services/dashboard-stats.service';
 import { StatisticsRow } from '../../../../core/services/statistics.service';
 import { GlobalLoadingService } from '../../../../core/services/global-loading.service';
+import { CollaboratorScopeService } from '../../../../core/services/collaborator-scope.service';
 import { EsNumberPipe } from '../../../../shared/pipes/es-number.pipe';
 import { DailySummaryApiItem, SummaryApiResult, MonthlySummaryApiItem, FiltersData, FilterProduct } from '../../../../core/models/dashboard-api.model';
 import { DateRange } from './models/dashboard-ui.model';
@@ -11,9 +12,10 @@ export type SortField = 'FullName' | 'Email' | 'TotalCups' | 'TotalAnnualConsump
 export type SortDirection = 'Asc' | 'Desc';
 
 export interface StatisticsFiltersDeps {
-  readonly dashboardService: DashboardStatsService;
-  readonly globalLoading:    GlobalLoadingService;
-  readonly esNumber:         EsNumberPipe;
+  readonly dashboardService:  DashboardStatsService;
+  readonly globalLoading:     GlobalLoadingService;
+  readonly esNumber:          EsNumberPipe;
+  readonly collaboratorScope: CollaboratorScopeService;
 }
 
 /**
@@ -125,7 +127,8 @@ export class StatisticsFiltersController {
       this.pageSize(),
       includeOnlyHistory,
       tariffIds,
-      productIds
+      productIds,
+      this.deps.collaboratorScope.selected()?.id
     ).subscribe({
       next: data => {
         // Actualizar dashboard solo en carga completa (no al filtrar/paginar)

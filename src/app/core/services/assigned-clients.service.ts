@@ -6,8 +6,9 @@ import { AssignedClientFilters, AssignedClientsPageResponse } from '../models/as
 
 /**
  * Listado de "Mis clientes". El backend resuelve el alcance (delegación propia
- * del usuario, o todas si es Master) a partir del JWT — el frontend no envía
- * ningún id de comercial/delegación.
+ * del usuario, o todas si es Master) a partir del JWT. `targetUserId` es la
+ * única excepción: viaja cuando Master seleccionó un colaborador en el
+ * selector global "ver como" (ver CollaboratorScopeService).
  */
 @Injectable({ providedIn: 'root' })
 export class AssignedClientsService {
@@ -20,6 +21,7 @@ export class AssignedClientsService {
       .set('pageSize', String(filters.pageSize ?? 20));
     if (filters.estado)   params = params.set('estado',   filters.estado);
     if (filters.faltante) params = params.set('faltante', filters.faltante);
+    if (filters.targetUserId) params = params.set('targetUserId', filters.targetUserId);
 
     return this.http.get<AssignedClientsPageResponse>(this.base, { params });
   }

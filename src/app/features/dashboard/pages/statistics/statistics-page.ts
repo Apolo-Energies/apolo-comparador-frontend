@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, inject, signal, PLATFORM_ID, TemplateRef, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, effect, inject, signal, PLATFORM_ID, TemplateRef, ViewChild } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { DataTableComponent, PaginatorComponent } from '@apolo-energies/table';
 import { ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
@@ -7,6 +7,7 @@ import { DashboardStatsService } from '../../../../core/services/dashboard-stats
 import { StatisticsRow } from '../../../../core/services/statistics.service';
 import { environment } from '../../../../../environments/environment';
 import { GlobalLoadingService } from '../../../../core/services/global-loading.service';
+import { CollaboratorScopeService } from '../../../../core/services/collaborator-scope.service';
 import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
 import { StatisticsDashboardComponent } from './components/statistics-dashboard/statistics-dashboard';
 import { UserDetailDialogComponent } from './components/user-detail-dialog/user-detail-dialog';
@@ -25,10 +26,12 @@ export class StatisticsPageComponent implements AfterViewInit {
   @ViewChild('cupsHeaderTpl') private cupsHeaderTpl!: TemplateRef<void>;
   @ViewChild('consumptionHeaderTpl') private consumptionHeaderTpl!: TemplateRef<void>;
   @ViewChild('actionsTpl') private actionsTpl!: TemplateRef<{ $implicit: StatisticsRow }>;
-  private dashboardService = inject(DashboardStatsService);
-  private platformId       = inject(PLATFORM_ID);
-  private globalLoading    = inject(GlobalLoadingService);
-  private esNumber         = new EsNumberPipe();
+  private dashboardService   = inject(DashboardStatsService);
+  private platformId         = inject(PLATFORM_ID);
+  private globalLoading      = inject(GlobalLoadingService);
+  private collaboratorScope  = inject(CollaboratorScopeService);
+  private esNumber           = new EsNumberPipe();
+  private isFirstLoad        = true;
 
   readonly isApolo = environment.features.userDetail;
 
@@ -40,9 +43,10 @@ export class StatisticsPageComponent implements AfterViewInit {
   // Filters, sorting, pagination and the consolidated-data load flow live in
   // the controller; the page only exposes signals/handlers by reference (R1).
   private readonly filters = new StatisticsFiltersController({
-    dashboardService: this.dashboardService,
+    dashboardService:  this.dashboardService,
     globalLoading:     this.globalLoading,
     esNumber:          this.esNumber,
+    collaboratorScope: this.collaboratorScope,
   });
 
   readonly filterName        = this.filters.filterName;
@@ -75,6 +79,14 @@ export class StatisticsPageComponent implements AfterViewInit {
     if (isPlatformBrowser(this.platformId)) {
       this.filters.load();
     }
+    // Recarga al cambiar el colaborador seleccionado en Analítica (Master).
+    // Se salta la primera ejecución del effect: el load() de arriba ya cubre la carga inicial.
+    effect(() => {
+      this.collaboratorScope.selected();
+      if (this.isFirstLoad) { this.isFirstLoad = false; return; }
+      this.filters.currentPage.set(1);
+      this.filters.load();
+    });
   }
 
   ngAfterViewInit(): void {

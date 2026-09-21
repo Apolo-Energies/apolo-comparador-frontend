@@ -24,7 +24,8 @@ export class DashboardStatsService {
     historyPageSize?: number,
     includeOnlyHistory = false,
     historyTariffIds?: number[],
-    historyProductIds?: number[]
+    historyProductIds?: number[],
+    targetUserId?: string
   ): Observable<ConsolidatedComparisonData> {
     const params: ConsolidatedDataParams = {
       includeSummary:        !includeOnlyHistory,
@@ -41,6 +42,7 @@ export class DashboardStatsService {
     if (historySortDirection)  params.historySortDirection = historySortDirection;
     if (historyPage)           params.historyPage = historyPage;
     if (historyPageSize)       params.historyPageSize = historyPageSize;
+    if (targetUserId)          params.targetUserId = targetUserId;
     
     // Agregar filtros de tarifa y producto como CSV
     if (historyTariffIds && historyTariffIds.length > 0) {

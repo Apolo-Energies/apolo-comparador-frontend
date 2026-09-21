@@ -1,11 +1,13 @@
 import { computed, signal } from '@angular/core';
 import { AssignedClientsService } from '../../../../core/services/assigned-clients.service';
 import { GlobalLoadingService } from '../../../../core/services/global-loading.service';
+import { CollaboratorScopeService } from '../../../../core/services/collaborator-scope.service';
 import { AssignedClient } from '../../../../core/models/assigned-client.model';
 
 export interface ClientListDeps {
-  clientsService: AssignedClientsService;
-  globalLoading:  GlobalLoadingService;
+  clientsService:     AssignedClientsService;
+  globalLoading:      GlobalLoadingService;
+  collaboratorScope:  CollaboratorScopeService;
   /** Called after every load() so the page can refresh dependent state (incidencias). */
   onLoaded: () => void;
 }
@@ -73,10 +75,11 @@ export class ClientListController {
     this.error.set(false);
     this.deps.globalLoading.start();
     this.deps.clientsService.list({
-      page:     this.currentPage(),
-      pageSize: this.pageSize(),
-      estado:   this.filterEstado() || undefined,
-      faltante: this.filterFaltante() || undefined,
+      page:         this.currentPage(),
+      pageSize:     this.pageSize(),
+      estado:       this.filterEstado() || undefined,
+      faltante:     this.filterFaltante() || undefined,
+      targetUserId: this.deps.collaboratorScope.selected()?.id,
     }).subscribe({
       next: res => {
         this.data.set(res?.data ?? []);

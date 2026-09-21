@@ -54,10 +54,12 @@ export interface AssignedClient {
 }
 
 export interface AssignedClientFilters {
-  page?:     number;
-  pageSize?: number;
-  estado?:   string;
-  faltante?: string;
+  page?:         number;
+  pageSize?:     number;
+  estado?:       string;
+  faltante?:     string;
+  /** Colaborador seleccionado en el selector global "ver como" (Master, Apolo). */
+  targetUserId?: string;
 }
 
 export interface AssignedClientsPageResponse {

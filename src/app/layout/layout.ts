@@ -14,12 +14,13 @@ import { RefreshTokenService } from '../core/services/refresh-token.service';
 import { OpportunityService } from '../core/services/opportunity.service';
 import { GlobalLoadingService } from '../core/services/global-loading.service';
 import { BrandLoaderComponent } from '../shared/components/brand-loader/brand-loader.component';
+import { CollaboratorScopeSelectorComponent } from '../shared/components/collaborator-scope-selector/collaborator-scope-selector';
 import { buildSidebarSections, hasAccess } from './layout.helpers';
 import { OpportunitiesBadgeController } from './opportunities-badge.controller';
 
 @Component({
   selector: 'app-layout',
-  imports: [RouterOutlet, ApoloSidebar, ApoloHeader, BrandLoaderComponent],
+  imports: [RouterOutlet, ApoloSidebar, ApoloHeader, BrandLoaderComponent, CollaboratorScopeSelectorComponent],
   templateUrl: './layout.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

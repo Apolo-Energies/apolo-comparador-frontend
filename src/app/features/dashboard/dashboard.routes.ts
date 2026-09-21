@@ -8,6 +8,7 @@ import { CommissionsPageComponent } from './pages/commissions/commissions-page';
 import { Layout } from '../../layout/layout';
 import { permissionGuard } from '../../core/guards/permission.guard';
 import { featureGuard } from '../../core/guards/feature.guard';
+import { openCollaboratorDialogGuard } from '../../core/guards/open-collaborator-dialog.guard';
 import { ForbiddenComponent } from '../forbidden/forbidden';
 import { SipsPageComponent } from './pages/sips/sips-page';
 import { SipsGasPageComponent } from './pages/sips-gas/sips-gas-page';
@@ -155,6 +156,11 @@ export const DASHBOARD_ROUTES: Routes = [
       ...GAS_ADMIN_ROUTES,
 
       { path: 'forbidden', component: ForbiddenComponent },
+
+      // Ítem "Colaborador" del sidebar (APOLO ENERGIES): el guard siempre cancela
+      // la navegación y abre el modal de selección — ForbiddenComponent nunca
+      // llega a renderizar, es solo el relleno formal que pide el tipo Route.
+      { path: 'collaborator-scope', canActivate: [openCollaboratorDialogGuard], component: ForbiddenComponent },
     ],
   },
 ];
