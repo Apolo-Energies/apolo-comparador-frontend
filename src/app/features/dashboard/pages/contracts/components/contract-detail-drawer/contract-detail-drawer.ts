@@ -7,9 +7,9 @@ import {
   ApoloIcons, DateIcon, HomeIcon, InfoIcon, LightningIcon,
   NoteIcon, UiIconSource, UserSimpleIcon, XIcon,
 } from '@apolo-energies/icons';
-import { ContratoClienteRow } from '../../../../../../entities/contrato.model';
-import { ServicioListItem } from '../../../../../../entities/servicio.model';
-import { ContractService } from '../../../../../../services/contract.service';
+import { ContratoClienteRow } from '../../../../../../core/models/contrato.model';
+import { ServicioListItem } from '../../../../../../core/models/servicio.model';
+import { ContractService } from '../../../../../../core/services/contract.service';
 import { BrandLoaderComponent } from '../../../../../../shared/components/brand-loader/brand-loader.component';
 import { calcDias, dedupeServiciosByCups, estadoCls, estadoLabel, fmtDate, fmtKwh } from '../../contracts-utils';
 

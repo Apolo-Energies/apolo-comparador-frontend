@@ -3,8 +3,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '@apolo-energies/ui';
 import { StarIcon, UiIconSource } from '@apolo-energies/icons';
-import { GasAccessTariffService } from '../../../../services/gas-access-tariff.service';
-import { GasAccessTariff } from '../../../../entities/gas-access-tariff.model';
+import { GasAccessTariffService } from '../../../../core/services/gas-access-tariff.service';
+import { GasAccessTariff } from '../../../../core/models/gas-access-tariff.model';
 
 type DialogMode = 'create' | 'updatePrices' | 'updateMargin' | 'close';
 

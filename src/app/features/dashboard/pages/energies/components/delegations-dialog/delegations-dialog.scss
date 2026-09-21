@@ -1,0 +1,10 @@
+@keyframes deleg-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes deleg-panel-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+.deleg-backdrop { animation: deleg-backdrop-in 150ms cubic-bezier(0.23, 1, 0.32, 1); }
+.deleg-panel    { animation: deleg-panel-in    200ms cubic-bezier(0.23, 1, 0.32, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .deleg-backdrop, .deleg-panel { animation: none; }
+}

@@ -3,8 +3,8 @@ import {
   effect, inject, input, OnInit, output, signal,
 } from '@angular/core';
 import { AlertService, ButtonComponent, DialogComponent } from '@apolo-energies/ui';
-import { ContractTemplateService } from '../../../../../services/contract-template.service';
-import { ContractTemplate } from '../../../../../entities/contract-template.model';
+import { ContractTemplateService } from '../../../../../core/services/contract-template.service';
+import { ContractTemplate } from '../../../../../core/models/contract-template.model';
 
 @Component({
   selector: 'app-contract-template-history',

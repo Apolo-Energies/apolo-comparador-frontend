@@ -1,3 +1,45 @@
+import { TemplateRef } from '@angular/core';
+import { TableColumn } from '@apolo-energies/table';
+import { FileDownIcon, NoteIcon, SearchIcon, ShieldCheckIcon, XIcon } from '@apolo-energies/icons';
+import { ContratoClienteRow, ContratosCards } from '../../../../core/models/contrato.model';
+
+export interface ContratosCardTile {
+  key:    keyof ContratosCards;
+  label:  string;
+  icon:   typeof ShieldCheckIcon;
+  accent: string;
+  /** Cada ícono de @apolo-energies/icons trae su propio viewBox/stroke-width
+   *  hardcodeado, así que a igual [size] se ven de peso visual desparejo —
+   *  se compensa afinando el size por ícono (ver también .contratos-tile-icon
+   *  en styles.css, que fuerza un stroke-width uniforme). */
+  size:   number;
+  value:  number | null;
+}
+
+/**
+ * Colores de estado tomados del skill de dataviz (paleta de status, variante dark —
+ * la app no tiene tema claro): good/warning/serious/critical + un neutro para "Estudios"
+ * (no forma parte del pipeline activos->bajas, y puede venir null).
+ */
+const CARD_ACCENTS: Record<keyof ContratosCards, string> = {
+  activos:      '#0ca30c',
+  paraFirma:    '#fab219',
+  paraTramitar: '#ec835a',
+  estudios:     '#a1a1aa',
+  bajas:        '#d03b3b',
+};
+
+export function buildCardTiles(cards: ContratosCards | null): ContratosCardTile[] {
+  const c = cards;
+  return [
+    { key: 'activos',      label: 'Activos',       icon: ShieldCheckIcon, accent: CARD_ACCENTS.activos,      size: 22, value: c?.activos      ?? null },
+    { key: 'paraFirma',    label: 'Para firma',     icon: NoteIcon,        accent: CARD_ACCENTS.paraFirma,    size: 22, value: c?.paraFirma    ?? null },
+    { key: 'paraTramitar', label: 'Para tramitar',  icon: FileDownIcon,    accent: CARD_ACCENTS.paraTramitar, size: 21, value: c?.paraTramitar ?? null },
+    { key: 'estudios',     label: 'Estudios',       icon: SearchIcon,      accent: CARD_ACCENTS.estudios,     size: 24, value: c?.estudios     ?? null },
+    { key: 'bajas',        label: 'Bajas',          icon: XIcon,           accent: CARD_ACCENTS.bajas,        size: 20, value: c?.bajas        ?? null },
+  ];
+}
+
 const ESTADO_MAP: Record<string, { label: string; cls: string }> = {
   F: { label: 'Firmado',   cls: 'bg-[#1AD5981A] text-[#1AD598]'   },
   A: { label: 'Alta',      cls: 'bg-blue-500/10 text-blue-400'     },
@@ -45,6 +87,30 @@ interface ServicioDedupItem {
  * Espeja el ranking del backend en GetMisContratos para que la deduplicación
  * en el drawer coincida con NumServicios (unique CUPS del cliente).
  */
+/** Devuelve true si TODOS los servicios del cliente comparten un mismo estado. */
+export function singleEstado(row: ContratoClienteRow): string | null {
+  const keys = Object.keys(row.EstadoBreakdown ?? {});
+  return keys.length === 1 ? keys[0] : null;
+}
+
+export function estadoEntries(row: ContratoClienteRow): { estado: string; count: number }[] {
+  const bd = row.EstadoBreakdown ?? {};
+  return Object.entries(bd)
+    .map(([estado, count]) => ({ estado, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/** Cablea los cellTemplate de las columnas de la tabla de contratos con los ng-template del host. */
+export function applyContratosColumnTemplates(
+  cols:      TableColumn<ContratoClienteRow>[],
+  templates: Record<string, TemplateRef<{ $implicit: ContratoClienteRow }>>,
+): TableColumn<ContratoClienteRow>[] {
+  return cols.map(col => {
+    const tpl = templates[col.key as string];
+    return tpl ? { ...col, cellTemplate: tpl } : col;
+  });
+}
+
 function estadoRank(s: ServicioDedupItem): number {
   const estado = (s.Estado ?? '').toUpperCase();
   const vigente = s.FechaFin ? new Date(s.FechaFin).getTime() >= Date.now() : false;

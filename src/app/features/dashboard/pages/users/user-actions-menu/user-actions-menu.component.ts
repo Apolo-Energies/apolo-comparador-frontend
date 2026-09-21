@@ -7,231 +7,26 @@ import { Router } from '@angular/router';
 import { AlertService, SelectOption } from '@apolo-energies/ui';
 import { DeleteUserModalComponent } from '../delete-user-modal/delete-user-modal.component';
 import { SvgIcon, SettingsIcon } from '@apolo-energies/icons';
-import { UserService } from '../../../../../services/user.service';
-import { CatalogService } from '../../../../../services/catalog.service';
+import { UserService } from '../../../../../core/services/user.service';
+import { CatalogService } from '../../../../../core/services/catalog.service';
 import { RestorePasswordModalComponent } from '../restore-password-modal/restore-password-modal.component';
 import { SendContractModalComponent } from '../send-contract-modal/send-contract-modal.component';
 import { DelegationPickerModalComponent } from '../delegation-picker-modal/delegation-picker-modal.component';
-import { UserRole, UserRoleLabel, normalizeRoleToOptionValue } from '../../../../../entities/user-role';
-import { PotentialParent } from '../../../../../entities/user.model';
-import { Delegation } from '../../../../../entities/delegation.model';
+import { UserRole, UserRoleLabel, normalizeRoleToOptionValue } from '../../../../../core/models/user-role';
+import { PotentialParent } from '../../../../../core/models/user.model';
+import { Delegation } from '../../../../../core/models/delegation.model';
 import { environment } from '../../../../../../environments/environment';
+import { UserRow } from './user-row.model';
+import { ACTION_BTN_CLS, computePanelPosition, SELECT_CLS } from './user-actions-menu.helpers';
 
-export interface SubUserSummary {
-  id:                   string;
-  fullName:             string;
-  email:                string;
-  role:                 string;
-  isActive:             boolean;
-  providerId:           number;
-  commissionPercentage: number | null;
-}
-
-export interface UserRow {
-  id:             string;
-  fullName:       string;
-  email:          string;
-  phone:          string | null;
-  role:           string | number;
-  isActive:       boolean;
-  isEnergyExpert: boolean;
-  commissions:    { isActive: boolean; commissionType: { id: string; name: string } }[];
-  providerId:     number | null;
-  provider:       { id: number; name: string } | null;
-  delegationId?:  number | null;
-  customerId?:                string | null;
-  identifier?:                string | null;
-  contractSignatureStatus?:   string | null;
-  hasActiveContract?:         boolean;
-  isSubUser?:                 boolean;
-  customer?: {
-    personType:  string;
-    dni:         string | null;
-    cif:         string | null;
-    companyName: string | null;
-  } | null;
-  subUsers?:  SubUserSummary[];
-  createdAt?: string;
-}
-
-const PANEL_H = 260;
-const PANEL_W = 384; // w-96
-
-const SELECT_CLS = [
-  'w-full appearance-none rounded-md border border-input bg-background',
-  'px-3 py-2 text-sm text-foreground cursor-pointer',
-  'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1',
-].join(' ');
-
-// Shared classes for the per-row action icons (eye / trash / gear). Keeps the icons aligned
-// and gives all three the same hover treatment (gray → white) so the gear matches the others.
-const ACTION_BTN_CLS = [
-  'p-2 rounded-md cursor-pointer transition-colors',
-  'text-muted-foreground hover:text-white hover:bg-muted',
-].join(' ');
+export type { UserRow, SubUserSummary } from './user-row.model';
 
 @Component({
   selector: 'app-user-actions-menu',
   standalone: true,
   imports: [FormsModule, SvgIcon, RestorePasswordModalComponent, SendContractModalComponent, DeleteUserModalComponent, DelegationPickerModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <div class="flex items-center gap-0.5">
-
-      <!-- Eye: navigate to user detail (Apolo only) -->
-      @if (showUserDetail) {
-        <button
-          type="button"
-          [class]="actionBtnCls"
-          title="Ver detalles"
-          (click)="goToDetail()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
-        </button>
-      }
-
-      <!-- Trash: delete user -->
-      <button
-        type="button"
-        [class]="actionBtnCls"
-        title="Eliminar usuario"
-        (click)="openDeleteConfirm()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 6h18"/>
-          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-        </svg>
-      </button>
-
-      <div #container>
-
-      <!-- Gear trigger -->
-      <button
-        #triggerBtn
-        type="button"
-        [class]="actionBtnCls + ' inline-flex items-center justify-center'"
-        title="Configurar usuario"
-        (click)="toggle($event)">
-        <lib-svg-icon [icon]="settingsIcon" [size]="16" />
-      </button>
-
-      <!-- Floating panel -->
-      @if (isOpen()) {
-        <div
-          class="fixed z-9999 w-96 rounded-lg border border-border bg-card shadow-xl"
-          [style.top.px]="panelTop()"
-          [style.left.px]="panelLeft()">
-
-          <!-- selects grid -->
-          <div class="grid grid-cols-2 gap-3 p-3">
-
-            @if (!isSubUser()) {
-              <select [class]="selectCls"
-                [ngModel]="selectedRole()"
-                (ngModelChange)="onRoleChange($event)">
-                @for (opt of roleOptions; track opt.value) {
-                  <option [value]="opt.value">{{ opt.label }}</option>
-                }
-              </select>
-            }
-
-            <select [class]="selectCls"
-              [ngModel]="selectedStatus()"
-              (ngModelChange)="onStatusChange($event)">
-              @for (opt of statusOptions; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-              }
-            </select>
-
-            @if (!isSubUser()) {
-              <select [class]="selectCls"
-                [value]="selectedExpert()"
-                (change)="onExpertChange($any($event.target).value)">
-                @for (opt of expertOptions; track opt.value) {
-                  <option [value]="opt.value" [selected]="opt.value === selectedExpert()">{{ opt.label }}</option>
-                }
-              </select>
-
-              <select [class]="selectCls"
-                [ngModel]="selectedCommission()"
-                (ngModelChange)="onCommissionChange($event)">
-                <option value="">— Comisión —</option>
-                @for (opt of commissionOptions(); track opt.value) {
-                  <option [value]="opt.value">{{ opt.label }}</option>
-                }
-              </select>
-            }
-
-            @if (canReassignParent()) {
-              <select [class]="selectCls + ' col-span-2'"
-                [ngModel]="selectedParent()"
-                (ngModelChange)="onParentChange($event)">
-                <option value="">— Sin asignar —</option>
-                @for (opt of parentSelectOptions(); track opt.value) {
-                  <option [value]="opt.value">{{ opt.label }}</option>
-                }
-              </select>
-            }
-
-          </div>
-
-          <!-- Footer -->
-          <div class="border-t border-border" [class]="showContracts && !isSubUser() ? 'grid grid-cols-2' : 'flex'">
-            @if (showContracts && !isSubUser()) {
-              <button
-                type="button"
-                class="px-3 py-2 text-left text-xs sm:text-sm hover:bg-muted text-primary border-r border-border"
-                (click)="openSendContractModal()">
-                Enviar contrato
-              </button>
-            }
-            <button
-              type="button"
-              class="w-full px-4 py-2 text-left text-sm text-destructive hover:bg-muted"
-              (click)="openPasswordModal()">
-              Restablecer contraseña
-            </button>
-          </div>
-        </div>
-      }
-      </div><!-- /#container -->
-
-    </div><!-- /.flex -->
-
-    <app-delete-user-modal
-      [open]="deleteConfirmOpen()"
-      [userId]="user().id"
-      [userName]="user().fullName"
-      (closed)="deleteConfirmOpen.set(false)"
-      (deleted)="updated.emit()"
-    />
-
-    <app-restore-password-modal
-      [open]="passwordModalOpen()"
-      [userId]="user().id"
-      [userEmail]="user().email"
-      [userName]="user().fullName"
-      (closed)="passwordModalOpen.set(false)"
-    />
-
-    <app-send-contract-modal
-      [open]="sendContractModalOpen()"
-      [customerId]="user().customerId"
-      [userName]="user().fullName"
-      [userEmail]="user().email"
-      (closed)="sendContractModalOpen.set(false)"
-    />
-
-    <app-delegation-picker-modal
-      [open]="delegationPickerOpen()"
-      (closed)="onDelegationPickerClosed()"
-      (selected)="onDelegationSelected($event)"
-    />
-  `,
+  templateUrl: './user-actions-menu.html',
 })
 export class UserActionsMenuComponent {
   @ViewChild('triggerBtn') private triggerRef!: ElementRef<HTMLButtonElement>;
@@ -324,14 +119,13 @@ export class UserActionsMenuComponent {
   }
 
   private reposition(): void {
-    const rect       = this.triggerRef.nativeElement.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const openAbove  = spaceBelow < PANEL_H && rect.top > PANEL_H;
-
-    this.panelTop.set(openAbove ? rect.top - PANEL_H - 4 : rect.bottom + 4);
-    this.panelLeft.set(
-      Math.max(8, Math.min(rect.left, window.innerWidth - PANEL_W - 8))
-    );
+    const rect = this.triggerRef.nativeElement.getBoundingClientRect();
+    const { top, left } = computePanelPosition(rect, {
+      width:  window.innerWidth,
+      height: window.innerHeight,
+    });
+    this.panelTop.set(top);
+    this.panelLeft.set(left);
   }
 
   @HostListener('document:click', ['$event'])

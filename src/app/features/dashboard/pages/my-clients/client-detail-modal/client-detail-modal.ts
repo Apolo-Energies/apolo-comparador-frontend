@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { ButtonComponent, DialogComponent } from '@apolo-energies/ui';
-import { AssignedClient, AssignedClientSuministro } from '../../../../../entities/assigned-client.model';
-import { ContractService } from '../../../../../services/contract.service';
+import { AssignedClient, AssignedClientSuministro } from '../../../../../core/models/assigned-client.model';
+import { ContractService } from '../../../../../core/services/contract.service';
 import { estadoCls, estadoLabel, fmtDate, calcDias } from '../../contracts/contracts-utils';
 
 export type ClientDetailMode = 'contratos' | 'servicios';

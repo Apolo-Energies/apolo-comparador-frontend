@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { KpiCardViewModel, TREND } from '../../models/dashboard-ui.models';
+import { KpiCardViewModel, TREND } from '../../models/dashboard-ui.model';
 
 @Component({
   selector: 'app-kpi-card',

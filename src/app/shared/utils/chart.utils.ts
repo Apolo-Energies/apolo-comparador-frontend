@@ -1,5 +1,5 @@
-import { SipsConsumo } from "../../entities/sips.model";
-import { GasSipsConsumption } from "../../entities/gas-sips.model";
+import { SipsConsumo } from "../../core/models/sips.model";
+import { GasSipsConsumption } from "../../core/models/gas-sips.model";
 
 export interface MonthlyRowDatum {
   month: string;

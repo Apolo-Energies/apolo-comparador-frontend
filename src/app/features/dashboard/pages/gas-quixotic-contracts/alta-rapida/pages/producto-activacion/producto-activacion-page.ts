@@ -3,8 +3,8 @@ import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { ButtonComponent } from '@apolo-energies/ui';
 import { AltaRapidaGasStore } from '../../store/alta-rapida-gas.store';
-import { QuixoticProductService } from '../../../../../../../services/quixotic-product.service';
-import { QuixoticProduct } from '../../../../../../../entities/quixotic-product.model';
+import { QuixoticProductService } from '../../../../../../../core/services/quixotic-product.service';
+import { QuixoticProduct } from '../../../../../../../core/models/quixotic-product.model';
 
 const INPUT_CLS = 'px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all';
 const SELECT_CLS = 'px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all cursor-pointer';

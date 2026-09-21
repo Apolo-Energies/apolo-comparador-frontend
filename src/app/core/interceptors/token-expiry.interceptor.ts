@@ -1,0 +1,86 @@
+import { inject } from '@angular/core';
+import { HttpBackend, HttpClient, HttpInterceptorFn } from '@angular/common/http';
+import { catchError, switchMap, throwError } from 'rxjs';
+import { AuthService } from '@apolo-energies/auth';
+import { RefreshTokenService } from '../../core/services/refresh-token.service';
+import { environment } from '../../../environments/environment';
+
+interface RefreshResponse {
+  accessToken?:  string;
+  access_token?: string;
+  refreshToken?:  string;
+  refresh_token?: string;
+}
+
+/**
+ * En un 401:
+ * 1. Intenta renovar con POST /auth/refresh (userId + refreshToken)
+ * 2. Si tiene éxito: actualiza el token y reintenta la request original
+ * 3. Si falla: limpia sesión y redirige al login
+ *
+ * X-Auth-Retry previene bucles: una request ya reintentada no vuelve a entrar al ciclo.
+ * Usa HttpBackend directamente para evitar pasar de nuevo por el interceptor.
+ */
+export const tokenExpiryInterceptor: HttpInterceptorFn = (req, next) => {
+  const auth                = inject(AuthService);
+  const refreshTokenService = inject(RefreshTokenService);
+  const httpBackend         = inject(HttpBackend);
+
+  return next(req).pipe(
+    catchError(error => {
+      if (error.status !== 401)          return throwError(() => error);
+      if (req.headers.has('X-Auth-Retry')) return throwError(() => error);
+
+      if (req.url.endsWith('/auth/refresh')) {
+        signOutAndClear(auth, refreshTokenService);
+        return throwError(() => error);
+      }
+
+      const refreshToken = refreshTokenService.getRefreshToken();
+      const userId       = refreshTokenService.getUserIdFromToken();
+
+      if (!refreshToken || !userId) {
+        signOutAndClear(auth, refreshTokenService);
+        return throwError(() => error);
+      }
+
+      const http = new HttpClient(httpBackend);
+
+      return http
+        .post<RefreshResponse>(`${environment.apiUrl}/auth/refresh`, { userId, refreshToken })
+        .pipe(
+          switchMap(response => {
+            const newToken   = response.accessToken  ?? response.access_token  ?? '';
+            const newRefresh = response.refreshToken ?? response.refresh_token ?? '';
+
+            auth.token.set(newToken);
+            saveAccessToken(newToken);
+            if (newRefresh) refreshTokenService.save(newRefresh);
+
+            const retryReq = req.clone({
+              setHeaders: { Authorization: `Bearer ${newToken}`, 'X-Auth-Retry': '1' },
+            });
+            return next(retryReq);
+          }),
+          catchError(refreshError => {
+            signOutAndClear(auth, refreshTokenService);
+            return throwError(() => refreshError);
+          }),
+        );
+    }),
+  );
+};
+
+function saveAccessToken(token: string): void {
+  if (environment.auth.tokenStorage === 'cookie') {
+    const secure = environment.production ? '; Secure' : '';
+    document.cookie = `${environment.auth.accessTokenKey}=${encodeURIComponent(token)}; path=/; SameSite=Strict${secure}`;
+  } else {
+    localStorage.setItem(environment.auth.accessTokenKey, token);
+  }
+}
+
+function signOutAndClear(auth: AuthService, refreshTokenService: RefreshTokenService): void {
+  refreshTokenService.clear();
+  auth.signOut();
+}

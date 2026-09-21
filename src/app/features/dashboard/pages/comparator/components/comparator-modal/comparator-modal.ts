@@ -1,26 +1,27 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
   effect,
   input,
   output,
   signal,
   untracked,
 } from '@angular/core';
-import { ButtonComponent, DialogComponent, InputFieldComponent, SelectFieldComponent, SelectOption, SliderComponent } from '@apolo-energies/ui';
+import { ButtonComponent, DialogComponent, InputFieldComponent, SelectFieldComponent, SliderComponent } from '@apolo-energies/ui';
 import { ApoloIcons, FileDownIcon, FileSpreadsheetIcon, LightningIcon, UiIconSource } from '@apolo-energies/icons';
-import {
-  ComparadorDownloadEvent,
-  ComparadorFormValue,
-  ComparadorResult,
-  ComparatorProductsByTariff,
-  FeeMode,
-  OcrResult,
-} from '../../comparator.models';
+import { ComparadorFormValue, ComparadorResult, FeeMode, OcrResult } from '../../../../../../core/models/comparator.model';
+import { ComparadorDownloadEvent } from '../../comparator-events.model';
+import { ComparatorProductsByTariff } from '../../comparator-ui.model';
 import { PERIOD_NUMBERS } from '../../../../../../shared/constants/period';
-
-const emptyPeriods = (): number[] => Array.from({ length: 6 }, () => 0);
+import { ComparatorFormController } from './comparator-form.controller';
+import {
+  formatEurValue,
+  formatPctValue,
+  formatPriceValue,
+  getPrecioEnergiaValue,
+  getPrecioPotenciaValue,
+  truncateValue,
+} from './comparator-modal.helpers';
 
 @Component({
   selector: 'app-comparator-modal',
@@ -71,63 +72,42 @@ export class ComparatorModalComponent {
   // ── UI state ───────────────────────────────────────────────────────────────
   readonly periodosOpen = signal(false);
 
-  // ── form signals ───────────────────────────────────────────────────────────
-  readonly tariff          = signal('');
-  readonly producto        = signal('');
-  readonly precioMedio     = signal(0);
-  readonly feeEnergia      = signal(0);
-  readonly feePotencia     = signal(0);
-  readonly comisionEnergia = signal(0);
+  // ── form (tariff / producto / fees / comisión) ──────────────────────────────
+  private readonly form = new ComparatorFormController({
+    productsByTariff:  () => this.productsByTariff(),
+    feeLockedProducts: () => this.feeLockedProducts(),
+    isReferrer:        () => this.isReferrer(),
+    comisionBase:      () => this.comisionBase(),
+    onChange:          () => this.emitFormChange(),
+  });
 
-  // Fees por período (P1..P6). Sólo se aplican cuando feeMode() === FeeMode.Periods.
-  readonly feeMode             = signal<FeeMode>(FeeMode.Global);
-  readonly feeEnergiaByPeriod  = signal<number[]>(emptyPeriods());
-  readonly feePotenciaByPeriod = signal<number[]>(emptyPeriods());
+  readonly tariff              = this.form.tariff;
+  readonly producto            = this.form.producto;
+  readonly precioMedio         = this.form.precioMedio;
+  readonly feeEnergia          = this.form.feeEnergia;
+  readonly feePotencia         = this.form.feePotencia;
+  readonly comisionEnergia     = this.form.comisionEnergia;
+  readonly feeMode             = this.form.feeMode;
+  readonly feeEnergiaByPeriod  = this.form.feeEnergiaByPeriod;
+  readonly feePotenciaByPeriod = this.form.feePotenciaByPeriod;
+
+  readonly energiaPeriods     = this.form.energiaPeriods;
+  readonly potenciaPeriods    = this.form.potenciaPeriods;
+  readonly energiaGridClass   = this.form.energiaGridClass;
+  readonly potenciaGridClass  = this.form.potenciaGridClass;
+
+  readonly hasEnergiaOverrides   = this.form.hasEnergiaOverrides;
+  readonly hasPotenciaOverrides  = this.form.hasPotenciaOverrides;
+  readonly hasPerPeriodOverrides = this.form.hasPerPeriodOverrides;
+
+  readonly tarifaOptions   = this.form.tarifaOptions;
+  readonly productoOptions = this.form.productoOptions;
+  readonly isFeeBlocked    = this.form.isFeeBlocked;
+
+  readonly effectiveComision = this.form.effectiveComision;
 
   // Expongo el enum a la template para poder hacer feeMode() === FeeMode.Global.
   protected readonly FeeMode = FeeMode;
-
-  // Nº de periodos relevantes según la tarifa. 2.0TD → 3 energía / 2 potencia.
-  // Resto (3.0TD, 6.X) → 6 y 6.
-  readonly energiaPeriods = computed<number[]>(() =>
-    this.tariff().startsWith('2.') ? [1, 2, 3] : [1, 2, 3, 4, 5, 6]
-  );
-  readonly potenciaPeriods = computed<number[]>(() =>
-    this.tariff().startsWith('2.') ? [1, 2] : [1, 2, 3, 4, 5, 6]
-  );
-  readonly energiaGridClass = computed(() =>
-    this.tariff().startsWith('2.') ? 'grid-cols-3' : 'grid-cols-6'
-  );
-  readonly potenciaGridClass = computed(() =>
-    this.tariff().startsWith('2.') ? 'grid-cols-2' : 'grid-cols-6'
-  );
-
-  readonly hasEnergiaOverrides = computed(() =>
-    this.feeEnergiaByPeriod().some(v => v !== this.feeEnergia())
-  );
-  readonly hasPotenciaOverrides = computed(() =>
-    this.feePotenciaByPeriod().some(v => v !== this.feePotencia())
-  );
-  readonly hasPerPeriodOverrides = computed(() =>
-    this.hasEnergiaOverrides() || this.hasPotenciaOverrides()
-  );
-
-  // ── derived select options ─────────────────────────────────────────────────
-  readonly tarifaOptions = computed<SelectOption[]>(() =>
-    Object.keys(this.productsByTariff()).map(t => ({ value: t, label: t }))
-  );
-
-  readonly productoOptions = computed<SelectOption[]>(() =>
-    (this.productsByTariff()[this.tariff()] ?? []).map(p => ({ value: p, label: p }))
-  );
-
-  readonly isFeeBlocked = computed(() =>
-    this.feeLockedProducts().includes(this.producto())
-  );
-
-  readonly effectiveComision = computed(() =>
-    this.isReferrer() ? this.comisionEnergia() : this.comisionBase()
-  );
 
   constructor() {
     effect(() => {
@@ -138,106 +118,30 @@ export class ComparatorModalComponent {
         const ocrTarifa = ocr.contrato?.tarifa ?? '';
         const tariff   = tarifas.includes(ocrTarifa) ? ocrTarifa : (tarifas[0] ?? '');
         const producto = this.productsByTariff()[tariff]?.[0] ?? '';
-        this.tariff.set(tariff);
-        this.producto.set(producto);
-        this.precioMedio.set(0);
-        this.feeEnergia.set(0);
-        this.feePotencia.set(0);
-        this.comisionEnergia.set(this.referrerDefaultFee());
-        this.feeMode.set(FeeMode.Global);
-        this.feeEnergiaByPeriod.set(emptyPeriods());
-        this.feePotenciaByPeriod.set(emptyPeriods());
+        this.form.reset(tariff, producto, this.referrerDefaultFee());
         this.emitFormChange();
       });
     });
 
     effect(() => {
       const base = this.comisionBase();
-      untracked(() => {
-        if (!this.isReferrer()) this.comisionEnergia.set(base);
-      });
+      untracked(() => this.form.syncComisionBase(base));
     }, { allowSignalWrites: true });
   }
 
-  // ── form handlers ──────────────────────────────────────────────────────────
+  // ── form handlers (delegados a ComparatorFormController) ────────────────────
 
-  onTariffChange(value: string) {
-    const producto = this.productsByTariff()[value]?.[0] ?? '';
-    this.tariff.set(value);
-    this.producto.set(producto);
-    this.applyFeeBlocking(producto);
-    this.emitFormChange();
-  }
-
-  onProductoChange(value: string) {
-    this.producto.set(value);
-    this.applyFeeBlocking(value);
-    this.emitFormChange();
-  }
-
-  onPrecioMedioChange(value: string) {
-    this.precioMedio.set(Number(value) || 0);
-    this.emitFormChange();
-  }
-
-  onFeeEnergiaChange(value: number) {
-    this.feeEnergia.set(value);
-    this.emitFormChange();
-  }
-
-  onFeePotenciaChange(value: number) {
-    this.feePotencia.set(value);
-    this.emitFormChange();
-  }
-
-  onFeeModeChange(mode: FeeMode) {
-    if (this.isFeeBlocked()) return;
-    // Al entrar en Periods por primera vez, inicializamos los inputs con el
-    // valor global para que el usuario sólo modifique lo que necesite.
-    if (mode === FeeMode.Periods) {
-      if (this.feeEnergiaByPeriod().every(v => v === 0) || !this.hasEnergiaOverrides()) {
-        this.feeEnergiaByPeriod.set(Array(6).fill(this.feeEnergia()));
-      }
-      if (this.feePotenciaByPeriod().every(v => v === 0) || !this.hasPotenciaOverrides()) {
-        this.feePotenciaByPeriod.set(Array(6).fill(this.feePotencia()));
-      }
-    }
-    this.feeMode.set(mode);
-    this.emitFormChange();
-  }
-
-  onFeeEnergiaPeriodChange(index: number, raw: string | number) {
-    const value = typeof raw === 'string' ? parseFloat(raw.replace(',', '.')) : raw;
-    const safe  = Number.isFinite(value) ? value : 0;
-    const arr = [...this.feeEnergiaByPeriod()];
-    arr[index] = safe;
-    this.feeEnergiaByPeriod.set(arr);
-    this.emitFormChange();
-  }
-
-  onFeePotenciaPeriodChange(index: number, raw: string | number) {
-    const value = typeof raw === 'string' ? parseFloat(raw.replace(',', '.')) : raw;
-    const safe  = Number.isFinite(value) ? value : 0;
-    const arr = [...this.feePotenciaByPeriod()];
-    arr[index] = safe;
-    this.feePotenciaByPeriod.set(arr);
-    this.emitFormChange();
-  }
-
-  resetFeeEnergiaOverrides() {
-    this.feeEnergiaByPeriod.set(Array(6).fill(this.feeEnergia()));
-    this.emitFormChange();
-  }
-
-  resetFeePotenciaOverrides() {
-    this.feePotenciaByPeriod.set(Array(6).fill(this.feePotencia()));
-    this.emitFormChange();
-  }
-
-  onComisionEnergiaChange(value: string) {
-    this.comisionEnergia.set(Number(value) || 0);
-    this.emitFormChange();
-  }
+  onTariffChange(value: string) { this.form.onTariffChange(value); }
+  onProductoChange(value: string) { this.form.onProductoChange(value); }
+  onPrecioMedioChange(value: string) { this.form.onPrecioMedioChange(value); }
+  onFeeEnergiaChange(value: number) { this.form.onFeeEnergiaChange(value); }
+  onFeePotenciaChange(value: number) { this.form.onFeePotenciaChange(value); }
+  onFeeModeChange(mode: FeeMode) { this.form.onFeeModeChange(mode); }
+  onFeeEnergiaPeriodChange(index: number, raw: string | number) { this.form.onFeeEnergiaPeriodChange(index, raw); }
+  onFeePotenciaPeriodChange(index: number, raw: string | number) { this.form.onFeePotenciaPeriodChange(index, raw); }
+  resetFeeEnergiaOverrides() { this.form.resetFeeEnergiaOverrides(); }
+  resetFeePotenciaOverrides() { this.form.resetFeePotenciaOverrides(); }
+  onComisionEnergiaChange(value: string) { this.form.onComisionEnergiaChange(value); }
 
   // ── actions ────────────────────────────────────────────────────────────────
 
@@ -247,41 +151,15 @@ export class ComparatorModalComponent {
 
   onDownload(type: 'pdf' | 'excel') {
     if (!this.result()) return;
-    this.download.emit({ type, formValue: this.buildFormValue() });
+    this.download.emit({ type, formValue: this.form.buildFormValue() });
   }
 
   onContratar() {
-    this.contratar.emit(this.buildFormValue());
-  }
-
-  // ── helpers ────────────────────────────────────────────────────────────────
-
-  private applyFeeBlocking(producto: string) {
-    if (this.feeLockedProducts().includes(producto)) {
-      this.feeEnergia.set(0);
-      this.feePotencia.set(0);
-      this.feeMode.set(FeeMode.Global);
-      this.feeEnergiaByPeriod.set(emptyPeriods());
-      this.feePotenciaByPeriod.set(emptyPeriods());
-    }
-  }
-
-  private buildFormValue(): ComparadorFormValue {
-    return {
-      tariff:              this.tariff(),
-      producto:            this.producto(),
-      precioMedio:         this.precioMedio(),
-      feeEnergia:          this.feeEnergia(),
-      feePotencia:         this.feePotencia(),
-      comisionEnergia:     this.effectiveComision(),
-      feeMode:             this.feeMode(),
-      feeEnergiaByPeriod:  this.feeEnergiaByPeriod(),
-      feePotenciaByPeriod: this.feePotenciaByPeriod(),
-    };
+    this.contratar.emit(this.form.buildFormValue());
   }
 
   private emitFormChange() {
-    this.formChange.emit(this.buildFormValue());
+    this.formChange.emit(this.form.buildFormValue());
   }
 
   // ── formatting ─────────────────────────────────────────────────────────────
@@ -289,28 +167,15 @@ export class ComparatorModalComponent {
   readonly PERIODOS = PERIOD_NUMBERS;
 
   getPrecioEnergia(periodos: { periodo: number | string; precioEnergiaOferta?: number }[], p: number): string {
-    const found = periodos.find(x => Number(x.periodo) === p);
-    return found ? found.precioEnergiaOferta?.toFixed(6) ?? '0,000000' : '0,000000';
+    return getPrecioEnergiaValue(periodos, p);
   }
 
   getPrecioPotencia(periodos: { periodo: number | string; precioPotenciaOferta?: number }[], p: number): string {
-    const found = periodos.find(x => Number(x.periodo) === p);
-    return found ? found.precioPotenciaOferta?.toFixed(6) ?? '0,000000' : '0,000000';
+    return getPrecioPotenciaValue(periodos, p);
   }
 
-  truncate(value: number): number {
-    return Math.trunc(value);
-  }
-
-  formatEur(value: number): string {
-    return value.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
-  }
-
-  formatPct(value: number): string {
-    return value.toFixed(2) + ' %';
-  }
-
-  formatPrice(value: number): string {
-    return value.toFixed(6);
-  }
+  readonly truncate    = truncateValue;
+  readonly formatEur   = formatEurValue;
+  readonly formatPct   = formatPctValue;
+  readonly formatPrice = formatPriceValue;
 }

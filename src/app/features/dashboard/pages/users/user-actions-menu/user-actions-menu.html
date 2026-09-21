@@ -1,0 +1,155 @@
+<div class="flex items-center gap-0.5">
+
+  <!-- Eye: navigate to user detail (Apolo only) -->
+  @if (showUserDetail) {
+    <button
+      type="button"
+      [class]="actionBtnCls"
+      title="Ver detalles"
+      (click)="goToDetail()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+    </button>
+  }
+
+  <!-- Trash: delete user -->
+  <button
+    type="button"
+    [class]="actionBtnCls"
+    title="Eliminar usuario"
+    (click)="openDeleteConfirm()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 6h18"/>
+      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+    </svg>
+  </button>
+
+  <div #container>
+
+  <!-- Gear trigger -->
+  <button
+    #triggerBtn
+    type="button"
+    [class]="actionBtnCls + ' inline-flex items-center justify-center'"
+    title="Configurar usuario"
+    (click)="toggle($event)">
+    <lib-svg-icon [icon]="settingsIcon" [size]="16" />
+  </button>
+
+  <!-- Floating panel -->
+  @if (isOpen()) {
+    <div
+      class="fixed z-9999 w-96 rounded-lg border border-border bg-card shadow-xl"
+      [style.top.px]="panelTop()"
+      [style.left.px]="panelLeft()">
+
+      <!-- selects grid -->
+      <div class="grid grid-cols-2 gap-3 p-3">
+
+        @if (!isSubUser()) {
+          <select [class]="selectCls"
+            [ngModel]="selectedRole()"
+            (ngModelChange)="onRoleChange($event)">
+            @for (opt of roleOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        }
+
+        <select [class]="selectCls"
+          [ngModel]="selectedStatus()"
+          (ngModelChange)="onStatusChange($event)">
+          @for (opt of statusOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+
+        @if (!isSubUser()) {
+          <select [class]="selectCls"
+            [value]="selectedExpert()"
+            (change)="onExpertChange($any($event.target).value)">
+            @for (opt of expertOptions; track opt.value) {
+              <option [value]="opt.value" [selected]="opt.value === selectedExpert()">{{ opt.label }}</option>
+            }
+          </select>
+
+          <select [class]="selectCls"
+            [ngModel]="selectedCommission()"
+            (ngModelChange)="onCommissionChange($event)">
+            <option value="">— Comisión —</option>
+            @for (opt of commissionOptions(); track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        }
+
+        @if (canReassignParent()) {
+          <select [class]="selectCls + ' col-span-2'"
+            [ngModel]="selectedParent()"
+            (ngModelChange)="onParentChange($event)">
+            <option value="">— Sin asignar —</option>
+            @for (opt of parentSelectOptions(); track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        }
+
+      </div>
+
+      <!-- Footer -->
+      <div class="border-t border-border" [class]="showContracts && !isSubUser() ? 'grid grid-cols-2' : 'flex'">
+        @if (showContracts && !isSubUser()) {
+          <button
+            type="button"
+            class="px-3 py-2 text-left text-xs sm:text-sm hover:bg-muted text-primary border-r border-border"
+            (click)="openSendContractModal()">
+            Enviar contrato
+          </button>
+        }
+        <button
+          type="button"
+          class="w-full px-4 py-2 text-left text-sm text-destructive hover:bg-muted"
+          (click)="openPasswordModal()">
+          Restablecer contraseña
+        </button>
+      </div>
+    </div>
+  }
+  </div><!-- /#container -->
+
+</div><!-- /.flex -->
+
+<app-delete-user-modal
+  [open]="deleteConfirmOpen()"
+  [userId]="user().id"
+  [userName]="user().fullName"
+  (closed)="deleteConfirmOpen.set(false)"
+  (deleted)="updated.emit()"
+/>
+
+<app-restore-password-modal
+  [open]="passwordModalOpen()"
+  [userId]="user().id"
+  [userEmail]="user().email"
+  [userName]="user().fullName"
+  (closed)="passwordModalOpen.set(false)"
+/>
+
+<app-send-contract-modal
+  [open]="sendContractModalOpen()"
+  [customerId]="user().customerId"
+  [userName]="user().fullName"
+  [userEmail]="user().email"
+  (closed)="sendContractModalOpen.set(false)"
+/>
+
+<app-delegation-picker-modal
+  [open]="delegationPickerOpen()"
+  (closed)="onDelegationPickerClosed()"
+  (selected)="onDelegationSelected($event)"
+/>

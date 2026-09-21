@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
-import { Tariff, BoePower, BoePowerPeriod } from '../../../../../../entities/provider.model';
+import { Tariff, BoePower, BoePowerPeriod } from '../../../../../../core/models/provider.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AlertService } from '@apolo-energies/ui';
-import { RatesService } from '../../../../../../services/rates.service';
+import { RatesService } from '../../../../../../core/services/rates.service';
 import { PeriodEditorComponent } from '../period-editor/period-editor.component';
 import { LucideAngularModule, Zap } from 'lucide-angular';
 

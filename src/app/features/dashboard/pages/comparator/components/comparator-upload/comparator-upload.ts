@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { ButtonComponent, ComboboxComponent, ComboboxOption, DropzoneComponent } from '@apolo-energies/ui';
-import { ComparadorCompareEvent, ComparadorUser } from '../../comparator.models';
+import { ComparadorCompareEvent } from '../../comparator-events.model';
+import { ComparadorUser } from '../../comparator-ui.model';
 
 @Component({
   selector: 'app-comparator-upload',

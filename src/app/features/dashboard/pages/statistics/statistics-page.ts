@@ -1,21 +1,18 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, computed, inject, signal, PLATFORM_ID, TemplateRef, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, inject, signal, PLATFORM_ID, TemplateRef, ViewChild } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
+import { DataTableComponent, PaginatorComponent } from '@apolo-energies/table';
 import { ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
 import { filterIcon, SearchIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
-import { DashboardStatsService } from '../../../../services/dashboard-stats.service';
-import { StatisticsRow } from '../../../../services/statistics.service';
+import { DashboardStatsService } from '../../../../core/services/dashboard-stats.service';
+import { StatisticsRow } from '../../../../core/services/statistics.service';
 import { environment } from '../../../../../environments/environment';
-import { GlobalLoadingService } from '../../../../services/global-loading.service';
+import { GlobalLoadingService } from '../../../../core/services/global-loading.service';
 import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
 import { StatisticsDashboardComponent } from './components/statistics-dashboard/statistics-dashboard';
 import { UserDetailDialogComponent } from './components/user-detail-dialog/user-detail-dialog';
-import { DailySummaryApiItem, SummaryApiResult, MonthlySummaryApiItem, FiltersData, FilterProduct } from './models/dashboard-api.models';
-import { DateRange } from './models/dashboard-ui.models';
+import { DateRange } from './models/dashboard-ui.model';
 import { EsNumberPipe } from '../../../../shared/pipes/es-number.pipe';
-
-type SortField = 'FullName' | 'Email' | 'TotalCups' | 'TotalAnnualConsumption';
-type SortDirection = 'Asc' | 'Desc';
+import { StatisticsFiltersController, SortField } from './statistics-filters.controller';
 
 @Component({
   selector: 'app-statistics-page',
@@ -40,229 +37,109 @@ export class StatisticsPageComponent implements AfterViewInit {
   readonly filterIcon:   UiIconSource = { type: 'apolo', icon: filterIcon,   size: 16 };
   readonly xIcon:        UiIconSource = { type: 'apolo', icon: XIcon,        size: 16 };
 
-  // filters
-  readonly filterName      = signal('');
-  readonly filterEmail     = signal('');
-  readonly sortBy          = signal<SortField>('FullName');
-  readonly sortDirection   = signal<SortDirection>('Asc');
+  // Filters, sorting, pagination and the consolidated-data load flow live in
+  // the controller; the page only exposes signals/handlers by reference (R1).
+  private readonly filters = new StatisticsFiltersController({
+    dashboardService: this.dashboardService,
+    globalLoading:     this.globalLoading,
+    esNumber:          this.esNumber,
+  });
 
-  // tariff and product filters
-  readonly selectedTariffId  = signal<number | null>(null);
-  readonly selectedProductId = signal<number | null>(null);
-  readonly availableFilters  = signal<FiltersData | null>(null);
+  readonly filterName        = this.filters.filterName;
+  readonly filterEmail       = this.filters.filterEmail;
+  readonly selectedTariffId  = this.filters.selectedTariffId;
+  readonly selectedProductId = this.filters.selectedProductId;
+  readonly availableFilters  = this.filters.availableFilters;
+  readonly availableProducts = this.filters.availableProducts;
 
-  readonly data        = signal<StatisticsRow[]>([]);
-  readonly loading     = signal(false);
-  readonly columns     = signal<TableColumn<StatisticsRow>[]>([]);
-  readonly currentPage = signal(1);
-  readonly pageSize    = signal(10);
-  readonly totalCount  = signal(0);
-  readonly totalPages  = signal(1);
+  readonly data        = this.filters.data;
+  readonly loading     = this.filters.loading;
+  readonly columns     = this.filters.columns;
+  readonly currentPage = this.filters.currentPage;
+  readonly pageSize    = this.filters.pageSize;
+  readonly totalCount  = this.filters.totalCount;
+  readonly totalPages  = this.filters.totalPages;
+  readonly pagedData   = this.filters.pagedData;
 
-  readonly dateRange      = signal<DateRange>({ from: null, to: null });
-  readonly summary        = signal<SummaryApiResult | null>(null);
-  readonly dailySummary   = signal<DailySummaryApiItem[]>([]);
-  readonly monthlySummary = signal<MonthlySummaryApiItem[]>([]);
+  readonly dateRange      = this.filters.dateRange;
+  readonly summary        = this.filters.summary;
+  readonly dailySummary   = this.filters.dailySummary;
+  readonly monthlySummary = this.filters.monthlySummary;
 
   // Modal de detalle
   readonly detailDialogOpen = signal(false);
   readonly selectedUserId   = signal('');
   readonly selectedUserName = signal('');
 
-  // Computed: productos disponibles basados en la tarifa seleccionada
-  readonly availableProducts = computed(() => {
-    const selectedTariffId = this.selectedTariffId();
-    const filters = this.availableFilters();
-    
-    if (selectedTariffId === null || !filters) {
-      return [];
-    }
-    
-    const products: FilterProduct[] = [];
-    
-    // Buscar la tarifa seleccionada en todos los providers
-    filters.providers.forEach(provider => {
-      const tariff = provider.tariffs.find(t => t.id === selectedTariffId);
-      if (tariff) {
-        products.push(...tariff.products);
-      }
-    });
-    
-    return products;
-  });
-
-  // Los datos ya vienen paginados del servidor
-  readonly pagedData = computed(() => this.data());
-
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
-      this.initializeColumns();
-      this.load();
+      this.filters.load();
     }
   }
 
   ngAfterViewInit(): void {
-    this.columns.update(cols => cols.map(col => {
-      if (col.key === 'totalCups') {
-        return { ...col, headerIconTemplate: this.cupsHeaderTpl };
-      }
-      if (col.key === 'totalAnnualConsumption') {
-        return { ...col, headerIconTemplate: this.consumptionHeaderTpl };
-      }
-      if (col.key === 'actions') {
-        return { ...col, cellTemplate: this.actionsTpl };
-      }
-      return col;
-    }));
+    this.filters.setHeaderTemplates(this.cupsHeaderTpl, this.consumptionHeaderTpl, this.actionsTpl);
   }
 
-  private initializeColumns() {
-    this.columns.set([
-      { key: 'fullName',               label: 'Nombre' },
-      { key: 'email',                  label: 'Email' },
-      { key: 'totalCups',              label: 'Total CUPS',              align: 'center' },
-      { key: 'totalAnnualConsumption', label: 'Consumo anual (MWh)',     align: 'right',
-        format: row => `${this.esNumber.transform(row.totalAnnualConsumption / 1000)} MWh` },
-      { key: 'actions',                label: 'Acciones',                align: 'center' },
-    ]);
+  onSearch(): void {
+    this.filters.onSearch();
   }
 
-  private load(includeOnlyHistory = false) {
-    this.loading.set(true);
-    this.globalLoading.start();
-
-    const tariffIds = this.selectedTariffId() !== null ? [this.selectedTariffId()!] : undefined;
-    const productIds = this.selectedProductId() !== null ? [this.selectedProductId()!] : undefined;
-
-    this.dashboardService.getConsolidatedData(
-      this.dateRange(),
-      this.filterName() || undefined,
-      this.filterEmail() || undefined,
-      this.sortBy(),
-      this.sortDirection(),
-      this.currentPage(),
-      this.pageSize(),
-      includeOnlyHistory,
-      tariffIds,
-      productIds
-    ).subscribe({
-      next: data => {
-        // Actualizar dashboard solo en carga completa (no al filtrar/paginar)
-        if (!includeOnlyHistory) {
-          if (data.summary)        this.summary.set(data.summary);
-          if (data.dailySummary)   this.dailySummary.set(data.dailySummary);
-          if (data.monthlySummary) this.monthlySummary.set(data.monthlySummary);
-          if (data.filters)        this.availableFilters.set(data.filters);
-        }
-
-        // Los datos agregados por usuario vienen directamente en history.items
-        const historyItems = data.history?.items ?? [];
-        const rows = historyItems.map(item => ({
-          userId: item.userId,
-          fullName: item.fullName,
-          email: item.email,
-          totalCups: item.totalCups,
-          totalAnnualConsumption: item.totalAnnualConsumption,
-        })) as StatisticsRow[];
-
-        this.data.set(rows);
-        this.totalCount.set(data.history?.totalCount ?? 0);
-        this.totalPages.set(data.history?.totalPages ?? 1);
-
-        this.loading.set(false);
-        this.globalLoading.stop();
-      },
-      error: () => { this.loading.set(false); this.globalLoading.stop(); },
-    });
-  }
-
-  onSearch() {
-    this.currentPage.set(1);
-    this.load(true); // Solo history al filtrar
-  }
-
-  onClearFilters() {
-    this.filterName.set('');
-    this.filterEmail.set('');
-    this.sortBy.set('FullName');
-    this.sortDirection.set('Asc');
-    this.selectedTariffId.set(null);
-    this.selectedProductId.set(null);
-    this.currentPage.set(1);
-    this.load();
+  onClearFilters(): void {
+    this.filters.onClearFilters();
   }
 
   onTariffChange(value: any): void {
-    // Convertir a número si no es null
-    const numValue = value === 'null' || value === null ? null : Number(value);
-    this.selectedTariffId.set(numValue);
-    // Resetear el producto seleccionado cuando cambia la tarifa
-    this.selectedProductId.set(null);
+    this.filters.onTariffChange(value);
   }
 
   onProductChange(value: any): void {
-    // Convertir a número si no es null
-    const numValue = value === 'null' || value === null ? null : Number(value);
-    this.selectedProductId.set(numValue);
+    this.filters.onProductChange(value);
   }
 
-  onDateRangeChange(range: DateRange) {
-    this.dateRange.set(range);
-    this.currentPage.set(1);
-    this.load(); // Datos completos al cambiar fecha
+  onDateRangeChange(range: DateRange): void {
+    this.filters.onDateRangeChange(range);
   }
 
-  onRetry() {
-    this.load();
+  onRetry(): void {
+    this.filters.onRetry();
   }
 
-  onColumnSort(field: SortField) {
-    if (this.sortBy() === field) {
-      // Toggle direction si es la misma columna
-      this.sortDirection.set(this.sortDirection() === 'Asc' ? 'Desc' : 'Asc');
-    } else {
-      // Nueva columna, empezar en descendente
-      this.sortBy.set(field);
-      this.sortDirection.set('Desc');
-    }
-    this.currentPage.set(1);
-    this.load(true); // Solo history al ordenar
+  onColumnSort(field: SortField): void {
+    this.filters.onColumnSort(field);
   }
 
-  onPageChange(page: number) {
-    this.currentPage.set(page);
-    this.load(true); // Solo history al cambiar página
+  onPageChange(page: number): void {
+    this.filters.onPageChange(page);
   }
 
-  onPageSizeChange(size: number) {
-    this.pageSize.set(size);
-    this.currentPage.set(1);
-    this.load(true); // Solo history al cambiar tamaño
+  onPageSizeChange(size: number): void {
+    this.filters.onPageSizeChange(size);
   }
 
   isSortedBy(field: SortField): boolean {
-    return this.sortBy() === field;
+    return this.filters.isSortedBy(field);
   }
 
   isSortAsc(field: SortField): boolean {
-    return this.isSortedBy(field) && this.sortDirection() === 'Asc';
+    return this.filters.isSortAsc(field);
   }
 
   isSortDesc(field: SortField): boolean {
-    return this.isSortedBy(field) && this.sortDirection() === 'Desc';
+    return this.filters.isSortDesc(field);
   }
 
-  onRowClick(row: StatisticsRow) {
+  onRowClick(row: StatisticsRow): void {
     this.selectedUserId.set(row.userId);
     this.selectedUserName.set(row.fullName);
     this.detailDialogOpen.set(true);
   }
 
-  onDetailDialogClose() {
+  onDetailDialogClose(): void {
     this.detailDialogOpen.set(false);
   }
 
-  onExport() {
+  onExport(): void {
     this.dashboardService.exportToExcel(this.dateRange());
   }
 }

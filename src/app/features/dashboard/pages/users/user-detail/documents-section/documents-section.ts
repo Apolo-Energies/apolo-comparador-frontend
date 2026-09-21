@@ -5,335 +5,22 @@ import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AlertService, ButtonComponent, DialogComponent } from '@apolo-energies/ui';
 import { DomSanitizer } from '@angular/platform-browser';
-import { ContractDocumentService } from '../../../../../../services/contract-document.service';
-import { ContractService } from '../../../../../../services/contract.service';
-import { firstValueFrom } from 'rxjs';
-import { ContractDocument, UserDetail } from '../../../../../../entities/user-detail.model';
-import { REQUIRED_DOCS_BY_PERSON_TYPE, OPTIONAL_DOCS_BY_PERSON_TYPE } from '../configs/doc-by-person-type.config';
-import { DOC_TYPE_LABELS } from '../configs/doc-type-labels.config';
-import { DOC_STATUS_CONFIG } from '../configs/doc-status.config';
-
-interface DocSlot {
-  type:       string;
-  label:      string;
-  doc:        ContractDocument | null;
-  isOptional: boolean;
-}
+import { ContractDocumentService } from '../../../../../../core/services/contract-document.service';
+import { ContractService } from '../../../../../../core/services/contract.service';
+import { ContractDocument, UserDetail } from '../../../../../../core/models/user-detail.model';
+import {
+  buildDocSlots, computeCanUploadSignedContract, getDocStatusConfig, getDocTypeLabel,
+  getPendingRequiredTypes, isDocReviewable,
+} from './documents-section.helpers';
+import { DocumentsUploadController } from './documents-upload.controller';
+import { DocumentsReviewController } from './documents-review.controller';
 
 @Component({
   selector: 'app-documents-section',
   standalone: true,
   imports: [FormsModule, ButtonComponent, DialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <!-- ─── Header ─────────────────────────────────────────────────── -->
-    <div class="flex items-center justify-between mb-4">
-      <p class="flex items-center gap-2 text-base font-semibold text-foreground">
-        <span class="h-2 w-2 rounded-full bg-primary"></span>
-        Documentación
-      </p>
-
-      <div class="flex items-center gap-3">
-        <!-- Master: upload physical signed contract -->
-        @if (canUploadSignedContract()) {
-          <button
-            type="button"
-            class="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
-            (click)="openSignedContractUpload()"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
-              fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <polyline points="12 18 12 12"/><polyline points="9 15 12 12 15 15"/>
-            </svg>
-            Subir contrato firmado
-          </button>
-        }
-      </div>
-    </div>
-
-    <!-- ─── Completion banner (shown once per user) ──────────────── -->
-    @if (showCompletionBanner()) {
-      <div class="flex items-start justify-between gap-3 rounded-lg border border-green-200 bg-green-50
-                  dark:border-green-900/40 dark:bg-green-900/20 px-4 py-3 mb-4">
-        <div class="flex items-start gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-            class="shrink-0 text-green-600 dark:text-green-400 mt-0.5">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-          <p class="text-sm font-medium text-green-700 dark:text-green-300">
-            ¡Felicidades! Has subido todos los documentos requeridos.
-          </p>
-        </div>
-        <button type="button"
-          class="shrink-0 text-green-600 hover:text-green-800 dark:text-green-400"
-          (click)="dismissCompletion()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-    }
-
-    <!-- ─── No customer yet ──────────────────────────────────────── -->
-    @if (!user()?.customer) {
-      <div class="flex flex-col items-center justify-center py-10 text-center">
-        <p class="text-sm text-muted-foreground">Agrega los datos del cliente para gestionar documentos.</p>
-      </div>
-    } @else {
-
-      <!-- ─── Document slots ──────────────────────────────────────── -->
-      <div class="space-y-2">
-        @for (slot of allSlots(); track slot.type) {
-
-          <div class="space-y-2">
-
-            <div class="flex items-center gap-3 rounded-lg border border-border bg-background px-4 py-3">
-
-              <!-- Doc icon -->
-              <div class="flex items-center justify-center w-9 h-9 rounded-lg bg-muted shrink-0"
-                   [class.opacity-50]="!slot.doc">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                  fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
-                  class="text-muted-foreground">
-                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                  <polyline points="14 2 14 8 20 8"/>
-                </svg>
-              </div>
-
-              <!-- Title + subtitle -->
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-foreground truncate">{{ slot.label }}</p>
-                @if (slot.doc; as doc) {
-                  <p class="text-xs text-muted-foreground mt-0.5">
-                    {{ slot.label }} &middot; Subido {{ formatDate(doc.createdAt) }}
-                  </p>
-                } @else {
-                  <p class="text-xs text-muted-foreground mt-0.5">Aún no se subió</p>
-                }
-              </div>
-
-              <!-- Right: badge + actions -->
-              <div class="flex items-center gap-2 shrink-0">
-
-                @if (slot.doc; as doc) {
-                  <!-- Status badge -->
-                  @if (statusConfig(doc.status); as s) {
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ s.cls }}">
-                      {{ s.label }}
-                    </span>
-                  }
-
-                  <!-- Approve / Reject: master only -->
-                  @if (isMaster() && canReview(doc.status)) {
-                    <button type="button"
-                      class="p-1.5 rounded-md hover:bg-green-50 text-green-600 hover:text-green-700 transition-colors"
-                      title="Aprobar"
-                      (click)="onVerify(doc.id)">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                    </button>
-                    <button type="button"
-                      class="p-1.5 rounded-md hover:bg-red-50 text-red-500 hover:text-red-600 transition-colors"
-                      title="Rechazar"
-                      (click)="onRejectClick(doc.id)">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                      </svg>
-                    </button>
-                  }
-
-                  <!-- Reemplazar: non-master, rejected docs only -->
-                  @if (!isMaster() && doc.status === 'Rejected') {
-                    <button type="button"
-                      class="inline-flex items-center gap-1 text-sm font-medium text-amber-600 hover:text-amber-700 transition-colors"
-                      (click)="openReplaceModal(slot.type, doc.id)">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="1 4 1 10 7 10"/>
-                        <path d="M3.51 15a9 9 0 1 0 .49-3.85"/>
-                      </svg>
-                      Reemplazar
-                    </button>
-                  }
-
-                  <!-- Ver button -->
-                  <button type="button"
-                    class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    (click)="viewDoc.set(doc)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-                      <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                    Ver
-                  </button>
-
-                  <!-- Delete button: master only -->
-                  @if (isMaster()) {
-                    <button type="button"
-                      class="p-1 text-muted-foreground hover:text-red-500 transition-colors"
-                      title="Eliminar"
-                      (click)="onDelete(doc.id)">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="3 6 5 6 21 6"/>
-                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                        <path d="M10 11v6"/><path d="M14 11v6"/>
-                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                      </svg>
-                    </button>
-                  }
-
-                } @else {
-                  <!-- Mismo badge para requerido u opcional: lo que importa acá es dejar
-                       explícito que el archivo no se subió, no si es obligatorio o no. -->
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                               bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                    No subido
-                  </span>
-
-                  <!-- Subir este documento puntual (reemplaza al botón genérico de arriba) -->
-                  <button type="button"
-                    class="p-1.5 rounded-md hover:bg-primary/10 text-primary transition-colors"
-                    title="Subir {{ slot.label }}"
-                    (click)="openUploadForType(slot.type)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
-                      fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                  </button>
-                }
-
-              </div>
-            </div>
-
-            <!-- Rejection reason (visible to all) -->
-            @if (slot.doc?.reviewComment; as reason) {
-              <div class="ml-12 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700 dark:bg-red-900/20 dark:border-red-900/40 dark:text-red-400">
-                <span class="font-medium">Motivo del rechazo: </span>{{ reason }}
-              </div>
-            }
-
-            <!-- Reject inline input (master only) -->
-            @if (slot.doc && rejectingDocId() === slot.doc.id) {
-              <div class="ml-12 flex items-center gap-2">
-                <input
-                  type="text"
-                  [ngModel]="rejectObservation()"
-                  (ngModelChange)="rejectObservation.set($event)"
-                  placeholder="Motivo del rechazo..."
-                  class="flex-1 px-3 py-1.5 text-sm rounded-md border border-border bg-card text-foreground
-                         placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-                  (keyup.enter)="onRejectSubmit(slot.doc!.id)" />
-                <button type="button"
-                  class="px-3 py-1.5 text-sm rounded-md bg-red-500 text-white hover:bg-red-600 transition-colors"
-                  (click)="onRejectSubmit(slot.doc!.id)">Enviar</button>
-                <button type="button"
-                  class="px-3 py-1.5 text-sm rounded-md border border-border hover:bg-muted transition-colors"
-                  (click)="rejectingDocId.set(null)">Cancelar</button>
-              </div>
-            }
-
-          </div>
-        }
-      </div>
-    }
-
-    <!-- ─── Upload modal ─────────────────────────────────────────── -->
-    <ui-dialog [open]="uploadModalOpen()" [closeable]="true" maxWidth="max-w-md"
-      (openChange)="$event ? null : closeUploadModal()">
-      <div class="flex flex-col">
-        <div class="shrink-0 border-b border-border px-6 py-4">
-          <p class="text-lg font-semibold text-foreground">
-            @if (selectedUploadType(); as type) { {{ docTypeLabel(type) }} } @else { Subir documento }
-          </p>
-          <p class="text-sm text-muted-foreground">Selecciona el archivo a subir</p>
-        </div>
-
-        <div class="space-y-4 px-6 py-5">
-          <div class="space-y-1">
-            <label class="text-sm font-medium text-muted-foreground">Archivo *</label>
-            <input type="file" (change)="onFileSelected($event)"
-              class="w-full text-sm text-muted-foreground file:mr-3 file:py-2 file:px-4 file:rounded-md
-                     file:border-0 file:text-sm file:font-medium file:bg-primary-button file:text-background
-                     hover:file:opacity-90 cursor-pointer" />
-          </div>
-        </div>
-
-        <div class="shrink-0 border-t border-border px-6 py-4 flex justify-end gap-2">
-          <ui-button label="Cancelar" variant="outline" size="md" (click)="closeUploadModal()" />
-          <button
-            type="button"
-            [disabled]="uploading() || selectedUploadType() === null || !selectedFile()"
-            (click)="onUpload()"
-            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg
-                   bg-primary-button text-background transition-opacity
-                   hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed">
-            @if (uploading()) {
-              <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-              </svg>
-              Subiendo...
-            } @else {
-              Subir
-            }
-          </button>
-        </div>
-      </div>
-    </ui-dialog>
-
-    <!-- ─── View document modal ──────────────────────────────────── -->
-    <ui-dialog [open]="!!viewDoc()" [closeable]="true" maxWidth="max-w-5xl"
-      (openChange)="$event ? null : viewDoc.set(null)">
-      @if (viewDoc(); as doc) {
-        <div class="flex flex-col" style="height: min(90vh, 900px)">
-          <div class="shrink-0 border-b border-border px-6 py-4 flex items-center justify-between">
-            <div>
-              <p class="text-base font-semibold text-foreground">{{ docTypeLabel(doc.documentType) }}</p>
-              <p class="text-sm text-muted-foreground">
-                Subido el {{ formatDate(doc.createdAt) }}
-                @if (statusConfig(doc.status); as s) {
-                  &middot;
-                  <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium {{ s.cls }}">
-                    {{ s.label }}
-                  </span>
-                }
-              </p>
-            </div>
-            <a [href]="doc.fileUrl" target="_blank" rel="noopener noreferrer"
-              class="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-              </svg>
-              Abrir en nueva pestaña
-            </a>
-          </div>
-
-          @if (doc.reviewComment) {
-            <div class="mx-6 mt-4 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700
-                        dark:bg-red-900/20 dark:border-red-900/40 dark:text-red-400">
-              <span class="font-medium">Motivo del rechazo: </span>{{ doc.reviewComment }}
-            </div>
-          }
-
-          <div class="flex-1 min-h-0 p-2">
-            <iframe [src]="sanitizeUrl(doc.previewUrl ?? doc.fileUrl)"
-              class="w-full h-full rounded-md border-0"></iframe>
-          </div>
-        </div>
-      }
-    </ui-dialog>
-  `,
+  templateUrl: './documents-section.html',
 })
 export class DocumentsSectionComponent {
   readonly user     = input.required<UserDetail | null>();
@@ -346,80 +33,41 @@ export class DocumentsSectionComponent {
   private readonly sanitizer      = inject(DomSanitizer);
   private readonly platformId     = inject(PLATFORM_ID);
 
-  readonly docs               = signal<ContractDocument[]>([]);
-  readonly localContractId    = signal<string | null>(null);
-  readonly uploadModalOpen    = signal(false);
-  readonly uploading          = signal(false);
-  readonly viewDoc            = signal<ContractDocument | null>(null);
-  readonly rejectingDocId     = signal<string | null>(null);
-  readonly selectedUploadType = signal<string | null>(null);
-  readonly selectedFile       = signal<File | null>(null);
-  readonly rejectObservation  = signal('');
+  // Upload/replace-document modal flow (state + service calls live in the controller; R1).
+  private readonly upload = new DocumentsUploadController({
+    contractDocSvc: this.contractDocSvc,
+    contractSvc:    this.contractSvc,
+    alertService:   this.alertService,
+    getUser:        () => this.user(),
+    onDone:         () => this.reload.emit(),
+  });
+  readonly uploadModalOpen    = this.upload.uploadModalOpen;
+  readonly uploading          = this.upload.uploading;
+  readonly selectedUploadType = this.upload.selectedUploadType;
+  readonly selectedFile       = this.upload.selectedFile;
+
+  // Verify/reject/delete review actions (state + service calls live in the controller; R1).
+  private readonly review = new DocumentsReviewController({
+    contractDocSvc:     this.contractDocSvc,
+    alertService:       this.alertService,
+    getLocalContractId: () => this.upload.localContractId(),
+    onDone:              () => this.reload.emit(),
+  });
+  readonly rejectingDocId    = this.review.rejectingDocId;
+  readonly rejectObservation = this.review.rejectObservation;
+
+  readonly viewDoc             = signal<ContractDocument | null>(null);
   readonly completionDismissed = signal(false);
-  // When set, onUpload calls replace instead of upload
-  private replacingDocId      = signal<string | null>(null);
 
-  // Master can upload the physical signed contract when it doesn't exist yet or was rejected
-  readonly canUploadSignedContract = computed(() => {
-    if (!this.isMaster()) return false;
-    const contract = this.user()?.contract;
-    if (!contract) return false;
-    const existing = contract.documents.uploaded.find(d => d.documentType === 'SignedContract');
-    return !existing || existing.status === 'Rejected';
-  });
+  readonly canUploadSignedContract = computed(() => computeCanUploadSignedContract(this.user()));
 
-  // All slots: required + optional (always visible) + extra uploaded (SignedContract etc.)
-  readonly allSlots = computed<DocSlot[]>(() => {
-    const u = this.user();
-    const contract = u?.contract;
-    if (!u?.customer) return [];
-    const required = contract?.documents.required
-      ?? REQUIRED_DOCS_BY_PERSON_TYPE[u.customer.personType]
-      ?? [];
-    const requiredSet = new Set(required);
-    const optional = (OPTIONAL_DOCS_BY_PERSON_TYPE[u.customer.personType] ?? [])
-      .filter(t => !requiredSet.has(t));
-    const uploadedMap = new Map(
-      (contract?.documents.uploaded ?? []).map(d => [d.documentType, d]),
-    );
-    const slots: DocSlot[] = [
-      ...required.map(type => ({
-        type, label: DOC_TYPE_LABELS[type] ?? type,
-        doc: uploadedMap.get(type) ?? null, isOptional: false,
-      })),
-      ...optional.map(type => ({
-        type, label: DOC_TYPE_LABELS[type] ?? type,
-        doc: uploadedMap.get(type) ?? null, isOptional: true,
-      })),
-    ];
-    const knownSet = new Set([...required, ...optional]);
-    for (const [type, doc] of uploadedMap) {
-      if (!knownSet.has(type)) {
-        slots.push({ type, label: DOC_TYPE_LABELS[type] ?? type, doc, isOptional: false });
-      }
-    }
-    return slots;
-  });
+  /** All slots: required + optional (always visible) + extra uploaded (SignedContract etc.). */
+  readonly allSlots = computed(() => buildDocSlots(this.user()));
 
-  // Only slots with an uploaded doc (used for non-master empty state check)
-  readonly uploadedSlots = computed<DocSlot[]>(() =>
-    this.allSlots().filter(s => s.doc !== null)
-  );
+  /** Only slots with an uploaded doc (used for non-master empty state check). */
+  readonly uploadedSlots = computed(() => this.allSlots().filter(s => s.doc !== null));
 
-  private readonly pendingRequiredTypes = computed(() => {
-    const u = this.user();
-    const contract = u?.contract;
-    if (!u?.customer) return [];
-    const required = contract?.documents.required
-      ?? REQUIRED_DOCS_BY_PERSON_TYPE[u.customer.personType]
-      ?? [];
-    const done = new Set(
-      (contract?.documents.uploaded ?? [])
-        .filter(d => d.status !== 'Rejected')
-        .map(d => d.documentType),
-    );
-    return required.filter(t => !done.has(t));
-  });
+  private readonly pendingRequiredTypes = computed(() => getPendingRequiredTypes(this.user()));
 
   readonly showCompletionBanner = computed(() =>
     !this.isMaster() &&
@@ -431,8 +79,8 @@ export class DocumentsSectionComponent {
   constructor() {
     effect(() => {
       const u = this.user();
-      this.docs.set(u?.contract?.documents.uploaded ?? []);
-      this.localContractId.set(u?.contract?.id ?? null);
+      this.review.docs.set(u?.contract?.documents.uploaded ?? []);
+      this.upload.localContractId.set(u?.contract?.id ?? null);
     }, { allowSignalWrites: true });
 
     effect(() => {
@@ -452,15 +100,15 @@ export class DocumentsSectionComponent {
   }
 
   docTypeLabel(type: string): string {
-    return DOC_TYPE_LABELS[type] ?? type;
+    return getDocTypeLabel(type);
   }
 
   statusConfig(status: string) {
-    return DOC_STATUS_CONFIG[status] ?? null;
+    return getDocStatusConfig(status);
   }
 
   canReview(status: string): boolean {
-    return status !== 'Validated' && status !== 'Rejected' && status !== 'Signed';
+    return isDocReviewable(status);
   }
 
   formatDate(dateStr: string): string {
@@ -474,154 +122,42 @@ export class DocumentsSectionComponent {
   }
 
   onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.selectedFile.set(input.files?.[0] ?? null);
+    this.upload.onFileSelected(event);
   }
 
   openReplaceModal(type: string, docId: string): void {
-    this.replacingDocId.set(docId);
-    this.selectedUploadType.set(type);
-    this.uploadModalOpen.set(true);
+    this.upload.openReplaceModal(type, docId);
   }
 
-  /** Subida directa desde el ícono "+" de una fila pendiente/opcional: pre-selecciona
-   *  el tipo de esa fila para no obligar a elegirlo de nuevo en el modal. */
   openUploadForType(type: string): void {
-    this.selectedUploadType.set(type);
-    this.uploadModalOpen.set(true);
+    this.upload.openUploadForType(type);
   }
 
   openSignedContractUpload(): void {
-    const uploaded = this.user()?.contract?.documents.uploaded ?? [];
-    const existing = uploaded.find(
-      d => d.documentType === 'SignedContract' && d.status === 'Rejected',
-    );
-    if (existing) {
-      this.openReplaceModal('SignedContract', existing.id);
-    } else {
-      this.selectedUploadType.set('SignedContract');
-      this.uploadModalOpen.set(true);
-    }
+    this.upload.openSignedContractUpload();
   }
 
   closeUploadModal(): void {
-    this.uploadModalOpen.set(false);
-    this.selectedUploadType.set(null);
-    this.selectedFile.set(null);
-    this.replacingDocId.set(null);
+    this.upload.closeUploadModal();
   }
 
   async onUpload(): Promise<void> {
-    const file = this.selectedFile();
-    if (!file) return;
-
-    this.uploading.set(true);
-
-    const replaceId = this.replacingDocId();
-
-    // Replace flow: POST /contract-document/replace/{documentId}
-    if (replaceId) {
-      this.contractDocSvc.replace(replaceId, file).subscribe({
-        next: () => {
-          this.alertService.show('Documento reemplazado correctamente', 'success');
-          this.uploading.set(false);
-          this.closeUploadModal();
-          this.reload.emit();
-        },
-        error: () => {
-          this.alertService.show('Error al reemplazar el documento', 'error');
-          this.uploading.set(false);
-        },
-      });
-      return;
-    }
-
-    // Upload flow: POST /contract-document/{contractId}
-    const docType = this.selectedUploadType();
-    if (docType === null) { this.uploading.set(false); return; }
-
-    const u = this.user();
-    if (!u) { this.uploading.set(false); return; }
-
-    let contractId = this.localContractId();
-
-    if (!contractId) {
-      const customerId = u.customerId ?? u.customer?.id ?? null;
-      if (!customerId) {
-        this.alertService.show('El usuario no tiene cliente asignado', 'error');
-        this.uploading.set(false);
-        return;
-      }
-      try {
-        const contract = await firstValueFrom(
-          this.contractSvc.createManual({ customerId, origin: 0 }),
-        );
-        contractId = contract.id;
-        this.localContractId.set(contractId);
-      } catch {
-        this.alertService.show('Error al crear el contrato', 'error');
-        this.uploading.set(false);
-        return;
-      }
-    }
-
-    this.contractDocSvc.upload(contractId, docType, file).subscribe({
-      next: () => {
-        this.alertService.show('Documento subido correctamente', 'success');
-        this.uploading.set(false);
-        this.closeUploadModal();
-        this.reload.emit();
-      },
-      error: () => {
-        this.alertService.show('Error al subir el documento', 'error');
-        this.uploading.set(false);
-      },
-    });
+    await this.upload.onUpload();
   }
 
   onVerify(docId: string): void {
-    const prev = this.docs();
-    const doc  = prev.find(d => d.id === docId);
-    this.docs.update(list =>
-      list.map(d => d.id === docId ? { ...d, status: 'Validated', reviewComment: null } : d)
-    );
-    const contractId = this.localContractId();
-    const validate$  = doc?.documentType === 'SignedContract' && contractId
-      ? this.contractDocSvc.validateSigned(contractId)
-      : this.contractDocSvc.validate(docId);
-    validate$.subscribe({
-      next: () => { this.alertService.show('Documento verificado correctamente', 'success'); this.reload.emit(); },
-      error: () => { this.docs.set(prev); this.alertService.show('Error al verificar el documento', 'error'); },
-    });
+    this.review.onVerify(docId);
   }
 
   onRejectClick(docId: string): void {
-    this.rejectingDocId.set(docId);
-    this.rejectObservation.set('');
+    this.review.onRejectClick(docId);
   }
 
   onRejectSubmit(docId: string): void {
-    const observation = this.rejectObservation().trim();
-    if (!observation) return;
-    const prev = this.docs();
-    this.docs.update(list =>
-      list.map(d => d.id === docId ? { ...d, status: 'Rejected', reviewComment: observation } : d)
-    );
-    this.rejectingDocId.set(null);
-    this.rejectObservation.set('');
-    this.contractDocSvc.reject(docId, observation).subscribe({
-      next: () => { this.alertService.show('Documento rechazado correctamente', 'success'); this.reload.emit(); },
-      error: () => { this.docs.set(prev); this.alertService.show('Error al rechazar el documento', 'error'); },
-    });
+    this.review.onRejectSubmit(docId);
   }
 
   onDelete(docId: string): void {
-    const prev = this.docs();
-    this.docs.update(list => list.filter(d => d.id !== docId));
-    if (this.rejectingDocId() === docId) this.rejectingDocId.set(null);
-    this.contractDocSvc.delete(docId).subscribe({
-      next: () => { this.alertService.show('Documento eliminado correctamente', 'success'); this.reload.emit(); },
-      error: () => { this.docs.set(prev); this.alertService.show('Error al eliminar el documento', 'error'); },
-    });
+    this.review.onDelete(docId);
   }
 }

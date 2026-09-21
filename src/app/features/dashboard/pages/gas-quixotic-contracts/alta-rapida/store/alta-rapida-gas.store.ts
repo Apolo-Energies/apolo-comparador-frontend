@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { AltaRapidaGasResponse, AltaRapidaPersonType } from '../../../../../../entities/alta-rapida-gas.model';
+import { AltaRapidaGasResponse, AltaRapidaPersonType } from '../../../../../../core/models/alta-rapida-gas.model';
 
 /** Borrador del wizard: todo en string para que los inputs mapeen 1:1; se tipa/convierte al enviar. */
 export interface AltaRapidaGasDraft {

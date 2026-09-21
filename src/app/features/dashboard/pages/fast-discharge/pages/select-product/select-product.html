@@ -1,0 +1,179 @@
+<app-loading-overlay [loading]="isLoading()" />
+<div class="flex items-center justify-center min-h-full px-4 py-8">
+  <div class="w-full max-w-2xl bg-card border border-border rounded-lg shadow-xl px-8 py-8 space-y-6"
+       style="max-height: 90vh; overflow-y: auto;">
+
+    <div>
+      <p class="text-xl font-bold text-foreground">Selecciona el Producto</p>
+      <p class="text-sm text-muted-foreground">Elige el tipo de trámite y configura las condiciones del contrato.</p>
+    </div>
+
+    <form (submit)="$event.preventDefault(); onSubmit()" class="space-y-6">
+
+      <!-- Tramite type pills -->
+      <div class="grid grid-cols-2 gap-3">
+        @for (opt of tramiteOptions; track opt.value) {
+          <button
+            type="button"
+            class="flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left"
+            [style.border-color]="isSelected(opt.value) ? 'var(--color-accent, #12AFF0)' : ''"
+            [style.background-color]="isSelected(opt.value) ? 'rgba(18, 175, 240, 0.07)' : ''"
+            (click)="toggle(opt.value)"
+          >
+            <span
+              class="relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 transition-all duration-200"
+              [style.background-color]="isSelected(opt.value) ? 'var(--color-accent, #12AFF0)' : ''"
+              [style.border-color]="isSelected(opt.value) ? 'var(--color-accent, #12AFF0)' : ''"
+            >
+              <span
+                class="pointer-events-none inline-block h-4 w-4 rounded-full shadow-sm transition-transform duration-200"
+                style="background: white;"
+                [style.transform]="isSelected(opt.value) ? 'translateX(16px)' : 'translateX(0)'"
+              ></span>
+            </span>
+            <span class="text-sm font-medium text-foreground">{{ opt.label }}</span>
+          </button>
+        }
+      </div>
+      @if (submitted() && tramites().length === 0) {
+        <span class="text-red-500 text-xs -mt-2 block">Selecciona al menos un tipo de trámite</span>
+      }
+
+      <!-- Tarifa + Tipo de producto + OMIE -->
+      <div class="grid grid-cols-3 gap-3">
+        <div>
+          <ui-select
+            label="Tarifa"
+            placeholder="Seleccionar..."
+            [options]="tariffOptions()"
+            [value]="localTariffCode()"
+            (valueChange)="onTariffChange($event)"
+          />
+        </div>
+        <div>
+          <ui-select
+            label="Tipo de producto"
+            placeholder="Seleccionar..."
+            [options]="productOptions()"
+            [value]="selectedProduct()"
+            (valueChange)="selectedProduct.set($event)"
+          />
+        </div>
+        <div>
+          <ui-input
+            label="OMIE (€/MWh)"
+            type="number"
+            placeholder="50"
+            [value]="omiePrice().toString()"
+            (valueChange)="omiePrice.set(+$event || 0)"
+          />
+        </div>
+      </div>
+
+      <!-- Fee energía -->
+      <div class="space-y-1">
+        <div class="flex items-center justify-between">
+          <p class="text-sm font-medium text-foreground">Fee energía</p>
+          <span class="text-sm font-bold text-primary-button">{{ feeEnergia() }}</span>
+        </div>
+        <ui-slider [value]="feeEnergia()" [min]="0" [max]="25" (valueChange)="feeEnergia.set($event)" />
+        <div class="flex justify-between text-xs text-muted-foreground"><span>0</span><span>25</span></div>
+      </div>
+
+      <!-- Fee potencia -->
+      <div class="space-y-1">
+        <div class="flex items-center justify-between">
+          <p class="text-sm font-medium text-foreground">Fee potencia</p>
+          <span class="text-sm font-bold text-primary-button">{{ feePotencia() }}</span>
+        </div>
+        <ui-slider [value]="feePotencia()" [min]="0" [max]="5" (valueChange)="feePotencia.set($event)" />
+        <div class="flex justify-between text-xs text-muted-foreground"><span>0</span><span>5</span></div>
+      </div>
+
+      <!-- Price table -->
+      @if (priceTable().length > 0) {
+        <div class="rounded-xl border border-border overflow-hidden">
+          <table class="w-full text-xs">
+            <thead>
+              <tr class="bg-muted/50 text-muted-foreground">
+                <th class="px-3 py-2 text-left font-semibold">Período</th>
+                <th class="px-3 py-2 text-right font-semibold">E. Base<br><span class="font-normal">(€/kWh)</span></th>
+                <th class="px-3 py-2 text-right font-semibold text-primary-button">+ Incr.<br><span class="font-normal">(€/kWh)</span></th>
+                <th class="px-3 py-2 text-right font-semibold">E. Oferta<br><span class="font-normal">(€/kWh)</span></th>
+                <th class="px-3 py-2 text-right font-semibold">Potencia<br><span class="font-normal">(€/kW/día)</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of priceTable(); track row.periodo) {
+                <tr class="border-t border-border">
+                  <td class="px-3 py-2 font-semibold text-foreground">P{{ row.periodo }}</td>
+                  <td class="px-3 py-2 text-right text-muted-foreground">{{ row.energiaBase | number:'1.4-4' }}</td>
+                  <td class="px-3 py-2 text-right text-primary-button font-medium">+{{ (row.energiaOferta - row.energiaBase) | number:'1.4-4' }}</td>
+                  <td class="px-3 py-2 text-right font-semibold text-foreground">{{ row.energiaOferta | number:'1.4-4' }}</td>
+                  <td class="px-3 py-2 text-right text-foreground">{{ row.potenciaOferta | number:'1.4-4' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <!-- Result cards -->
+      @if (showCards()) {
+        <div class="grid grid-cols-2 gap-3">
+
+          <!-- Comisión comercial -->
+          <div class="rounded-xl border border-border bg-card px-4 py-4 space-y-2">
+            <p class="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Comisión comercial</p>
+            <div class="flex items-end gap-1.5">
+              <span class="text-2xl font-bold text-primary-button">{{ commissionFmt() }} €</span>
+              <span class="text-sm text-muted-foreground mb-0.5">/ año</span>
+            </div>
+            <p class="text-sm font-semibold text-foreground">
+              {{ commissionMonthlyFmt() }} € / mes
+            </p>
+            <p class="text-xs text-muted-foreground">
+              {{ commissionPct() }}% · {{ periodosUsados() }} registros SIPS
+            </p>
+          </div>
+
+          <!-- Factura estimada -->
+          <div class="rounded-xl border border-border bg-card px-4 py-4 space-y-2">
+            <p class="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Factura estimada</p>
+            <div class="flex items-end gap-1.5">
+              <span class="text-2xl font-bold text-foreground">{{ monthlyEstBillFmt() }} €</span>
+              <span class="text-sm text-muted-foreground mb-0.5">/ mes</span>
+            </div>
+            <p class="text-sm font-semibold text-foreground">
+              {{ annualEstBillFmt() }} € al año
+            </p>
+          </div>
+
+        </div>
+
+        <!-- Consumption summary -->
+        <div class="flex gap-3">
+          <div class="flex-1 rounded-lg border border-border bg-card/50 px-3 py-2 text-sm">
+            <p class="text-xs text-muted-foreground">Consumo anual</p>
+            @if (hasConsumptionData()) {
+              <p class="font-semibold text-foreground">{{ annualKwhFmt() }} kWh</p>
+            } @else {
+              <p class="text-muted-foreground italic text-xs">Sin datos SIPS</p>
+            }
+          </div>
+          <div class="flex-1 rounded-lg border border-border bg-card/50 px-3 py-2 text-sm">
+            <p class="text-xs text-muted-foreground">Potencia total</p>
+            <p class="font-semibold text-foreground">{{ totalKwFmt() }} kW</p>
+          </div>
+        </div>
+      }
+
+      <!-- Footer -->
+      <div class="border-t border-border pt-4 flex items-center justify-between">
+        <ui-button label="Volver"    variant="secondary" size="sm" type="button" (click)="onBack()" />
+        <ui-button label="Siguiente" size="sm"           type="submit" />
+      </div>
+
+    </form>
+  </div>
+</div>

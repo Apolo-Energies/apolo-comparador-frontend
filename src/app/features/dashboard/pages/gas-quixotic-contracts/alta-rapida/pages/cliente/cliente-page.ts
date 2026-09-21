@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { ButtonComponent } from '@apolo-energies/ui';
 import { AuthService } from '@apolo-energies/auth';
 import { AltaRapidaGasStore } from '../../store/alta-rapida-gas.store';
-import { getUserRoles } from '../../../../../../../utils/auth.utils';
+import { getUserRoles } from '../../../../../../../core/helpers/auth.utils';
 
 const INPUT_CLS  = 'px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all';
 const SELECT_CLS = 'px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all cursor-pointer';

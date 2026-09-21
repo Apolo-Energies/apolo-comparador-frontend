@@ -4,7 +4,7 @@ import { RouterOutlet } from '@angular/router';
 @Component({
   selector: 'app-alta-rapida-gas',
   imports: [RouterOutlet],
-  template: `<router-outlet />`,
+  templateUrl: './alta-rapida-gas.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AltaRapidaGas {}

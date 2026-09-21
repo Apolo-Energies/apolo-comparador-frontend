@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import type { Chart, ChartConfiguration } from 'chart.js';
-import { MarketSeries, MarketSeriesPoint } from '../../../../../../entities/market-data.model';
+import { MarketSeries, MarketSeriesPoint } from '../../../../../../core/models/market-data.model';
 
 @Component({
   selector: 'app-market-line-chart',

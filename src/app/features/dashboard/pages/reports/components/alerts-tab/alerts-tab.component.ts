@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { OpportunitySummary, OpportunityStatus } from '../../../../../../entities/opportunity.model';
+import { OpportunitySummary, OpportunityStatus } from '../../../../../../core/models/opportunity.model';
 import { fmtDate, statusLabel } from '../../report-utils';
 
 export type StagnantOpp = OpportunitySummary & { days: number };

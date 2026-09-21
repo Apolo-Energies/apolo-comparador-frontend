@@ -1,4 +1,4 @@
-import { OpportunityStatus, OPPORTUNITY_STATUS_LABEL } from '../../../../entities/opportunity.model';
+import { OpportunityStatus, OPPORTUNITY_STATUS_LABEL } from '../../../../core/models/opportunity.model';
 
 export function fmtNum(n: number | null | undefined): string {
   return n == null ? '—' : n.toLocaleString('es-ES');

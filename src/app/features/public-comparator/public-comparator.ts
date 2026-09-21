@@ -11,21 +11,18 @@ import {
   ViewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { ComparatorService } from '../../services/comparator.service';
-import { PublicComparatorService } from '../../services/public-comparator.service';
+import { ComparatorService } from '../../core/services/comparator.service';
+import { PublicComparatorService } from '../../core/services/public-comparator.service';
 import { ComparatorUploadComponent } from '../dashboard/pages/comparator/components/comparator-upload/comparator-upload';
 import { ComparatorModalComponent } from '../dashboard/pages/comparator/components/comparator-modal/comparator-modal';
 import { OfferRequestWizardComponent } from '../dashboard/pages/comparator/components/offer-request-wizard/offer-request-wizard';
 import { BrandLoaderComponent } from '../../shared/components/brand-loader/brand-loader.component';
-import {
-  ComparadorCompareEvent,
-  ComparadorFormValue,
-  ComparadorResult,
-  ComparatorProductsByTariff,
-  OcrResult,
-} from '../dashboard/pages/comparator/comparator.models';
+import { ComparadorFormValue, ComparadorResult, OcrResult } from '../../core/models/comparator.model';
+import { ComparadorCompareEvent } from '../dashboard/pages/comparator/comparator-events.model';
+import { ComparatorProductsByTariff } from '../dashboard/pages/comparator/comparator-ui.model';
 import { environment } from '../../../environments/environment';
 import { EFFICIENCY_TIPS_LEAD, pickRandomEfficiencyTip } from '../../shared/constants/efficiency-tips';
+import { FEE_LOCKED_PRODUCTS } from '../../shared/constants/flat-commission-products';
 
 // Candidatos a "producto fijo ganador" por tarifa. Al recibir un OCR se simula el cálculo con
 // cada uno y se ofrece al cliente solo el que produce mayor ahorroEstudio.
@@ -95,10 +92,7 @@ export class PublicComparator implements AfterViewInit, OnDestroy {
     return result;
   });
 
-  readonly feeLockedProducts = [
-    'Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi', 'Vibra',
-    'Promo 3M Lite', 'Promo 3M Pro', 'Promo 3M Plus',
-  ];
+  readonly feeLockedProducts = FEE_LOCKED_PRODUCTS;
 
   // ── iframe auto-resize ──────────────────────────────────────────────────
   private resizeObserver?: ResizeObserver;

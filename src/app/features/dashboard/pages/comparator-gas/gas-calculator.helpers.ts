@@ -1,4 +1,4 @@
-import { GasOcrResult, GasResult } from './comparator-gas.models';
+import { GasOcrResult, GasResult } from '../../../../core/models/comparator-gas.model';
 
 const IVA_DEFAULT = 0.21;
 // IH (Impuesto Hidrocarburos): 0.00234 €/kWh general, 0.00108 reducida para grandes

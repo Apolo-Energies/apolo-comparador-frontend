@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, ou
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DialogComponent, ButtonComponent, InputFieldComponent, SliderComponent, AlertService } from '@apolo-energies/ui';
-import { CommissionService, CommissionRow } from '../../../../../services/commission.service';
+import { CommissionService, CommissionRow } from '../../../../../core/services/commission.service';
 
 @Component({
   selector: 'app-add-commission-modal',

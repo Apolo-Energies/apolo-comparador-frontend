@@ -1,100 +1,23 @@
 import {
-  ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef,
+  ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, ElementRef,
   effect, inject, input, NgZone, OnDestroy, OnInit, output, signal, ViewChild,
-  computed,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { AlertService, ButtonComponent, DialogComponent, InputFieldComponent, SelectFieldComponent } from '@apolo-energies/ui';
-import { Editor, NgxEditorModule, Toolbar, toHTML, schema as ngxSchema } from 'ngx-editor';
-import { Schema, MarkSpec, DOMParser as PMParser } from 'prosemirror-model';
-import { tableNodes, tableEditing, addRowBefore, addRowAfter, deleteRow, deleteColumn, deleteTable } from 'prosemirror-tables';
-import { ContractTemplateService } from '../../../../../services/contract-template.service';
-import { ContractTemplate, SignatureWidget } from '../../../../../entities/contract-template.model';
-
-// ── Signature block HTML ────────────────────────────────────────────────────
-// vertical-align:bottom garantiza que las líneas siempre queden a la misma altura
-// sin importar qué haya encima en cada columna (imagen, espacio, etc.)
-const SIGNATURE_BLOCK = `<table style="width:100%;border-collapse:collapse;margin-top:50px;table-layout:fixed"><tbody><tr style="vertical-align:bottom"><td style="width:45%;border-top:1.5px solid #111;padding-top:10px;vertical-align:bottom;text-align:left"><p>Apolo Business S.L.</p><p>&nbsp;</p><p>P.p. D. Wenceslao González Vicens</p></td><td style="width:10%">&nbsp;</td><td style="width:45%;border-top:1.5px solid #111;padding-top:10px;vertical-align:bottom;text-align:left"><p>{{ClientName}}</p><p>&nbsp;</p><p>P.p. {{ClientName}}</p></td></tr></tbody></table>`;
-
-// ── Font size mark ──────────────────────────────────────────────────────────
-const FONT_SIZE_MARK: MarkSpec = {
-  attrs:    { pt: {} },
-  parseDOM: [{ style: 'font-size', getAttrs: (v: string | Node) => ({ pt: typeof v === 'string' ? v : '' }) }],
-  toDOM:    (node: any) => ['span', { style: `font-size: ${node.attrs['pt']}` }, 0],
-};
-
-const FONT_SIZES = ['8pt', '9pt', '10pt', '11pt', '12pt', '14pt', '16pt', '18pt', '20pt', '24pt', '28pt', '32pt'];
-
-// ── Custom schema with table support + style preservation ──────────────────
-const CONTRACT_TABLE_NODES = tableNodes({
-  tableGroup: 'block',
-  cellContent: 'block+',
-  cellAttributes: {
-    style: {
-      default:    null,
-      getFromDOM: (dom: Element) => (dom as HTMLElement).getAttribute('style'),
-      setDOMAttr: (value: unknown, attrs: Record<string, unknown>) => { if (value) attrs['style'] = value; },
-    },
-  },
-});
-
-const CONTRACT_SCHEMA = new Schema({
-  nodes: (ngxSchema.spec.nodes as any)
-    // whitespace:'pre' tells ProseMirror's DOM parser to preserve spaces verbatim
-    // inside every paragraph — prevents single spaces from being collapsed when the
-    // adjacent text runs carry different marks (e.g. "SNAP " + bold "2" → "SNAP2").
-    .update('paragraph', {
-      ...(ngxSchema.spec.nodes as any).get('paragraph'),
-      whitespace: 'pre',
-    })
-    .append({
-      ...CONTRACT_TABLE_NODES,
-      table: {
-        ...CONTRACT_TABLE_NODES.table,
-        attrs:    { style: { default: null } },
-        parseDOM: [{ tag: 'table', getAttrs: (dom: Element) => ({ style: (dom as HTMLElement).getAttribute('style') }) }],
-        toDOM:    (node: any) => { const a: Record<string, unknown> = {}; if (node.attrs['style']) a['style'] = node.attrs['style']; return ['table', a, ['tbody', 0]] as any; },
-      },
-      // Preserve tr inline styles (e.g. alternating row background colors from Word/HTML imports)
-      table_row: {
-        ...CONTRACT_TABLE_NODES.table_row,
-        attrs:    { style: { default: null } },
-        parseDOM: [{ tag: 'tr', getAttrs: (dom: Element) => ({ style: (dom as HTMLElement).getAttribute('style') || null }) }],
-        toDOM:    (node: any) => { const a: Record<string, unknown> = {}; if (node.attrs['style']) a['style'] = node.attrs['style']; return ['tr', a, 0] as any; },
-      },
-    }),
-  marks: (ngxSchema.spec.marks as any).addToEnd('font_size', FONT_SIZE_MARK),
-});
-
-const PLACEHOLDER_GROUPS = [
-  {
-    label: 'Cliente',
-    items: ['{{ClientName}}', '{{Dni}}', '{{Cif}}', '{{CompanyName}}', '{{Email}}', '{{Phone}}', '{{BankAccount}}', '{{Date}}'],
-  },
-  {
-    label: 'Dirección legal',
-    items: ['{{Address1}}', '{{LegalCity}}', '{{LegalStreet}}', '{{LegalNumber}}', '{{PostalCodeLegal}}'],
-  },
-  {
-    label: 'Dirección notificación',
-    items: ['{{Address2}}', '{{NotificationCity}}', '{{NotificationStreet}}', '{{NotificationNumber}}', '{{PostalCodeNotification}}'],
-  },
-];
-
-const TYPE_OPTIONS = [
-  { value: 'individual', label: 'Individual' },
-  { value: 'company',    label: 'Empresa'    },
-];
-
-const TOOLBAR: Toolbar = [
-  ['bold', 'italic', 'underline', 'strike'],
-  [{ heading: ['h1', 'h2', 'h3'] }],
-  ['ordered_list', 'bullet_list'],
-  ['align_left', 'align_center', 'align_right', 'align_justify'],
-  ['link', 'horizontal_rule'],
-  ['undo', 'redo'],
-];
+import { Editor, NgxEditorModule, toHTML } from 'ngx-editor';
+import { tableEditing } from 'prosemirror-tables';
+import { ContractTemplateService } from '../../../../../core/services/contract-template.service';
+import { ContractTemplate } from '../../../../../core/models/contract-template.model';
+import { DocumentImportController } from './document-import.controller';
+import { EditorCommandsController } from './editor-commands.controller';
+import { SignatureCanvasController } from './signature-canvas.controller';
+import { ContractTemplateSubmitController } from './contract-template-submit.controller';
+import {
+  CONTRACT_SCHEMA, FONT_SIZES, PLACEHOLDER_GROUPS, TOOLBAR, TYPE_OPTIONS,
+  bumpVersion, typeLabel as resolveTypeLabel,
+} from './contract-template-form.helpers';
+import { applyVersionMode, downloadHtmlExport, setBaseControls } from './contract-template-form-actions.helpers';
 
 @Component({
   selector: 'app-contract-template-form',
@@ -114,39 +37,49 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
   private templateService = inject(ContractTemplateService);
   private alertService    = inject(AlertService);
   private cdr             = inject(ChangeDetectorRef);
+  private readonly zone    = inject(NgZone);
 
-  readonly saving            = signal(false);
-  readonly importing         = signal(false);
-  readonly confirming        = signal(false);
-  readonly contentError      = signal(false);
-  readonly previewOpen       = signal(false);
-  readonly isNewVersion      = signal(true);
-  readonly widgets           = signal<SignatureWidget[]>([]);
-  readonly currentPage       = signal(1);
-  readonly selectedWidget    = signal<number | null>(null);
-  readonly pdfPages          = signal<string[]>([]);
-  readonly loadingPdf        = signal(false);
+  readonly contentError = signal(false);
+  readonly isNewVersion = signal(true);
   readonly placeholderGroups = PLACEHOLDER_GROUPS;
   readonly typeOptions       = TYPE_OPTIONS;
 
-  readonly pageWidgets = computed(() =>
-    this.widgets().map((w, i) => ({ w, i })).filter(({ w }) => w.page === this.currentPage())
-  );
+  // Submit flow (create / new version / correction) — extracted controller (R1).
+  private readonly submitFlow = new ContractTemplateSubmitController({
+    templateService: this.templateService,
+    alertService:    this.alertService,
+    onSuccess:       () => { this.resetForm(); this.saved.emit(); },
+  });
+  readonly saving = this.submitFlow.saving;
 
-  readonly drawDraft = signal<{ left: number; top: number; width: number; height: number } | null>(null);
+  // Document import/preview flow (docx / pdf / html) — extracted controller (R1).
+  private readonly docImport = new DocumentImportController({
+    alertService: this.alertService,
+    getEditor: () => this.editor,
+    markForCheck: () => this.cdr.markForCheck(),
+    clearContentError: () => this.contentError.set(false),
+  });
+  readonly importing   = this.docImport.importing;
+  readonly confirming  = this.docImport.confirming;
+  readonly previewOpen = this.docImport.previewOpen;
 
-  private dragInfo: {
-    i: number; ox: number; oy: number; ow: number; oh: number;
-    mx: number; my: number; rect: DOMRect; mode: 'move' | 'resize';
-  } | null = null;
+  // Signature-widget canvas (PDF background, page nav, CRUD, draw/drag) — extracted controller (R1).
+  private readonly canvas = new SignatureCanvasController({
+    zone: this.zone, templateService: this.templateService, alertService: this.alertService,
+  });
+  readonly widgets        = this.canvas.widgets;
+  readonly currentPage    = this.canvas.currentPage;
+  readonly selectedWidget = this.canvas.selectedWidget;
+  readonly pdfPages       = this.canvas.pdfPages;
+  readonly loadingPdf     = this.canvas.loadingPdf;
+  readonly pageWidgets    = this.canvas.pageWidgets;
+  readonly drawDraft      = this.canvas.drawDraft;
 
-  private drawStart: { x: number; y: number; rect: DOMRect } | null = null;
-
-  private readonly zone    = inject(NgZone);
-  private boundMove        = this.onGlobalMove.bind(this);
-  private boundUp          = this.onGlobalUp.bind(this);
-  private boundDrawMove    = this.onDrawMove.bind(this);
-  private boundDrawUp      = this.onDrawUp.bind(this);
+  // ProseMirror toolbar/table commands — extracted controller (R1).
+  private readonly editorCommands = new EditorCommandsController({
+    getEditor: () => this.editor,
+    alertService: this.alertService,
+  });
 
   readonly isEditMode = computed(() => this.template() !== null);
 
@@ -155,7 +88,7 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
   // Setter fires as soon as the iframe enters the DOM (inside @if previewOpen)
   @ViewChild('previewFrame')
   set previewFrameRef(ref: ElementRef<HTMLIFrameElement> | undefined) {
-    if (ref) this.renderPreview(ref.nativeElement);
+    if (ref) this.docImport.renderPreview(ref.nativeElement);
   }
 
   editor!: Editor;
@@ -163,10 +96,6 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
   readonly fontSizes = FONT_SIZES;
   private editorDoc: Record<string, unknown> = {};
   private editorSub?: Subscription;
-  private pendingBuffer?: ArrayBuffer;
-  private pendingFileType?: 'docx' | 'pdf' | 'html';
-  private pendingHtml?: string;
-  private pendingBlobUrl?: string;
 
   readonly form = this.fb.group({
     code:        ['', [Validators.required, Validators.pattern(/^[A-Z0-9_]+$/)]],
@@ -194,36 +123,28 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.editor.destroy();
     this.editorSub?.unsubscribe();
-    window.removeEventListener('mousemove', this.boundMove);
-    window.removeEventListener('mouseup', this.boundUp);
-    window.removeEventListener('mousemove', this.boundDrawMove);
-    window.removeEventListener('mouseup', this.boundDrawUp);
+    this.canvas.destroy();
+    this.docImport.destroy();
   }
 
   // ── Edit mode ────────────────────────────────────────────────────────────
 
   private applyTemplate(tpl: ContractTemplate | null): void {
     if (!tpl) {
-      this.form.controls.code.enable();
-      this.form.controls.name.enable();
-      this.form.controls.type.enable();
+      setBaseControls(this.form, 'enable');
       this.widgets.set([]);
       return;
     }
     this.isNewVersion.set(true);
     this.form.patchValue({
       code: tpl.code, name: tpl.name, type: tpl.type,
-      version: this.bumpVersion(tpl.version), changeNotes: '',
+      version: bumpVersion(tpl.version), changeNotes: '',
     });
-    this.form.controls.code.disable();
-    this.form.controls.name.disable();
-    this.form.controls.type.disable();
+    setBaseControls(this.form, 'disable');
     this.form.controls.version.enable();
     this.editor.setContent(tpl.content);
     this.editorDoc = {};
-    this.widgets.set(tpl.signatureWidgets ? [...tpl.signatureWidgets] : []);
-    this.currentPage.set(1);
-    this.selectedWidget.set(null);
+    this.canvas.applyTemplateWidgets(tpl.signatureWidgets ? [...tpl.signatureWidgets] : []);
     this.contentError.set(false);
     this.cdr.markForCheck();
   }
@@ -232,619 +153,56 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
     this.isNewVersion.set(isNew);
     const tpl = this.template();
     if (!tpl) return;
-    if (isNew) {
-      this.form.controls.version.setValue(this.bumpVersion(tpl.version));
-      this.form.controls.version.enable();
-    } else {
-      this.form.controls.version.setValue(tpl.version);
-      this.form.controls.version.disable();
-    }
+    applyVersionMode(this.form.controls.version, tpl, isNew);
   }
 
-  private bumpVersion(v: string): string {
-    const parts = v.split('.');
-    const last  = parseInt(parts[parts.length - 1], 10);
-    if (!isNaN(last)) parts[parts.length - 1] = String(last + 1);
-    return parts.join('.');
-  }
+  typeLabel(type: string): string { return resolveTypeLabel(type); }
 
-  typeLabel(type: string): string {
-    return type === 'individual' ? 'Individual' : 'Empresa';
-  }
-
-  // ── Document import with preview (docx / pdf / html) ────────────────────
+  // ── Document import (delegates to DocumentImportController) ─────────────
 
   triggerImport(): void { this.fileInput.nativeElement.click(); }
+  onFileSelected(event: Event): Promise<void> { return this.docImport.onFileSelected(event); }
+  onCancelPreview(): void { this.docImport.onCancelPreview(); }
+  onConfirmImport(): Promise<void> { return this.docImport.onConfirmImport(); }
 
-  async onFileSelected(event: Event): Promise<void> {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-    (event.target as HTMLInputElement).value = '';
+  // ── Editor / table commands (delegate to EditorCommandsController) ──────
 
-    this.importing.set(true);
-    this.cdr.markForCheck();
+  applyFontSize(pt: string): void { this.editorCommands.applyFontSize(pt); }
+  insertPlaceholder(placeholder: string): void { this.editorCommands.insertPlaceholder(placeholder); }
+  insertPageBreak(): void { this.editorCommands.insertPageBreak(); }
+  insertSignatureBlock(): void { this.editorCommands.insertSignatureBlock(); }
+  tableAddRowBefore(): void { this.editorCommands.tableAddRowBefore(); }
+  tableAddRowAfter(): void { this.editorCommands.tableAddRowAfter(); }
+  tableDeleteRow(): void { this.editorCommands.tableDeleteRow(); }
+  tableDeleteColumn(): void { this.editorCommands.tableDeleteColumn(); }
+  tableDeleteTable(): void { this.editorCommands.tableDeleteTable(); }
 
-    try {
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      this.pendingFileType = ext === 'pdf' ? 'pdf' : (ext === 'html' || ext === 'htm') ? 'html' : 'docx';
-      this.pendingBuffer   = await file.arrayBuffer();
-      if (this.pendingFileType === 'html') this.pendingHtml = await file.text();
-      this.previewOpen.set(true);  // ViewChild setter triggers renderPreview
-    } catch {
-      this.alertService.show('Error al abrir el documento', 'error');
-    } finally {
-      this.importing.set(false);
-      this.cdr.markForCheck();
-    }
+  // ── Signature widgets / canvas (delegate to SignatureCanvasController) ──
+
+  prevPage(): void { this.canvas.prevPage(); }
+  nextPage(): void { this.canvas.nextPage(); }
+  goToPage(page: number): void { this.canvas.goToPage(page); }
+  addWidget(): void { this.canvas.addWidget(); }
+  removeWidget(index: number): void { this.canvas.removeWidget(index); }
+  setWidgetType(index: number, value: string): void { this.canvas.setWidgetType(index, value); }
+  setWidgetRecipient(index: number, value: number): void { this.canvas.setWidgetRecipient(index, value); }
+  setWidgetBool(index: number, field: 'required' | 'editable', value: boolean): void { this.canvas.setWidgetBool(index, field, value); }
+  onCanvasMousedown(event: MouseEvent, canvasEl: HTMLElement): void { this.canvas.onCanvasMousedown(event, canvasEl); }
+  onWidgetMousedown(event: MouseEvent, index: number, mode: 'move' | 'resize', canvasEl: HTMLElement): void {
+    this.canvas.onWidgetMousedown(event, index, mode, canvasEl);
   }
 
-  private async renderPreview(frame: HTMLIFrameElement): Promise<void> {
-    if (!this.pendingBuffer || !this.pendingFileType) return;
-    try {
-      if (this.pendingFileType === 'docx') {
-        await this.renderDocxInFrame(frame);
-      } else if (this.pendingFileType === 'pdf') {
-        this.renderPdfInFrame(frame);
-      } else {
-        this.renderHtmlInFrame(frame);
-      }
-    } catch {
-      this.alertService.show('Error al renderizar la vista previa', 'error');
-    }
+  async loadPdfPreview(): Promise<void> {
+    const tpl = this.template();
+    if (!tpl) return;
+    return this.canvas.loadPdfPreview(tpl.id);
   }
 
-  private async renderDocxInFrame(frame: HTMLIFrameElement): Promise<void> {
-    const { renderAsync } = await import('docx-preview');
-    const doc = frame.contentDocument!;
-    doc.open();
-    doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
-      <style>
-        /* Scroll horizontal si el A4 es más ancho que el iframe */
-        html, body { margin: 0; overflow-x: auto; overflow-y: auto; background: #f0f0f0; }
-        body { padding: 32px 16px; }
-        .docx-wrapper { background: transparent !important; }
-        .docx-wrapper section.docx { margin-bottom: 24px !important; border-radius: 2px; box-shadow: 0 4px 28px rgba(0,0,0,.18); }
-      </style>
-    </head><body></body></html>`);
-    doc.close();
-    await renderAsync(this.pendingBuffer!.slice(0), doc.body, doc.head, {
-      className: 'docx', inWrapper: true, ignoreWidth: false, ignoreHeight: false,
-      breakPages: true, useBase64URL: true, renderHeaders: true, renderFooters: true,
-      renderFootnotes: true, experimental: true, trimXmlDeclaration: true,
-    });
-    this.cdr.markForCheck();
-  }
-
-  private renderPdfInFrame(frame: HTMLIFrameElement): void {
-    if (this.pendingBlobUrl) URL.revokeObjectURL(this.pendingBlobUrl);
-    const blob = new Blob([this.pendingBuffer!], { type: 'application/pdf' });
-    this.pendingBlobUrl = URL.createObjectURL(blob);
-    frame.src = this.pendingBlobUrl;
-  }
-
-  private renderHtmlInFrame(frame: HTMLIFrameElement): void {
-    const doc = frame.contentDocument!;
-    doc.open();
-    // Write the raw HTML inside the iframe — fully isolated from Angular styles
-    doc.write(this.pendingHtml ?? '');
-    doc.close();
-  }
-
-  onCancelPreview(): void {
-    this.previewOpen.set(false);
-    this.clearPending();
-  }
-
-  async onConfirmImport(): Promise<void> {
-    if (!this.pendingFileType) return;
-    this.confirming.set(true);
-    this.cdr.markForCheck();
-
-    try {
-      if (this.pendingFileType === 'docx') {
-        await this.importDocx();
-      } else if (this.pendingFileType === 'pdf') {
-        await this.importPdf();
-      } else {
-        this.importHtml();
-      }
-      this.previewOpen.set(false);
-      this.clearPending();
-    } catch {
-      this.alertService.show('Error al importar el documento', 'error');
-    } finally {
-      this.confirming.set(false);
-      this.cdr.markForCheck();
-    }
-  }
-
-  private async importDocx(): Promise<void> {
-    if (!this.pendingBuffer) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mod     = await import('mammoth') as any;
-    const mammoth = mod.default ?? mod;
-
-    const result = await mammoth.convertToHtml(
-      { arrayBuffer: this.pendingBuffer },
-      {
-        styleMap: [
-          'u => u',
-          'strike => s',
-          'br[type="page"] => hr:fresh',
-          "p[style-name='__center']  => p.docx-center:fresh",
-          "p[style-name='__right']   => p.docx-right:fresh",
-          "p[style-name='__justify'] => p.docx-justify:fresh",
-        ],
-        transformDocument: mammoth.transforms.paragraph((para: any) => {
-          const alignMap: Record<string, string> = {
-            center: '__center', right: '__right', both: '__justify',
-          };
-          const tag = para.alignment && alignMap[para.alignment];
-          return tag ? { ...para, styleName: tag } : para;
-        }),
-        convertImage: mammoth.images.inline((img: any) =>
-          img.read('base64').then((b64: string) => ({
-            src: `data:${img.contentType};base64,${b64}`,
-          }))
-        ),
-      }
-    );
-
-    const dom = new DOMParser().parseFromString(result.value as string, 'text/html');
-
-    // Alignment classes → inline style
-    const alignMap: Record<string, string> = {
-      'docx-center': 'center', 'docx-right': 'right', 'docx-justify': 'justify',
-    };
-    for (const [cls, align] of Object.entries(alignMap)) {
-      dom.querySelectorAll(`.${cls}`).forEach(el => {
-        el.classList.remove(cls);
-        (el as HTMLElement).style.textAlign = align;
-      });
-    }
-
-    // Quitar párrafos vacíos: &nbsp; ( ), zero-width (​), solo <br>
-    dom.querySelectorAll('p').forEach(p => {
-      const text = (p.textContent ?? '').replace(/[\s ​‌‍﻿]+/g, '');
-      const hasContent = text.length > 0 || !!p.querySelector('img, table');
-      if (!hasContent) p.remove();
-    });
-
-    this.editor.setContent(dom.body.innerHTML);
-    this.contentError.set(false);
-    this.alertService.show('Word importado correctamente', 'success');
-  }
-
-  private async importPdf(): Promise<void> {
-    if (!this.pendingBuffer) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pdfjs = await import('pdfjs-dist') as any;
-    pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
-
-    const pdf = await pdfjs.getDocument({ data: this.pendingBuffer.slice(0) }).promise;
-    let html  = '';
-
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page    = await pdf.getPage(i);
-      const content = await page.getTextContent();
-
-      // Agrupar items por línea (mismo Y redondeado — PDF Y crece hacia arriba)
-      const lineMap = new Map<number, any[]>();
-      for (const item of content.items as any[]) {
-        if (!('str' in item) || !item.str.trim()) continue;
-        const y = Math.round(item.transform[5]);
-        if (!lineMap.has(y)) lineMap.set(y, []);
-        lineMap.get(y)!.push(item);
-      }
-
-      // Ordenar de arriba a abajo
-      const lines = Array.from(lineMap.entries()).sort((a, b) => b[0] - a[0]);
-      let prevY: number | undefined;
-
-      for (const [y, items] of lines) {
-        const lineText = items.map((it: any) => it.str).join('').trim();
-        if (!lineText) continue;
-
-        const fontSize = Math.abs(items[0].transform[0]);
-        const fontName = (items[0].fontName ?? '').toLowerCase();
-        const isBold   = fontName.includes('bold') || fontName.includes('heavy') || fontName.includes('black');
-
-        // Gap mayor a 1.8× fontSize = separación de párrafo
-        if (prevY !== undefined && (prevY - y) > fontSize * 1.8) {
-          html += '<p>&nbsp;</p>';
-        }
-
-        if (fontSize >= 14) {
-          html += `<h2 style="text-align:center"><strong>${lineText}</strong></h2>`;
-        } else if (isBold) {
-          html += `<p><strong>${lineText}</strong></p>`;
-        } else {
-          html += `<p>${lineText}</p>`;
-        }
-
-        prevY = y;
-      }
-
-      if (i < pdf.numPages) html += '<hr>';
-    }
-
-    this.editor.setContent(html || '<p></p>');
-    this.contentError.set(false);
-    this.alertService.show(`PDF importado como texto editable (${pdf.numPages} páginas)`, 'success');
-  }
-
-  private importHtml(): void {
-    if (!this.pendingHtml) return;
-    const dom = new DOMParser().parseFromString(this.pendingHtml, 'text/html');
-    dom.querySelectorAll('script, style, link').forEach(el => el.remove());
-    // Preserve inline page-break rules as <hr>
-    dom.querySelectorAll('[style*="page-break"], [style*="break-after"]').forEach(el => {
-      el.insertAdjacentHTML('afterend', '<hr>');
-    });
-    this.editor.setContent(dom.body.innerHTML.trim() || '<p></p>');
-    this.contentError.set(false);
-    this.alertService.show('HTML importado correctamente', 'success');
-  }
-
-  private clearPending(): void {
-    this.pendingBuffer   = undefined;
-    this.pendingFileType = undefined;
-    this.pendingHtml     = undefined;
-    if (this.pendingBlobUrl) {
-      URL.revokeObjectURL(this.pendingBlobUrl);
-      this.pendingBlobUrl = undefined;
-    }
-  }
-
-  // ── Editor helpers ───────────────────────────────────────────────────────
-
-  applyFontSize(pt: string): void {
-    const { state, dispatch } = this.editor.view;
-    const { from, to, empty } = state.selection;
-    if (empty || !pt) return;
-    dispatch(state.tr.addMark(from, to, state.schema.marks['font_size'].create({ pt })));
-    this.editor.view.focus();
-  }
-
-  insertPlaceholder(placeholder: string): void {
-    const { state, dispatch } = this.editor.view;
-    const { from, to } = state.selection;
-    dispatch(state.tr.insertText(placeholder, from, to));
-    this.editor.view.focus();
-  }
-
-  insertPageBreak(): void {
-    const { state, dispatch } = this.editor.view;
-    const hrNode = state.schema.nodes['horizontal_rule'];
-    if (!hrNode) return;
-    dispatch(state.tr.replaceSelectionWith(hrNode.create()).scrollIntoView());
-    this.editor.view.focus();
-  }
-
-  insertSignatureBlock(): void {
-    const { state, dispatch } = this.editor.view;
-    const dom = document.createElement('div');
-    dom.innerHTML = SIGNATURE_BLOCK;
-    const slice = PMParser.fromSchema(state.schema).parseSlice(dom);
-    dispatch(state.tr.replaceSelection(slice).scrollIntoView());
-    this.editor.view.focus();
-  }
-
-  // ── Table commands ───────────────────────────────────────────────────────
-
-  tableAddRowBefore(): void {
-    const view = this.editor.view;
-    if (!addRowBefore(view.state, view.dispatch)) {
-      this.alertService.show('Haz clic dentro de la tabla para agregar una fila', 'error');
-      return;
-    }
-    // prosemirror-tables v1.8.5 creates cells with createAndFill() — no attrs.
-    // Fix: copy inline styles from other rows into the newly inserted row.
-    this.fixNewRowStyles(false);
-    view.focus();
-  }
-
-  tableAddRowAfter(): void {
-    const view = this.editor.view;
-    if (!addRowAfter(view.state, view.dispatch)) {
-      this.alertService.show('Haz clic dentro de la tabla para agregar una fila', 'error');
-      return;
-    }
-    this.fixNewRowStyles(true);
-    view.focus();
-  }
-
-  tableDeleteRow(): void {
-    const view = this.editor.view;
-    if (!deleteRow(view.state, view.dispatch)) {
-      this.alertService.show('Haz clic dentro de la tabla para eliminar la fila', 'error');
-      return;
-    }
-    view.focus();
-  }
-
-  tableDeleteColumn(): void {
-    const view = this.editor.view;
-    if (!deleteColumn(view.state, view.dispatch)) {
-      this.alertService.show('Haz clic dentro de la tabla para eliminar la columna', 'error');
-      return;
-    }
-    view.focus();
-  }
-
-  tableDeleteTable(): void {
-    const view = this.editor.view;
-    if (!deleteTable(view.state, view.dispatch)) {
-      this.alertService.show('Haz clic dentro de la tabla para eliminarla', 'error');
-      return;
-    }
-    view.focus();
-  }
-
-  // prosemirror-tables v1.8.5 creates new rows with createAndFill() — no attrs.
-  // Strategy:
-  //  1. Detect header rows (table_header cells OR first row when no <th> exists).
-  //  2. Collect per-column styles from body rows only, split by even/odd body index.
-  //  3. Apply the even or odd style to the new row based on its body-row position.
-  //     This handles alternating gray/white patterns automatically.
-  private fixNewRowStyles(after: boolean): void {
-    const { state, dispatch } = this.editor.view;
-    const { $from } = state.selection;
-
-    // Walk up the selection to find the enclosing table and current row
-    let tableDepth = -1, rowDepth = -1;
-    for (let d = $from.depth; d > 0; d--) {
-      const n = $from.node(d).type.name;
-      if (n === 'table_row' && rowDepth < 0)  rowDepth = d;
-      if (n === 'table'     && tableDepth < 0) tableDepth = d;
-      if (tableDepth >= 0 && rowDepth >= 0) break;
-    }
-    if (tableDepth < 0 || rowDepth < 0) return;
-
-    const table    = $from.node(tableDepth);
-    const tablePos = $from.before(tableDepth);
-    const curRowPos = $from.before(rowDepth);
-
-    // Resolve the cursor row's index in the table
-    let currentRowIdx = -1;
-    let scanPos = tablePos + 1;
-    for (let i = 0; i < table.childCount; i++) {
-      if (scanPos === curRowPos) { currentRowIdx = i; break; }
-      scanPos += table.child(i).nodeSize;
-    }
-    if (currentRowIdx < 0) return;
-
-    const newRowIdx = after ? currentRowIdx + 1 : currentRowIdx - 1;
-    if (newRowIdx < 0 || newRowIdx >= table.childCount) return;
-
-    // ── Header detection ──────────────────────────────────────────────────
-    // A row is a <th>-header if ALL its cells are table_header type.
-    const isThRow = (row: any): boolean => {
-      if (!row.childCount) return false;
-      for (let i = 0; i < row.childCount; i++) {
-        if (row.child(i).type.name !== 'table_header') return false;
-      }
-      return true;
-    };
-    // Does the table have any explicit <th> header row?
-    let hasThHeaders = false;
-    for (let i = 0; i < table.childCount; i++) {
-      if (isThRow(table.child(i))) { hasThHeaders = true; break; }
-    }
-    // isHeader: explicit <th> row OR (fallback) the very first row when no <th> exists.
-    // The fallback covers tables imported with <td>-styled headers (dark blue etc.).
-    const isHeader = (row: any, idx: number): boolean =>
-      isThRow(row) || (!hasThHeaders && idx === 0);
-
-    // ── Collect body-row styles split by even/odd position ────────────────
-    // We track both tr-level styles (background on <tr>) and td-level styles
-    // (background/padding etc. on <td>) separately so both are preserved.
-    let evenTr:  string | null = null;
-    let oddTr:   string | null = null;
-    const evenCellStyles: Record<number, string> = {};
-    const oddCellStyles:  Record<number, string> = {};
-    let newRowBodyIdx = -1;
-    let bodyCount = 0;
-
-    for (let i = 0; i < table.childCount; i++) {
-      if (isHeader(table.child(i), i)) continue;
-      const bodyIdx = bodyCount++;
-      if (i === newRowIdx) { newRowBodyIdx = bodyIdx; continue; }
-      const row = table.child(i);
-      const isEven = bodyIdx % 2 === 0;
-
-      // tr-level style (e.g. alternating background from Word imports)
-      const rowStyle: string | null = row.attrs['style'] ?? null;
-      if (rowStyle) {
-        if (isEven && !evenTr) evenTr = rowStyle;
-        if (!isEven && !oddTr)  oddTr  = rowStyle;
-      }
-
-      // td-level styles (per column)
-      const cellTarget = isEven ? evenCellStyles : oddCellStyles;
-      row.forEach((cell: any, _off: number, colIdx: number) => {
-        const s: string | null = cell.attrs['style'] ?? null;
-        if (s && !cellTarget[colIdx]) cellTarget[colIdx] = s;
-      });
-    }
-
-    if (newRowBodyIdx < 0) return;
-    const isNewEven  = newRowBodyIdx % 2 === 0;
-    const trStyle    = isNewEven ? evenTr  : oddTr;
-    const cellStyles = isNewEven ? evenCellStyles : oddCellStyles;
-
-    // ── Compute the new row's absolute doc position ───────────────────────
-    let newRowPos = tablePos + 1;
-    for (let i = 0; i < newRowIdx; i++) newRowPos += table.child(i).nodeSize;
-
-    const newRow = table.child(newRowIdx);
-    const tr = state.tr;
-    let changed = false;
-
-    // Apply tr-level style (skip if the table has no styled rows at all)
-    if (trStyle && !newRow.attrs['style']) {
-      tr.setNodeMarkup(newRowPos, null, { ...newRow.attrs, style: trStyle });
-      changed = true;
-    }
-
-    // Apply td-level styles cell by cell
-    newRow.forEach((cell: any, cellOffset: number, colIdx: number) => {
-      const s = cellStyles[colIdx];
-      if (!cell.attrs['style'] && s) {
-        tr.setNodeMarkup(newRowPos + 1 + cellOffset, null, { ...cell.attrs, style: s });
-        changed = true;
-      }
-    });
-
-    // Always move cursor into the new row — even when no styles were applied
-    // (e.g. white rows that need no inline style). This ensures the next
-    // "+ Fila ↓" click inserts after THIS row, not the original one, so the
-    // alternating even/odd pattern is maintained across consecutive insertions.
-    // TextSelection is not a direct dep; access it through the current selection's
-    // constructor (which IS a TextSelection after addRowAfter dispatches).
-    try {
-      const $pos = tr.doc.resolve(newRowPos + 2);
-      const Sel  = (state.selection as any).constructor as any;
-      const sel  = Sel.findFrom ? Sel.findFrom($pos, 1, true) : null;
-      if (sel) { tr.setSelection(sel); changed = true; }
-    } catch { /* ignore if position is out of range */ }
-
-    if (changed) dispatch(tr);
-  }
-
-  // ── Signature widgets ────────────────────────────────────────────────────
-
-  prevPage(): void { if (this.currentPage() > 1) this.currentPage.update(p => p - 1); }
-  nextPage(): void { this.currentPage.update(p => p + 1); }
-  goToPage(page: number): void { this.currentPage.set(page); this.selectedWidget.set(null); }
-
-  addWidget(): void {
-    const newIdx = this.widgets().length;
-    this.widgets.update(ws => [...ws, {
-      recipientIndex: 0, page: this.currentPage(), left: 35, top: 40,
-      width: 26, height: 9, type: 'signature', required: true, editable: true,
-    }]);
-    this.selectedWidget.set(newIdx);
-  }
-
-  removeWidget(index: number): void {
-    this.widgets.update(ws => ws.filter((_, i) => i !== index));
-    if (this.selectedWidget() === index) this.selectedWidget.set(null);
-  }
-
-  setWidgetType(index: number, value: string): void {
-    this.widgets.update(ws => { const c = [...ws]; c[index] = { ...c[index], type: value }; return c; });
-  }
-
-  setWidgetRecipient(index: number, value: number): void {
-    this.widgets.update(ws => { const c = [...ws]; c[index] = { ...c[index], recipientIndex: value }; return c; });
-  }
-
-  setWidgetBool(index: number, field: 'required' | 'editable', value: boolean): void {
-    this.widgets.update(ws => { const c = [...ws]; c[index] = { ...c[index], [field]: value }; return c; });
-  }
-
-  // ── Draw-to-place ────────────────────────────────────────────────────────
-
-  onCanvasMousedown(event: MouseEvent, canvas: HTMLElement): void {
-    // Only start drawing if click is directly on canvas (not on a widget)
-    if (event.target !== canvas) return;
-    event.preventDefault();
-    this.selectedWidget.set(null);
-    this.drawStart = { x: event.clientX, y: event.clientY, rect: canvas.getBoundingClientRect() };
-    window.addEventListener('mousemove', this.boundDrawMove);
-    window.addEventListener('mouseup', this.boundDrawUp);
-  }
-
-  private onDrawMove(event: MouseEvent): void {
-    const d = this.drawStart;
-    if (!d) return;
-    const toPercent = (px: number, total: number) => Math.round(Math.max(0, Math.min(100, (px / total) * 100)));
-    const x1 = event.clientX - d.rect.left;
-    const y1 = event.clientY - d.rect.top;
-    this.zone.run(() => {
-      this.drawDraft.set({
-        left:   toPercent(Math.min(d.x - d.rect.left, x1), d.rect.width),
-        top:    toPercent(Math.min(d.y - d.rect.top,  y1), d.rect.height),
-        width:  toPercent(Math.abs(x1 - (d.x - d.rect.left)), d.rect.width),
-        height: toPercent(Math.abs(y1 - (d.y - d.rect.top)),  d.rect.height),
-      });
-    });
-  }
-
-  private onDrawUp(): void {
-    window.removeEventListener('mousemove', this.boundDrawMove);
-    window.removeEventListener('mouseup', this.boundDrawUp);
-    const draft = this.drawDraft();
-    this.drawDraft.set(null);
-    this.drawStart = null;
-    if (!draft || draft.width < 3 || draft.height < 2) return;  // too small → ignore
-    const newIdx = this.widgets().length;
-    this.zone.run(() => {
-      this.widgets.update(ws => [...ws, {
-        recipientIndex: 0, page: this.currentPage(),
-        left: draft.left, top: draft.top, width: draft.width, height: draft.height,
-        type: 'signature', required: true, editable: true,
-      }]);
-      this.selectedWidget.set(newIdx);
-    });
-  }
-
-  onWidgetMousedown(event: MouseEvent, index: number, mode: 'move' | 'resize', canvas: HTMLElement): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.selectedWidget.set(index);
-    const w = this.widgets()[index];
-    this.dragInfo = {
-      i: index, ox: w.left, oy: w.top, ow: w.width, oh: w.height,
-      mx: event.clientX, my: event.clientY,
-      rect: canvas.getBoundingClientRect(), mode,
-    };
-    window.addEventListener('mousemove', this.boundMove);
-    window.addEventListener('mouseup', this.boundUp);
-  }
-
-  private onGlobalMove(event: MouseEvent): void {
-    const d = this.dragInfo;
-    if (!d) return;
-    const dx = ((event.clientX - d.mx) / d.rect.width)  * 100;
-    const dy = ((event.clientY - d.my) / d.rect.height) * 100;
-    this.zone.run(() => {
-      this.widgets.update(ws => {
-        const copy = [...ws];
-        const w    = { ...copy[d.i] };
-        if (d.mode === 'move') {
-          w.left = Math.round(Math.max(0, Math.min(100 - w.width,  d.ox + dx)));
-          w.top  = Math.round(Math.max(0, Math.min(100 - w.height, d.oy + dy)));
-        } else {
-          w.width  = Math.round(Math.max(5, Math.min(100 - w.left, d.ow + dx)));
-          w.height = Math.round(Math.max(3, Math.min(100 - w.top,  d.oh + dy)));
-        }
-        copy[d.i] = w;
-        return copy;
-      });
-    });
-  }
-
-  private onGlobalUp(): void {
-    this.dragInfo = null;
-    window.removeEventListener('mousemove', this.boundMove);
-    window.removeEventListener('mouseup', this.boundUp);
-  }
+  // ── Export / misc ────────────────────────────────────────────────────────
 
   exportHtml(): void {
-    const html = toHTML(
-      this.editor.view.state.doc.toJSON() as Record<string, unknown>,
-      this.editor.schema,
-    );
-    const name = this.form.getRawValue().name || this.template()?.name || 'template';
-    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `${name.toLowerCase().replace(/\s+/g, '-')}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const html = toHTML(this.editor.view.state.doc.toJSON() as Record<string, unknown>, this.editor.schema);
+    downloadHtmlExport(html, this.form.getRawValue().name || this.template()?.name || 'template');
   }
 
   onCodeInput(event: Event): void {
@@ -862,83 +220,25 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
     const html = toHTML(this.editor.view.state.doc.toJSON() as Record<string, unknown>, this.editor.schema).trim();
     if (!html || html === '<p></p>') { this.contentError.set(true); return; }
     this.contentError.set(false);
-    this.saving.set(true);
 
-    const { version, changeNotes } = this.form.getRawValue();
-    const signatureWidgets = this.widgets().length ? this.widgets() : undefined;
-
-    if (this.isEditMode()) {
-      const tpl = this.template()!;
-      if (this.isNewVersion()) {
-        this.templateService.createVersion(tpl.code, {
-          version: version!, content: html, changeNotes: changeNotes || undefined, signatureWidgets,
-        }).subscribe({
-          next: () => { this.alertService.show('Nueva versión creada correctamente', 'success'); this.saving.set(false); this.resetForm(); this.saved.emit(); },
-          error: () => { this.saving.set(false); this.alertService.show('Error al crear la versión', 'error'); },
-        });
-      } else {
-        this.templateService.updateContent(tpl.id, {
-          content: html, changeNotes: changeNotes || undefined, signatureWidgets,
-        }).subscribe({
-          next: () => { this.alertService.show('Plantilla actualizada correctamente', 'success'); this.saving.set(false); this.resetForm(); this.saved.emit(); },
-          error: () => { this.saving.set(false); this.alertService.show('Error al actualizar la plantilla', 'error'); },
-        });
-      }
-    } else {
-      const { code, name, type } = this.form.getRawValue();
-      this.templateService.create({
-        code: code!, name: name!, type: type as 'individual' | 'company',
-        version: version!, content: html, changeNotes: changeNotes || undefined, signatureWidgets,
-      }).subscribe({
-        next: () => { this.alertService.show('Plantilla creada correctamente', 'success'); this.saving.set(false); this.resetForm(); this.saved.emit(); },
-        error: (err) => { this.saving.set(false); this.alertService.show(err.status === 409 ? 'Ya existe una plantilla con ese código' : 'Error al crear la plantilla', 'error'); },
-      });
-    }
+    const { code, name, type, version, changeNotes } = this.form.getRawValue();
+    this.submitFlow.submit({
+      isEditMode:   this.isEditMode(),
+      isNewVersion: this.isNewVersion(),
+      template:     this.template(),
+      code: code!, name: name!, type: type!, version: version!, changeNotes: changeNotes!,
+      html,
+      signatureWidgets: this.widgets().length ? this.widgets() : undefined,
+    });
   }
 
   onCancel(): void { this.resetForm(); this.cancelled.emit(); }
 
-  async loadPdfPreview(): Promise<void> {
-    const tpl = this.template();
-    if (!tpl) return;
-    this.loadingPdf.set(true);
-    try {
-      const { firstValueFrom } = await import('rxjs');
-      const blob   = await firstValueFrom(this.templateService.getPreview(tpl.id));
-      const buffer = await blob.arrayBuffer();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pdfjs  = await import('pdfjs-dist') as any;
-      pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
-      const pdf    = await pdfjs.getDocument({ data: buffer }).promise;
-      const pages: string[] = [];
-      for (let p = 1; p <= pdf.numPages; p++) {
-        const page     = await pdf.getPage(p);
-        const viewport = page.getViewport({ scale: 2 });
-        const cvs      = document.createElement('canvas');
-        cvs.width      = viewport.width;
-        cvs.height     = viewport.height;
-        await page.render({ canvasContext: cvs.getContext('2d')!, viewport }).promise;
-        pages.push(cvs.toDataURL('image/jpeg', 0.9));
-      }
-      this.pdfPages.set(pages);
-      this.alertService.show(`PDF cargado — ${pages.length} páginas`, 'success');
-    } catch {
-      this.alertService.show('No se pudo cargar el PDF del template', 'error');
-    } finally {
-      this.loadingPdf.set(false);
-    }
-  }
-
   private resetForm(): void {
     this.isNewVersion.set(true);
-    this.widgets.set([]);
-    this.currentPage.set(1);
-    this.selectedWidget.set(null);
-    this.pdfPages.set([]);
+    this.canvas.reset();
     this.form.reset({ code: '', name: '', type: 'individual', version: '1.0', changeNotes: '' });
-    this.form.controls.code.enable();
-    this.form.controls.name.enable();
-    this.form.controls.type.enable();
+    setBaseControls(this.form, 'enable');
     this.form.controls.version.enable();
     this.editor.setContent('');
     this.editorDoc = {};

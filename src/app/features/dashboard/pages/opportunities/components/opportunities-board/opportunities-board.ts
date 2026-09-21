@@ -5,40 +5,20 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { debounceTime, finalize, forkJoin, Subject, switchMap } from 'rxjs';
-import { GlobalLoadingService } from '../../../../../../services/global-loading.service';
+import { GlobalLoadingService } from '../../../../../../core/services/global-loading.service';
 import { ApoloIcons, ShieldCheckIcon, UiIconSource, UserCircleIcon, XIcon } from '@apolo-energies/icons';
 import {
   OpportunitySummary, OpportunityStatus, OpportunityFilters,
   OPPORTUNITY_STATUS_LABEL, OPPORTUNITY_ALLOWED_TRANSITIONS,
-  OPPORTUNITY_STATUS_ORDER,
-} from '../../../../../../entities/opportunity.model';
-import { OpportunityService } from '../../../../../../services/opportunity.service';
+} from '../../../../../../core/models/opportunity.model';
+import { OpportunityService } from '../../../../../../core/services/opportunity.service';
 import { OpportunityCardComponent } from '../opportunity-card/opportunity-card';
 import { EsNumberPipe } from '../../../../../../shared/pipes/es-number.pipe';
-
-interface BoardColumn {
-  status:      OpportunityStatus;
-  label:       string;
-  loading:     boolean;
-  loadingMore: boolean;
-  items:       OpportunitySummary[];
-  totalCount:  number;
-  currentPage: number;
-  hasMore:     boolean;
-}
-
-interface StatusPalette {
-  dot:      string;
-  badge:    string;
-  iconText: string;
-  iconRing: string;
-  emptyDescription: string;
-  emptyIcon?: UiIconSource;
-}
-
-const STATUS_ORDER = OPPORTUNITY_STATUS_ORDER;
-const PAGE_SIZE_PER_COLUMN = 20;
-const SCROLL_THRESHOLD_PX = 200;
+import {
+  aggregateBoardCounts, BOARD_PAGE_SIZE_PER_COLUMN, BOARD_STATUS_ORDER, BoardColumn,
+  BoardStatusPalette, createInitialBoardColumns, isNearColumnBottom, recountBoardColumnTotal,
+  resolveBoardStatusPalette, trackBoardColumnByStatus, trackOpportunityById,
+} from './opportunities-board.helpers';
 
 @Component({
   selector: 'app-opportunities-board',
@@ -62,18 +42,9 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
   private readonly checkIcon:      UiIconSource = { type: 'apolo', icon: ShieldCheckIcon, size: 28 };
   private readonly xCircleIcon:    UiIconSource = { type: 'apolo', icon: XIcon,           size: 28 };
 
-  readonly columns = signal<BoardColumn[]>(STATUS_ORDER.map(status => ({
-    status,
-    label:       OPPORTUNITY_STATUS_LABEL[status],
-    loading:     true,
-    loadingMore: false,
-    items:       [],
-    totalCount:  0,
-    currentPage: 1,
-    hasMore:     false,
-  })));
+  readonly columns = signal<BoardColumn[]>(createInitialBoardColumns());
 
-  readonly listIds = STATUS_ORDER.map(s => `column-${s}`);
+  readonly listIds = BOARD_STATUS_ORDER.map(s => `column-${s}`);
 
   readonly globalLoading = computed(() => this.columns().some(c => c.loading));
 
@@ -85,9 +56,9 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
       switchMap(() => {
         this.columns.update(cols => cols.map(c => ({ ...c, loading: true })));
         this.globalLoadingSvc.start();
-        const requests = STATUS_ORDER.reduce((acc, status) => {
+        const requests = BOARD_STATUS_ORDER.reduce((acc, status) => {
           acc[status] = this.oppService.list({
-            ...this.filters, status, page: 1, pageSize: PAGE_SIZE_PER_COLUMN,
+            ...this.filters, status, page: 1, pageSize: BOARD_PAGE_SIZE_PER_COLUMN,
           });
           return acc;
         }, {} as Record<OpportunityStatus, ReturnType<OpportunityService['list']>>);
@@ -98,7 +69,7 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
       takeUntilDestroyed(this.destroyRef),
     ).subscribe({
       next: results => {
-        this.columns.set(STATUS_ORDER.map(status => ({
+        this.columns.set(BOARD_STATUS_ORDER.map(status => ({
           status,
           label:       OPPORTUNITY_STATUS_LABEL[status],
           loading:     false,
@@ -127,74 +98,25 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
   }
 
   private emitCounts() {
-    const totals: Record<OpportunityStatus, number> = {
-      [OpportunityStatus.Pending]:     0,
-      [OpportunityStatus.Negotiation]: 0,
-      [OpportunityStatus.Won]:         0,
-      [OpportunityStatus.Lost]:        0,
-    };
-    const volumes: Record<OpportunityStatus, number> = {
-      [OpportunityStatus.Pending]:     0,
-      [OpportunityStatus.Negotiation]: 0,
-      [OpportunityStatus.Won]:         0,
-      [OpportunityStatus.Lost]:        0,
-    };
-    for (const col of this.columns()) {
-      totals[col.status]  = col.totalCount;
-      volumes[col.status] = col.items.reduce((sum, o) => sum + (o.lastAnnualConsumption ?? 0), 0);
-    }
+    const { totals, volumes } = aggregateBoardCounts(this.columns());
     this.countsChange.emit(totals);
     this.volumesChange.emit(volumes);
   }
 
-  paletteFor(status: OpportunityStatus): StatusPalette {
-    switch (status) {
-      case OpportunityStatus.Pending:
-        return {
-          dot:      'bg-blue-500',
-          badge:    'bg-blue-500/10 text-blue-400 ring-blue-500/20',
-          iconText: 'text-blue-400',
-          iconRing: 'ring-blue-500/20',
-          emptyDescription: 'Las oportunidades pendientes aparecerán aquí.',
-          emptyIcon: this.userCircleIcon,
-        };
-      case OpportunityStatus.Negotiation:
-        return {
-          dot:      'bg-amber-400',
-          badge:    'bg-amber-500/10 text-amber-400 ring-amber-500/20',
-          iconText: 'text-amber-400',
-          iconRing: 'ring-amber-500/20',
-          emptyDescription: 'Las oportunidades en negociación aparecerán aquí.',
-          emptyIcon: this.userCircleIcon,
-        };
-      case OpportunityStatus.Won:
-        return {
-          dot:      'bg-emerald-400',
-          badge:    'bg-emerald-500/10 text-emerald-400 ring-emerald-500/20',
-          iconText: 'text-emerald-400',
-          iconRing: 'ring-emerald-500/20',
-          emptyDescription: 'Las oportunidades ganadas aparecerán aquí.',
-          emptyIcon: this.checkIcon,
-        };
-      case OpportunityStatus.Lost:
-        return {
-          dot:      'bg-rose-400',
-          badge:    'bg-rose-500/10 text-rose-400 ring-rose-500/20',
-          iconText: 'text-rose-400',
-          iconRing: 'ring-rose-500/20',
-          emptyDescription: 'Las oportunidades perdidas aparecerán aquí.',
-          emptyIcon: this.xCircleIcon,
-        };
-    }
+  paletteFor(status: OpportunityStatus): BoardStatusPalette {
+    return resolveBoardStatusPalette(status, {
+      userCircle: this.userCircleIcon,
+      check:      this.checkIcon,
+      xCircle:    this.xCircleIcon,
+    });
   }
 
-  trackByStatus = (_: number, col: BoardColumn) => col.status;
-  trackById     = (_: number, item: OpportunitySummary) => item.id;
+  readonly trackByStatus = trackBoardColumnByStatus;
+  readonly trackById     = trackOpportunityById;
 
   onColumnScroll(event: Event, status: OpportunityStatus) {
     const el = event.target as HTMLElement;
-    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    if (distanceFromBottom > SCROLL_THRESHOLD_PX) return;
+    if (!isNearColumnBottom(el)) return;
     this.loadMore(status);
   }
 
@@ -208,7 +130,7 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
     ));
 
     this.oppService.list({
-      ...this.filters, status, page: nextPage, pageSize: PAGE_SIZE_PER_COLUMN,
+      ...this.filters, status, page: nextPage, pageSize: BOARD_PAGE_SIZE_PER_COLUMN,
     }).pipe(
       takeUntilDestroyed(this.destroyRef),
     ).subscribe({
@@ -277,21 +199,9 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
           items: [updated, ...next[targetIdx].items],
         };
       }
-      return next.map(c => ({ ...c, totalCount: this.recountTotal(c, cols, item, targetStatus) }));
+      return next.map(c => ({ ...c, totalCount: recountBoardColumnTotal(c, cols, item, targetStatus) }));
     });
     this.emitCounts();
-  }
-
-  private recountTotal(
-    col: BoardColumn,
-    prevCols: BoardColumn[],
-    moved: OpportunitySummary,
-    targetStatus: OpportunityStatus,
-  ): number {
-    const prev = prevCols.find(c => c.status === col.status)!;
-    if (col.status === moved.status && col.status !== targetStatus) return Math.max(0, prev.totalCount - 1);
-    if (col.status === targetStatus && col.status !== moved.status) return prev.totalCount + 1;
-    return prev.totalCount;
   }
 
   private replaceItem(updated: OpportunitySummary) {

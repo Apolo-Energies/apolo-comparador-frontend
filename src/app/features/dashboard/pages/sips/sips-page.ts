@@ -3,64 +3,15 @@ import { Router } from '@angular/router';
 import { ButtonComponent } from '@apolo-energies/ui';
 import { SipsInfoCardComponent } from './components/sips-info-card.component';
 import { DownloadIcon, SearchIcon, UiIconSource } from '@apolo-energies/icons';
-import { SipsService } from '../../../../services/sips.service';
+import { SipsService } from '../../../../core/services/sips.service';
 import { environment } from '../../../../../environments/environment';
-import { GlobalLoadingService } from '../../../../services/global-loading.service';
-import { SipsDonutChartComponent, DonutDatum, TrendData } from './components/donut-chart/donut-chart.component';
-import { SipsPowerChartComponent, PowerBarDatum } from './components/power-chart/power-chart.component';
-import { SipsMonthlyChartComponent } from './components/montly-chart/monthly-chart.component';
-import { SipsConsumo, SipsPs } from '../../../../entities/sips.model';
+import { GlobalLoadingService } from '../../../../core/services/global-loading.service';
+import { SipsDonutChartComponent } from './components/donut-chart/donut-chart.component';
+import { SipsPowerChartComponent } from './components/power-chart/power-chart.component';
+import { SipsMonthlyChartComponent } from './components/monthly-chart/monthly-chart.component';
+import { SipsConsumo, SipsPs } from '../../../../core/models/sips.model';
 import { getMonthlyStackedChartData, MonthlyRowDatum } from '../../../../shared/utils/chart.utils';
-import { PERIODS } from '../../../../shared/constants/period';
-
-function wToKwh(wh: number): number {
-  return wh / 1000;
-}
-
-function buildPeriodSummary(consumos: SipsConsumo[]): { periods: DonutDatum[]; totalFormatted: number } {
-  const last12 = [...consumos]
-    .sort((a, b) => a.fechaInicio.localeCompare(b.fechaInicio))
-    .slice(-12);
-
-  const periods: DonutDatum[] = PERIODS.map(p => ({
-    label: p,
-    value: Math.round(last12.reduce((s, c) => s + wToKwh((c[`energia${p}`] as number) || 0), 0)),
-  })).filter(d => d.value > 0);
-
-  return {
-    periods,
-    totalFormatted: periods.reduce((s, d) => s + d.value, 0),
-  };
-}
-
-function buildTrend(consumos: SipsConsumo[]): TrendData | null {
-  const sorted = [...consumos].sort((a, b) => a.fechaInicio.localeCompare(b.fechaInicio));
-  const last12 = sorted.slice(-12);
-  if (last12.length < 12) return null;
-
-  const total = (slice: SipsConsumo[]) =>
-    slice.reduce(
-      (s, c) => s + PERIODS.reduce((ps, p) => ps + wToKwh((c[`energia${p}`] as number) || 0), 0),
-      0
-    );
-
-  const prev = total(last12.slice(0, 6));
-  const curr = total(last12.slice(6));
-  if (prev === 0) return null;
-
-  const percent = Math.abs(Math.round(((curr - prev) / prev) * 100));
-  return {
-    percent,
-    trend: curr > prev ? 'up' : curr < prev ? 'down' : 'equal',
-  };
-}
-
-function buildPowerData(ps: SipsPs): PowerBarDatum[] {
-  return PERIODS.map(p => ({
-    label: p,
-    value: (ps[`potenciaContratada${p}`] as number) || 0,
-  })).filter(d => d.value > 0);
-}
+import { buildPeriodSummary, buildPowerData, buildTrend, parseCupsInput } from './sips-page.helpers';
 
 @Component({
   selector: 'app-sips-page',
@@ -91,28 +42,7 @@ export class SipsPageComponent {
   readonly exporting = signal(false);
   readonly error = signal<string | null>(null);
 
-  // Format español: ES + 16 dígitos + 2 alfanuméricos (con sufijo opcional de control).
-  // Lo dejamos amplio para no rechazar CUPS válidos atípicos; el backend valida realmente.
-  private static readonly CUPS_PATTERN = /^ES[0-9]{16}[A-Z0-9]{2}[A-Z0-9]{0,2}$/i;
-
-  readonly parsedCups = computed(() => {
-    const raw = this.cups();
-    if (!raw.trim()) return { valid: [] as string[], invalid: 0 };
-    const tokens = raw
-      .split(/[\n,;]+/)
-      .map(t => t.trim().toUpperCase())
-      .filter(t => t.length > 0);
-    const seen = new Set<string>();
-    const valid: string[] = [];
-    let invalid = 0;
-    for (const t of tokens) {
-      if (!SipsPageComponent.CUPS_PATTERN.test(t)) { invalid++; continue; }
-      if (seen.has(t)) continue;
-      seen.add(t);
-      valid.push(t);
-    }
-    return { valid, invalid };
-  });
+  readonly parsedCups = computed(() => parseCupsInput(this.cups()));
 
   readonly validCount = computed(() => this.parsedCups().valid.length);
   readonly invalidCount = computed(() => this.parsedCups().invalid);

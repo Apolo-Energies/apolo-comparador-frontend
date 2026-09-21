@@ -2,8 +2,8 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '@apolo-energies/ui';
-import { GasApoloProductService } from '../../../../services/gas-apolo-product.service';
-import { GasApoloProduct } from '../../../../entities/gas-apolo-product.model';
+import { GasApoloProductService } from '../../../../core/services/gas-apolo-product.service';
+import { GasApoloProduct } from '../../../../core/models/gas-apolo-product.model';
 
 type DialogMode = 'editMargin' | 'editName';
 

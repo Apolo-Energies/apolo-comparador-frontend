@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { ChartBar } from '../../models/dashboard-ui.models';
+import { ChartBar } from '../../models/dashboard-ui.model';
 
 export interface YTick {
   label:   string;

@@ -3,8 +3,8 @@ import { ButtonComponent } from '@apolo-energies/ui';
 import { DownloadIcon, UiIconSource } from '@apolo-energies/icons';
 
 import { mapDailyToChart, mapMonthlyToChart, mapSummaryToKpis } from '../../mappers/dashboard.mapper';
-import { ChartBar, DASHBOARD_STATUS, DateRange, DashboardStatus, KpiCardViewModel } from '../../models/dashboard-ui.models';
-import { DailySummaryApiItem, MonthlySummaryApiItem, SummaryApiResult } from '../../models/dashboard-api.models';
+import { ChartBar, DASHBOARD_STATUS, DateRange, DashboardStatus, KpiCardViewModel } from '../../models/dashboard-ui.model';
+import { DailySummaryApiItem, MonthlySummaryApiItem, SummaryApiResult } from '../../../../../../core/models/dashboard-api.model';
 import { KpiCardComponent } from '../kpi-card/kpi-card';
 import { BarChartComponent } from '../bar-chart/bar-chart';
 import { DateRangePickerComponent } from '../date-range-picker/date-range-picker';

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { ApoloIcons, DateIcon, LightningIcon, UiIconSource, UserSimpleIcon } from '@apolo-energies/icons';
-import { OpportunitySummary } from '../../../../../../entities/opportunity.model';
+import { OpportunitySummary } from '../../../../../../core/models/opportunity.model';
 import { EsNumberPipe } from '../../../../../../shared/pipes/es-number.pipe';
 
 @Component({

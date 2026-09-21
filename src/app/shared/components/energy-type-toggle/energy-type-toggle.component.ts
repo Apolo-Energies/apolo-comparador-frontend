@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { EnergyType } from '../../../entities/energy-type.enum';
-import { EnergyContextService } from '../../../services/energy-context.service';
+import { EnergyType } from '../../../core/models/energy-type.enum';
+import { EnergyContextService } from '../../../core/services/energy-context.service';
 
 @Component({
   selector: 'app-energy-type-toggle',

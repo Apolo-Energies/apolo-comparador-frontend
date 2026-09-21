@@ -6,9 +6,9 @@ import { isPlatformBrowser } from '@angular/common';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
 import { AlertComponent, ButtonComponent } from '@apolo-energies/ui';
 import { ApoloIcons, NoteIcon, StarIcon, UiIconSource } from '@apolo-energies/icons';
-import { CommissionService, CommissionRow } from '../../../../services/commission.service';
+import { CommissionService, CommissionRow } from '../../../../core/services/commission.service';
 import { AddCommissionModalComponent } from './add-commission-modal/add-commission-modal';
-import { GlobalLoadingService } from '../../../../services/global-loading.service';
+import { GlobalLoadingService } from '../../../../core/services/global-loading.service';
 import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
 import { environment } from '../../../../../environments/environment';
 

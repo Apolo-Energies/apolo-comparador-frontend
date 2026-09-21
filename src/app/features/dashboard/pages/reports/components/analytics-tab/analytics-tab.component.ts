@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import type { Chart } from 'chart.js';
-import { SummaryApiResult, DailySummaryApiItem, HistoryItem } from '../../../statistics/models/dashboard-api.models';
+import { SummaryApiResult, DailySummaryApiItem, HistoryItem } from '../../../../../../core/models/dashboard-api.model';
 import { fmtNum, fmtGwh, initials } from '../../report-utils';
 
 const BAR_COLOR  = '#B79DF5';

@@ -12,8 +12,8 @@ import {
 import {
   ComparisonHistoryRow, OpportunityDetail, OpportunityStatus,
   OPPORTUNITY_ALLOWED_TRANSITIONS, OPPORTUNITY_STATUS_LABEL,
-} from '../../../../../../entities/opportunity.model';
-import { OpportunityService } from '../../../../../../services/opportunity.service';
+} from '../../../../../../core/models/opportunity.model';
+import { OpportunityService } from '../../../../../../core/services/opportunity.service';
 
 @Component({
   selector: 'app-opportunity-detail-drawer',

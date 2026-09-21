@@ -17,41 +17,7 @@ import { AlertComponent, AlertService } from '@apolo-energies/ui';
   standalone: true,
   imports: [LoginSliderComponent, LoginFormComponent, AlertComponent, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <ui-alert />
-
-    <div class="w-[80vw] h-[80vh] rounded-lg p-8 bg-card backdrop-blur-sm border border-border shadow-xl overflow-hidden">
-      <div class="grid grid-cols-1 md:grid-cols-2 md:h-full">
-
-        <div class="hidden md:flex items-center justify-center h-full">
-          <apolo-login-slider [slides]="slides()" />
-        </div>
-
-        <div class="flex justify-center md:items-start items-start py-10 md:py-0 md:pl-10">
-          <div class="w-full max-w-md mt-0 md:mt-20">
-            <p class="text-3xl font-semibold mb-6 md:mb-8 leading-tight text-foreground text-center md:text-left">
-              {{ titleLine1() }}<br />{{ titleLine2() }}
-            </p>
-
-            <apolo-login-form
-              [loading]="loading()"
-              [submitLabel]="submitLabel()"
-              [rememberLabel]="rememberLabel()"
-              (formSubmit)="onFormSubmit($event)"
-            />
-
-            <a
-              routerLink="/forgot-password"
-              class="block text-center mt-4 text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors cursor-pointer"
-            >
-              ¿Olvidaste tu contraseña?
-            </a>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  `,
+  templateUrl: './login-page.html',
 })
 export class LoginPage {
   readonly slides        = input<LoginSlide[]>([]);
