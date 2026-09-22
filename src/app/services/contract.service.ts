@@ -212,6 +212,29 @@ export class ContractService {
     );
   }
 
+  // Requiere CUPS: el backend resuelve el idArchivo consultando facturas por ese CUPS.
+  downloadContratoPdf(idContrato: number, cups: string): Observable<Blob> {
+    const params = new HttpParams().set('cups', cups.trim().toUpperCase());
+    return this.http.get(
+      `${environment.apiUrl}/energy-expert/contratos/${idContrato}/archivo`,
+      { responseType: 'blob', params },
+    );
+  }
+
+  getFacturasByContrato(cups: string, limit = 50): Observable<unknown> {
+    // Comillas obligatorias: EE responde 500 si el string va sin quotes.
+    const params = new HttpParams()
+      .set('filter',  `CUPS="${cups.trim().toUpperCase()}"`)
+      .set('orderBy', 'FechaFin')
+      .set('offset',  '0')
+      .set('limit',   String(limit));
+    return this.http.post<unknown>(
+      `${environment.apiUrl}/energy-expert/invoices`,
+      {},
+      { params },
+    );
+  }
+
   getContratos(params: {
     filter?:   string;
     orderBy?:  string;

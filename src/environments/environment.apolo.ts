@@ -29,6 +29,6 @@ export const environment = {
     markets: true,
     reports: true,
     support: false,
-    myClients: true,
+    myClients: false,
   },
 };

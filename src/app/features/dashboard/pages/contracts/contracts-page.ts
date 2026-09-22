@@ -15,7 +15,10 @@ import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { Dialog } from 'primeng/dialog';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
 import { ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
-import { FileDownIcon, NoteIcon, SearchIcon, ShieldCheckIcon, SvgIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
+import {
+  ArrowUpDownIcon, DateIcon, FileDownIcon, InfoIcon, ListIcon, NoteIcon,
+  SearchIcon, ShieldCheckIcon, SvgIcon, TradingDownIcon, UiIconSource, XIcon,
+} from '@apolo-energies/icons';
 import { AuthService } from '@apolo-energies/auth';
 import { ContractService } from '../../../../services/contract.service';
 import { ContratoClienteRow, ContratosCards } from '../../../../entities/contrato.model';
@@ -87,6 +90,7 @@ const CARD_ACCENTS: Record<keyof ContratosCards, string> = {
 })
 export class ContractsPageComponent implements AfterViewInit {
   @ViewChild('clienteTpl')      private clienteTpl!:      TemplateRef<{ $implicit: ContratoClienteRow }>;
+  @ViewChild('cupsTpl')         private cupsTpl!:         TemplateRef<{ $implicit: ContratoClienteRow }>;
   @ViewChild('serviciosTpl')    private serviciosTpl!:    TemplateRef<{ $implicit: ContratoClienteRow }>;
   @ViewChild('consumoTpl')      private consumoTpl!:      TemplateRef<{ $implicit: ContratoClienteRow }>;
   @ViewChild('estadoTpl')       private estadoTpl!:       TemplateRef<{ $implicit: ContratoClienteRow }>;
@@ -103,6 +107,14 @@ export class ContractsPageComponent implements AfterViewInit {
 
   readonly searchIcon: UiIconSource = { type: 'apolo', icon: SearchIcon, size: 16 };
   readonly xIcon:      UiIconSource = { type: 'apolo', icon: XIcon,      size: 16 };
+
+  readonly pillAllIcon        = ListIcon;
+  readonly pillActivosIcon    = ShieldCheckIcon;
+  readonly pillPendientesIcon = DateIcon;
+  readonly pillRenovadosIcon  = ArrowUpDownIcon;
+  readonly pillBajasIcon      = XIcon;
+  readonly pillPorCaducarIcon = InfoIcon;
+  readonly pillCaducadosIcon  = TradingDownIcon;
 
   readonly isMaster = computed(() => getUserRoles(this.auth.currentUser()).includes('Master'));
   readonly delegationId = signal<number | null>(null);
@@ -130,6 +142,121 @@ export class ContractsPageComponent implements AfterViewInit {
   readonly data        = signal<ContratoClienteRow[]>([]);
   readonly hasMore     = signal(false);
   readonly selectedClient = signal<ContratoClienteRow | null>(null);
+
+  /**
+   * Vista/filtro activo de la tabla. Pills alineadas con la referencia del portal EE
+   * más los subfiltros temporales de renovaciones que ya teníamos.
+   *   - Estados de contrato (A/F/P/B/R/C agrupados):
+   *       todos      → sin filtro
+   *       activos    → EstadoBreakdown tiene al menos 1 servicio A (Alta) o F (Firmado)
+   *       pendientes → EstadoBreakdown tiene al menos 1 servicio P (Pendiente)
+   *       renovados  → EstadoBreakdown tiene al menos 1 servicio R (Renovado)
+   *       bajas      → EstadoBreakdown tiene al menos 1 servicio B (Baja) o C (Cancelado)
+   *   - Vista temporal (renovaciones):
+   *       porCaducar → ProximoVencimiento ≤ 60 días
+   *       caducados  → ProximoVencimiento en el pasado
+   */
+  readonly filterMode = signal<
+    'todos' | 'activos' | 'pendientes' | 'renovados' | 'bajas' | 'porCaducar' | 'caducados'
+  >('todos');
+
+  readonly setFilterMode = (m: ReturnType<typeof this.filterMode>): void => {
+    this.filterMode.set(m);
+    this.currentPage.set(1);
+  };
+
+  /** Backwards-compat con el HTML previo (tabs Todos/Por caducar/Caducados). */
+  readonly viewMode = this.filterMode;
+  readonly setViewMode = this.setFilterMode;
+
+  /** Rango de fechas opcional sobre UltimoMovimiento — ISO "yyyy-mm-dd" o vacío. */
+  readonly fechaDesde = signal<string>('');
+  readonly fechaHasta = signal<string>('');
+  readonly setFechaDesde = (v: string): void => { this.fechaDesde.set(v); this.currentPage.set(1); };
+  readonly setFechaHasta = (v: string): void => { this.fechaHasta.set(v); this.currentPage.set(1); };
+  readonly hasDateFilter = computed(() => !!this.fechaDesde() || !!this.fechaHasta());
+  readonly clearDateFilter = (): void => {
+    this.fechaDesde.set('');
+    this.fechaHasta.set('');
+    this.currentPage.set(1);
+  };
+
+  private matchesEstadoFilter(row: ContratoClienteRow, mode: string): boolean {
+    const bd = row.EstadoBreakdown ?? {};
+    const has = (codes: string[]) => codes.some(c => (bd[c] ?? 0) > 0);
+    switch (mode) {
+      case 'activos':    return has(['A', 'F']);
+      case 'pendientes': return has(['P']);
+      case 'renovados':  return has(['R']);
+      case 'bajas':      return has(['B', 'C']);
+      default:           return true;
+    }
+  }
+
+  private matchesDateRange(row: ContratoClienteRow): boolean {
+    if (!this.hasDateFilter()) return true;
+    const iso = row.UltimoMovimiento;
+    if (!iso) return false;
+    const t = new Date(iso).getTime();
+    if (Number.isNaN(t)) return false;
+    const desde = this.fechaDesde();
+    const hasta = this.fechaHasta();
+    if (desde && t < new Date(desde).getTime()) return false;
+    if (hasta && t > new Date(hasta).getTime() + 86_400_000 - 1) return false;
+    return true;
+  }
+
+  private matchesVencimiento(row: ContratoClienteRow, mode: 'porCaducar' | 'caducados'): boolean {
+    if (!row.ProximoVencimiento) return false;
+    const end = new Date(row.ProximoVencimiento).getTime();
+    if (Number.isNaN(end)) return false;
+    const today = new Date().setHours(0, 0, 0, 0);
+    const diffDays = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+    return mode === 'caducados' ? diffDays < 0 : (diffDays >= 0 && diffDays <= 60);
+  }
+
+  /** Rows visibles tras aplicar los filtros combinados (pill + rango de fechas). */
+  readonly visibleData = computed<ContratoClienteRow[]>(() => {
+    const mode = this.filterMode();
+    return this.data().filter(row => {
+      if (!this.matchesDateRange(row)) return false;
+      if (mode === 'todos') return true;
+      if (mode === 'porCaducar' || mode === 'caducados') {
+        return this.matchesVencimiento(row, mode);
+      }
+      return this.matchesEstadoFilter(row, mode);
+    });
+  });
+
+  // Contadores para las pills (previa filtro de fechas para dar señal global).
+  readonly countActivos     = computed(() => this.data().filter(r => this.matchesEstadoFilter(r, 'activos')).length);
+  readonly countPendientes  = computed(() => this.data().filter(r => this.matchesEstadoFilter(r, 'pendientes')).length);
+  readonly countRenovados   = computed(() => this.data().filter(r => this.matchesEstadoFilter(r, 'renovados')).length);
+  readonly countBajas       = computed(() => this.data().filter(r => this.matchesEstadoFilter(r, 'bajas')).length);
+  readonly countPorCaducar  = computed(() => this.data().filter(r => this.matchesVencimiento(r, 'porCaducar')).length);
+  readonly countCaducados   = computed(() => this.data().filter(r => this.matchesVencimiento(r, 'caducados')).length);
+
+  /**
+   * Consumos totales por estado (segunda fila de KPIs).
+   * Aproxima el consumo por estado repartiendo `ConsumoTotal` del row entre los
+   * estados del `EstadoBreakdown` proporcionalmente al conteo. Para clientes con
+   * un único estado es exacto; para mixtos es una aproximación decente sin exigir
+   * datos adicionales al backend.
+   */
+  readonly consumoPorEstado = computed<{ activos: number; pendientes: number; renovados: number; bajas: number }>(() => {
+    let activos = 0, pendientes = 0, renovados = 0, bajas = 0;
+    for (const row of this.data()) {
+      const bd = row.EstadoBreakdown ?? {};
+      const totalServicios = Object.values(bd).reduce((s, n) => s + n, 0);
+      if (totalServicios <= 0 || !row.ConsumoTotal) continue;
+      const consumoPorServicio = row.ConsumoTotal / totalServicios;
+      activos    += consumoPorServicio * ((bd['A'] ?? 0) + (bd['F'] ?? 0));
+      pendientes += consumoPorServicio * (bd['P'] ?? 0);
+      renovados  += consumoPorServicio * (bd['R'] ?? 0);
+      bajas      += consumoPorServicio * ((bd['B'] ?? 0) + (bd['C'] ?? 0));
+    }
+    return { activos, pendientes, renovados, bajas };
+  });
 
   /** Filtros de incidencia. Server-side — dispara reload al cambiar. */
   readonly filterEstado   = signal<string>('');
@@ -182,6 +309,7 @@ export class ContractsPageComponent implements AfterViewInit {
 
   readonly columns = signal<TableColumn<ContratoClienteRow>[]>([
     { key: 'NombreCliente',      label: 'Cliente' },
+    { key: 'CUPS',               label: 'CUPS',        align: 'center' },
     { key: 'NumServicios',       label: 'Servicios',   align: 'center' },
     { key: 'ConsumoTotal',       label: 'Consumo',     align: 'right' },
     { key: 'EstadoResumen',      label: 'Estado',      align: 'center' },
@@ -223,6 +351,7 @@ export class ContractsPageComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     this.columns.update(cols => cols.map(col => {
       if (col.key === 'NombreCliente')      return { ...col, cellTemplate: this.clienteTpl     };
+      if (col.key === 'CUPS')               return { ...col, cellTemplate: this.cupsTpl        };
       if (col.key === 'NumServicios')       return { ...col, cellTemplate: this.serviciosTpl   };
       if (col.key === 'ConsumoTotal')       return { ...col, cellTemplate: this.consumoTpl     };
       if (col.key === 'EstadoResumen')      return { ...col, cellTemplate: this.estadoTpl      };

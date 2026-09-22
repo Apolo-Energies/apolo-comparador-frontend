@@ -58,4 +58,6 @@ export interface ServicioListItem {
   PrecioEnergiaP4:              number;
   PrecioEnergiaP5:              number;
   PrecioEnergiaP6:              number;
+  // Inyectado por el backend a partir de la última factura EE — null si no hay PDF.
+  idArchivo?:                   number | null;
 }
