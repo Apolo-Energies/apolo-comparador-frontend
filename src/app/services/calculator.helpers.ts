@@ -14,7 +14,7 @@ const IVA_RATE = 0.21;         // IVA 21 %
 // el consumo total de la factura ACTUAL. Cambiar aquí si el valor se renegocia.
 const FIXED_PRODUCT_SURCHARGE_EUR_KWH = 0.012;
 
-const SNAP_PRODUCTS_SET = new Set(['Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi']);
+const SNAP_PRODUCTS_SET = new Set(['Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi', 'Vibra']);
 
 // Preferir SIPS (histórico real 12 meses) sobre la extrapolación de la factura,
 // que sesga por estacionalidad (una factura de invierno puede sobreestimar +50%).

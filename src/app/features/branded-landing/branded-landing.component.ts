@@ -98,7 +98,7 @@ export class BrandedLandingComponent {
   });
 
   readonly feeLockedProducts = [
-    'Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi',
+    'Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi', 'Vibra',
     'Promo 3M Lite', 'Promo 3M Pro', 'Promo 3M Plus',
   ];
 
