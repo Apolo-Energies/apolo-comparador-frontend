@@ -212,20 +212,19 @@ export class ContractService {
     );
   }
 
-  // Descarga el PDF del contrato de un servicio concreto. El backend resuelve
-  // internamente el idArchivo buscando la primera factura del contrato en EE.
-  downloadContratoPdf(idContrato: number): Observable<Blob> {
+  // Requiere CUPS: el backend resuelve el idArchivo consultando facturas por ese CUPS.
+  downloadContratoPdf(idContrato: number, cups: string): Observable<Blob> {
+    const params = new HttpParams().set('cups', cups.trim().toUpperCase());
     return this.http.get(
       `${environment.apiUrl}/energy-expert/contratos/${idContrato}/archivo`,
-      { responseType: 'blob' },
+      { responseType: 'blob', params },
     );
   }
 
-  // Facturas de un contrato concreto. Usa el endpoint genérico con filtro EE
-  // (sintaxis: "campo=valor && campo2=valor"). El controlador ya scopeó delegación.
-  getFacturasByContrato(idContrato: number, limit = 50): Observable<unknown> {
+  getFacturasByContrato(cups: string, limit = 50): Observable<unknown> {
+    // Comillas obligatorias: EE responde 500 si el string va sin quotes.
     const params = new HttpParams()
-      .set('filter',  `IdContrato=${idContrato}`)
+      .set('filter',  `CUPS="${cups.trim().toUpperCase()}"`)
       .set('orderBy', 'FechaFin')
       .set('offset',  '0')
       .set('limit',   String(limit));

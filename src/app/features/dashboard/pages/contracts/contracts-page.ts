@@ -15,7 +15,10 @@ import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { Dialog } from 'primeng/dialog';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
 import { ButtonComponent, InputFieldComponent } from '@apolo-energies/ui';
-import { FileDownIcon, NoteIcon, SearchIcon, ShieldCheckIcon, SvgIcon, UiIconSource, XIcon } from '@apolo-energies/icons';
+import {
+  ArrowUpDownIcon, DateIcon, FileDownIcon, InfoIcon, ListIcon, NoteIcon,
+  SearchIcon, ShieldCheckIcon, SvgIcon, TradingDownIcon, UiIconSource, XIcon,
+} from '@apolo-energies/icons';
 import { AuthService } from '@apolo-energies/auth';
 import { ContractService } from '../../../../services/contract.service';
 import { ContratoClienteRow, ContratosCards } from '../../../../entities/contrato.model';
@@ -104,6 +107,14 @@ export class ContractsPageComponent implements AfterViewInit {
 
   readonly searchIcon: UiIconSource = { type: 'apolo', icon: SearchIcon, size: 16 };
   readonly xIcon:      UiIconSource = { type: 'apolo', icon: XIcon,      size: 16 };
+
+  readonly pillAllIcon        = ListIcon;
+  readonly pillActivosIcon    = ShieldCheckIcon;
+  readonly pillPendientesIcon = DateIcon;
+  readonly pillRenovadosIcon  = ArrowUpDownIcon;
+  readonly pillBajasIcon      = XIcon;
+  readonly pillPorCaducarIcon = InfoIcon;
+  readonly pillCaducadosIcon  = TradingDownIcon;
 
   readonly isMaster = computed(() => getUserRoles(this.auth.currentUser()).includes('Master'));
   readonly delegationId = signal<number | null>(null);

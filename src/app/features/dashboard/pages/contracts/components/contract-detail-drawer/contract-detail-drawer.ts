@@ -6,6 +6,8 @@ import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Drawer } from 'primeng/drawer';
+import { Dialog } from 'primeng/dialog';
+import { MessageService } from 'primeng/api';
 import {
   ApoloIcons, DateIcon, HomeIcon, InfoIcon, LightningIcon,
   NoteIcon, UiIconSource, UserSimpleIcon, XIcon,
@@ -22,7 +24,7 @@ import { getUserRoles } from '../../../../../../utils/auth.utils';
 @Component({
   selector: 'app-contract-detail-drawer',
   standalone: true,
-  imports: [CommonModule, FormsModule, Drawer, ApoloIcons, BrandLoaderComponent],
+  imports: [CommonModule, FormsModule, Drawer, Dialog, ApoloIcons, BrandLoaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './contract-detail-drawer.html',
   styleUrl: './contract-detail-drawer.scss',
@@ -37,6 +39,7 @@ export class ContractDetailDrawerComponent {
   private auth             = inject(AuthService);
   private router           = inject(Router);
   private cdr              = inject(ChangeDetectorRef);
+  private toast            = inject(MessageService);
 
   readonly visible  = signal(false);
   readonly services = signal<ServicioListItem[]>([]);
@@ -55,19 +58,28 @@ export class ContractDetailDrawerComponent {
   readonly newIncidenceDescription = signal<string>('');
   readonly submittingIncidence = signal(false);
 
-  // Edición de datos del contrato antes de firma (visible solo en servicios con estado 'P').
-  // Como los endpoints EE que tenemos solo tocan datos del cliente (patchCliente), editamos
-  // los campos más críticos que suelen corregirse antes de firma: email de facturación y IBAN.
-  // Otros campos (potencias, precios, dirección suministro) requerirían nuevos endpoints EE
-  // que quedan fuera de alcance por ahora.
+  // Solo editable en estado 'P' (pendiente de firma). Limitado a email de facturación e
+  // IBAN — es lo único que patchCliente de EE deja tocar.
   readonly editingServicioId       = signal<number | null>(null);
   readonly editEmailFacturacion    = signal<string>('');
   readonly editIban                = signal<string>('');
   readonly submittingEdit          = signal(false);
 
+  readonly closeIncidenceTarget     = signal<Incidence | null>(null);
+  readonly closeIncidenceNote       = signal<string>('');
+  readonly submittingCloseIncidence = signal(false);
+
+  private showFeedback(kind: 'error' | 'info', title: string, message: string): void {
+    this.toast.add({
+      severity: kind === 'error' ? 'error' : 'info',
+      summary:  title,
+      detail:   message,
+      life:     4500,
+    });
+  }
+
+  // 'P' = Pendiente de firma.
   isEditableEstado(estado: string | null | undefined): boolean {
-    // Estado del contrato que permite editar antes de firma:
-    //   P = Pendiente / esperando firma
     return (estado ?? '').toUpperCase() === 'P';
   }
 
@@ -168,9 +180,10 @@ export class ContractDetailDrawerComponent {
   // ── Acciones sobre un servicio ──────────────────────────────────────────
 
   downloadContrato(s: ServicioListItem): void {
-    this.contractService.downloadContratoPdf(s.Id).subscribe({
+    this.contractService.downloadContratoPdf(s.Id, s.CUPS).subscribe({
       next: blob => this.saveBlob(blob, `contrato_${s.Id}.pdf`),
-      error: () => alert('No se pudo descargar el contrato. Puede que aún no tenga PDF disponible.'),
+      error: () => this.showFeedback('error', 'Descarga no disponible',
+        'No se pudo descargar el contrato. Puede que aún no tenga PDF disponible.'),
     });
   }
 
@@ -188,24 +201,28 @@ export class ContractDetailDrawerComponent {
     this.closeDrawer();
   }
 
-  toggleFacturas(idContrato: number): void {
+  toggleFacturas(s: ServicioListItem): void {
     const current = this.expandedFacturas();
-    this.expandedFacturas.set(current === idContrato ? null : idContrato);
-    if (current !== idContrato) this.loadFacturas(idContrato);
+    const opening = current !== s.Id;
+    this.expandedFacturas.set(opening ? s.Id : null);
+    if (opening) {
+      this.expandedIncidencias.set(null);
+      this.loadFacturas(s);
+    }
   }
 
-  private loadFacturas(idContrato: number): void {
+  private loadFacturas(s: ServicioListItem): void {
     const cache = this.facturasCache();
-    if (cache[idContrato] && cache[idContrato] !== 'error') return;
-    this.facturasCache.set({ ...cache, [idContrato]: 'loading' });
-    this.contractService.getFacturasByContrato(idContrato).subscribe({
+    if (cache[s.Id] && cache[s.Id] !== 'error') return;
+    this.facturasCache.set({ ...cache, [s.Id]: 'loading' });
+    this.contractService.getFacturasByContrato(s.CUPS).subscribe({
       next: raw => {
         const items = this.normalizeFacturas(raw);
-        this.facturasCache.set({ ...this.facturasCache(), [idContrato]: items });
+        this.facturasCache.set({ ...this.facturasCache(), [s.Id]: items });
         this.cdr.markForCheck();
       },
       error: () => {
-        this.facturasCache.set({ ...this.facturasCache(), [idContrato]: 'error' });
+        this.facturasCache.set({ ...this.facturasCache(), [s.Id]: 'error' });
         this.cdr.markForCheck();
       },
     });
@@ -233,14 +250,19 @@ export class ContractDetailDrawerComponent {
   downloadFactura(idArchivo: number): void {
     this.contractService.getContratoArchivo(idArchivo).subscribe({
       next: blob => this.saveBlob(blob, `factura_${idArchivo}.pdf`),
-      error: () => alert('No se pudo descargar la factura.'),
+      error: () => this.showFeedback('error', 'Descarga no disponible',
+        'No se pudo descargar la factura.'),
     });
   }
 
   toggleIncidencias(idContrato: number): void {
     const current = this.expandedIncidencias();
-    this.expandedIncidencias.set(current === idContrato ? null : idContrato);
-    if (current !== idContrato) this.loadIncidencias(idContrato);
+    const opening = current !== idContrato;
+    this.expandedIncidencias.set(opening ? idContrato : null);
+    if (opening) {
+      this.expandedFacturas.set(null);
+      this.loadIncidencias(idContrato);
+    }
   }
 
   private loadIncidencias(idContrato: number): void {
@@ -274,7 +296,7 @@ export class ContractDetailDrawerComponent {
     const title       = this.newIncidenceTitle().trim();
     const description = this.newIncidenceDescription().trim();
     if (!title || !description) {
-      alert('Rellena el título y la descripción.');
+      this.showFeedback('info', 'Faltan datos', 'Rellena el título y la descripción.');
       return;
     }
     this.submittingIncidence.set(true);
@@ -285,7 +307,6 @@ export class ContractDetailDrawerComponent {
       description,
     }).subscribe({
       next: created => {
-        // refrescar lista añadiendo la nueva al principio
         const cache = this.incidenciasCache();
         const existing = Array.isArray(cache[idContrato]) ? (cache[idContrato] as Incidence[]) : [];
         this.incidenciasCache.set({ ...cache, [idContrato]: [created, ...existing] });
@@ -294,15 +315,29 @@ export class ContractDetailDrawerComponent {
         this.cdr.markForCheck();
       },
       error: () => {
-        alert('No se pudo crear la incidencia.');
         this.submittingIncidence.set(false);
+        this.showFeedback('error', 'Error', 'No se pudo crear la incidencia.');
       },
     });
   }
 
   closeIncidence(inc: Incidence): void {
     if (!this.isMaster()) return;
-    const note = prompt('Nota de resolución (opcional):') ?? undefined;
+    this.closeIncidenceTarget.set(inc);
+    this.closeIncidenceNote.set('');
+  }
+
+  cancelCloseIncidence(): void {
+    if (this.submittingCloseIncidence()) return;
+    this.closeIncidenceTarget.set(null);
+    this.closeIncidenceNote.set('');
+  }
+
+  confirmCloseIncidence(): void {
+    const inc = this.closeIncidenceTarget();
+    if (!inc || this.submittingCloseIncidence()) return;
+    const note = this.closeIncidenceNote().trim();
+    this.submittingCloseIncidence.set(true);
     this.incidenceService.close(inc.id, note ? { resolutionNote: note } : {}).subscribe({
       next: updated => {
         const cache = this.incidenciasCache();
@@ -311,9 +346,15 @@ export class ContractDetailDrawerComponent {
           ...cache,
           [inc.contratoExtId]: list.map(i => i.id === updated.id ? updated : i),
         });
+        this.submittingCloseIncidence.set(false);
+        this.closeIncidenceTarget.set(null);
+        this.closeIncidenceNote.set('');
         this.cdr.markForCheck();
       },
-      error: () => alert('No se pudo cerrar la incidencia.'),
+      error: () => {
+        this.submittingCloseIncidence.set(false);
+        this.showFeedback('error', 'Error', 'No se pudo cerrar la incidencia. Reintenta más tarde.');
+      },
     });
   }
 
@@ -350,7 +391,8 @@ export class ContractDetailDrawerComponent {
   submitEdit(s: ServicioListItem): void {
     const idCliente = s.IdCliente;
     if (!idCliente) {
-      alert('No se puede editar: falta el identificador del cliente.');
+      this.showFeedback('error', 'No se puede editar',
+        'Falta el identificador del cliente. Vuelve a abrir el detalle e intenta de nuevo.');
       return;
     }
     const patch: Record<string, string | null> = {};
@@ -370,7 +412,6 @@ export class ContractDetailDrawerComponent {
     this.submittingEdit.set(true);
     this.contractService.patchCliente(String(idCliente), patch).subscribe({
       next: () => {
-        // Actualizar en memoria el servicio para reflejar el cambio sin recargar.
         this.services.update(list => list.map(x => x.Id === s.Id
           ? { ...x, EmailFacturacion: newEmail, CodigoCuentaDomiciliacion: newIban }
           : x));
@@ -379,8 +420,9 @@ export class ContractDetailDrawerComponent {
         this.cdr.markForCheck();
       },
       error: () => {
-        alert('No se pudieron guardar los cambios. Reintenta más tarde.');
         this.submittingEdit.set(false);
+        this.showFeedback('error', 'No se pudo guardar',
+          'No se pudieron guardar los cambios. Reintenta más tarde.');
       },
     });
   }
