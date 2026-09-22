@@ -237,13 +237,259 @@
                 </div>
               </div>
 
-              <!-- Footer: CUPS -->
+              <!-- Footer: CUPS + acciones -->
               <div
-                class="px-4 py-2 border-t border-zinc-800/60 flex items-center gap-2 text-[11px] text-zinc-500"
+                class="px-4 py-2 border-t border-zinc-800/60 flex flex-wrap items-center justify-between gap-2 text-[11px] text-zinc-500"
               >
-                <lib-apolo-icons [icon]="iconBolt" class="flex items-center" />
-                <span class="font-mono text-zinc-400 truncate">{{ s.CUPS || '—' }}</span>
+                <div class="inline-flex items-center gap-2 min-w-0">
+                  <lib-apolo-icons [icon]="iconBolt" class="flex items-center" />
+                  <span class="font-mono text-zinc-400 truncate">{{ s.CUPS || '—' }}</span>
+                </div>
+                <div class="inline-flex items-center gap-1 shrink-0">
+                  @if (isEditableEstado(s.Estado)) {
+                    <button type="button"
+                            class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20"
+                            (click)="toggleEdit(s)"
+                            title="Editar datos antes de firma">
+                      ✎ Editar
+                    </button>
+                  }
+                  <button type="button"
+                          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold text-primary-button bg-primary-button/10 hover:bg-primary-button/20"
+                          (click)="downloadContrato(s)"
+                          [title]="s.idArchivo ? 'Descargar PDF del contrato' : 'El PDF aún no está disponible en EE'">
+                    Descargar
+                  </button>
+                  @if (calcDias(s.FechaFin) !== null && calcDias(s.FechaFin)! <= 60) {
+                    <button type="button"
+                            class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold text-blue-300 bg-blue-500/10 hover:bg-blue-500/20"
+                            (click)="renovar(s)"
+                            title="Renovar en el comparador con datos precargados">
+                      Renovar
+                    </button>
+                  }
+                  <button type="button"
+                          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold text-zinc-300 bg-zinc-700/40 hover:bg-zinc-700/60"
+                          (click)="toggleFacturas(s)">
+                    Facturas
+                  </button>
+                  <button type="button"
+                          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold text-zinc-300 bg-zinc-700/40 hover:bg-zinc-700/60"
+                          (click)="toggleIncidencias(s.Id)">
+                    Incidencias
+                  </button>
+                </div>
               </div>
+
+              <!-- Sección expandida: EDICIÓN ANTES DE FIRMA -->
+              @if (editingServicioId() === s.Id) {
+                <div class="px-4 py-3 border-t border-zinc-800/60 bg-amber-500/5">
+                  <div class="flex items-center justify-between mb-3">
+                    <p class="text-[11px] font-semibold text-amber-300 uppercase tracking-wider">
+                      Editar datos antes de firma
+                    </p>
+                    <span class="text-[10px] text-muted-foreground">
+                      Estado: Pendiente
+                    </span>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label class="flex flex-col gap-1">
+                      <span class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
+                        Email de facturación
+                      </span>
+                      <input type="email"
+                             class="bg-zinc-950 border border-zinc-700 rounded-md px-2 py-1.5 text-xs text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                             placeholder="cliente@correo.com"
+                             [ngModel]="editEmailFacturacion()"
+                             (ngModelChange)="editEmailFacturacion.set($event)" />
+                    </label>
+                    <label class="flex flex-col gap-1">
+                      <span class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
+                        IBAN (cuenta domiciliación)
+                      </span>
+                      <input type="text"
+                             class="bg-zinc-950 border border-zinc-700 rounded-md px-2 py-1.5 text-xs text-zinc-100 font-mono focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                             placeholder="ES91 2100 0418 4502 0005 1332"
+                             [ngModel]="editIban()"
+                             (ngModelChange)="editIban.set($event)" />
+                    </label>
+                  </div>
+                  <p class="text-[10px] text-muted-foreground mt-3">
+                    ⓘ Otros campos (potencias, precios, dirección) requieren editar el contrato
+                    directamente en el sistema Energy Expert.
+                  </p>
+                  <div class="flex items-center justify-end gap-2 mt-3">
+                    <button type="button"
+                            class="text-[11px] text-zinc-400 hover:text-zinc-200"
+                            (click)="cancelEdit()"
+                            [disabled]="submittingEdit()">
+                      Cancelar
+                    </button>
+                    <button type="button"
+                            class="text-[11px] font-semibold px-3 py-1 rounded-md bg-amber-500 text-black hover:bg-amber-400 disabled:opacity-50"
+                            (click)="submitEdit(s)"
+                            [disabled]="submittingEdit()">
+                      {{ submittingEdit() ? 'Guardando…' : 'Guardar cambios' }}
+                    </button>
+                  </div>
+                </div>
+              }
+
+              <!-- Sección expandida: FACTURAS -->
+              @if (expandedFacturas() === s.Id) {
+                <div class="px-4 py-3 border-t border-zinc-800/60 bg-zinc-900/40">
+                  @let facturas = facturasCache()[s.Id];
+                  @if (facturas === 'loading') {
+                    <p class="text-xs text-zinc-500">Cargando facturas…</p>
+                  } @else if (facturas === 'error') {
+                    <p class="text-xs text-red-400">No se pudieron cargar las facturas.</p>
+                  } @else if (!facturas || facturas.length === 0) {
+                    <p class="text-xs text-zinc-500">Sin facturas para este contrato.</p>
+                  } @else {
+                    <table class="w-full text-[11px]">
+                      <thead class="text-zinc-500">
+                        <tr>
+                          <th class="text-left font-medium py-1">Nº</th>
+                          <th class="text-left font-medium py-1">Emisión</th>
+                          <th class="text-left font-medium py-1">Periodo</th>
+                          <th class="text-right font-medium py-1">Consumo</th>
+                          <th class="text-right font-medium py-1">Importe</th>
+                          <th class="text-right font-medium py-1">PDF</th>
+                        </tr>
+                      </thead>
+                      <tbody class="text-zinc-300">
+                        @for (f of facturas; track f.id) {
+                          <tr class="border-t border-zinc-800/40">
+                            <td class="py-1 font-mono">{{ f.numero || '—' }}</td>
+                            <td class="py-1">{{ fmtDate(f.fechaEmision) }}</td>
+                            <td class="py-1">{{ fmtDate(f.fechaInicio) }} – {{ fmtDate(f.fechaFin) }}</td>
+                            <td class="py-1 text-right font-mono">
+                              @if (f.consumoKwh !== null) { {{ fmtKwh(f.consumoKwh) }} } @else { — }
+                            </td>
+                            <td class="py-1 text-right font-mono">
+                              @if (f.importe !== null) { {{ f.importe | number:'1.2-2' }} € } @else { — }
+                            </td>
+                            <td class="py-1 text-right">
+                              @if (f.idArchivo) {
+                                <button type="button"
+                                        class="text-primary-button hover:underline font-semibold"
+                                        (click)="downloadFactura(f.idArchivo)">
+                                  Descargar
+                                </button>
+                              } @else { — }
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  }
+                </div>
+              }
+
+              <!-- Sección expandida: INCIDENCIAS -->
+              @if (expandedIncidencias() === s.Id) {
+                <div class="px-4 py-3 border-t border-zinc-800/60 bg-zinc-900/40">
+                  @let incs = incidenciasCache()[s.Id];
+                  <div class="flex items-center justify-between mb-2">
+                    <p class="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider">
+                      Incidencias
+                    </p>
+                    @if (incidenceFormFor() !== s.Id) {
+                      <button type="button"
+                              class="text-[11px] font-semibold text-primary-button hover:underline"
+                              (click)="openIncidenceForm(s.Id)">
+                        + Reportar nueva
+                      </button>
+                    }
+                  </div>
+
+                  @if (incidenceFormFor() === s.Id) {
+                    <div class="rounded-lg border border-zinc-700 bg-zinc-900 p-3 mb-3 space-y-2">
+                      <div class="flex gap-2">
+                        <select class="flex-1 bg-zinc-950 border border-zinc-700 rounded-md px-2 py-1 text-xs text-zinc-100"
+                                [ngModel]="newIncidenceType()"
+                                (ngModelChange)="newIncidenceType.set($event)">
+                          @for (t of incidenceTypes; track t) {
+                            <option [value]="t">{{ incidenceTypeLabels[t] }}</option>
+                          }
+                        </select>
+                      </div>
+                      <input type="text"
+                             class="w-full bg-zinc-950 border border-zinc-700 rounded-md px-2 py-1 text-xs text-zinc-100"
+                             placeholder="Título breve"
+                             [ngModel]="newIncidenceTitle()"
+                             (ngModelChange)="newIncidenceTitle.set($event)" />
+                      <textarea rows="3"
+                                class="w-full bg-zinc-950 border border-zinc-700 rounded-md px-2 py-1 text-xs text-zinc-100"
+                                placeholder="Describe la incidencia..."
+                                [ngModel]="newIncidenceDescription()"
+                                (ngModelChange)="newIncidenceDescription.set($event)"></textarea>
+                      <div class="flex items-center justify-end gap-2">
+                        <button type="button"
+                                class="text-[11px] text-zinc-400 hover:text-zinc-200"
+                                (click)="cancelIncidenceForm()"
+                                [disabled]="submittingIncidence()">Cancelar</button>
+                        <button type="button"
+                                class="text-[11px] font-semibold px-3 py-1 rounded-md bg-primary-button text-white hover:bg-primary-button/90 disabled:opacity-50"
+                                (click)="submitIncidence(s.Id)"
+                                [disabled]="submittingIncidence()">
+                          {{ submittingIncidence() ? 'Enviando…' : 'Enviar' }}
+                        </button>
+                      </div>
+                    </div>
+                  }
+
+                  @if (incs === 'loading') {
+                    <p class="text-xs text-zinc-500">Cargando…</p>
+                  } @else if (incs === 'error') {
+                    <p class="text-xs text-red-400">No se pudieron cargar las incidencias.</p>
+                  } @else if (!incs || incs.length === 0) {
+                    <p class="text-xs text-zinc-500">Sin incidencias.</p>
+                  } @else {
+                    <ul class="space-y-2">
+                      @for (inc of incs; track inc.id) {
+                        <li class="rounded-md border border-zinc-800 bg-zinc-950/50 p-2">
+                          <div class="flex items-start justify-between gap-2">
+                            <div class="min-w-0">
+                              <div class="flex items-center gap-2 flex-wrap">
+                                <span class="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                  {{ incidenceTypeLabels[inc.type] || inc.type }}
+                                </span>
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold"
+                                      [class.bg-yellow-500]="inc.status === 'Abierta'"
+                                      [class.text-yellow-100]="inc.status === 'Abierta'"
+                                      [class.bg-blue-500]="inc.status === 'EnTramite'"
+                                      [class.text-blue-100]="inc.status === 'EnTramite'"
+                                      [class.bg-green-600]="inc.status === 'Resuelta'"
+                                      [class.text-green-100]="inc.status === 'Resuelta'">
+                                  {{ inc.status === 'EnTramite' ? 'En trámite' : inc.status }}
+                                </span>
+                              </div>
+                              <p class="text-xs font-medium text-zinc-200 mt-1">{{ inc.title }}</p>
+                              <p class="text-[11px] text-zinc-400 mt-0.5 whitespace-pre-wrap">{{ inc.description }}</p>
+                              <p class="text-[10px] text-zinc-500 mt-1">
+                                {{ inc.createdByName || inc.createdByUserId }} · {{ fmtDate(inc.createdAt) }}
+                              </p>
+                              @if (inc.resolutionNote) {
+                                <p class="text-[11px] text-green-300 mt-1 border-l-2 border-green-500 pl-2">
+                                  Resolución: {{ inc.resolutionNote }}
+                                </p>
+                              }
+                            </div>
+                            @if (isMaster() && inc.status !== 'Resuelta') {
+                              <button type="button"
+                                      class="text-[11px] font-semibold text-primary-button hover:underline shrink-0"
+                                      (click)="closeIncidence(inc)">
+                                Cerrar
+                              </button>
+                            }
+                          </div>
+                        </li>
+                      }
+                    </ul>
+                  }
+                </div>
+              }
             </li>
           }
         </ol>
@@ -251,3 +497,39 @@
     </section>
   }
 </p-drawer>
+
+<!-- Modal: Cerrar incidencia -->
+<p-dialog
+  [visible]="!!closeIncidenceTarget()"
+  (visibleChange)="$event ? null : cancelCloseIncidence()"
+  [modal]="true"
+  [closable]="!submittingCloseIncidence()"
+  [style]="{ width: '32rem' }"
+  header="Cerrar incidencia">
+  <div class="space-y-3">
+    <p class="text-xs text-zinc-400">
+      Estás cerrando <span class="font-medium text-zinc-200">{{ closeIncidenceTarget()?.title }}</span>.
+      Añade una nota de resolución si quieres dejar constancia del motivo o la acción tomada.
+    </p>
+    <label class="block text-xs text-zinc-500">Nota de resolución (opcional)</label>
+    <textarea
+      rows="3"
+      [ngModel]="closeIncidenceNote()"
+      (ngModelChange)="closeIncidenceNote.set($event)"
+      class="w-full px-3 py-2 border border-zinc-700 rounded-md text-sm bg-zinc-900 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary-button/40 resize-none"
+      placeholder="Ej.: Reclamación resuelta con la comercializadora."></textarea>
+    <div class="flex justify-end gap-2 pt-2 border-t border-zinc-800">
+      <button type="button"
+              class="px-3 py-1.5 text-sm rounded-md border border-zinc-700 text-zinc-300 hover:bg-zinc-800/60 disabled:opacity-50"
+              [disabled]="submittingCloseIncidence()"
+              (click)="cancelCloseIncidence()">Cancelar</button>
+      <button type="button"
+              class="px-3 py-1.5 text-sm rounded-md bg-primary-button text-white hover:bg-primary-button/90 disabled:opacity-50"
+              [disabled]="submittingCloseIncidence()"
+              (click)="confirmCloseIncidence()">
+        {{ submittingCloseIncidence() ? 'Cerrando…' : 'Cerrar incidencia' }}
+      </button>
+    </div>
+  </div>
+</p-dialog>
+
