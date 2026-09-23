@@ -462,7 +462,7 @@
                                       [class.text-blue-100]="inc.status === 'EnTramite'"
                                       [class.bg-green-600]="inc.status === 'Resuelta'"
                                       [class.text-green-100]="inc.status === 'Resuelta'">
-                                  {{ inc.status === 'EnTramite' ? 'En trámite' : inc.status }}
+                                  {{ incidenceStatusLabels[inc.status] }}
                                 </span>
                               </div>
                               <p class="text-xs font-medium text-zinc-200 mt-1">{{ inc.title }}</p>
