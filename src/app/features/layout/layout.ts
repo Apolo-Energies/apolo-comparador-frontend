@@ -11,9 +11,7 @@ import { ArrowDownBoxIcon, chevronDownIcon, chevronRightIcon, CircleIcon, Compas
 import { getUserRoles } from '../../utils/auth.utils';
 import { environment } from '../../../environments/environment';
 import { RefreshTokenService } from '../../services/refresh-token.service';
-import { OpportunityService } from '../../services/opportunity.service';
-import { OpportunityStatus } from '../../entities/opportunity.model';
-import { EnergyType } from '../../entities/energy-type.enum';
+import { OpportunityCountsStore } from '../../services/opportunity-counts.store';
 import { GlobalLoadingService } from '../../services/global-loading.service';
 import { BrandLoaderComponent } from '../../shared/components/brand-loader/brand-loader.component';
 
@@ -51,7 +49,7 @@ export class Layout {
   private router = inject(Router);
   private http = inject(HttpClient);
   private refreshTokenService = inject(RefreshTokenService);
-  private oppService = inject(OpportunityService);
+  private countsStore = inject(OpportunityCountsStore);
   private platformId = inject(PLATFORM_ID);
   private destroyRef = inject(DestroyRef);
   readonly globalLoading = inject(GlobalLoadingService);
@@ -77,9 +75,20 @@ export class Layout {
   constructor() {
     if (!isPlatformBrowser(this.platformId)) return;
     if (environment.features.opportunities) {
-      this.refreshOpportunitiesCount();
+      this.initOpportunitiesCount();
       afterNextRender(() => this.setupOpportunitiesParentMarker());
     }
+    // Sincroniza contadores del store → signals locales, aplicando el filtro de colaborador
+    // (Gas no visible para Colaboradores; se muestra 0 aunque el backend lo devuelva).
+    effect(() => {
+      const badges = this.countsStore.badges();
+      const luz = badges?.electricity ?? 0;
+      const gas = badges?.gas         ?? 0;
+      const roles = getUserRoles(this.auth.currentUser());
+      const isColaborador = (roles.includes('Colaborador') || roles.includes('Colaborador - Referenciador')) && !roles.includes('Master');
+      this.opportunitiesCountLuz.set(luz);
+      this.opportunitiesCountGas.set(isColaborador ? 0 : gas);
+    });
     effect(() => {
       const luz = this.opportunitiesCountLuz();
       const gas = this.opportunitiesCountGas();
@@ -135,19 +144,20 @@ export class Layout {
     else document.documentElement.style.removeProperty(name);
   }
 
-  private refreshOpportunitiesCount(): void {
-    this.oppService.list({ pageSize: 1, status: OpportunityStatus.Pending, energyType: EnergyType.Electricity }).subscribe({
-      next: res => this.opportunitiesCountLuz.set(res.totalCount),
-      error: () => { },
-    });
-    // Gas de oportunidades aún no disponible para Colaboradores; evita sumar al badge total.
-    const roles = getUserRoles(this.auth.currentUser());
-    const isColaborador = (roles.includes('Colaborador') || roles.includes('Colaborador - Referenciador')) && !roles.includes('Master');
-    if (isColaborador) return;
-    this.oppService.list({ pageSize: 1, status: OpportunityStatus.Pending, energyType: EnergyType.Gas }).subscribe({
-      next: res => this.opportunitiesCountGas.set(res.totalCount),
-      error: () => { },
-    });
+  /**
+   * Alimenta el store de contadores del sidebar:
+   * - Si aterrizamos en la página del board, esperamos a que OpportunitiesBoard llame a
+   *   store.update() con los contadores que ya vienen en la respuesta de /opportunities/board;
+   *   como fallback, disparamos /opportunities/summary tras 2s por si el board falla al cargar.
+   * - Si estamos en cualquier otra ruta, pedimos /opportunities/summary directamente.
+   */
+  private initOpportunitiesCount(): void {
+    const onBoard = this.router.url.startsWith('/dashboard/analytics/opportunities');
+    if (onBoard) {
+      setTimeout(() => this.countsStore.ensureLoaded(), 2000);
+    } else {
+      this.countsStore.ensureLoaded();
+    }
   }
 
   readonly logoSrc = environment.logoUrl;
