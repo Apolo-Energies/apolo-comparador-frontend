@@ -10,6 +10,12 @@ export interface ContratoCheckItem {
   currentValue: string | null;
   entity: string | null;
   field: string | null;
+  /**
+   * true = dato confirmado (viene de EE o fue verificado manualmente).
+   * false = rellenado manualmente, pendiente de verificar en sistemas externos → estado amarillo.
+   * Backend Java lo setea en ContratoService.campoTexto (control).
+   */
+  verificado: boolean;
 }
 
 export interface ContratoIncidencia {

@@ -4,9 +4,11 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   ComparisonsPaged,
+  OpportunityBoardResponse,
   OpportunityDetail,
   OpportunityFilters,
   OpportunityPaged,
+  OpportunitySidebarBadges,
   OpportunityStatus,
   OpportunitySummary,
   parseOpportunityStatus,
@@ -53,6 +55,42 @@ export class OpportunityService {
         items: res.items.map(normalizeSummary),
       })),
     );
+  }
+
+  /**
+   * Página 1 de las 4 columnas del tablero Kanban en una sola llamada + contadores de badges
+   * del sidebar. Sustituye al forkJoin de 4 list() en la carga inicial del board.
+   * El scroll infinito por columna sigue usando list() con status filtrado.
+   */
+  board(filters: OpportunityFilters = {}): Observable<OpportunityBoardResponse> {
+    let params = new HttpParams()
+      .set('pageSize', String(filters.pageSize ?? 20));
+
+    if (filters.cups)                     params = params.set('cups',              filters.cups);
+    if (filters.startDate)                params = params.set('startDate',         localDateToIsoStart(filters.startDate));
+    if (filters.endDate)                  params = params.set('endDate',           localDateToIsoEndExclusive(filters.endDate));
+    if (filters.clientName)               params = params.set('clientName',        filters.clientName);
+    if (filters.clientNif)                params = params.set('clientNif',         filters.clientNif);
+    if (filters.createdByFullName)        params = params.set('createdByFullName', filters.createdByFullName);
+    if (filters.createdByEmail)           params = params.set('createdByEmail',    filters.createdByEmail);
+    if (filters.searchTerm)               params = params.set('searchTerm',        filters.searchTerm);
+    if (filters.energyType !== undefined) params = params.set('energyType',        String(filters.energyType));
+
+    return this.http.get<OpportunityBoardResponse>(`${this.base}/board`, { params }).pipe(
+      map(res => ({
+        ...res,
+        columns: res.columns.map(col => ({
+          ...col,
+          status: parseOpportunityStatus(col.status as unknown as string | number),
+          items:  col.items.map(normalizeSummary),
+        })),
+      })),
+    );
+  }
+
+  /** Contadores globales de pendientes por energyType para los badges del sidebar. */
+  summary(): Observable<OpportunitySidebarBadges> {
+    return this.http.get<OpportunitySidebarBadges>(`${this.base}/summary`);
   }
 
   getById(id: string, page = 1, pageSize = 20): Observable<OpportunityDetail> {
