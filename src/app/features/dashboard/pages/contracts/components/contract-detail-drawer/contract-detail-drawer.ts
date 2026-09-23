@@ -16,7 +16,7 @@ import { AuthService } from '@apolo-energies/auth';
 import { ContratoClienteRow } from '../../../../../../entities/contrato.model';
 import { ServicioListItem } from '../../../../../../entities/servicio.model';
 import { ContractService } from '../../../../../../services/contract.service';
-import { IncidenceService, Incidence, INCIDENCE_TYPES, INCIDENCE_TYPE_LABELS } from '../../../../../../services/incidence.service';
+import { IncidenceService, Incidence, INCIDENCE_TYPES, INCIDENCE_TYPE_LABELS, INCIDENCE_STATUS_LABELS } from '../../../../../../services/incidence.service';
 import { BrandLoaderComponent } from '../../../../../../shared/components/brand-loader/brand-loader.component';
 import { calcDias, dedupeServiciosByCups, estadoCls, estadoLabel, fmtDate, fmtKwh } from '../../contracts-utils';
 import { getUserRoles } from '../../../../../../utils/auth.utils';
@@ -53,7 +53,7 @@ export class ContractDetailDrawerComponent {
 
   // Formulario de nueva incidencia (solo abierto para 1 servicio a la vez).
   readonly incidenceFormFor = signal<number | null>(null);
-  readonly newIncidenceType = signal<string>('Facturacion');
+  readonly newIncidenceType = signal<string>('ErrorFacturacion');
   readonly newIncidenceTitle = signal<string>('');
   readonly newIncidenceDescription = signal<string>('');
   readonly submittingIncidence = signal(false);
@@ -85,6 +85,7 @@ export class ContractDetailDrawerComponent {
 
   readonly incidenceTypes = INCIDENCE_TYPES;
   readonly incidenceTypeLabels = INCIDENCE_TYPE_LABELS;
+  readonly incidenceStatusLabels = INCIDENCE_STATUS_LABELS;
 
   readonly isMaster = () => getUserRoles(this.auth.currentUser()).includes('Master');
 
@@ -107,7 +108,11 @@ export class ContractDetailDrawerComponent {
       const c = this.client();
       if (c) {
         this.visible.set(true);
-        this.loadServices(c.IdCliente);
+        // Cada fila de la tabla ahora es 1 contrato/CUPS: filtramos el drawer por ese
+        // CUPS específico. Si por algún motivo la fila tiene múltiples CUPS (legacy),
+        // caemos al fetch por cliente completo.
+        const singleCups = c.CUPS.length === 1 ? c.CUPS[0] : undefined;
+        this.loadServices(c.IdCliente, singleCups);
       } else {
         this.visible.set(false);
         this.services.set([]);
@@ -115,13 +120,13 @@ export class ContractDetailDrawerComponent {
     });
   }
 
-  private loadServices(idCliente: number) {
+  private loadServices(idCliente: number, cups?: string) {
     if (!idCliente || idCliente <= 0) {
       this.services.set([]);
       return;
     }
     this.loading.set(true);
-    this.contractService.getServiciosByCliente(idCliente, 100).subscribe({
+    this.contractService.getServiciosByCliente(idCliente, 100, cups).subscribe({
       next: rows => {
         // Dedup por CUPS con la misma winner-logic que el backend usa en /contratos,
         // así el drawer muestra 1 card por CUPS y coincide con NumServicios del header.
@@ -261,15 +266,20 @@ export class ContractDetailDrawerComponent {
     this.expandedIncidencias.set(opening ? idContrato : null);
     if (opening) {
       this.expandedFacturas.set(null);
-      this.loadIncidencias(idContrato);
+      const s = this.services().find(x => x.Id === idContrato);
+      this.loadIncidencias(idContrato, s?.CUPS ?? '');
     }
   }
 
-  private loadIncidencias(idContrato: number): void {
+  private loadIncidencias(idContrato: number, cups: string): void {
     const cache = this.incidenciasCache();
     if (Array.isArray(cache[idContrato])) return;
+    if (!cups) {
+      this.incidenciasCache.set({ ...cache, [idContrato]: [] });
+      return;
+    }
     this.incidenciasCache.set({ ...cache, [idContrato]: 'loading' });
-    this.incidenceService.listByContrato(idContrato).subscribe({
+    this.incidenceService.listByCups(cups).subscribe({
       next: items => {
         this.incidenciasCache.set({ ...this.incidenciasCache(), [idContrato]: items });
         this.cdr.markForCheck();
@@ -283,7 +293,7 @@ export class ContractDetailDrawerComponent {
 
   openIncidenceForm(idContrato: number): void {
     this.incidenceFormFor.set(idContrato);
-    this.newIncidenceType.set('Facturacion');
+    this.newIncidenceType.set('ErrorFacturacion');
     this.newIncidenceTitle.set('');
     this.newIncidenceDescription.set('');
   }
@@ -299,10 +309,18 @@ export class ContractDetailDrawerComponent {
       this.showFeedback('info', 'Faltan datos', 'Rellena el título y la descripción.');
       return;
     }
+    const s = this.services().find(x => x.Id === idContrato);
+    const cups = s?.CUPS ?? '';
+    const clienteNombre = this.client()?.NombreCliente ?? '';
+    if (!cups || !clienteNombre) {
+      this.showFeedback('error', 'Datos incompletos', 'Falta CUPS o nombre de cliente para crear la incidencia.');
+      return;
+    }
     this.submittingIncidence.set(true);
     this.incidenceService.create({
-      contratoExtId: idContrato,
-      type:          this.newIncidenceType() as never,
+      cups,
+      clienteNombre,
+      type:        this.newIncidenceType() as never,
       title,
       description,
     }).subscribe({
@@ -340,12 +358,18 @@ export class ContractDetailDrawerComponent {
     this.submittingCloseIncidence.set(true);
     this.incidenceService.close(inc.id, note ? { resolutionNote: note } : {}).subscribe({
       next: updated => {
+        // contratoExtId ya no viene del backend (control no lo trackea); localizamos el
+        // servicio en cuyo cache está la incidencia recorriendo el mapa.
         const cache = this.incidenciasCache();
-        const list  = Array.isArray(cache[inc.contratoExtId]) ? (cache[inc.contratoExtId] as Incidence[]) : [];
-        this.incidenciasCache.set({
-          ...cache,
-          [inc.contratoExtId]: list.map(i => i.id === updated.id ? updated : i),
-        });
+        const nextCache: Record<number, Incidence[] | 'loading' | 'error'> = { ...cache };
+        for (const key of Object.keys(nextCache)) {
+          const id = Number(key);
+          const list = nextCache[id];
+          if (Array.isArray(list) && list.some(i => i.id === inc.id)) {
+            nextCache[id] = list.map(i => i.id === updated.id ? updated : i);
+          }
+        }
+        this.incidenciasCache.set(nextCache);
         this.submittingCloseIncidence.set(false);
         this.closeIncidenceTarget.set(null);
         this.closeIncidenceNote.set('');
