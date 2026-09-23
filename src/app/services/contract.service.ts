@@ -145,15 +145,19 @@ export class ContractService {
   }
 
   /**
-   * Todos los servicios asociados a un cliente (por IdCliente). Usa el endpoint
-   * delegated-filtered `GET /servicios` con match exacto en memoria contra el
-   * cache del backend. Evita el filtro tipado de EE, que responde 500 para
-   * ciertos campos en Servicios.
+   * Servicios asociados a un cliente. Usa el endpoint delegated-filtered `GET /servicios`
+   * con match exacto en memoria contra el cache del backend. Evita el filtro tipado de EE,
+   * que responde 500 para ciertos campos en Servicios.
+   *
+   * Cuando se pasa `cups`, restringe adicionalmente al servicio de ese CUPS — necesario
+   * ahora que la tabla de contratos devuelve 1 fila por contrato/CUPS (no por cliente),
+   * para que el drawer no muestre TODOS los servicios del cliente en cada fila.
    */
-  getServiciosByCliente(idCliente: number, limit = 100): Observable<ServicioListItem[]> {
-    const httpParams = new HttpParams()
+  getServiciosByCliente(idCliente: number, limit = 100, cups?: string): Observable<ServicioListItem[]> {
+    let httpParams = new HttpParams()
       .set('idCliente', String(idCliente))
       .set('limit',     String(limit));
+    if (cups) httpParams = httpParams.set('cups', cups);
 
     return this.http.get<ServiciosPageResponse>(
       `${environment.apiUrl}/energy-expert/servicios`,

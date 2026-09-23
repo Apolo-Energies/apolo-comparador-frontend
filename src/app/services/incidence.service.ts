@@ -1,58 +1,69 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+// Alineado con TipoCambio de Control (tabla `cambio`). El backend .NET traduce
+// PascalCase → snake_case ("CambioPotencia" → "cambio_potencia") antes de reenviar.
 export type IncidenceType =
-  | 'Facturacion'
-  | 'CorteSuministro'
-  | 'AltaBaja'
-  | 'CambioTitular'
-  | 'Reclamacion'
+  | 'CambioPotencia'
+  | 'CambioTitularidad'
+  | 'CambioCuentaBancaria'
+  | 'CambioOferta'
+  | 'BajaPorCese'
+  | 'ErrorFacturacion'
   | 'Otra';
 
 export type IncidenceStatus = 'Abierta' | 'EnTramite' | 'Resuelta';
 
 export const INCIDENCE_TYPES: IncidenceType[] = [
-  'Facturacion', 'CorteSuministro', 'AltaBaja', 'CambioTitular', 'Reclamacion', 'Otra',
+  'CambioPotencia',
+  'CambioTitularidad',
+  'CambioCuentaBancaria',
+  'CambioOferta',
+  'BajaPorCese',
+  'ErrorFacturacion',
+  'Otra',
 ];
 
 export const INCIDENCE_TYPE_LABELS: Record<IncidenceType, string> = {
-  Facturacion:     'Facturación',
-  CorteSuministro: 'Corte de suministro',
-  AltaBaja:        'Alta/Baja',
-  CambioTitular:   'Cambio de titular',
-  Reclamacion:     'Reclamación',
-  Otra:            'Otra',
+  CambioPotencia:       'Cambio de potencia',
+  CambioTitularidad:    'Cambio de titularidad',
+  CambioCuentaBancaria: 'Cambio de cuenta bancaria',
+  CambioOferta:         'Cambio de oferta',
+  BajaPorCese:          'Baja por cese',
+  ErrorFacturacion:     'Error de facturación',
+  Otra:                 'Otra',
 };
 
 export const INCIDENCE_STATUS_LABELS: Record<IncidenceStatus, string> = {
   Abierta:   'Abierta',
   EnTramite: 'En trámite',
-  Resuelta:  'Resuelta',
+  Resuelta:  'Gestionada',
 };
 
 export interface Incidence {
   id:               string;
-  contratoExtId:    number;
+  contratoExtId:    number;                 // Deprecado: siempre 0 (control no lo trackea).
   type:             IncidenceType;
   title:            string;
   description:      string;
   status:           IncidenceStatus;
-  createdByUserId:  string;
+  createdByUserId:  string;                 // "" — control no lo trackea.
   createdByName:    string | null;
   createdAt:        string;
   closedByUserId:   string | null;
   closedByName:     string | null;
   closedAt:         string | null;
-  resolutionNote:   string | null;
+  resolutionNote:   string | null;          // null — control usa `comentarios`.
 }
 
 export interface CreateIncidenceRequest {
-  contratoExtId: number;
-  type:          IncidenceType;
-  title:         string;
-  description:   string;
+  cups:           string;
+  clienteNombre:  string;
+  type:           IncidenceType;
+  title:          string;
+  description:    string;
 }
 
 export interface CloseIncidenceRequest {
@@ -63,10 +74,11 @@ export interface CloseIncidenceRequest {
 export class IncidenceService {
   private http = inject(HttpClient);
 
-  listByContrato(contratoExtId: number): Observable<Incidence[]> {
+  /** Lista los cambios (incidencias) asociados a un CUPS. */
+  listByCups(cups: string): Observable<Incidence[]> {
     return this.http.get<Incidence[]>(
       `${environment.apiUrl}/incidences`,
-      { params: { contratoExtId: String(contratoExtId) } },
+      { params: new HttpParams().set('cups', cups) },
     );
   }
 
