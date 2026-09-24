@@ -46,8 +46,8 @@ export interface Incidence {
   id:               string;
   contratoExtId:    number;                 // Deprecado: siempre 0 (control no lo trackea).
   type:             IncidenceType;
-  title:            string;
-  description:      string;
+  title:            string;                 // Siempre "" (control solo tiene `comentarios`).
+  description:      string;                 // = comentarios de control.
   status:           IncidenceStatus;
   createdByUserId:  string;                 // "" — control no lo trackea.
   createdByName:    string | null;
@@ -59,11 +59,11 @@ export interface Incidence {
 }
 
 export interface CreateIncidenceRequest {
-  cups:           string;
-  clienteNombre:  string;
-  type:           IncidenceType;
-  title:          string;
-  description:    string;
+  cups:            string;
+  clienteNombre:   string;
+  clienteNif?:     string | null;   // Para que control auto-vincule el cliente por NIF.
+  type:            IncidenceType;
+  description:     string;          // Texto único de la incidencia (va a `comentarios` en control).
 }
 
 export interface CloseIncidenceRequest {
