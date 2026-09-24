@@ -54,7 +54,6 @@ export class ContractDetailDrawerComponent {
   // Formulario de nueva incidencia (solo abierto para 1 servicio a la vez).
   readonly incidenceFormFor = signal<number | null>(null);
   readonly newIncidenceType = signal<string>('ErrorFacturacion');
-  readonly newIncidenceTitle = signal<string>('');
   readonly newIncidenceDescription = signal<string>('');
   readonly submittingIncidence = signal(false);
 
@@ -294,7 +293,6 @@ export class ContractDetailDrawerComponent {
   openIncidenceForm(idContrato: number): void {
     this.incidenceFormFor.set(idContrato);
     this.newIncidenceType.set('ErrorFacturacion');
-    this.newIncidenceTitle.set('');
     this.newIncidenceDescription.set('');
   }
 
@@ -303,10 +301,9 @@ export class ContractDetailDrawerComponent {
   }
 
   submitIncidence(idContrato: number): void {
-    const title       = this.newIncidenceTitle().trim();
     const description = this.newIncidenceDescription().trim();
-    if (!title || !description) {
-      this.showFeedback('info', 'Faltan datos', 'Rellena el título y la descripción.');
+    if (!description) {
+      this.showFeedback('info', 'Faltan datos', 'Escribe un comentario para la incidencia.');
       return;
     }
     const s = this.services().find(x => x.Id === idContrato);
@@ -320,8 +317,8 @@ export class ContractDetailDrawerComponent {
     this.incidenceService.create({
       cups,
       clienteNombre,
+      clienteNif:  this.client()?.NIF ?? null,
       type:        this.newIncidenceType() as never,
-      title,
       description,
     }).subscribe({
       next: created => {

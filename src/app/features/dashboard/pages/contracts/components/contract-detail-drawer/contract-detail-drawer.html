@@ -414,12 +414,7 @@
                           }
                         </select>
                       </div>
-                      <input type="text"
-                             class="w-full bg-zinc-950 border border-zinc-700 rounded-md px-2 py-1 text-xs text-zinc-100"
-                             placeholder="Título breve"
-                             [ngModel]="newIncidenceTitle()"
-                             (ngModelChange)="newIncidenceTitle.set($event)" />
-                      <textarea rows="3"
+                      <textarea rows="4"
                                 class="w-full bg-zinc-950 border border-zinc-700 rounded-md px-2 py-1 text-xs text-zinc-100"
                                 placeholder="Describe la incidencia..."
                                 [ngModel]="newIncidenceDescription()"
@@ -465,8 +460,7 @@
                                   {{ incidenceStatusLabels[inc.status] }}
                                 </span>
                               </div>
-                              <p class="text-xs font-medium text-zinc-200 mt-1">{{ inc.title }}</p>
-                              <p class="text-[11px] text-zinc-400 mt-0.5 whitespace-pre-wrap">{{ inc.description }}</p>
+                              <p class="text-xs text-zinc-200 mt-1 whitespace-pre-wrap">{{ inc.description }}</p>
                               <p class="text-[10px] text-zinc-500 mt-1">
                                 {{ inc.createdByName || inc.createdByUserId }} · {{ fmtDate(inc.createdAt) }}
                               </p>
