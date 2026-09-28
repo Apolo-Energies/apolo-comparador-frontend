@@ -4,7 +4,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
-import { debounceTime, finalize, Subject, switchMap } from 'rxjs';
+import { debounceTime, finalize, forkJoin, Subject, switchMap } from 'rxjs';
 import { GlobalLoadingService } from '../../../../../../services/global-loading.service';
 import { ApoloIcons, ShieldCheckIcon, UiIconSource, UserCircleIcon, XIcon } from '@apolo-energies/icons';
 import {
@@ -13,12 +13,13 @@ import {
   OPPORTUNITY_STATUS_ORDER,
 } from '../../../../../../entities/opportunity.model';
 import { OpportunityService } from '../../../../../../services/opportunity.service';
+import { OpportunityHubService } from '../../../../../../services/opportunity-hub.service';
 import { OpportunityCountsStore } from '../../../../../../services/opportunity-counts.store';
 import { OpportunityCardComponent } from '../opportunity-card/opportunity-card';
 import { EsNumberPipe } from '../../../../../../shared/pipes/es-number.pipe';
 
 interface BoardColumn {
-  status:      OpportunityStatus;
+  statuses:    OpportunityStatus[];
   label:       string;
   loading:     boolean;
   loadingMore: boolean;
@@ -27,6 +28,16 @@ interface BoardColumn {
   currentPage: number;
   hasMore:     boolean;
 }
+
+interface BoardGroup { statuses: OpportunityStatus[]; label: string; }
+const BOARD_GROUPS: BoardGroup[] = [
+  { label: 'Pendiente',   statuses: [OpportunityStatus.Pending] },
+  { label: 'Negociación', statuses: [OpportunityStatus.Negotiation, OpportunityStatus.Meeting, OpportunityStatus.ContractSent, OpportunityStatus.ContractSigned] },
+  { label: 'Ganada',      statuses: [OpportunityStatus.Won] },
+  { label: 'Perdida',     statuses: [OpportunityStatus.Lost, OpportunityStatus.Nurturing] },
+  { label: 'Finalizado',  statuses: [OpportunityStatus.Finalized] },
+  { label: 'Baja',        statuses: [OpportunityStatus.Cancelled] },
+];
 
 interface StatusPalette {
   dot:      string;
@@ -40,6 +51,23 @@ interface StatusPalette {
 const STATUS_ORDER = OPPORTUNITY_STATUS_ORDER;
 const PAGE_SIZE_PER_COLUMN = 20;
 const SCROLL_THRESHOLD_PX = 200;
+
+const ICON_USER:  UiIconSource = { type: 'apolo', icon: UserCircleIcon,  size: 28 };
+const ICON_CHECK: UiIconSource = { type: 'apolo', icon: ShieldCheckIcon, size: 28 };
+const ICON_X:     UiIconSource = { type: 'apolo', icon: XIcon,           size: 28 };
+
+const STATUS_PALETTE: Record<OpportunityStatus, StatusPalette> = {
+  [OpportunityStatus.Pending]:        { dot: 'opp-dot-pending',         badge: 'opp-badge-pending',         iconText: 'opp-icon-pending',         iconRing: 'opp-icon-pending',         emptyDescription: 'Las oportunidades pendientes aparecerán aquí.',   emptyIcon: ICON_USER  },
+  [OpportunityStatus.Negotiation]:    { dot: 'opp-dot-negotiation',     badge: 'opp-badge-negotiation',     iconText: 'opp-icon-negotiation',     iconRing: 'opp-icon-negotiation',     emptyDescription: 'Las oportunidades en negociación aparecerán aquí.', emptyIcon: ICON_USER  },
+  [OpportunityStatus.Won]:            { dot: 'opp-dot-won',             badge: 'opp-badge-won',             iconText: 'opp-icon-won',             iconRing: 'opp-icon-won',             emptyDescription: 'Las oportunidades ganadas aparecerán aquí.',       emptyIcon: ICON_CHECK },
+  [OpportunityStatus.Lost]:           { dot: 'opp-dot-lost',            badge: 'opp-badge-lost',            iconText: 'opp-icon-lost',            iconRing: 'opp-icon-lost',            emptyDescription: 'Las oportunidades perdidas aparecerán aquí.',      emptyIcon: ICON_X     },
+  [OpportunityStatus.Meeting]:        { dot: 'opp-dot-meeting',         badge: 'opp-badge-meeting',         iconText: 'opp-icon-meeting',         iconRing: 'opp-icon-meeting',         emptyDescription: 'Las reuniones aparecerán aquí.',                   emptyIcon: ICON_USER  },
+  [OpportunityStatus.ContractSent]:   { dot: 'opp-dot-contract-sent',   badge: 'opp-badge-contract-sent',   iconText: 'opp-icon-contract-sent',   iconRing: 'opp-icon-contract-sent',   emptyDescription: 'Los contratos enviados aparecerán aquí.',          emptyIcon: ICON_USER  },
+  [OpportunityStatus.ContractSigned]: { dot: 'opp-dot-contract-signed', badge: 'opp-badge-contract-signed', iconText: 'opp-icon-contract-signed', iconRing: 'opp-icon-contract-signed', emptyDescription: 'Los contratos firmados aparecerán aquí.',          emptyIcon: ICON_CHECK },
+  [OpportunityStatus.Nurturing]:      { dot: 'opp-dot-nurturing',       badge: 'opp-badge-nurturing',       iconText: 'opp-icon-nurturing',       iconRing: 'opp-icon-nurturing',       emptyDescription: 'Las oportunidades en nurturing aparecerán aquí.',  emptyIcon: ICON_USER  },
+  [OpportunityStatus.Finalized]:      { dot: 'opp-dot-finalized',       badge: 'opp-badge-finalized',       iconText: 'opp-icon-finalized',       iconRing: 'opp-icon-finalized',       emptyDescription: 'Las oportunidades finalizadas aparecerán aquí.',   emptyIcon: ICON_CHECK },
+  [OpportunityStatus.Cancelled]:      { dot: 'opp-dot-cancelled',       badge: 'opp-badge-cancelled',       iconText: 'opp-icon-cancelled',       iconRing: 'opp-icon-cancelled',       emptyDescription: 'Las bajas aparecerán aquí.',                       emptyIcon: ICON_X     },
+};
 
 @Component({
   selector: 'app-opportunities-board',
@@ -56,17 +84,14 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
   @Output() cardOpen     = new EventEmitter<OpportunitySummary>();
 
   private oppService     = inject(OpportunityService);
+  private hubService     = inject(OpportunityHubService);
   private countsStore    = inject(OpportunityCountsStore);
   private destroyRef     = inject(DestroyRef);
   private globalLoadingSvc = inject(GlobalLoadingService);
 
-  private readonly userCircleIcon: UiIconSource = { type: 'apolo', icon: UserCircleIcon, size: 28 };
-  private readonly checkIcon:      UiIconSource = { type: 'apolo', icon: ShieldCheckIcon, size: 28 };
-  private readonly xCircleIcon:    UiIconSource = { type: 'apolo', icon: XIcon,           size: 28 };
-
-  readonly columns = signal<BoardColumn[]>(STATUS_ORDER.map(status => ({
-    status,
-    label:       OPPORTUNITY_STATUS_LABEL[status],
+  readonly columns = signal<BoardColumn[]>(BOARD_GROUPS.map(g => ({
+    statuses:    g.statuses,
+    label:       g.label,
     loading:     true,
     loadingMore: false,
     items:       [],
@@ -75,7 +100,7 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
     hasMore:     false,
   })));
 
-  readonly listIds = STATUS_ORDER.map(s => `column-${s}`);
+  readonly listIds = BOARD_GROUPS.map(g => `column-${g.statuses[0]}`);
 
   readonly globalLoading = computed(() => this.columns().some(c => c.loading));
 
@@ -98,18 +123,18 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
     ).subscribe({
       next: response => {
         const byStatus = new Map(response.columns.map(c => [c.status, c]));
-        this.columns.set(STATUS_ORDER.map(status => {
-          const col = byStatus.get(status);
-          const items      = col?.items      ?? [];
-          const totalCount = col?.totalCount ?? 0;
+        this.columns.set(BOARD_GROUPS.map(group => {
+          const apiCols  = group.statuses.map(s => byStatus.get(s));
+          const items     = apiCols.flatMap(c => c?.items      ?? []);
+          const totalCount = apiCols.reduce((s, c)  => s + (c?.totalCount ?? 0), 0);
           return {
-            status,
-            label:       OPPORTUNITY_STATUS_LABEL[status],
+            statuses:    group.statuses,
+            label:       group.label,
             loading:     false,
             loadingMore: false,
             items,
             totalCount,
-            currentPage: col?.currentPage ?? 1,
+            currentPage: 1,
             hasMore:     items.length < totalCount,
           };
         }));
@@ -126,6 +151,10 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
 
   ngOnInit(): void {
     this.loadTrigger$.next();
+    this.hubService.start();
+    this.hubService.opportunityUpdated$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(updated => this.handleHubUpdate(updated));
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -135,123 +164,66 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
   }
 
   private emitCounts() {
-    const totals: Record<OpportunityStatus, number> = {
-      [OpportunityStatus.Pending]:     0,
-      [OpportunityStatus.Negotiation]: 0,
-      [OpportunityStatus.Won]:         0,
-      [OpportunityStatus.Lost]:        0,
-    };
-    const volumes: Record<OpportunityStatus, number> = {
-      [OpportunityStatus.Pending]:     0,
-      [OpportunityStatus.Negotiation]: 0,
-      [OpportunityStatus.Won]:         0,
-      [OpportunityStatus.Lost]:        0,
-    };
+    const totals  = Object.fromEntries(STATUS_ORDER.map(s => [s, 0])) as Record<OpportunityStatus, number>;
+    const volumes = Object.fromEntries(STATUS_ORDER.map(s => [s, 0])) as Record<OpportunityStatus, number>;
     for (const col of this.columns()) {
-      totals[col.status]  = col.totalCount;
-      volumes[col.status] = col.items.reduce((sum, o) => sum + (o.lastAnnualConsumption ?? 0), 0);
+      totals[col.statuses[0]]  = col.totalCount;
+      volumes[col.statuses[0]] = col.items.reduce((sum, o) => sum + (o.lastAnnualConsumption ?? 0), 0);
     }
     this.countsChange.emit(totals);
     this.volumesChange.emit(volumes);
   }
 
   paletteFor(status: OpportunityStatus): StatusPalette {
-    switch (status) {
-      case OpportunityStatus.Pending:
-        return {
-          dot:      'bg-blue-500',
-          badge:    'bg-blue-500/10 text-blue-400 ring-blue-500/20',
-          iconText: 'text-blue-400',
-          iconRing: 'ring-blue-500/20',
-          emptyDescription: 'Las oportunidades pendientes aparecerán aquí.',
-          emptyIcon: this.userCircleIcon,
-        };
-      case OpportunityStatus.Negotiation:
-        return {
-          dot:      'bg-amber-400',
-          badge:    'bg-amber-500/10 text-amber-400 ring-amber-500/20',
-          iconText: 'text-amber-400',
-          iconRing: 'ring-amber-500/20',
-          emptyDescription: 'Las oportunidades en negociación aparecerán aquí.',
-          emptyIcon: this.userCircleIcon,
-        };
-      case OpportunityStatus.Won:
-        return {
-          dot:      'bg-emerald-400',
-          badge:    'bg-emerald-500/10 text-emerald-400 ring-emerald-500/20',
-          iconText: 'text-emerald-400',
-          iconRing: 'ring-emerald-500/20',
-          emptyDescription: 'Las oportunidades ganadas aparecerán aquí.',
-          emptyIcon: this.checkIcon,
-        };
-      case OpportunityStatus.Lost:
-        return {
-          dot:      'bg-rose-400',
-          badge:    'bg-rose-500/10 text-rose-400 ring-rose-500/20',
-          iconText: 'text-rose-400',
-          iconRing: 'ring-rose-500/20',
-          emptyDescription: 'Las oportunidades perdidas aparecerán aquí.',
-          emptyIcon: this.xCircleIcon,
-        };
-    }
+    return STATUS_PALETTE[status];
   }
 
-  trackByStatus = (_: number, col: BoardColumn) => col.status;
+  trackByStatus = (_: number, col: BoardColumn) => col.statuses[0];
   trackById     = (_: number, item: OpportunitySummary) => item.id;
 
-  onColumnScroll(event: Event, status: OpportunityStatus) {
+  onColumnScroll(event: Event, col: BoardColumn) {
     const el = event.target as HTMLElement;
-    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    if (distanceFromBottom > SCROLL_THRESHOLD_PX) return;
-    this.loadMore(status);
+    if (el.scrollHeight - el.scrollTop - el.clientHeight > SCROLL_THRESHOLD_PX) return;
+    this.loadMore(col);
   }
 
-  private loadMore(status: OpportunityStatus) {
-    const col = this.columns().find(c => c.status === status);
-    if (!col || col.loading || col.loadingMore || !col.hasMore) return;
-
+  private loadMore(col: BoardColumn) {
+    if (col.loading || col.loadingMore || !col.hasMore) return;
+    const primary  = col.statuses[0];
     const nextPage = col.currentPage + 1;
     this.columns.update(cols => cols.map(c =>
-      c.status === status ? { ...c, loadingMore: true } : c
+      c.statuses[0] === primary ? { ...c, loadingMore: true } : c
     ));
-
-    this.oppService.list({
-      ...this.filters, status, page: nextPage, pageSize: PAGE_SIZE_PER_COLUMN,
-    }).pipe(
-      takeUntilDestroyed(this.destroyRef),
-    ).subscribe({
-      next: result => {
+    forkJoin(
+      col.statuses.map(s =>
+        this.oppService.list({ ...this.filters, status: s, page: nextPage, pageSize: PAGE_SIZE_PER_COLUMN })
+      )
+    ).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: results => {
         this.columns.update(cols => cols.map(c => {
-          if (c.status !== status) return c;
+          if (c.statuses[0] !== primary) return c;
           const existingIds = new Set(c.items.map(i => i.id));
-          const newItems = result.items.filter(i => !existingIds.has(i.id));
-          const items = [...c.items, ...newItems];
-          return {
-            ...c,
-            items,
-            loadingMore: false,
-            currentPage: result.currentPage,
-            totalCount:  result.totalCount,
-            hasMore:     items.length < result.totalCount,
-          };
+          const newItems    = results.flatMap(r => r.items).filter(i => !existingIds.has(i.id));
+          const totalCount  = results.reduce((s, r) => s + r.totalCount, 0);
+          const items       = [...c.items, ...newItems];
+          return { ...c, items, loadingMore: false, currentPage: nextPage, totalCount, hasMore: items.length < totalCount };
         }));
         this.emitCounts();
       },
       error: () => {
         this.columns.update(cols => cols.map(c =>
-          c.status === status ? { ...c, loadingMore: false } : c
+          c.statuses[0] === primary ? { ...c, loadingMore: false } : c
         ));
       },
     });
   }
 
-  onDrop(event: CdkDragDrop<OpportunitySummary[]>, targetStatus: OpportunityStatus) {
+  onDrop(event: CdkDragDrop<OpportunitySummary[]>, col: BoardColumn) {
     if (event.previousContainer === event.container) return;
-
     const item = event.item.data as OpportunitySummary;
     if (!item) return;
-    if (item.status === targetStatus) return;
-
+    if (col.statuses.includes(item.status)) return;
+    const targetStatus = col.statuses[0];
     const allowed = OPPORTUNITY_ALLOWED_TRANSITIONS[item.status] ?? [];
     if (!allowed.includes(targetStatus)) {
       this.errorMessage.emit(
@@ -259,7 +231,6 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
       );
       return;
     }
-
     this.applyOptimistic(item, targetStatus);
 
     this.oppService.updateStatus(item.id, targetStatus).subscribe({
@@ -273,33 +244,43 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
 
   private applyOptimistic(item: OpportunitySummary, targetStatus: OpportunityStatus) {
     this.columns.update(cols => {
-      const next = cols.map(col => ({
-        ...col,
-        items: col.items.filter(o => o.id !== item.id),
-      }));
-      const targetIdx = next.findIndex(c => c.status === targetStatus);
+      const next = cols.map(col => ({ ...col, items: col.items.filter(o => o.id !== item.id) }));
+      const targetIdx = next.findIndex(c => c.statuses.includes(targetStatus));
       if (targetIdx >= 0) {
         const updated = { ...item, status: targetStatus };
-        next[targetIdx] = {
-          ...next[targetIdx],
-          items: [updated, ...next[targetIdx].items],
-        };
+        next[targetIdx] = { ...next[targetIdx], items: [updated, ...next[targetIdx].items] };
       }
       return next.map(c => ({ ...c, totalCount: this.recountTotal(c, cols, item, targetStatus) }));
     });
     this.emitCounts();
   }
 
-  private recountTotal(
-    col: BoardColumn,
-    prevCols: BoardColumn[],
-    moved: OpportunitySummary,
-    targetStatus: OpportunityStatus,
-  ): number {
-    const prev = prevCols.find(c => c.status === col.status)!;
-    if (col.status === moved.status && col.status !== targetStatus) return Math.max(0, prev.totalCount - 1);
-    if (col.status === targetStatus && col.status !== moved.status) return prev.totalCount + 1;
+  private recountTotal(col: BoardColumn, prevCols: BoardColumn[], moved: OpportunitySummary, targetStatus: OpportunityStatus): number {
+    const prev     = prevCols.find(c => c.statuses[0] === col.statuses[0])!;
+    const isSource = prev.statuses.includes(moved.status);
+    const isTarget = col.statuses.includes(targetStatus);
+    if (isSource && !isTarget) return Math.max(0, prev.totalCount - 1);
+    if (isTarget && !isSource) return prev.totalCount + 1;
     return prev.totalCount;
+  }
+
+  private handleHubUpdate(updated: OpportunitySummary): void {
+    this.columns.update(cols => {
+      const srcCol = cols.find(c => c.items.some(i => i.id === updated.id));
+      const dstCol = cols.find(c => c.statuses.includes(updated.status));
+      return cols.map(col => {
+        const isSrc = srcCol && col.statuses[0] === srcCol.statuses[0];
+        const isDst = dstCol && col.statuses[0] === dstCol.statuses[0];
+        if (isSrc && !isDst)
+          return { ...col, items: col.items.filter(i => i.id !== updated.id), totalCount: Math.max(0, col.totalCount - 1) };
+        if (isDst && !isSrc)
+          return { ...col, items: [updated, ...col.items], totalCount: col.totalCount + 1 };
+        if (isSrc && isDst)
+          return { ...col, items: col.items.map(i => i.id === updated.id ? { ...i, ...updated } : i) };
+        return col;
+      });
+    });
+    this.emitCounts();
   }
 
   private replaceItem(updated: OpportunitySummary) {

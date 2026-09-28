@@ -82,98 +82,37 @@
   </header>
 
   <!-- ============ KPI CARDS ============ -->
-  <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-    <!-- Pendientes -->
-    <div class="group relative overflow-hidden rounded-2xl border border-border
-                bg-card hover:bg-card/80
-                shadow-lg shadow-black/10
-                transition-all duration-300 ease-out hover:-translate-y-0.5 p-5">
-      <div class="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-blue-500/5 blur-3xl
-                  group-hover:bg-blue-500/10 transition-colors duration-300"></div>
-      <div class="relative flex items-start gap-4">
-        <div class="shrink-0 w-14 h-14 rounded-xl grid place-items-center
-                    bg-blue-500/10 ring-1 ring-blue-500/20 text-blue-400">
-          <lib-apolo-icons [icon]="kpiIconTotal" style="display:inline-block" />
-        </div>
-        <div class="min-w-0 flex-1">
-          <p class="text-3xl font-bold text-blue-400 leading-none">{{ kpiPending() | esNumber:0 }}</p>
-          <p class="text-[11px] uppercase tracking-widest text-zinc-500 mt-1.5 font-semibold">Pendientes</p>
-          <p class="text-xs text-zinc-400 mt-2 tabular-nums">
-            <span class="text-blue-400/80 font-semibold">{{ (volPending() / 1000) | esNumber }} MWh</span>
-            <span class="text-zinc-500"> · volumen</span>
-          </p>
-        </div>
-      </div>
-    </div>
+  <section class="flex gap-3 overflow-x-auto pb-2 items-stretch">
 
-    <!-- Ganadas -->
-    <div class="group relative overflow-hidden rounded-2xl border border-border
-                bg-card hover:bg-card/80
-                shadow-lg shadow-black/10
-                transition-all duration-300 ease-out hover:-translate-y-0.5 p-5">
-      <div class="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-emerald-500/5 blur-3xl
-                  group-hover:bg-emerald-500/10 transition-colors duration-300"></div>
-      <div class="relative flex items-start gap-4">
-        <div class="shrink-0 w-14 h-14 rounded-xl grid place-items-center
-                    bg-emerald-500/10 ring-1 ring-emerald-500/20 text-emerald-400">
-          <lib-apolo-icons [icon]="kpiIconWon" style="display:inline-block" />
-        </div>
-        <div class="min-w-0 flex-1">
-          <p class="text-3xl font-bold text-emerald-400 leading-none">{{ kpiWon() | esNumber:0 }}</p>
-          <p class="text-[11px] uppercase tracking-widest text-zinc-500 mt-1.5 font-semibold">Ganadas</p>
-          <p class="text-xs text-zinc-400 mt-2 tabular-nums">
-            <span class="text-emerald-400/80 font-semibold">{{ (volWon() / 1000) | esNumber }} MWh</span>
-            <span class="text-zinc-500"> · volumen</span>
-          </p>
+    @for (card of kpiCards(); track card.label) {
+      <div class="group relative overflow-hidden rounded-2xl border border-border
+                  bg-card hover:bg-card/80 shadow-lg shadow-black/10
+                  transition-all duration-300 ease-out hover:-translate-y-0.5 p-4 flex-1 min-w-36">
+        <div class="relative flex flex-col gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="w-2 h-2 rounded-full shrink-0" [class]="card.dot"></span>
+            <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold truncate">{{ card.label }}</p>
+          </div>
+          <p class="text-2xl font-bold leading-none" [class]="card.icon">{{ card.count | esNumber:0 }}</p>
+          <p class="text-xs text-zinc-500 tabular-nums">{{ card.volumeMwh | esNumber }} MWh</p>
         </div>
       </div>
-    </div>
+    }
 
     <!-- Conversión -->
     <div class="group relative overflow-hidden rounded-2xl border border-border
-                bg-card hover:bg-card/80
-                shadow-lg shadow-black/10
-                transition-all duration-300 ease-out hover:-translate-y-0.5 p-5">
-      <div class="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-amber-500/5 blur-3xl
-                  group-hover:bg-amber-500/10 transition-colors duration-300"></div>
-      <div class="relative flex items-start gap-4">
-        <div class="shrink-0 w-14 h-14 rounded-xl grid place-items-center
-                    bg-amber-500/10 ring-1 ring-amber-500/20 text-amber-400">
-          <lib-apolo-icons [icon]="kpiIconConversion" style="display:inline-block" />
+                bg-card hover:bg-card/80 shadow-lg shadow-black/10
+                transition-all duration-300 ease-out hover:-translate-y-0.5 p-4 flex-1 min-w-36">
+      <div class="relative flex flex-col gap-2">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full shrink-0 bg-amber-400"></span>
+          <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">Conversión</p>
         </div>
-        <div class="min-w-0 flex-1">
-          <p class="text-3xl font-bold text-amber-400 leading-none">{{ kpiConversion() | esNumber }}%</p>
-          <p class="text-[11px] uppercase tracking-widest text-zinc-500 mt-1.5 font-semibold">Conversión</p>
-          <p class="text-xs text-zinc-400 mt-2 tabular-nums">
-            <span class="text-amber-400/80 font-semibold">{{ (volWon() / 1000) | esNumber }} MWh</span>
-            <span class="text-zinc-500"> · convertido</span>
-          </p>
-        </div>
+        <p class="text-2xl font-bold leading-none text-amber-400">{{ conversion() | esNumber }}%</p>
+        <p class="text-xs text-zinc-500">Ganadas / Total</p>
       </div>
     </div>
 
-    <!-- Perdidas -->
-    <div class="group relative overflow-hidden rounded-2xl border border-border
-                bg-card hover:bg-card/80
-                shadow-lg shadow-black/10
-                transition-all duration-300 ease-out hover:-translate-y-0.5 p-5">
-      <div class="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-rose-500/5 blur-3xl
-                  group-hover:bg-rose-500/10 transition-colors duration-300"></div>
-      <div class="relative flex items-start gap-4">
-        <div class="shrink-0 w-14 h-14 rounded-xl grid place-items-center
-                    bg-rose-500/10 ring-1 ring-rose-500/20 text-rose-400">
-          <lib-apolo-icons [icon]="kpiIconLost" style="display:inline-block" />
-        </div>
-        <div class="min-w-0 flex-1">
-          <p class="text-3xl font-bold text-rose-400 leading-none">{{ kpiLost() | esNumber:0 }}</p>
-          <p class="text-[11px] uppercase tracking-widest text-zinc-500 mt-1.5 font-semibold">Perdidas</p>
-          <p class="text-xs text-zinc-400 mt-2 tabular-nums">
-            <span class="text-rose-400/80 font-semibold">{{ (volLost() / 1000) | esNumber }} MWh</span>
-            <span class="text-zinc-500"> · volumen</span>
-          </p>
-        </div>
-      </div>
-    </div>
   </section>
 
   <!-- ============ FILTER BAR ============ -->
@@ -236,7 +175,7 @@
     />
 
     <p class="text-xs text-zinc-500 italic">
-      Arrastra una tarjeta a otra columna para cambiar su estado · sólo se aplican transiciones válidas.
+      Arrastra una tarjeta a otra columna para cambiar su estado.
     </p>
   } @else {
     <div class="border border-border rounded-2xl overflow-hidden shadow-lg shadow-black/10 bg-card">

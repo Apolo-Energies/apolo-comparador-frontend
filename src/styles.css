@@ -75,6 +75,48 @@
   }
 }
 
+/* ── Colores de estado de oportunidades ───────────────────────────────────────
+   Clases semánticas reutilizables en badge, punto de columna e icono.
+   Añadir un nuevo estado: agregar sus tres variantes aquí y el enum en el backend/frontend.
+   ──────────────────────────────────────────────────────────────────────────── */
+@layer components {
+  /* badge: fondo + texto + ring */
+  .opp-badge-pending         { @apply bg-blue-500/10    text-blue-400    ring-blue-500/20; }
+  .opp-badge-negotiation     { @apply bg-amber-500/10   text-amber-400   ring-amber-500/20; }
+  .opp-badge-won             { @apply bg-emerald-500/10 text-emerald-400 ring-emerald-500/20; }
+  .opp-badge-lost            { @apply bg-rose-500/10    text-rose-400    ring-rose-500/20; }
+  .opp-badge-meeting         { @apply bg-cyan-500/10    text-cyan-400    ring-cyan-500/20; }
+  .opp-badge-contract-sent   { @apply bg-violet-500/10  text-violet-400  ring-violet-500/20; }
+  .opp-badge-contract-signed { @apply bg-purple-500/10  text-purple-400  ring-purple-500/20; }
+  .opp-badge-nurturing       { @apply bg-orange-500/10  text-orange-400  ring-orange-500/20; }
+  .opp-badge-finalized       { @apply bg-teal-500/10    text-teal-400    ring-teal-500/20; }
+  .opp-badge-cancelled       { @apply bg-slate-500/10   text-slate-400   ring-slate-500/20; }
+
+  /* dot: solo el color del punto */
+  .opp-dot-pending         { @apply bg-blue-500; }
+  .opp-dot-negotiation     { @apply bg-amber-400; }
+  .opp-dot-won             { @apply bg-emerald-400; }
+  .opp-dot-lost            { @apply bg-rose-400; }
+  .opp-dot-meeting         { @apply bg-cyan-400; }
+  .opp-dot-contract-sent   { @apply bg-violet-400; }
+  .opp-dot-contract-signed { @apply bg-purple-400; }
+  .opp-dot-nurturing       { @apply bg-orange-400; }
+  .opp-dot-finalized       { @apply bg-teal-400; }
+  .opp-dot-cancelled       { @apply bg-slate-400; }
+
+  /* icon: color de texto e icono en estado vacío */
+  .opp-icon-pending         { @apply text-blue-400    ring-blue-500/20; }
+  .opp-icon-negotiation     { @apply text-amber-400   ring-amber-500/20; }
+  .opp-icon-won             { @apply text-emerald-400 ring-emerald-500/20; }
+  .opp-icon-lost            { @apply text-rose-400    ring-rose-500/20; }
+  .opp-icon-meeting         { @apply text-cyan-400    ring-cyan-500/20; }
+  .opp-icon-contract-sent   { @apply text-violet-400  ring-violet-500/20; }
+  .opp-icon-contract-signed { @apply text-purple-400  ring-purple-500/20; }
+  .opp-icon-nurturing       { @apply text-orange-400  ring-orange-500/20; }
+  .opp-icon-finalized       { @apply text-teal-400    ring-teal-500/20; }
+  .opp-icon-cancelled       { @apply text-slate-400   ring-slate-500/20; }
+}
+
 /* ─────────────────────────────────────────────────────────────────────────
    PrimeNG — sincronizado con la paleta zinc.
    Cubre tanto las variables nuevas (--p-*) como las legacy (--surface-*).

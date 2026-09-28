@@ -3,18 +3,18 @@ import {
   Component, computed, inject, signal, TemplateRef, ViewChild, PLATFORM_ID,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
 import { ButtonComponent, InputFieldComponent, SelectFieldComponent, SelectOption } from '@apolo-energies/ui';
 import {
   ApoloIcons, chevronRightIcon, DateIcon, EmailIcon, filterIcon,
-  ListIcon, NoteIcon, SearchIcon, ShieldCheckIcon, TradingUpIcon,
+  ListIcon, NoteIcon, SearchIcon,
   UiIconSource, XIcon,
 } from '@apolo-energies/icons';
 import {
   OpportunitySummary, OpportunityStatus, OpportunityFilters,
-  OPPORTUNITY_STATUS_LABEL,
+  OPPORTUNITY_STATUS_LABEL, OPPORTUNITY_STATUS_ORDER,
 } from '../../../../entities/opportunity.model';
 import { EnergyType } from '../../../../entities/energy-type.enum';
 import { OpportunityService } from '../../../../services/opportunity.service';
@@ -28,21 +28,18 @@ import { TableSkeletonComponent } from '../../../../shared/components/table-skel
 
 type ViewMode = 'board' | 'table';
 
-interface KpiTotals {
-  total:       number;
-  pending:     number;
-  negotiation: number;
-  won:         number;
-  lost:        number;
-  conversion:  number;
-}
+const _ZERO_COUNTS = () => Object.fromEntries(OPPORTUNITY_STATUS_ORDER.map(s => [s, 0])) as Record<OpportunityStatus, number>;
 
-interface KpiVolumes {
-  pending:     number;
-  negotiation: number;
-  won:         number;
-  lost:        number;
-}
+interface KpiGroup { label: string; key: OpportunityStatus; dot: string; icon: string; }
+
+const KPI_GROUPS: KpiGroup[] = [
+  { label: 'Pendiente',   key: OpportunityStatus.Pending,     dot: 'opp-dot-pending',    icon: 'opp-icon-pending'    },
+  { label: 'Negociación', key: OpportunityStatus.Negotiation, dot: 'opp-dot-negotiation', icon: 'opp-icon-negotiation' },
+  { label: 'Ganada',      key: OpportunityStatus.Won,         dot: 'opp-dot-won',         icon: 'opp-icon-won'         },
+  { label: 'Perdida',     key: OpportunityStatus.Lost,        dot: 'opp-dot-lost',        icon: 'opp-icon-lost'        },
+  { label: 'Finalizado',  key: OpportunityStatus.Finalized,   dot: 'opp-dot-finalized',   icon: 'opp-icon-finalized'   },
+  { label: 'Baja',        key: OpportunityStatus.Cancelled,   dot: 'opp-dot-cancelled',   icon: 'opp-icon-cancelled'   },
+];
 
 @Component({
   selector: 'app-opportunities-page',
@@ -64,7 +61,6 @@ export class OpportunitiesPageComponent implements AfterViewInit {
   private oppService    = inject(OpportunityService);
   private platformId    = inject(PLATFORM_ID);
   private cdr           = inject(ChangeDetectorRef);
-  private router        = inject(Router);
   private route         = inject(ActivatedRoute);
   private toast         = inject(MessageService);
   private globalLoading = inject(GlobalLoadingService);
@@ -81,11 +77,6 @@ export class OpportunitiesPageComponent implements AfterViewInit {
   readonly dateIcon:   UiIconSource = { type: 'apolo', icon: DateIcon,   size: 16 };
   readonly emailIcon:  UiIconSource = { type: 'apolo', icon: EmailIcon,  size: 14 };
   readonly listIcon:   UiIconSource = { type: 'apolo', icon: ListIcon,   size: 16 };
-
-  readonly kpiIconTotal:      UiIconSource = { type: 'apolo', icon: NoteIcon,        size: 36 };
-  readonly kpiIconWon:        UiIconSource = { type: 'apolo', icon: ShieldCheckIcon, size: 36 };
-  readonly kpiIconConversion: UiIconSource = { type: 'apolo', icon: TradingUpIcon,   size: 36 };
-  readonly kpiIconLost:       UiIconSource = { type: 'apolo', icon: XIcon,           size: 36 };
 
   readonly tableroIcon: UiIconSource = { type: 'apolo', icon: NoteIcon, size: 14 };
   readonly tablaIcon:   UiIconSource = { type: 'apolo', icon: ListIcon, size: 14 };
@@ -104,12 +95,20 @@ export class OpportunitiesPageComponent implements AfterViewInit {
 
   readonly appliedFilters = signal<OpportunityFilters>({ energyType: this.energyType });
 
-  readonly kpis = signal<KpiTotals>({
-    total: 0, pending: 0, negotiation: 0, won: 0, lost: 0, conversion: 0,
-  });
+  readonly counts     = signal<Record<OpportunityStatus, number>>(_ZERO_COUNTS());
+  readonly volumes    = signal<Record<OpportunityStatus, number>>(_ZERO_COUNTS());
+  readonly conversion = signal(0);
 
-  readonly volumes = signal<KpiVolumes>({
-    pending: 0, negotiation: 0, won: 0, lost: 0,
+  readonly kpiCards = computed(() => {
+    const c = this.counts();
+    const v = this.volumes();
+    return KPI_GROUPS.map(g => ({
+      label:     g.label,
+      count:     c[g.key] ?? 0,
+      volumeMwh: (v[g.key] ?? 0) / 1000,
+      dot:       g.dot,
+      icon:      g.icon,
+    }));
   });
 
 
@@ -120,11 +119,8 @@ export class OpportunitiesPageComponent implements AfterViewInit {
   readonly tableData    = signal<OpportunitySummary[]>([]);
 
   readonly statusOptions: SelectOption[] = [
-    { value: '',                                       label: 'Todos los estados' },
-    { value: String(OpportunityStatus.Pending),        label: OPPORTUNITY_STATUS_LABEL[OpportunityStatus.Pending] },
-    { value: String(OpportunityStatus.Negotiation),    label: OPPORTUNITY_STATUS_LABEL[OpportunityStatus.Negotiation] },
-    { value: String(OpportunityStatus.Won),            label: OPPORTUNITY_STATUS_LABEL[OpportunityStatus.Won] },
-    { value: String(OpportunityStatus.Lost),           label: OPPORTUNITY_STATUS_LABEL[OpportunityStatus.Lost] },
+    { value: '', label: 'Todos los estados' },
+    ...OPPORTUNITY_STATUS_ORDER.map(s => ({ value: String(s), label: OPPORTUNITY_STATUS_LABEL[s] })),
   ];
 
   @ViewChild('statusCellTpl')   statusCellTpl!:   TemplateRef<{ $implicit: OpportunitySummary }>;
@@ -187,19 +183,10 @@ export class OpportunitiesPageComponent implements AfterViewInit {
            || f.startDate || f.endDate || f.createdByFullName || f.createdByEmail);
   });
 
-  readonly kpiPending     = computed(() => this.kpis().pending);
-  readonly kpiWon         = computed(() => this.kpis().won);
-  readonly kpiConversion  = computed(() => this.kpis().conversion);
-  readonly kpiLost        = computed(() => this.kpis().lost);
-
-  readonly volPending = computed(() => this.volumes().pending);
-  readonly volWon     = computed(() => this.volumes().won);
-  readonly volLost    = computed(() => this.volumes().lost);
-
   readonly pageTitle = computed(() => this.energyType === EnergyType.Gas ? 'Oportunidades · Gas' : 'Oportunidades · Luz');
 
   readonly subtitleText = computed(() => {
-    const total = this.kpis().total;
+    const total = (Object.values(this.counts()) as number[]).reduce((s, n) => s + n, 0);
     if (total === 0) return 'Pipeline de ventas';
     return `Pipeline de ventas · ${total.toLocaleString('es-ES')} oportunidades`;
   });
@@ -239,22 +226,14 @@ export class OpportunitiesPageComponent implements AfterViewInit {
   }
 
   onBoardCounts(totals: Record<OpportunityStatus, number>) {
-    const pending     = totals[OpportunityStatus.Pending];
-    const negotiation = totals[OpportunityStatus.Negotiation];
-    const won         = totals[OpportunityStatus.Won];
-    const lost        = totals[OpportunityStatus.Lost];
-    const total       = pending + negotiation + won + lost;
-    const conversion  = total > 0 ? (won / total) * 100 : 0;
-    this.kpis.set({ total, pending, negotiation, won, lost, conversion });
+    const won   = totals[OpportunityStatus.Won]  ?? 0;
+    const total = (Object.values(totals) as number[]).reduce((s, n) => s + n, 0);
+    this.counts.set(totals);
+    this.conversion.set(total > 0 ? (won / total) * 100 : 0);
   }
 
-  onBoardVolumes(volumes: Record<OpportunityStatus, number>) {
-    this.volumes.set({
-      pending:     volumes[OpportunityStatus.Pending],
-      negotiation: volumes[OpportunityStatus.Negotiation],
-      won:         volumes[OpportunityStatus.Won],
-      lost:        volumes[OpportunityStatus.Lost],
-    });
+  onBoardVolumes(vols: Record<OpportunityStatus, number>) {
+    this.volumes.set(vols);
   }
 
 
