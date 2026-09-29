@@ -22,11 +22,17 @@ export function isCargoNoRecurrente(concepto: string | undefined): boolean {
 }
 
 /** Precio fijo €/día que paga HOY el cliente con su comercializadora, extraído del OCR.
- *  Prioridad: (1) primera línea de disponibilidad con precio_dia y mayor importe (evita la
- *  complementaria pequeña), (2) importe_total / dias_total retro-calculado. Devuelve 0 si no
- *  se puede determinar — evita mostrar un cuadrito con dato falso. */
+ *  Prioridad:
+ *    (1) primera línea de disponibilidad con precio_dia y mayor importe (evita la complementaria pequeña)
+ *    (2) importe_total / dias_total retro-calculado desde disponibilidad
+ *    (3) totales_gas.disponibilidad / dias del periodo (mercado libre con seccion agregada)
+ *    (4) TUR con 0 kWh reales: consumo.importe_total ES el término fijo mensual entero, no
+ *        hay parte variable — Curenergía/Iberdrola facturan el "Término fijo mensual: N meses ×
+ *        €/mes" dentro de la sección ENERGÍA cuando lectura actual = anterior.
+ *  Devuelve 0 si no se puede determinar — evita mostrar un cuadrito con dato falso. */
 export function computeClientePrecioFijoDia(ocr: GasOcrResult | null): number {
   const disp = ocr?.disponibilidad;
+  const dias = ocr?.periodo_facturacion?.numero_dias;
   if (disp) {
     const lineaPrincipal = (disp.lineas ?? [])
       .filter(l => (l.precio_dia ?? 0) > 0)
@@ -36,10 +42,24 @@ export function computeClientePrecioFijoDia(ocr: GasOcrResult | null): number {
       return disp.importe_total / disp.dias_total;
     }
   }
-  // Fallback TUR: término fijo viene como €/mes en lugar de €/día en la sección "ENERGÍA".
   const totalDisp = ocr?.totales_gas?.disponibilidad;
-  const dias = ocr?.periodo_facturacion?.numero_dias;
   if (totalDisp && totalDisp > 0 && dias && dias > 0) return totalDisp / dias;
+
+  // TUR sin sección "disponibilidad" separada: el término fijo mensual va dentro de la
+  // sección ENERGÍA. Probamos MÚLTIPLES fuentes por si el OCR pobló solo algunas.
+  const consumoImp = ocr?.consumo?.importe_total
+                     ?? ocr?.totales_gas?.consumo
+                     ?? (ocr?.consumo?.lineas ?? []).reduce((s, l) => s + (l.importe ?? 0), 0);
+  if (consumoImp > 0 && dias && dias > 0) return consumoImp / dias;
+
+  // Última alternativa: base_imponible − alquiler_equipo = fijo del cliente (asumiendo
+  // 0 consumo variable). Alquiler equipos se paga igual a la distribuidora con cualquier
+  // comercializadora, así que restarlo da la comparación like-for-like con Apolo.
+  const baseImp  = ocr?.totales_gas?.base_imponible ?? 0;
+  const alquiler = ocr?.totales_gas?.alquiler_equipo ?? 0;
+  const fijoDerivado = baseImp - alquiler;
+  if (fijoDerivado > 0 && dias && dias > 0) return fijoDerivado / dias;
+
   return 0;
 }
 

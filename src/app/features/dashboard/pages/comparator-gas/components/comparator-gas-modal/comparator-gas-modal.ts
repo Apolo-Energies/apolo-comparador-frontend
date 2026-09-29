@@ -49,6 +49,10 @@ export class ComparatorGasModalComponent {
   readonly pricingError = input<string | null>(null);
   readonly pricingInfo  = input<ApoloGasPricing | null>(null);
 
+  // Modo "pedir consumo anual manualmente" — cuando SIPS + extrapolación dan 0.
+  readonly awaitingManualConsumption = input(false);
+  readonly suggestedManualKwh        = input<number | null>(null);
+
   readonly showExcelButton     = input(true);
   readonly showContratarButton = input(false);
 
@@ -62,6 +66,15 @@ export class ComparatorGasModalComponent {
   readonly download        = output<GasDownloadEvent>();
   readonly contratar       = output<void>();
   readonly overridesChange = output<GasModalOverrides>();
+  readonly manualConsumptionSubmit = output<number>();
+
+  // Estado local del input manual — se resetea al abrirse el modo.
+  readonly manualKwhInput = signal<number | null>(null);
+
+  submitManualKwh(): void {
+    const val = this.manualKwhInput() ?? this.suggestedManualKwh();
+    if (val && val > 0) this.manualConsumptionSubmit.emit(val);
+  }
 
   // ── icons ──────────────────────────────────────────────────────────────────
   readonly excelIcon:     UiIconSource = { type: 'apolo', icon: FileSpreadsheetIcon, size: 16 };

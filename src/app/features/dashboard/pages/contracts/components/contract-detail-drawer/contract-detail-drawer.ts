@@ -2,21 +2,29 @@ import {
   ChangeDetectionStrategy, ChangeDetectorRef, Component,
   effect, inject, input, output, signal,
 } from '@angular/core';
+import { Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Drawer } from 'primeng/drawer';
+import { Dialog } from 'primeng/dialog';
+import { MessageService } from 'primeng/api';
 import {
   ApoloIcons, DateIcon, HomeIcon, InfoIcon, LightningIcon,
   NoteIcon, UiIconSource, UserSimpleIcon, XIcon,
 } from '@apolo-energies/icons';
+import { AuthService } from '@apolo-energies/auth';
 import { ContratoClienteRow } from '../../../../../../core/models/contrato.model';
 import { ServicioListItem } from '../../../../../../core/models/servicio.model';
 import { ContractService } from '../../../../../../core/services/contract.service';
+import { IncidenceService, Incidence, INCIDENCE_TYPES, INCIDENCE_TYPE_LABELS, INCIDENCE_STATUS_LABELS } from '../../../../../../core/services/incidence.service';
 import { BrandLoaderComponent } from '../../../../../../shared/components/brand-loader/brand-loader.component';
 import { calcDias, dedupeServiciosByCups, estadoCls, estadoLabel, fmtDate, fmtKwh } from '../../contracts-utils';
+import { getUserRoles } from '../../../../../../core/helpers/auth.utils';
 
 @Component({
   selector: 'app-contract-detail-drawer',
   standalone: true,
-  imports: [Drawer, ApoloIcons, BrandLoaderComponent],
+  imports: [CommonModule, FormsModule, Drawer, Dialog, ApoloIcons, BrandLoaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './contract-detail-drawer.html',
   styleUrl: './contract-detail-drawer.scss',
@@ -26,12 +34,59 @@ export class ContractDetailDrawerComponent {
 
   readonly closed = output<void>();
 
-  private contractService = inject(ContractService);
-  private cdr             = inject(ChangeDetectorRef);
+  private contractService  = inject(ContractService);
+  private incidenceService = inject(IncidenceService);
+  private auth             = inject(AuthService);
+  private router           = inject(Router);
+  private cdr              = inject(ChangeDetectorRef);
+  private toast            = inject(MessageService);
 
   readonly visible  = signal(false);
   readonly services = signal<ServicioListItem[]>([]);
   readonly loading  = signal(false);
+
+  // Por-servicio: cuál está expandido para facturas / incidencias y su cache.
+  readonly expandedFacturas    = signal<number | null>(null);
+  readonly expandedIncidencias = signal<number | null>(null);
+  readonly facturasCache       = signal<Record<number, InvoiceRow[] | 'loading' | 'error'>>({});
+  readonly incidenciasCache    = signal<Record<number, Incidence[] | 'loading' | 'error'>>({});
+
+  // Formulario de nueva incidencia (solo abierto para 1 servicio a la vez).
+  readonly incidenceFormFor = signal<number | null>(null);
+  readonly newIncidenceType = signal<string>('ErrorFacturacion');
+  readonly newIncidenceDescription = signal<string>('');
+  readonly submittingIncidence = signal(false);
+
+  // Solo editable en estado 'P' (pendiente de firma). Limitado a email de facturación e
+  // IBAN — es lo único que patchCliente de EE deja tocar.
+  readonly editingServicioId       = signal<number | null>(null);
+  readonly editEmailFacturacion    = signal<string>('');
+  readonly editIban                = signal<string>('');
+  readonly submittingEdit          = signal(false);
+
+  readonly closeIncidenceTarget     = signal<Incidence | null>(null);
+  readonly closeIncidenceNote       = signal<string>('');
+  readonly submittingCloseIncidence = signal(false);
+
+  private showFeedback(kind: 'error' | 'info', title: string, message: string): void {
+    this.toast.add({
+      severity: kind === 'error' ? 'error' : 'info',
+      summary:  title,
+      detail:   message,
+      life:     4500,
+    });
+  }
+
+  // 'P' = Pendiente de firma.
+  isEditableEstado(estado: string | null | undefined): boolean {
+    return (estado ?? '').toUpperCase() === 'P';
+  }
+
+  readonly incidenceTypes = INCIDENCE_TYPES;
+  readonly incidenceTypeLabels = INCIDENCE_TYPE_LABELS;
+  readonly incidenceStatusLabels = INCIDENCE_STATUS_LABELS;
+
+  readonly isMaster = () => getUserRoles(this.auth.currentUser()).includes('Master');
 
   readonly iconClose:  UiIconSource = { type: 'apolo', icon: XIcon,          size: 16 };
   readonly iconInfo:   UiIconSource = { type: 'apolo', icon: InfoIcon,       size: 14 };
@@ -52,7 +107,11 @@ export class ContractDetailDrawerComponent {
       const c = this.client();
       if (c) {
         this.visible.set(true);
-        this.loadServices(c.IdCliente);
+        // Cada fila de la tabla ahora es 1 contrato/CUPS: filtramos el drawer por ese
+        // CUPS específico. Si por algún motivo la fila tiene múltiples CUPS (legacy),
+        // caemos al fetch por cliente completo.
+        const singleCups = c.CUPS.length === 1 ? c.CUPS[0] : undefined;
+        this.loadServices(c.IdCliente, singleCups);
       } else {
         this.visible.set(false);
         this.services.set([]);
@@ -60,13 +119,13 @@ export class ContractDetailDrawerComponent {
     });
   }
 
-  private loadServices(idCliente: number) {
+  private loadServices(idCliente: number, cups?: string) {
     if (!idCliente || idCliente <= 0) {
       this.services.set([]);
       return;
     }
     this.loading.set(true);
-    this.contractService.getServiciosByCliente(idCliente, 100).subscribe({
+    this.contractService.getServiciosByCliente(idCliente, 100, cups).subscribe({
       next: rows => {
         // Dedup por CUPS con la misma winner-logic que el backend usa en /contratos,
         // así el drawer muestra 1 card por CUPS y coincide con NumServicios del header.
@@ -121,4 +180,282 @@ export class ContractDetailDrawerComponent {
   }
 
   trackByServicioId = (_: number, s: ServicioListItem) => s.Id;
+
+  // ── Acciones sobre un servicio ──────────────────────────────────────────
+
+  downloadContrato(s: ServicioListItem): void {
+    this.contractService.downloadContratoPdf(s.Id, s.CUPS).subscribe({
+      next: blob => this.saveBlob(blob, `contrato_${s.Id}.pdf`),
+      error: () => this.showFeedback('error', 'Descarga no disponible',
+        'No se pudo descargar el contrato. Puede que aún no tenga PDF disponible.'),
+    });
+  }
+
+  renovar(s: ServicioListItem): void {
+    // Abre el comparador con CUPS + consumo + tarifa actual prellenados.
+    // El comparador leerá estos query params en su ngOnInit para inicializar el flujo.
+    this.router.navigate(['/dashboard/comparator'], {
+      queryParams: {
+        cups:    s.CUPS,
+        consumo: this.consumoServicio(s),
+        tarifa:  s.Tarifa,
+        origin:  'renewal',
+      },
+    });
+    this.closeDrawer();
+  }
+
+  toggleFacturas(s: ServicioListItem): void {
+    const current = this.expandedFacturas();
+    const opening = current !== s.Id;
+    this.expandedFacturas.set(opening ? s.Id : null);
+    if (opening) {
+      this.expandedIncidencias.set(null);
+      this.loadFacturas(s);
+    }
+  }
+
+  private loadFacturas(s: ServicioListItem): void {
+    const cache = this.facturasCache();
+    if (cache[s.Id] && cache[s.Id] !== 'error') return;
+    this.facturasCache.set({ ...cache, [s.Id]: 'loading' });
+    this.contractService.getFacturasByContrato(s.CUPS).subscribe({
+      next: raw => {
+        const items = this.normalizeFacturas(raw);
+        this.facturasCache.set({ ...this.facturasCache(), [s.Id]: items });
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.facturasCache.set({ ...this.facturasCache(), [s.Id]: 'error' });
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  private normalizeFacturas(raw: unknown): InvoiceRow[] {
+    // El backend devuelve JsonElement raw. Toleramos que sea array o {data:[]}.
+    const arr = Array.isArray(raw)
+      ? raw
+      : (raw && typeof raw === 'object' && Array.isArray((raw as { data?: unknown[] }).data))
+        ? (raw as { data: unknown[] }).data
+        : [];
+    return arr.map((f: Record<string, unknown>) => ({
+      id:            typeof f['Id']          === 'number' ? (f['Id']          as number) : 0,
+      numero:        typeof f['NumeroFactura'] === 'string' ? (f['NumeroFactura'] as string) : null,
+      fechaEmision:  typeof f['FechaEmision'] === 'string' ? (f['FechaEmision'] as string) : null,
+      fechaInicio:   typeof f['FechaInicio']  === 'string' ? (f['FechaInicio']  as string) : null,
+      fechaFin:      typeof f['FechaFin']     === 'string' ? (f['FechaFin']     as string) : null,
+      importe:       typeof f['Importe']      === 'number' ? (f['Importe']      as number) : null,
+      consumoKwh:    typeof f['ConsumoKwh']   === 'number' ? (f['ConsumoKwh']   as number) : null,
+      idArchivo:     typeof f['IdArchivo']    === 'number' ? (f['IdArchivo']    as number) : null,
+    }));
+  }
+
+  downloadFactura(idArchivo: number): void {
+    this.contractService.getContratoArchivo(idArchivo).subscribe({
+      next: blob => this.saveBlob(blob, `factura_${idArchivo}.pdf`),
+      error: () => this.showFeedback('error', 'Descarga no disponible',
+        'No se pudo descargar la factura.'),
+    });
+  }
+
+  toggleIncidencias(idContrato: number): void {
+    const current = this.expandedIncidencias();
+    const opening = current !== idContrato;
+    this.expandedIncidencias.set(opening ? idContrato : null);
+    if (opening) {
+      this.expandedFacturas.set(null);
+      const s = this.services().find(x => x.Id === idContrato);
+      this.loadIncidencias(idContrato, s?.CUPS ?? '');
+    }
+  }
+
+  private loadIncidencias(idContrato: number, cups: string): void {
+    const cache = this.incidenciasCache();
+    if (Array.isArray(cache[idContrato])) return;
+    if (!cups) {
+      this.incidenciasCache.set({ ...cache, [idContrato]: [] });
+      return;
+    }
+    this.incidenciasCache.set({ ...cache, [idContrato]: 'loading' });
+    this.incidenceService.listByCups(cups).subscribe({
+      next: items => {
+        this.incidenciasCache.set({ ...this.incidenciasCache(), [idContrato]: items });
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.incidenciasCache.set({ ...this.incidenciasCache(), [idContrato]: 'error' });
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  openIncidenceForm(idContrato: number): void {
+    this.incidenceFormFor.set(idContrato);
+    this.newIncidenceType.set('ErrorFacturacion');
+    this.newIncidenceDescription.set('');
+  }
+
+  cancelIncidenceForm(): void {
+    this.incidenceFormFor.set(null);
+  }
+
+  submitIncidence(idContrato: number): void {
+    const description = this.newIncidenceDescription().trim();
+    if (!description) {
+      this.showFeedback('info', 'Faltan datos', 'Escribe un comentario para la incidencia.');
+      return;
+    }
+    const s = this.services().find(x => x.Id === idContrato);
+    const cups = s?.CUPS ?? '';
+    const clienteNombre = this.client()?.NombreCliente ?? '';
+    if (!cups || !clienteNombre) {
+      this.showFeedback('error', 'Datos incompletos', 'Falta CUPS o nombre de cliente para crear la incidencia.');
+      return;
+    }
+    this.submittingIncidence.set(true);
+    this.incidenceService.create({
+      cups,
+      clienteNombre,
+      clienteNif:  this.client()?.NIF ?? null,
+      type:        this.newIncidenceType() as never,
+      description,
+    }).subscribe({
+      next: created => {
+        const cache = this.incidenciasCache();
+        const existing = Array.isArray(cache[idContrato]) ? (cache[idContrato] as Incidence[]) : [];
+        this.incidenciasCache.set({ ...cache, [idContrato]: [created, ...existing] });
+        this.incidenceFormFor.set(null);
+        this.submittingIncidence.set(false);
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.submittingIncidence.set(false);
+        this.showFeedback('error', 'Error', 'No se pudo crear la incidencia.');
+      },
+    });
+  }
+
+  closeIncidence(inc: Incidence): void {
+    if (!this.isMaster()) return;
+    this.closeIncidenceTarget.set(inc);
+    this.closeIncidenceNote.set('');
+  }
+
+  cancelCloseIncidence(): void {
+    if (this.submittingCloseIncidence()) return;
+    this.closeIncidenceTarget.set(null);
+    this.closeIncidenceNote.set('');
+  }
+
+  confirmCloseIncidence(): void {
+    const inc = this.closeIncidenceTarget();
+    if (!inc || this.submittingCloseIncidence()) return;
+    const note = this.closeIncidenceNote().trim();
+    this.submittingCloseIncidence.set(true);
+    this.incidenceService.close(inc.id, note ? { resolutionNote: note } : {}).subscribe({
+      next: updated => {
+        // contratoExtId ya no viene del backend (control no lo trackea); localizamos el
+        // servicio en cuyo cache está la incidencia recorriendo el mapa.
+        const cache = this.incidenciasCache();
+        const nextCache: Record<number, Incidence[] | 'loading' | 'error'> = { ...cache };
+        for (const key of Object.keys(nextCache)) {
+          const id = Number(key);
+          const list = nextCache[id];
+          if (Array.isArray(list) && list.some(i => i.id === inc.id)) {
+            nextCache[id] = list.map(i => i.id === updated.id ? updated : i);
+          }
+        }
+        this.incidenciasCache.set(nextCache);
+        this.submittingCloseIncidence.set(false);
+        this.closeIncidenceTarget.set(null);
+        this.closeIncidenceNote.set('');
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.submittingCloseIncidence.set(false);
+        this.showFeedback('error', 'Error', 'No se pudo cerrar la incidencia. Reintenta más tarde.');
+      },
+    });
+  }
+
+  private saveBlob(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // ── Edición del contrato antes de firma ─────────────────────────────────
+
+  toggleEdit(s: ServicioListItem): void {
+    const current = this.editingServicioId();
+    if (current === s.Id) {
+      this.editingServicioId.set(null);
+      return;
+    }
+    this.editEmailFacturacion.set(s.EmailFacturacion ?? '');
+    this.editIban.set(s.CodigoCuentaDomiciliacion ?? '');
+    this.editingServicioId.set(s.Id);
+  }
+
+  cancelEdit(): void {
+    this.editingServicioId.set(null);
+    this.editEmailFacturacion.set('');
+    this.editIban.set('');
+  }
+
+  submitEdit(s: ServicioListItem): void {
+    const idCliente = s.IdCliente;
+    if (!idCliente) {
+      this.showFeedback('error', 'No se puede editar',
+        'Falta el identificador del cliente. Vuelve a abrir el detalle e intenta de nuevo.');
+      return;
+    }
+    const patch: Record<string, string | null> = {};
+    const newEmail = this.editEmailFacturacion().trim();
+    const newIban  = this.editIban().trim().replace(/\s+/g, '').toUpperCase();
+
+    if (newEmail !== (s.EmailFacturacion ?? '').trim()) patch['EmailFacturacion'] = newEmail || null;
+    if (newIban !== (s.CodigoCuentaDomiciliacion ?? '').trim().replace(/\s+/g, '').toUpperCase()) {
+      patch['CodigoCuentaDomiciliacion'] = newIban || null;
+    }
+
+    if (Object.keys(patch).length === 0) {
+      this.cancelEdit();
+      return;
+    }
+
+    this.submittingEdit.set(true);
+    this.contractService.patchCliente(String(idCliente), patch).subscribe({
+      next: () => {
+        this.services.update(list => list.map(x => x.Id === s.Id
+          ? { ...x, EmailFacturacion: newEmail, CodigoCuentaDomiciliacion: newIban }
+          : x));
+        this.submittingEdit.set(false);
+        this.editingServicioId.set(null);
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.submittingEdit.set(false);
+        this.showFeedback('error', 'No se pudo guardar',
+          'No se pudieron guardar los cambios. Reintenta más tarde.');
+      },
+    });
+  }
+}
+
+interface InvoiceRow {
+  id:           number;
+  numero:       string | null;
+  fechaEmision: string | null;
+  fechaInicio:  string | null;
+  fechaFin:     string | null;
+  importe:      number | null;
+  consumoKwh:   number | null;
+  idArchivo:    number | null;
 }

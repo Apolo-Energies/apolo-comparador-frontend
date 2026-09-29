@@ -96,9 +96,12 @@ export class ContractIncidenciasController {
     const newValue = this.editValue.value;
     this.deps.contractService.patchCliente(inc.clienteId, { [item.field]: newValue }).subscribe({
       next: () => {
+        // Al rellenar manualmente entra en estado "amarillo/pendiente de verificar"
+        // (verificado=false); Control lo confirmará luego al sync con EE o vía verificar-campo.
         this.applyChecklistUpdate(inc.id, item.key, {
           completed: newValue.trim().length > 0,
           currentValue: newValue,
+          verificado: false,
         });
         this.saving.set(false);
         this.closeEdit();

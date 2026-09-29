@@ -11,7 +11,7 @@ import { chevronDownIcon, chevronRightIcon, CircleIcon, InfoIcon, LightningIcon,
 import { getUserRoles } from '../core/helpers/auth.utils';
 import { environment } from '../../environments/environment';
 import { RefreshTokenService } from '../core/services/refresh-token.service';
-import { OpportunityService } from '../core/services/opportunity.service';
+import { OpportunityCountsStore } from '../core/services/opportunity-counts.store';
 import { GlobalLoadingService } from '../core/services/global-loading.service';
 import { BrandLoaderComponent } from '../shared/components/brand-loader/brand-loader.component';
 import { CollaboratorScopeSelectorComponent } from '../shared/components/collaborator-scope-selector/collaborator-scope-selector';
@@ -29,7 +29,7 @@ export class Layout {
   private router = inject(Router);
   private http = inject(HttpClient);
   private refreshTokenService = inject(RefreshTokenService);
-  private oppService = inject(OpportunityService);
+  private countsStore = inject(OpportunityCountsStore);
   private platformId = inject(PLATFORM_ID);
   private destroyRef = inject(DestroyRef);
   readonly globalLoading = inject(GlobalLoadingService);
@@ -49,8 +49,9 @@ export class Layout {
   // exponen signals porque el template no los usa directamente (solo afectan
   // custom properties CSS via el effect() de abajo).
   private readonly oppBadge = new OpportunitiesBadgeController({
-    oppService: this.oppService,
+    countsStore: this.countsStore,
     auth: this.auth,
+    router: this.router,
     destroyRef: this.destroyRef,
   });
 

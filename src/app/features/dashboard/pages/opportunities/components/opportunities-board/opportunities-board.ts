@@ -4,7 +4,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
-import { debounceTime, finalize, forkJoin, Subject, switchMap } from 'rxjs';
+import { debounceTime, finalize, Subject, switchMap } from 'rxjs';
 import { GlobalLoadingService } from '../../../../../../core/services/global-loading.service';
 import { ApoloIcons, ShieldCheckIcon, UiIconSource, UserCircleIcon, XIcon } from '@apolo-energies/icons';
 import {
@@ -12,6 +12,7 @@ import {
   OPPORTUNITY_STATUS_LABEL, OPPORTUNITY_ALLOWED_TRANSITIONS,
 } from '../../../../../../core/models/opportunity.model';
 import { OpportunityService } from '../../../../../../core/services/opportunity.service';
+import { OpportunityCountsStore } from '../../../../../../core/services/opportunity-counts.store';
 import { OpportunityCardComponent } from '../opportunity-card/opportunity-card';
 import { EsNumberPipe } from '../../../../../../shared/pipes/es-number.pipe';
 import {
@@ -35,6 +36,7 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
   @Output() cardOpen     = new EventEmitter<OpportunitySummary>();
 
   private oppService     = inject(OpportunityService);
+  private countsStore    = inject(OpportunityCountsStore);
   private destroyRef     = inject(DestroyRef);
   private globalLoadingSvc = inject(GlobalLoadingService);
 
@@ -56,29 +58,35 @@ export class OpportunitiesBoardComponent implements OnInit, OnChanges {
       switchMap(() => {
         this.columns.update(cols => cols.map(c => ({ ...c, loading: true })));
         this.globalLoadingSvc.start();
-        const requests = BOARD_STATUS_ORDER.reduce((acc, status) => {
-          acc[status] = this.oppService.list({
-            ...this.filters, status, page: 1, pageSize: BOARD_PAGE_SIZE_PER_COLUMN,
-          });
-          return acc;
-        }, {} as Record<OpportunityStatus, ReturnType<OpportunityService['list']>>);
-        return forkJoin(requests).pipe(
+        return this.oppService.board({
+          ...this.filters,
+          pageSize: BOARD_PAGE_SIZE_PER_COLUMN,
+        }).pipe(
           finalize(() => this.globalLoadingSvc.stop()),
         );
       }),
       takeUntilDestroyed(this.destroyRef),
     ).subscribe({
-      next: results => {
-        this.columns.set(BOARD_STATUS_ORDER.map(status => ({
-          status,
-          label:       OPPORTUNITY_STATUS_LABEL[status],
-          loading:     false,
-          loadingMore: false,
-          items:       results[status].items,
-          totalCount:  results[status].totalCount,
-          currentPage: results[status].currentPage,
-          hasMore:     results[status].items.length < results[status].totalCount,
-        })));
+      next: response => {
+        const byStatus = new Map(response.columns.map(c => [c.status, c]));
+        this.columns.set(BOARD_STATUS_ORDER.map(status => {
+          const col = byStatus.get(status);
+          const items      = col?.items      ?? [];
+          const totalCount = col?.totalCount ?? 0;
+          return {
+            status,
+            label:       OPPORTUNITY_STATUS_LABEL[status],
+            loading:     false,
+            loadingMore: false,
+            items,
+            totalCount,
+            currentPage: col?.currentPage ?? 1,
+            hasMore:     items.length < totalCount,
+          };
+        }));
+        // La respuesta del board incluye los contadores del sidebar para evitar la
+        // segunda llamada del layout (GET /opportunities/summary).
+        this.countsStore.update(response.sidebarBadges);
         this.emitCounts();
       },
       error: () => {

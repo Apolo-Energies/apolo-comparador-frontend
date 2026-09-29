@@ -41,9 +41,12 @@
     [pricingError]="pricingError()"
     [pricingInfo]="pricingInfo()"
     [downloadingType]="downloadingType()"
+    [awaitingManualConsumption]="awaitingManualConsumption()"
+    [suggestedManualKwh]="suggestedManualKwh()"
     (openChange)="modalOpen.set($event)"
     (download)="onDownload($event)"
     (overridesChange)="onOverridesChange($event)"
+    (manualConsumptionSubmit)="onManualConsumptionSubmit($event)"
   />
 
 </div>
