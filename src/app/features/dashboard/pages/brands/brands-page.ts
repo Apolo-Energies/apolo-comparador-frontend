@@ -3,17 +3,17 @@ import { isPlatformBrowser } from '@angular/common';
 import { AlertComponent, AlertService, ButtonComponent } from '@apolo-energies/ui';
 import { BrandService } from '../../../../core/services/brand.service';
 import { BrandSummary } from '../../../../core/models/brand.model';
-import { BrandFormDialogComponent } from './brand-form-dialog';
+import { BrandFormDialogComponent } from './components/brand-form-dialog/brand-form-dialog';
 import { BrandLoaderComponent } from '../../../../shared/components/brand-loader/brand-loader.component';
 
 @Component({
-  selector: 'app-white-label-brands-page',
+  selector: 'app-brands-page',
   standalone: true,
   imports: [AlertComponent, ButtonComponent, BrandFormDialogComponent, BrandLoaderComponent],
-  templateUrl: './white-label-brands-page.html',
+  templateUrl: './brands-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class WhiteLabelBrandsPageComponent {
+export class BrandsPageComponent {
   private readonly brandService = inject(BrandService);
   private readonly alert        = inject(AlertService);
   private readonly platformId   = inject(PLATFORM_ID);

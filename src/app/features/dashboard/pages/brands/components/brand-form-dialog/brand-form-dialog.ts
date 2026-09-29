@@ -3,12 +3,12 @@ import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { AlertService, ButtonComponent, DialogComponent, InputFieldComponent } from '@apolo-energies/ui';
 import { FileText, LucideAngularModule } from 'lucide-angular';
-import { BrandService } from '../../../../core/services/brand.service';
-import { BrandSummary, BRAND_IMAGE_KIND_DEFS, BRAND_MODULE_DEFS } from '../../../../core/models/brand.model';
-import { BrandFormController, BrandFormSection } from './brand-form.controller';
-import { BrandImagesController } from './brand-images.controller';
-import { BrandModulesController } from './brand-modules.controller';
-import { BrandLoaderComponent } from '../../../../shared/components/brand-loader/brand-loader.component';
+import { BrandService } from '../../../../../../core/services/brand.service';
+import { BrandSummary, BRAND_IMAGE_KIND_DEFS, BRAND_MODULE_DEFS } from '../../../../../../core/models/brand.model';
+import { BrandFormController, BrandFormSection } from '../../brand-form.controller';
+import { BrandImagesController } from '../../brand-images.controller';
+import { BrandModulesController } from '../../brand-modules.controller';
+import { BrandLoaderComponent } from '../../../../../../shared/components/brand-loader/brand-loader.component';
 
 /**
  * Modal de marcas blancas: alta (nombre + slug) y, una vez creada/
@@ -121,7 +121,7 @@ export class BrandFormDialogComponent {
     const id = this.form.brandId();
     if (!id) return;
     this.close();
-    this.router.navigate(['/dashboard/white-label-brands', id]);
+    this.router.navigate(['/dashboard/brands', id]);
   }
 
   close(): void {

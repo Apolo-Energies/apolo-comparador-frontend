@@ -60,7 +60,7 @@ export function buildSidebarSections(params: BuildSidebarSectionsParams): Sideba
         // ternario externo no lo excluye).
         ...(isApolo && !isColaborador ? [
           { title: 'Landings', url: '/dashboard/landings', access: ['analytics:view'] },
-          { title: 'Marcas Blancas', url: '/dashboard/white-label-brands', access: ['analytics:view'] },
+          { title: 'Marcas Blancas', url: '/dashboard/brands', access: ['analytics:view'] },
         ] : []),
       ];
 

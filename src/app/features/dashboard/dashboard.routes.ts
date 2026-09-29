@@ -153,19 +153,19 @@ export const DASHBOARD_ROUTES: Routes = [
 
       // Master only — Marcas blancas (partner)
       {
-        path: 'white-label-brands',
+        path: 'brands',
         canActivate: [permissionGuard],
         data: { roles: ['Master'] },
         loadComponent: () =>
-          import('./pages/white-label-brands/white-label-brands-page')
-            .then(m => m.WhiteLabelBrandsPageComponent),
+          import('./pages/brands/brands-page')
+            .then(m => m.BrandsPageComponent),
       },
       {
-        path: 'white-label-brands/:id',
+        path: 'brands/:id',
         canActivate: [permissionGuard],
         data: { roles: ['Master'] },
         loadComponent: () =>
-          import('./pages/white-label-brands/brand-edit-page')
+          import('./pages/brands/brand-edit-page')
             .then(m => m.BrandEditPageComponent),
       },
 
