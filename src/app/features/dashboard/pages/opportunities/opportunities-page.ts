@@ -3,13 +3,13 @@ import {
   Component, computed, inject, signal, TemplateRef, ViewChild, PLATFORM_ID,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
 import { ButtonComponent, InputFieldComponent, SelectFieldComponent } from '@apolo-energies/ui';
 import {
   ApoloIcons, chevronRightIcon, DateIcon, EmailIcon, filterIcon,
-  ListIcon, NoteIcon, SearchIcon, ShieldCheckIcon, TradingUpIcon,
+  ListIcon, NoteIcon, SearchIcon,
   UiIconSource, XIcon,
 } from '@apolo-energies/icons';
 import { OpportunitySummary, OpportunityStatus } from '../../../../core/models/opportunity.model';
@@ -23,9 +23,9 @@ import { environment } from '../../../../../environments/environment';
 import { GlobalLoadingService } from '../../../../core/services/global-loading.service';
 import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
 import {
-  applyOpportunityColumnTemplates, computeOpportunityKpiTotals, createOpportunityTableColumns,
-  formatOpportunityDate, mapOpportunityKpiVolumes, OpportunityKpiTotals, OpportunityKpiVolumes,
-  OPPORTUNITY_STATUS_OPTIONS,
+  applyOpportunityColumnTemplates, createOpportunityTableColumns,
+  formatOpportunityDate, OPPORTUNITY_KPI_GROUPS, OPPORTUNITY_STATUS_OPTIONS,
+  zeroOpportunityCounts,
 } from './opportunities-page.helpers';
 import { OpportunityFiltersController } from './opportunities-filters.controller';
 import { OpportunitiesTableController } from './opportunities-table.controller';
@@ -52,7 +52,6 @@ export class OpportunitiesPageComponent implements AfterViewInit {
   private oppService    = inject(OpportunityService);
   private platformId    = inject(PLATFORM_ID);
   private cdr           = inject(ChangeDetectorRef);
-  private router        = inject(Router);
   private route         = inject(ActivatedRoute);
   private toast         = inject(MessageService);
   private globalLoading = inject(GlobalLoadingService);
@@ -69,11 +68,6 @@ export class OpportunitiesPageComponent implements AfterViewInit {
   readonly dateIcon:   UiIconSource = { type: 'apolo', icon: DateIcon,   size: 16 };
   readonly emailIcon:  UiIconSource = { type: 'apolo', icon: EmailIcon,  size: 14 };
   readonly listIcon:   UiIconSource = { type: 'apolo', icon: ListIcon,   size: 16 };
-
-  readonly kpiIconTotal:      UiIconSource = { type: 'apolo', icon: NoteIcon,        size: 36 };
-  readonly kpiIconWon:        UiIconSource = { type: 'apolo', icon: ShieldCheckIcon, size: 36 };
-  readonly kpiIconConversion: UiIconSource = { type: 'apolo', icon: TradingUpIcon,   size: 36 };
-  readonly kpiIconLost:       UiIconSource = { type: 'apolo', icon: XIcon,           size: 36 };
 
   readonly tableroIcon: UiIconSource = { type: 'apolo', icon: NoteIcon, size: 14 };
   readonly tablaIcon:   UiIconSource = { type: 'apolo', icon: ListIcon, size: 14 };
@@ -97,12 +91,20 @@ export class OpportunitiesPageComponent implements AfterViewInit {
   readonly hasActiveFilters = this.filters.hasActive;
   readonly statusOptions    = OPPORTUNITY_STATUS_OPTIONS;
 
-  readonly kpis = signal<OpportunityKpiTotals>({
-    total: 0, pending: 0, negotiation: 0, won: 0, lost: 0, conversion: 0,
-  });
+  readonly counts     = signal<Record<OpportunityStatus, number>>(zeroOpportunityCounts());
+  readonly volumes    = signal<Record<OpportunityStatus, number>>(zeroOpportunityCounts());
+  readonly conversion = signal(0);
 
-  readonly volumes = signal<OpportunityKpiVolumes>({
-    pending: 0, negotiation: 0, won: 0, lost: 0,
+  readonly kpiCards = computed(() => {
+    const c = this.counts();
+    const v = this.volumes();
+    return OPPORTUNITY_KPI_GROUPS.map(g => ({
+      label:     g.label,
+      count:     c[g.key] ?? 0,
+      volumeMwh: (v[g.key] ?? 0) / 1000,
+      dot:       g.dot,
+      icon:      g.icon,
+    }));
   });
 
   // Vista "tabla" — paginación y llamada al servicio viven en el controller
@@ -146,19 +148,10 @@ export class OpportunitiesPageComponent implements AfterViewInit {
     this.cdr.markForCheck();
   }
 
-  readonly kpiPending     = computed(() => this.kpis().pending);
-  readonly kpiWon         = computed(() => this.kpis().won);
-  readonly kpiConversion  = computed(() => this.kpis().conversion);
-  readonly kpiLost        = computed(() => this.kpis().lost);
-
-  readonly volPending = computed(() => this.volumes().pending);
-  readonly volWon     = computed(() => this.volumes().won);
-  readonly volLost    = computed(() => this.volumes().lost);
-
   readonly pageTitle = computed(() => this.energyType === EnergyType.Gas ? 'Oportunidades · Gas' : 'Oportunidades · Luz');
 
   readonly subtitleText = computed(() => {
-    const total = this.kpis().total;
+    const total = (Object.values(this.counts()) as number[]).reduce((s, n) => s + n, 0);
     if (total === 0) return 'Pipeline de ventas';
     return `Pipeline de ventas · ${total.toLocaleString('es-ES')} oportunidades`;
   });
@@ -188,11 +181,14 @@ export class OpportunitiesPageComponent implements AfterViewInit {
   }
 
   onBoardCounts(totals: Record<OpportunityStatus, number>) {
-    this.kpis.set(computeOpportunityKpiTotals(totals));
+    const won   = totals[OpportunityStatus.Won]  ?? 0;
+    const total = (Object.values(totals) as number[]).reduce((s, n) => s + n, 0);
+    this.counts.set(totals);
+    this.conversion.set(total > 0 ? (won / total) * 100 : 0);
   }
 
-  onBoardVolumes(volumes: Record<OpportunityStatus, number>) {
-    this.volumes.set(mapOpportunityKpiVolumes(volumes));
+  onBoardVolumes(vols: Record<OpportunityStatus, number>) {
+    this.volumes.set(vols);
   }
 
   onBoardError(message: string) {

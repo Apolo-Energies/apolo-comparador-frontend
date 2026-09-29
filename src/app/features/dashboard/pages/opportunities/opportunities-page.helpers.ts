@@ -3,25 +3,9 @@ import { SelectOption } from '@apolo-energies/ui';
 import { TableColumn } from '@apolo-energies/table';
 import {
   OpportunitySummary, OpportunityStatus, OpportunityFilters,
-  OPPORTUNITY_STATUS_LABEL,
+  OPPORTUNITY_STATUS_LABEL, OPPORTUNITY_STATUS_ORDER,
 } from '../../../../core/models/opportunity.model';
 import { EnergyType } from '../../../../core/models/energy-type.enum';
-
-export interface OpportunityKpiTotals {
-  total:       number;
-  pending:     number;
-  negotiation: number;
-  won:         number;
-  lost:        number;
-  conversion:  number;
-}
-
-export interface OpportunityKpiVolumes {
-  pending:     number;
-  negotiation: number;
-  won:         number;
-  lost:        number;
-}
 
 /** Draft filter-bar inputs, before being turned into an OpportunityFilters snapshot. */
 export interface OpportunityFilterDraft {
@@ -53,38 +37,29 @@ export function buildOpportunityFilters(energyType: EnergyType, draft: Opportuni
   };
 }
 
-/** Converts the per-status totals emitted by the board into the KPI summary shown in the header cards. */
-export function computeOpportunityKpiTotals(totals: Record<OpportunityStatus, number>): OpportunityKpiTotals {
-  const pending     = totals[OpportunityStatus.Pending];
-  const negotiation = totals[OpportunityStatus.Negotiation];
-  const won         = totals[OpportunityStatus.Won];
-  const lost        = totals[OpportunityStatus.Lost];
-  const total       = pending + negotiation + won + lost;
-  const conversion  = total > 0 ? (won / total) * 100 : 0;
-  return { total, pending, negotiation, won, lost, conversion };
-}
-
-/** Maps the per-status volumes emitted by the board into the KPI volume summary. */
-export function mapOpportunityKpiVolumes(volumes: Record<OpportunityStatus, number>): OpportunityKpiVolumes {
-  return {
-    pending:     volumes[OpportunityStatus.Pending],
-    negotiation: volumes[OpportunityStatus.Negotiation],
-    won:         volumes[OpportunityStatus.Won],
-    lost:        volumes[OpportunityStatus.Lost],
-  };
-}
-
 export function formatOpportunityDate(iso: string): string {
   return new Date(iso).toLocaleString();
 }
 
 export const OPPORTUNITY_STATUS_OPTIONS: SelectOption[] = [
-  { value: '',                                    label: 'Todos los estados' },
-  { value: String(OpportunityStatus.Pending),     label: OPPORTUNITY_STATUS_LABEL[OpportunityStatus.Pending] },
-  { value: String(OpportunityStatus.Negotiation), label: OPPORTUNITY_STATUS_LABEL[OpportunityStatus.Negotiation] },
-  { value: String(OpportunityStatus.Won),         label: OPPORTUNITY_STATUS_LABEL[OpportunityStatus.Won] },
-  { value: String(OpportunityStatus.Lost),        label: OPPORTUNITY_STATUS_LABEL[OpportunityStatus.Lost] },
+  { value: '', label: 'Todos los estados' },
+  ...OPPORTUNITY_STATUS_ORDER.map(s => ({ value: String(s), label: OPPORTUNITY_STATUS_LABEL[s] })),
 ];
+
+export interface OpportunityKpiGroup { label: string; key: OpportunityStatus; dot: string; icon: string; }
+
+export const OPPORTUNITY_KPI_GROUPS: OpportunityKpiGroup[] = [
+  { label: 'Pendiente',   key: OpportunityStatus.Pending,     dot: 'opp-dot-pending',     icon: 'opp-icon-pending'     },
+  { label: 'Negociación', key: OpportunityStatus.Negotiation, dot: 'opp-dot-negotiation', icon: 'opp-icon-negotiation' },
+  { label: 'Ganada',      key: OpportunityStatus.Won,         dot: 'opp-dot-won',         icon: 'opp-icon-won'         },
+  { label: 'Perdida',     key: OpportunityStatus.Lost,        dot: 'opp-dot-lost',        icon: 'opp-icon-lost'        },
+  { label: 'Finalizado',  key: OpportunityStatus.Finalized,   dot: 'opp-dot-finalized',   icon: 'opp-icon-finalized'   },
+  { label: 'Baja',        key: OpportunityStatus.Cancelled,   dot: 'opp-dot-cancelled',   icon: 'opp-icon-cancelled'   },
+];
+
+export function zeroOpportunityCounts(): Record<OpportunityStatus, number> {
+  return Object.fromEntries(OPPORTUNITY_STATUS_ORDER.map(s => [s, 0])) as Record<OpportunityStatus, number>;
+}
 
 /** Fresh table-column definitions for the "table" view mode. A factory (not a shared const) avoids sharing the mutable cellTemplate slots across page instances. */
 export function createOpportunityTableColumns(): TableColumn<OpportunitySummary>[] {

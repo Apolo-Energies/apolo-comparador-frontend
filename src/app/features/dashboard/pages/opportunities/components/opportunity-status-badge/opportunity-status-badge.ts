@@ -2,10 +2,16 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { OpportunityStatus, OPPORTUNITY_STATUS_LABEL } from '../../../../../../core/models/opportunity.model';
 
 const STATUS_CLASSES: Record<OpportunityStatus, string> = {
-  [OpportunityStatus.Pending]:     'bg-zinc-700/40    text-zinc-200    ring-zinc-600/40',
-  [OpportunityStatus.Negotiation]: 'bg-amber-500/10   text-amber-300   ring-amber-500/20',
-  [OpportunityStatus.Won]:         'bg-emerald-500/10 text-emerald-300 ring-emerald-500/20',
-  [OpportunityStatus.Lost]:        'bg-rose-500/10    text-rose-300    ring-rose-500/20',
+  [OpportunityStatus.Pending]:        'opp-badge-pending',
+  [OpportunityStatus.Negotiation]:    'opp-badge-negotiation',
+  [OpportunityStatus.Won]:            'opp-badge-won',
+  [OpportunityStatus.Lost]:           'opp-badge-lost',
+  [OpportunityStatus.Meeting]:        'opp-badge-meeting',
+  [OpportunityStatus.ContractSent]:   'opp-badge-contract-sent',
+  [OpportunityStatus.ContractSigned]: 'opp-badge-contract-signed',
+  [OpportunityStatus.Nurturing]:      'opp-badge-nurturing',
+  [OpportunityStatus.Finalized]:      'opp-badge-finalized',
+  [OpportunityStatus.Cancelled]:      'opp-badge-cancelled',
 };
 
 @Component({

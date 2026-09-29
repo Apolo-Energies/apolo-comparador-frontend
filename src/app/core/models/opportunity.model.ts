@@ -2,10 +2,16 @@ import { EnergyType } from './energy-type.enum';
 
 /** Estados posibles de una oportunidad. Deben coincidir con el enum del backend. */
 export enum OpportunityStatus {
-  Pending     = 0, // Pendiente — recién creada, sin trabajar
-  Negotiation = 1, // En negociación activa con el cliente
-  Won         = 2, // Ganada — contrato cerrado (estado terminal, libera el CUPS)
-  Lost        = 3, // Perdida — cliente rechazó, pero puede reactivarse
+  Pending        = 0, // Pendiente
+  Negotiation    = 1, // Negociación
+  Won            = 2, // Ganada
+  Lost           = 3, // Perdida
+  Meeting        = 4, // Reunión
+  ContractSent   = 5, // Contrato enviado
+  ContractSigned = 6, // Contrato firmado
+  Nurturing      = 7, // Nurturing
+  Finalized      = 8, // Finalizado
+  Cancelled      = 9, // Baja
 }
 
 /** Datos del cliente extraídos del OCR de la factura. */
@@ -137,29 +143,36 @@ export interface OpportunityFilters {
 
 /** Etiquetas en español para mostrar en la UI según el estado. */
 export const OPPORTUNITY_STATUS_LABEL: Record<OpportunityStatus, string> = {
-  [OpportunityStatus.Pending]:     'Pendiente',
-  [OpportunityStatus.Negotiation]: 'Negociación',
-  [OpportunityStatus.Won]:         'Ganada',
-  [OpportunityStatus.Lost]:        'Perdida',
+  [OpportunityStatus.Pending]:        'Pendiente',
+  [OpportunityStatus.Negotiation]:    'Negociación',
+  [OpportunityStatus.Won]:            'Ganada',
+  [OpportunityStatus.Lost]:           'Perdida',
+  [OpportunityStatus.Meeting]:        'Reunión',
+  [OpportunityStatus.ContractSent]:   'Contrato enviado',
+  [OpportunityStatus.ContractSigned]: 'Contrato firmado',
+  [OpportunityStatus.Nurturing]:      'Nurturing',
+  [OpportunityStatus.Finalized]:      'Finalizado',
+  [OpportunityStatus.Cancelled]:      'Baja',
 };
 
-/**
- * Define a qué estados puede pasar una oportunidad desde cada estado.
- * Se usa para mostrar solo los botones de transición válidos en el drawer.
- */
-export const OPPORTUNITY_ALLOWED_TRANSITIONS: Record<OpportunityStatus, OpportunityStatus[]> = {
-  [OpportunityStatus.Pending]:     [OpportunityStatus.Negotiation, OpportunityStatus.Lost],
-  [OpportunityStatus.Negotiation]: [OpportunityStatus.Won, OpportunityStatus.Lost, OpportunityStatus.Pending],
-  [OpportunityStatus.Won]:         [], // Terminal: no hay transiciones posibles
-  [OpportunityStatus.Lost]:        [OpportunityStatus.Pending, OpportunityStatus.Negotiation],
-};
+const _ALL: OpportunityStatus[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-/** Orden de las columnas en el tablero Kanban. */
+/** Todas las transiciones son libres — cualquier estado puede ir a cualquier otro. */
+export const OPPORTUNITY_ALLOWED_TRANSITIONS: Record<OpportunityStatus, OpportunityStatus[]> =
+  Object.fromEntries(_ALL.map(s => [s, _ALL.filter(t => t !== s)])) as Record<OpportunityStatus, OpportunityStatus[]>;
+
+/** Orden de las columnas en el tablero Kanban (sigue el pipeline de HubSpot). */
 export const OPPORTUNITY_STATUS_ORDER: readonly OpportunityStatus[] = [
   OpportunityStatus.Pending,
   OpportunityStatus.Negotiation,
+  OpportunityStatus.Meeting,
+  OpportunityStatus.ContractSent,
+  OpportunityStatus.ContractSigned,
   OpportunityStatus.Won,
   OpportunityStatus.Lost,
+  OpportunityStatus.Nurturing,
+  OpportunityStatus.Finalized,
+  OpportunityStatus.Cancelled,
 ];
 
 /**

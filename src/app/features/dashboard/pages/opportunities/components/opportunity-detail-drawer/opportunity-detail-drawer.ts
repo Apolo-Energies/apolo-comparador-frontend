@@ -15,6 +15,19 @@ import {
 } from '../../../../../../core/models/opportunity.model';
 import { OpportunityService } from '../../../../../../core/services/opportunity.service';
 
+const STATUS_BADGE_CLASSES: Record<OpportunityStatus, string> = {
+  [OpportunityStatus.Pending]:        'opp-badge-pending',
+  [OpportunityStatus.Negotiation]:    'opp-badge-negotiation',
+  [OpportunityStatus.Won]:            'opp-badge-won',
+  [OpportunityStatus.Lost]:           'opp-badge-lost',
+  [OpportunityStatus.Meeting]:        'opp-badge-meeting',
+  [OpportunityStatus.ContractSent]:   'opp-badge-contract-sent',
+  [OpportunityStatus.ContractSigned]: 'opp-badge-contract-signed',
+  [OpportunityStatus.Nurturing]:      'opp-badge-nurturing',
+  [OpportunityStatus.Finalized]:      'opp-badge-finalized',
+  [OpportunityStatus.Cancelled]:      'opp-badge-cancelled',
+};
+
 @Component({
   selector: 'app-opportunity-detail-drawer',
   standalone: true,
@@ -76,13 +89,7 @@ export class OpportunityDetailDrawerComponent {
 
   readonly statusBadgeClass = computed(() => {
     const s = this.summary()?.status;
-    if (s === undefined || s === null) return 'bg-zinc-700/40 text-zinc-300 ring-zinc-600/40';
-    switch (s) {
-      case OpportunityStatus.Pending:     return 'bg-blue-500/10    text-blue-400    ring-blue-500/20';
-      case OpportunityStatus.Negotiation: return 'bg-amber-500/10   text-amber-400   ring-amber-500/20';
-      case OpportunityStatus.Won:         return 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/20';
-      case OpportunityStatus.Lost:        return 'bg-rose-500/10    text-rose-400    ring-rose-500/20';
-    }
+    return s != null ? STATUS_BADGE_CLASSES[s] : 'opp-badge-pending';
   });
 
   readonly addressText = computed(() => {

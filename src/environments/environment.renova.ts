@@ -2,6 +2,7 @@ export const environment = {
   production: true,
   clientName: 'renova',
   apiUrl: 'https://apiestudios.renovaenergy.es/api/renovae/v1',
+  hubUrl: 'https://apiestudios.renovaenergy.es/hubs/opportunities',
   logoUrl: '/renova/logo.webp',
   faviconUrl: '/renova/favicon.ico',
   appTitle: 'RENOVAE',

@@ -1,12 +1,13 @@
 <div
-  class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4"
+  class="flex gap-4 overflow-x-auto pb-3 items-start"
   cdkDropListGroup
 >
   @for (col of columns(); track trackByStatus($index, col)) {
-    @let palette = paletteFor(col.status);
+    @let palette = paletteFor(col.statuses[0]);
 
     <section class="flex flex-col rounded-2xl border border-border bg-card backdrop-blur-sm
-                    transition-colors duration-300 hover:border-ring overflow-hidden">
+                    transition-colors duration-300 hover:border-ring overflow-hidden
+                    shrink-0 w-72">
 
       <!-- Column header -->
       <header class="flex items-center justify-between px-4 py-3 border-b border-border">
@@ -25,11 +26,11 @@
       <div
         class="flex-1 min-h-70 p-3 space-y-2 overflow-y-auto max-h-[calc(100vh-340px)] relative"
         cdkDropList
-        [id]="'column-' + col.status"
+        [id]="'column-' + col.statuses[0]"
         [cdkDropListData]="col.items"
         [cdkDropListConnectedTo]="listIds"
-        (cdkDropListDropped)="onDrop($event, col.status)"
-        (scroll)="onColumnScroll($event, col.status)"
+        (cdkDropListDropped)="onDrop($event, col)"
+        (scroll)="onColumnScroll($event, col)"
       >
         @for (item of col.items; track trackById($index, item)) {
           <div cdkDrag [cdkDragData]="item">
