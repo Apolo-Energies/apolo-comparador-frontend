@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { ProviderService } from '../../../../services/provider.service';
-import { ComparatorService } from '../../../../services/comparator.service';
-import { Provider } from '../../../../entities/provider.model';
-import { TabType } from '../../../../entities/rates.model';
+import { ProviderService } from '../../../../core/services/provider.service';
+import { ComparatorService } from '../../../../core/services/comparator.service';
+import { Provider } from '../../../../core/models/provider.model';
+import { TabType } from '../../../../core/models/rates.model';
 import { LucideAngularModule, Building, Calculator, TrendingUp, Zap } from 'lucide-angular';
 import { AlertComponent, ButtonComponent } from '@apolo-energies/ui';
 import { DownloadIcon, UiIconSource } from '@apolo-energies/icons';
@@ -15,7 +15,8 @@ import { TariffsTabComponent } from './components/tariffs-tab/tariffs-tab.compon
 import { OmieDistributionTabComponent } from './components/omie-distribution-tab/omie-distribution-tab.component';
 import { BoePowerTabComponent } from './components/boe-power-tab/boe-power-tab.component';
 import { environment } from '../../../../../environments/environment';
-import { GlobalLoadingService } from '../../../../services/global-loading.service';
+import { GlobalLoadingService } from '../../../../core/services/global-loading.service';
+import { EnergyRouteToggleComponent } from '../../../../shared/components/energy-route-toggle/energy-route-toggle.component';
 
 @Component({
   selector: 'app-rates-page',
@@ -29,6 +30,7 @@ import { GlobalLoadingService } from '../../../../services/global-loading.servic
     TariffsTabComponent,
     OmieDistributionTabComponent,
     BoePowerTabComponent,
+    EnergyRouteToggleComponent,
   ],
   templateUrl: './rates-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -49,6 +51,7 @@ export class RatesPageComponent {
   readonly downloadIcon: UiIconSource = { type: 'apolo', icon: DownloadIcon, size: 16 };
 
   readonly loading = signal(true);
+  readonly exporting = signal(false);
   readonly error = signal<string | null>(null);
   readonly activeTab = signal<TabType>('provider');
 
@@ -90,15 +93,20 @@ export class RatesPageComponent {
 
   onExportExcel(): void {
     const providerId = this.providerData()?.id;
-    if (!providerId) return;
+    if (!providerId || this.exporting()) return;
 
-    this.providerService.downloadExcel(providerId).subscribe(blob => {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'comparado.xlsx';
-      a.click();
-      URL.revokeObjectURL(url);
+    this.exporting.set(true);
+    this.providerService.downloadExcel(providerId).subscribe({
+      next: blob => {
+        this.exporting.set(false);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'comparado.xlsx';
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => { this.exporting.set(false); },
     });
   }
 }

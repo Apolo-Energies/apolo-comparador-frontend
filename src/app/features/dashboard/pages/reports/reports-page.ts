@@ -8,9 +8,10 @@ import {
 } from '@angular/core';
 import { catchError, of } from 'rxjs';
 import { BrandLoaderComponent } from '../../../../shared/components/brand-loader/brand-loader.component';
-import { DashboardStatsService } from '../../../../services/dashboard-stats.service';
-import { SummaryApiResult, DailySummaryApiItem, HistoryItem } from '../statistics/models/dashboard-api.models';
-import { OpportunitySummary, OpportunityStatus } from '../../../../entities/opportunity.model';
+import { EnergyRouteToggleComponent } from '../../../../shared/components/energy-route-toggle/energy-route-toggle.component';
+import { DashboardStatsService } from '../../../../core/services/dashboard-stats.service';
+import { SummaryApiResult, DailySummaryApiItem, HistoryItem } from '../../../../core/models/dashboard-api.model';
+import { OpportunitySummary, OpportunityStatus } from '../../../../core/models/opportunity.model';
 import { ReportsAnalyticsTabComponent, ColabPeriod } from './components/analytics-tab/analytics-tab.component';
 import { ReportsOpportunitiesTabComponent } from './components/opportunities-tab/opportunities-tab.component';
 import { ReportsAlertsTabComponent } from './components/alerts-tab/alerts-tab.component';
@@ -23,7 +24,7 @@ const CRITICAL_DAYS = 7;
 @Component({
   selector: 'app-reports-page',
   standalone: true,
-  imports: [BrandLoaderComponent, ReportsAnalyticsTabComponent, ReportsOpportunitiesTabComponent, ReportsAlertsTabComponent],
+  imports: [BrandLoaderComponent, ReportsAnalyticsTabComponent, ReportsOpportunitiesTabComponent, ReportsAlertsTabComponent, EnergyRouteToggleComponent],
   templateUrl: './reports-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

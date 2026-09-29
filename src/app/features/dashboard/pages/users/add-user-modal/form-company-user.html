@@ -1,0 +1,31 @@
+<div [formGroup]="form()" class="space-y-4">
+
+  <!-- Email -->
+  <div class="space-y-1">
+    <label class="text-sm font-normal text-foreground">Email <span class="text-red-500">*</span></label>
+    <input formControlName="email" type="email" placeholder="empresa@email.com"
+      [class]="inputCls" [class.border-red-500]="err('email')" />
+    @if (err('email')) { <p class="text-xs text-red-500">{{ errMsg('email') }}</p> }
+  </div>
+
+  <!-- Rol -->
+  <div class="space-y-1">
+    <label class="text-sm font-normal text-foreground">Rol <span class="text-red-500">*</span></label>
+    <select formControlName="role" [class]="selectCls" [class.border-red-500]="err('role')">
+      <option value="" disabled>Seleccionar rol</option>
+      @for (opt of roleOptions; track opt.value) {
+        <option [value]="opt.value">{{ opt.label }}</option>
+      }
+    </select>
+    @if (err('role')) { <p class="text-xs text-red-500">El rol es obligatorio</p> }
+  </div>
+
+  <!-- Razón Social -->
+  <div class="space-y-1">
+    <label class="text-sm font-normal text-foreground">Razón Social <span class="text-red-500">*</span></label>
+    <input formControlName="companyName" placeholder="Empresa S.L."
+      [class]="inputCls" [class.border-red-500]="err('companyName')" />
+    @if (err('companyName')) { <p class="text-xs text-red-500">{{ errMsg('companyName') }}</p> }
+  </div>
+
+</div>

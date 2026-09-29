@@ -1,0 +1,242 @@
+<ui-dialog [open]="open()" [closeable]="true" maxWidth="max-w-2xl" (openChange)="$event ? null : onClose()">
+  <div class="flex flex-col overflow-hidden" style="max-height: 90vh">
+
+    <!-- Header + toggle -->
+    <div class="shrink-0 space-y-4 border-b border-border px-6 py-4">
+      <div>
+        <p class="text-lg font-semibold text-foreground">
+          {{ mode() === 'create' ? 'Agregar datos personales' : 'Editar datos personales' }}
+        </p>
+        <p class="text-sm text-muted-foreground">Completa o actualiza la información del cliente</p>
+      </div>
+
+      <div class="space-y-1.5">
+        <p class="text-sm font-medium text-foreground">Tipo de persona</p>
+        <div class="flex rounded-lg border border-border p-1 bg-muted gap-1">
+          @for (opt of typeOptions; track opt.value) {
+            <button type="button" (click)="setPersonType(opt.value)"
+              class="flex-1 text-sm py-1.5 rounded-md transition-all font-medium"
+              [class.bg-card]="personType() === opt.value"
+              [class.text-foreground]="personType() === opt.value"
+              [class.shadow-sm]="personType() === opt.value"
+              [class.text-muted-foreground]="personType() !== opt.value"
+              [disabled]="isEditMode()">
+              {{ opt.label }}
+            </button>
+          }
+        </div>
+        @if (isEditMode()) {
+          <p class="text-xs text-muted-foreground">El tipo de persona no se puede modificar al editar.</p>
+        }
+      </div>
+    </div>
+
+    <!-- Form body -->
+    <form [formGroup]="form" class="flex flex-col flex-1 min-h-0">
+      <div class="flex-1 overflow-y-auto px-6 py-5">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+
+          @if (personType() === 0) {
+            <!-- Individual -->
+            <div class="space-y-1">
+              <label class="text-sm font-medium text-muted-foreground">Nombre *</label>
+              <input formControlName="firstName" placeholder="Juan"
+                [class]="inputCls" [class.border-red-500]="err('firstName')" />
+              @if (err('firstName')) { <p class="text-xs text-red-500">{{ errMsg('firstName') }}</p> }
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-sm font-medium text-muted-foreground">Primer apellido *</label>
+              <input formControlName="lastName1" placeholder="García"
+                [class]="inputCls" [class.border-red-500]="err('lastName1')" />
+              @if (err('lastName1')) { <p class="text-xs text-red-500">{{ errMsg('lastName1') }}</p> }
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-sm font-medium text-muted-foreground">Segundo apellido *</label>
+              <input formControlName="lastName2" placeholder="López"
+                [class]="inputCls" [class.border-red-500]="err('lastName2')" />
+              @if (err('lastName2')) { <p class="text-xs text-red-500">{{ errMsg('lastName2') }}</p> }
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-sm font-medium text-muted-foreground">DNI / NIE *</label>
+              <input formControlName="dni" placeholder="12345678A"
+                [class]="inputCls" [class.border-red-500]="err('dni')" />
+              @if (err('dni')) { <p class="text-xs text-red-500">{{ errMsg('dni') }}</p> }
+            </div>
+          } @else {
+            <!-- Company -->
+            <div class="md:col-span-2 space-y-1">
+              <label class="text-sm font-medium text-muted-foreground">Razón social *</label>
+              <input formControlName="companyName" placeholder="Empresa S.L."
+                [class]="inputCls" [class.border-red-500]="err('companyName')" />
+              @if (err('companyName')) { <p class="text-xs text-red-500">{{ errMsg('companyName') }}</p> }
+            </div>
+
+            <div class="md:col-span-2 space-y-1">
+              <label class="text-sm font-medium text-muted-foreground">CIF *</label>
+              <input formControlName="cif" placeholder="B56263304"
+                [class]="inputCls" [class.border-red-500]="err('cif')" />
+              @if (err('cif')) { <p class="text-xs text-red-500">{{ errMsg('cif') }}</p> }
+            </div>
+
+            <div class="md:col-span-2 space-y-2">
+              <label class="text-sm font-medium text-muted-foreground">Datos representante legal</label>
+              <div class="grid grid-cols-2 gap-2">
+                <div class="space-y-1">
+                  <p class="text-xs text-muted-foreground">Nombre *</p>
+                  <input formControlName="firstName" placeholder="Juan"
+                    [class]="inputCls" [class.border-red-500]="err('firstName')" />
+                  @if (err('firstName')) { <p class="text-xs text-red-500">{{ errMsg('firstName') }}</p> }
+                </div>
+                <div class="space-y-1">
+                  <p class="text-xs text-muted-foreground">Primer apellido *</p>
+                  <input formControlName="lastName1" placeholder="García"
+                    [class]="inputCls" [class.border-red-500]="err('lastName1')" />
+                  @if (err('lastName1')) { <p class="text-xs text-red-500">{{ errMsg('lastName1') }}</p> }
+                </div>
+                <div class="space-y-1">
+                  <p class="text-xs text-muted-foreground">Segundo apellido *</p>
+                  <input formControlName="lastName2" placeholder="López"
+                    [class]="inputCls" [class.border-red-500]="err('lastName2')" />
+                  @if (err('lastName2')) { <p class="text-xs text-red-500">{{ errMsg('lastName2') }}</p> }
+                </div>
+                <div class="space-y-1">
+                  <p class="text-xs text-muted-foreground">DNI</p>
+                  <input formControlName="dni" placeholder="12345678A"
+                    [class]="inputCls" />
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Common fields -->
+          <div class="space-y-1">
+            <label class="text-sm font-medium text-muted-foreground">Correo <span class="text-red-500">*</span></label>
+            <input formControlName="email" type="email" placeholder="usuario@email.com"
+              [class]="inputCls" [class.border-red-500]="err('email')" />
+            @if (err('email')) { <p class="text-xs text-red-500">{{ errMsg('email') }}</p> }
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-sm font-medium text-muted-foreground">Teléfono *</label>
+            <div class="flex">
+              <select formControlName="dialCode" [class]="selectCls"
+                (change)="form.controls.phoneNumber.updateValueAndValidity()">
+                @for (c of phoneCountries; track c.code) {
+                  <option [value]="c.code">{{ c.flag }} {{ c.code }}</option>
+                }
+              </select>
+              <input formControlName="phoneNumber" type="tel" placeholder="612 345 678"
+                [class]="numberCls" [class.border-red-500]="err('phoneNumber')" />
+            </div>
+            @if (err('phoneNumber')) { <p class="text-xs text-red-500">{{ errMsg('phoneNumber') }}</p> }
+          </div>
+
+          <!-- Dirección legal -->
+          <div class="md:col-span-2 space-y-2">
+            <label class="text-sm font-medium text-muted-foreground">Dirección legal *</label>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="space-y-1">
+                <p class="text-xs text-muted-foreground">Tipo de vía / Calle</p>
+                <div class="flex">
+                  <select formControlName="legalStreetType" [class]="selectCls">
+                    @for (t of streetTypes; track t) {
+                      <option [value]="t">{{ t }}</option>
+                    }
+                  </select>
+                  <input formControlName="legalStreet" placeholder="Mayor"
+                    [class]="numberCls" [class.border-red-500]="err('legalStreet')" />
+                </div>
+                @if (err('legalStreet')) { <p class="text-xs text-red-500">{{ errMsg('legalStreet') }}</p> }
+              </div>
+              <div class="space-y-1">
+                <p class="text-xs text-muted-foreground">Número</p>
+                <input formControlName="legalNumber" placeholder="42"
+                  [class]="inputCls" [class.border-red-500]="err('legalNumber')" />
+                @if (err('legalNumber')) { <p class="text-xs text-red-500">{{ errMsg('legalNumber') }}</p> }
+              </div>
+              <div class="space-y-1">
+                <p class="text-xs text-muted-foreground">Ciudad</p>
+                <input formControlName="cityLegal" placeholder="Madrid"
+                  [class]="inputCls" [class.border-red-500]="err('cityLegal')" />
+                @if (err('cityLegal')) { <p class="text-xs text-red-500">{{ errMsg('cityLegal') }}</p> }
+              </div>
+              <div class="space-y-1">
+                <p class="text-xs text-muted-foreground">Código postal</p>
+                <input formControlName="postalCodeLegal" placeholder="28001"
+                  [class]="inputCls" [class.border-red-500]="err('postalCodeLegal')" />
+                @if (err('postalCodeLegal')) { <p class="text-xs text-red-500">{{ errMsg('postalCodeLegal') }}</p> }
+              </div>
+            </div>
+          </div>
+
+          <!-- Dirección de notificación -->
+          <div class="md:col-span-2 space-y-2">
+            <label class="text-sm font-medium text-muted-foreground">Dirección de notificación *</label>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="space-y-1">
+                <p class="text-xs text-muted-foreground">Tipo de vía / Calle</p>
+                <div class="flex">
+                  <select formControlName="notificationStreetType" [class]="selectCls">
+                    @for (t of streetTypes; track t) {
+                      <option [value]="t">{{ t }}</option>
+                    }
+                  </select>
+                  <input formControlName="notificationStreet" placeholder="Mayor"
+                    [class]="numberCls" [class.border-red-500]="err('notificationStreet')" />
+                </div>
+                @if (err('notificationStreet')) { <p class="text-xs text-red-500">{{ errMsg('notificationStreet') }}</p> }
+              </div>
+              <div class="space-y-1">
+                <p class="text-xs text-muted-foreground">Número</p>
+                <input formControlName="notificationNumber" placeholder="42"
+                  [class]="inputCls" [class.border-red-500]="err('notificationNumber')" />
+                @if (err('notificationNumber')) { <p class="text-xs text-red-500">{{ errMsg('notificationNumber') }}</p> }
+              </div>
+              <div class="space-y-1">
+                <p class="text-xs text-muted-foreground">Ciudad</p>
+                <input formControlName="cityNotification" placeholder="Madrid"
+                  [class]="inputCls" [class.border-red-500]="err('cityNotification')" />
+                @if (err('cityNotification')) { <p class="text-xs text-red-500">{{ errMsg('cityNotification') }}</p> }
+              </div>
+              <div class="space-y-1">
+                <p class="text-xs text-muted-foreground">Código postal</p>
+                <input formControlName="postalCodeNotification" placeholder="28001"
+                  [class]="inputCls" [class.border-red-500]="err('postalCodeNotification')" />
+                @if (err('postalCodeNotification')) { <p class="text-xs text-red-500">{{ errMsg('postalCodeNotification') }}</p> }
+              </div>
+            </div>
+          </div>
+
+          <div class="md:col-span-2 space-y-1">
+            <label class="text-sm font-medium text-muted-foreground">Cuenta bancaria *</label>
+            <input formControlName="bankAccount" placeholder="ES83 0182 6517 7302 0197 5760"
+              (input)="onIban($event)"
+              [class]="inputCls" [class.border-red-500]="err('bankAccount')" />
+            @if (err('bankAccount')) { <p class="text-xs text-red-500">{{ errMsg('bankAccount') }}</p> }
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="shrink-0 border-t border-border px-6 py-4 flex justify-between gap-2">
+        <ui-button label="Cancelar" variant="outline" size="md" (click)="onClose()" />
+        @if (saving()) {
+          <button disabled class="inline-flex items-center justify-center min-w-32 rounded-md px-4 py-2 bg-primary-button text-white text-sm font-semibold cursor-not-allowed opacity-80">
+            <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+              <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="white"/>
+            </svg>
+          </button>
+        } @else {
+          <ui-button [label]="mode() === 'create' ? 'Guardar datos' : 'Actualizar datos'"
+            variant="default" size="md" (click)="onSubmit()" />
+        }
+      </div>
+    </form>
+
+  </div>
+</ui-dialog>

@@ -1,0 +1,226 @@
+<ui-dialog
+  [open]="open()"
+  [closeable]="!creating()"
+  maxWidth="max-w-2xl"
+  (openChange)="openChange.emit($event)"
+>
+  <div class="flex flex-col" style="max-height: 90vh;">
+
+    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <header class="px-8 pt-7 pb-4 border-b border-border">
+      <h2 class="text-xl font-bold text-foreground truncate">
+        {{ isEdit() ? ('Editar marca: ' + brandName()) : 'Nueva marca blanca' }}
+      </h2>
+      @if (isEdit()) {
+        <p class="text-xs text-muted-foreground mt-1">/{{ brandSlug() }}</p>
+      } @else {
+        <p class="text-xs text-muted-foreground mt-1">Define el nombre y el slug; después podrás configurar imágenes y módulos.</p>
+      }
+
+      @if (isEdit()) {
+        <nav class="mt-5 flex items-center gap-1 -mb-px">
+          <button
+            type="button"
+            class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
+            [class.border-blue-500]="section() === 'images'"
+            [class.text-foreground]="section() === 'images'"
+            [class.border-transparent]="section() !== 'images'"
+            [class.text-muted-foreground]="section() !== 'images'"
+            (click)="setSection('images')"
+          >Imágenes</button>
+          <button
+            type="button"
+            class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
+            [class.border-blue-500]="section() === 'modules'"
+            [class.text-foreground]="section() === 'modules'"
+            [class.border-transparent]="section() !== 'modules'"
+            [class.text-muted-foreground]="section() !== 'modules'"
+            (click)="setSection('modules')"
+          >Módulos</button>
+          <button
+            type="button"
+            title="Va a la página de colores"
+            class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-blue-500 transition-colors inline-flex items-center gap-1.5"
+            (click)="goToColors()"
+          >
+            <lucide-icon [img]="colorsIcon" [size]="14" />
+            Colores
+          </button>
+        </nav>
+      }
+    </header>
+
+    <!-- ── Body ───────────────────────────────────────────────────────────── -->
+    <!-- min-h-0 es necesario: sin él, un item flex no se achica por debajo de su
+         contenido (min-height:auto por default), así que este overflow-y-auto nunca
+         entra en juego y termina scrolleando TODO el panel (header/tabs/footer
+         incluidos) en vez de solo este bloque. -->
+    <div class="flex-1 min-h-0 overflow-y-auto px-8 py-6 space-y-6">
+
+      @if (!isEdit()) {
+
+        <div>
+          <ui-input
+            label="Nombre"
+            placeholder="Marca Ejemplo"
+            [value]="name()"
+            (valueChange)="name.set($event); markTouched('name')"
+          />
+          @if (isFieldInvalid('name')) {
+            <span class="text-red-500 text-xs mt-1 block">Obligatorio.</span>
+          }
+        </div>
+
+        <div>
+          <ui-input
+            label="Slug"
+            placeholder="marca-ejemplo"
+            [value]="slug()"
+            (valueChange)="slug.set($event); markTouched('slug')"
+          />
+          @if (isFieldInvalid('slug')) {
+            <span class="text-red-500 text-xs mt-1 block">Solo minúsculas, números y guiones (ej. marca-ejemplo).</span>
+          } @else {
+            <span class="text-xs text-muted-foreground mt-1 block">Identifica la marca en la API pública (/brand/{{ slug() || '…' }}/config).</span>
+          }
+        </div>
+
+      } @else if (loading()) {
+
+        <div class="py-8">
+          <app-brand-loader
+            [visible]="true"
+            [inline]="true"
+            [size]="64"
+            [showWordmark]="false"
+            [showDescription]="false"
+            [showBar]="false"
+            [showPercent]="false"
+            [showMicrocopy]="false"
+            title="Cargando configuración…"
+          />
+        </div>
+
+      } @else if (section() === 'images') {
+
+        <p class="text-xs text-muted-foreground">
+          Sube el archivo de cada imagen y ajusta el orden; "Guardar imágenes" fija el set final
+          (reemplaza todo lo anterior en el backend).
+        </p>
+
+        <div class="space-y-3">
+          @for (img of imageRows(); track $index; let i = $index) {
+            <div class="rounded-lg border border-border bg-card p-3 flex gap-3">
+
+              <!-- Miniatura -->
+              <div class="relative w-16 h-16 shrink-0 rounded-md overflow-hidden bg-muted/40 border border-border flex items-center justify-center">
+                @if (img.url || img.previewUrl) {
+                  <img [src]="img.url || img.previewUrl" alt="" class="w-full h-full object-contain" />
+                } @else if (img.objectKey) {
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-muted-foreground"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="M21 15l-5-5L5 21" /></svg>
+                } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-muted-foreground/50"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="M21 15l-5-5L5 21" /></svg>
+                }
+                @if (img.uploading) {
+                  <div class="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <svg class="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25" stroke-width="3"/>
+                      <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/>
+                    </svg>
+                  </div>
+                }
+              </div>
+
+              <div class="flex-1 min-w-0 space-y-2">
+                <div class="flex items-center gap-2">
+                  <select
+                    class="flex-1 px-3 py-1.5 text-sm rounded-lg border bg-card border-border text-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+                    [value]="img.kind"
+                    (change)="setImageKind(i, $any($event.target).value)"
+                  >
+                    @for (def of imageKindDefs; track def.value) {
+                      <option [value]="def.value">{{ def.label }}</option>
+                    }
+                  </select>
+                  <button
+                    type="button"
+                    title="Quitar imagen"
+                    class="h-8 w-8 shrink-0 inline-flex items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/30 transition-colors"
+                    (click)="removeImageRow(i)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6" /></svg>
+                  </button>
+                </div>
+
+                <div class="flex items-center gap-3 flex-wrap">
+                  <label class="text-xs font-medium text-blue-500 hover:underline cursor-pointer shrink-0">
+                    {{ img.objectKey ? 'Reemplazar imagen' : 'Subir imagen' }}
+                    <input type="file" class="hidden" accept="image/*" (change)="uploadImageFile(i, $event)" />
+                  </label>
+                  @if (img.uploading) {
+                    <span class="text-xs text-muted-foreground">Subiendo…</span>
+                  } @else if (img.objectKey) {
+                    <span class="text-xs text-green-500">✓ Imagen lista</span>
+                  } @else {
+                    <span class="text-xs text-muted-foreground">Sin imagen todavía</span>
+                  }
+
+                  <label class="text-xs text-muted-foreground ml-auto flex items-center gap-1.5 shrink-0">
+                    Orden
+                    <input
+                      type="number"
+                      class="w-14 px-2 py-1 text-xs rounded-md border bg-card border-border text-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+                      [value]="img.sortOrder"
+                      (input)="setImageSortOrder(i, $any($event.target).value)"
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+          } @empty {
+            <p class="text-sm text-muted-foreground text-center py-4">Sin imágenes todavía.</p>
+          }
+        </div>
+
+        <ui-button label="Añadir imagen" size="sm" variant="secondary" (click)="addImageRow(imageKindDefs[0].value)" />
+
+      } @else if (section() === 'modules') {
+
+        <div class="space-y-4">
+          @for (g of moduleGroups(); track g.group) {
+            <div>
+              <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{{ g.group }}</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                @for (def of g.defs; track def.code) {
+                  <label class="flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-4 py-3 cursor-pointer select-none">
+                    <span class="text-sm font-medium text-foreground">{{ def.label }}</span>
+                    <input
+                      type="checkbox"
+                      class="h-4 w-4 rounded border-border accent-blue-500 shrink-0"
+                      [checked]="isModuleEnabled(def.code)"
+                      (change)="toggleModule(def.code)"
+                    />
+                  </label>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+      }
+    </div>
+
+    <!-- ── Footer ─────────────────────────────────────────────────────────── -->
+    <footer class="px-8 py-4 border-t border-border flex items-center justify-between gap-2">
+      <ui-button label="Cerrar" size="sm" variant="secondary" [disabled]="creating()" (click)="close()" />
+
+      @if (!isEdit()) {
+        <ui-button [label]="creating() ? 'Creando…' : 'Crear marca'" size="sm" [disabled]="creating()" (click)="create()" />
+      } @else if (section() === 'images') {
+        <ui-button [label]="savingImages() ? 'Guardando…' : 'Guardar imágenes'" size="sm" [disabled]="savingImages() || loading()" (click)="saveImages()" />
+      } @else if (section() === 'modules') {
+        <ui-button [label]="savingModules() ? 'Guardando…' : 'Guardar módulos'" size="sm" [disabled]="savingModules() || loading()" (click)="saveModules()" />
+      }
+    </footer>
+  </div>
+</ui-dialog>

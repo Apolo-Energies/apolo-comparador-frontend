@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, output, signal } from '@angular/core';
 import { DialogComponent, ButtonComponent } from '@apolo-energies/ui';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
-import { DashboardStatsService } from '../../../../../../services/dashboard-stats.service';
-import { ComparisonDetailItem, PaginatedComparisonDetail } from '../../models/dashboard-api.models';
-import { DateRange } from '../../models/dashboard-ui.models';
+import { DashboardStatsService } from '../../../../../../core/services/dashboard-stats.service';
+import { ComparisonDetailItem, PaginatedComparisonDetail } from '../../../../../../core/models/dashboard-api.model';
+import { DateRange } from '../../models/dashboard-ui.model';
 import { LoadingOverlayComponent } from '../../../../../../shared/components/loading-overlay/loading-overlay.component';
 import { EsNumberPipe } from '../../../../../../shared/pipes/es-number.pipe';
 

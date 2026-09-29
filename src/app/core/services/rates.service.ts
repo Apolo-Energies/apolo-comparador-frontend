@@ -1,0 +1,119 @@
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+import { Observable } from 'rxjs';
+import { Product, ProductType, OmieDistributionPeriod, BoePowerPeriod } from '../models/provider.model';
+
+// Request types
+export interface CreateProductPeriod {
+  period: string;
+  value:  number;
+}
+
+export interface CreateProductRequest {
+  name:           string;
+  tariffId:       number;
+  type:           ProductType;
+  energyPeriods:  CreateProductPeriod[];
+  powerPeriods?:  CreateProductPeriod[];
+}
+
+export interface UpdateProductRequest {
+  name?:          string;
+  type?:          ProductType;
+  energyPeriods?: CreateProductPeriod[];
+  powerPeriods?:  CreateProductPeriod[];
+}
+
+export interface UpdateProductPeriodRequest {
+  period: string;  // "P1", "P2", etc.
+  value: number;
+  productId: number;
+}
+
+export interface UpdateOmieDistributionPeriodRequest {
+  period: string;  // "P1", "P2", etc.
+  factor: number;
+  omieDistributionId: number;
+}
+
+export interface UpdateBoePowerPeriodRequest {
+  period: string;  // "P1", "P2", etc.
+  value: number;
+  boePowerId: number;
+}
+
+@Injectable({ providedIn: 'root' })
+export class RatesService {
+  private http = inject(HttpClient);
+
+  createProduct(data: CreateProductRequest): Observable<Product> {
+    return this.http.post<Product>(`${environment.apiUrl}/products`, data);
+  }
+
+  updateProduct(id: number, data: UpdateProductRequest): Observable<void> {
+    return this.http.put<void>(`${environment.apiUrl}/products/${id}`, data);
+  }
+
+  patchAvailability(id: number, isAvailable: boolean): Observable<void> {
+    return this.http.patch<void>(`${environment.apiUrl}/products/availability/${id}`, { isAvailable });
+  }
+
+  patchCommission(id: number, percentage: number | null): Observable<void> {
+    return this.http.patch<void>(`${environment.apiUrl}/products/commission/${id}`, { percentage });
+  }
+
+  deleteProduct(id: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/products/${id}`);
+  }
+
+  /**
+   * Actualizar un período individual de producto
+   */
+  updateProductPeriod(periodId: number, data: UpdateProductPeriodRequest): Observable<void> {
+    return this.http.put<void>(`${environment.apiUrl}/product-period/${periodId}`, data);
+  }
+
+  createOmieDistributionPeriod(data: { period: string; factor: number; omieDistributionId: number }): Observable<OmieDistributionPeriod> {
+    return this.http.post<OmieDistributionPeriod>(`${environment.apiUrl}/omie-distribution-period`, data);
+  }
+
+  /**
+   * Actualizar un período individual de distribución OMIE
+   */
+  updateOmieDistributionPeriod(periodId: number, data: UpdateOmieDistributionPeriodRequest): Observable<void> {
+    return this.http.put<void>(`${environment.apiUrl}/omie-distribution-period/${periodId}`, data);
+  }
+
+  createBoePowerPeriod(data: { period: string; value: number; boePowerId: number }): Observable<BoePowerPeriod> {
+    return this.http.post<BoePowerPeriod>(`${environment.apiUrl}/boe-power-period`, data);
+  }
+
+  /**
+   * Actualizar un período individual de potencia BOE
+   */
+  updateBoePowerPeriod(periodId: number, data: UpdateBoePowerPeriodRequest): Observable<void> {
+    return this.http.put<void>(`${environment.apiUrl}/boe-power-period/${periodId}`, data);
+  }
+
+  /**
+   * Eliminar un período de producto
+   */
+  deleteProductPeriod(periodId: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/product-period/${periodId}`);
+  }
+
+  /**
+   * Eliminar un período de distribución OMIE
+   */
+  deleteOmieDistributionPeriod(periodId: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/omie-distribution-period/${periodId}`);
+  }
+
+  /**
+   * Eliminar un período de potencia BOE
+   */
+  deleteBoePowerPeriod(periodId: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/boe-power-period/${periodId}`);
+  }
+}

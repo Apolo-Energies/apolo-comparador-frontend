@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import type { Chart } from 'chart.js';
-import { OpportunitySummary, OpportunityStatus } from '../../../../../../entities/opportunity.model';
+import { OpportunitySummary, OpportunityStatus } from '../../../../../../core/models/opportunity.model';
 import { fmtDate, statusClass, statusLabel } from '../../report-utils';
 
 const DONUT_COLORS = ['#7C67F2','#8FDBFF','#FFB86B','#F691A6','#C4C4C4','#999DF8'];

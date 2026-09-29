@@ -4,11 +4,11 @@ import { Router } from '@angular/router';
 import { ButtonComponent } from '@apolo-energies/ui';
 import { DownloadIcon, SearchIcon, UiIconSource } from '@apolo-energies/icons';
 import { SipsGasInfoCardComponent } from './components/sips-gas-info-card.component';
-import { GasSipsService } from '../../../../services/gas-sips.service';
-import { GasSipsPs, GasSipsConsumption } from '../../../../entities/gas-sips.model';
-import { GlobalLoadingService } from '../../../../services/global-loading.service';
+import { GasSipsService } from '../../../../core/services/gas-sips.service';
+import { GasSipsPs, GasSipsConsumption } from '../../../../core/models/gas-sips.model';
+import { GlobalLoadingService } from '../../../../core/services/global-loading.service';
 import { SipsDonutChartComponent, DonutDatum } from '../sips/components/donut-chart/donut-chart.component';
-import { SipsMonthlyChartComponent } from '../sips/components/montly-chart/monthly-chart.component';
+import { SipsMonthlyChartComponent } from '../sips/components/monthly-chart/monthly-chart.component';
 import { getGasMonthlyStackedChartData } from '../../../../shared/utils/chart.utils';
 import { Period } from '../../../../shared/constants/period';
 

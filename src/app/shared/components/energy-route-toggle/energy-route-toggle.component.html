@@ -1,0 +1,22 @@
+@if (visible()) {
+  <div class="mb-4 inline-flex gap-1 bg-card border border-border rounded-lg p-1">
+    <a
+      [routerLink]="luzUrl()"
+      class="px-4 py-2 text-sm font-medium rounded-md transition-all"
+      [class.bg-accent]="!isGas()"
+      [class.text-foreground]="!isGas()"
+      [class.text-muted-foreground]="isGas()"
+    >
+      Luz
+    </a>
+    <a
+      [routerLink]="gasUrl()"
+      class="px-4 py-2 text-sm font-medium rounded-md transition-all"
+      [class.bg-accent]="isGas()"
+      [class.text-foreground]="isGas()"
+      [class.text-muted-foreground]="!isGas()"
+    >
+      Gas
+    </a>
+  </div>
+}

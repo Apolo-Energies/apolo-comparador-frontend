@@ -8,12 +8,15 @@
   </button>
 </ng-template>
 
+<app-energy-route-toggle luzUrl="/dashboard/analytics/statistics" gasUrl="/dashboard/analytics/statistics/gas" />
+
 <!-- Dashboard de estadísticas -->
 <app-statistics-dashboard
   [summary]="summary()"
   [dailySummary]="dailySummary()"
   [monthlySummary]="monthlySummary()"
   [loading]="loading()"
+  [exportingReport]="exportingReport()"
   (rangeChange)="onDateRangeChange($event)"
   (retryRequest)="onRetry()"
   (exportReport)="onExport()"

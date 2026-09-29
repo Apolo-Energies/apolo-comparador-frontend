@@ -1,5 +1,5 @@
-import { DailySummaryApiItem, MonthlySummaryApiItem, SummaryApiResult } from '../models/dashboard-api.models';
-import { ChartBar, KpiCardViewModel, TREND, TrendDirection } from '../models/dashboard-ui.models';
+import { DailySummaryApiItem, MonthlySummaryApiItem, SummaryApiResult } from '../../../../../core/models/dashboard-api.model';
+import { ChartBar, KpiCardViewModel, TREND, TrendDirection } from '../models/dashboard-ui.model';
 
 const MONTH_ABBR = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 

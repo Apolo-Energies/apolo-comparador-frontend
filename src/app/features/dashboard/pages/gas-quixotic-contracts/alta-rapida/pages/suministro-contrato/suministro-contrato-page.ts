@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Router } from '@angular/router';
 import { ButtonComponent } from '@apolo-energies/ui';
 import { AltaRapidaGasStore } from '../../store/alta-rapida-gas.store';
-import { GasSipsService } from '../../../../../../../services/gas-sips.service';
-import { GasSipsPs } from '../../../../../../../entities/gas-sips.model';
+import { GasSipsService } from '../../../../../../../core/services/gas-sips.service';
+import { GasSipsPs } from '../../../../../../../core/models/gas-sips.model';
 
 const INPUT_CLS = 'px-4 py-2.5 text-sm rounded-lg border bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all';
 
