@@ -1,15 +1,24 @@
+import { LucideIconData, Users, FileText, MapPin, SlidersHorizontal } from 'lucide-angular';
+
 export interface CrmVideo {
   title:       string;
   description: string;
   url:         string;
 }
 
+export interface SupportFaq {
+  question: string;
+  answer:   string;
+}
+
 export interface SupportTopic {
+  /** Id estable para el switch Inicio/CRM/Tarifas Luz/Tarifas Gas/Comparador. */
+  key:           string;
   title:         string;
+  /** Etiqueta corta del switch (ej. "Tarifas Luz" en vez de "Tarifas De Luz"). */
+  switchLabel:   string;
   tag:           string;
-  tagCls:        string;
-  dotCls:        string;
-  available:     boolean;
+  icon:          LucideIconData;
   videos?:       CrmVideo[];
   excelPreview?: true;
 }
@@ -49,27 +58,31 @@ export const CRM_VIDEOS: CrmVideo[] = [
 
 export const SUPPORT_TOPICS: SupportTopic[] = [
   {
-    title:     'CRM',
-    tag:       'Aprende a usar el CRM y todo su potencial',
-    tagCls:    'bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/20',
-    dotCls:    'bg-blue-400',
-    available: true,
-    videos:    CRM_VIDEOS,
+    key:         'crm',
+    title:       'CRM',
+    switchLabel: 'CRM',
+    tag:         'Aprende a usar el CRM y todo su potencial',
+    icon:        Users,
+    videos:      CRM_VIDEOS,
   },
   {
+    key:          'luz',
     title:        'Tarifas De Luz',
+    switchLabel:  'Tarifas Luz',
     tag:          'Guía de tarifas eléctricas',
-    tagCls:       'bg-indigo-500/15 text-indigo-400 ring-1 ring-indigo-500/20',
-    dotCls:       'bg-indigo-400',
-    available:    true,
+    icon:         FileText,
     excelPreview: true,
   },
   {
-    title:     'Tarifas De Gas',
-    tag:       'Guía de tarifas de gas',
-    tagCls:    'bg-pink-500/15 text-pink-400 ring-1 ring-pink-500/20',
-    dotCls:    'bg-pink-400',
-    available: true,
+    key:         'gas',
+    title:       'Tarifas De Gas',
+    switchLabel: 'Tarifas Gas',
+    tag:         'Guía de tarifas de gas',
+    icon:        MapPin,
+    // Pendiente: sin exportador Excel de gas en el backend todavía (a diferencia de
+    // Luz, que sí lo tiene vía TariffPreviewController). Mientras no exista, se queda
+    // con video — el día que el backend lo agregue, cambiar a excelPreview: true y
+    // este tema pasa automáticamente al mismo visor de documento que Luz.
     videos: [
       {
         title:       'Tarifas De Gas',
@@ -79,11 +92,11 @@ export const SUPPORT_TOPICS: SupportTopic[] = [
     ],
   },
   {
-    title:     'Comparador',
-    tag:       'Cómo usar el comparador',
-    tagCls:    'bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/20',
-    dotCls:    'bg-purple-400',
-    available: true,
+    key:         'comparador',
+    title:       'Comparador',
+    switchLabel: 'Comparador',
+    tag:         'Cómo usar el comparador',
+    icon:        SlidersHorizontal,
     videos: [
       {
         title:       'Comparador',
@@ -92,26 +105,24 @@ export const SUPPORT_TOPICS: SupportTopic[] = [
       },
     ],
   },
+];
+
+export const SUPPORT_FAQS: SupportFaq[] = [
   {
-    title:     'Proceso de Firma',
-    tag:       'Próximamente',
-    tagCls:    'bg-muted text-muted-foreground ring-1 ring-border',
-    dotCls:    'bg-muted-foreground',
-    available: false,
+    question: '¿Cómo puedo sacarle el máximo partido al CRM?',
+    answer:   'El CRM te permite gestionar leads, clientes y oportunidades en un solo lugar. Empieza por la lección de Presentación e inicio y sigue la lista de reproducción (6 vídeos).',
   },
   {
-    title:     'Postventa y Soporte',
-    tag:       'Próximamente',
-    tagCls:    'bg-muted text-muted-foreground ring-1 ring-border',
-    dotCls:    'bg-muted-foreground',
-    available: false,
+    question: '¿Qué es la tarifa 3.0TD y a quién aplica?',
+    answer:   'La 3.0TD aplica a consumidores con potencia contratada superior a 15 kW (hasta 450 kW) — normalmente negocios y grandes consumidores. A diferencia de la 2.0TD, reparte el consumo y la potencia en 6 periodos (P1-P6) en vez de 3, con un precio distinto en cada uno.',
   },
   {
-    title:     'Comunidad Apolo',
-    tag:       'Próximamente',
-    tagCls:    'bg-muted text-muted-foreground ring-1 ring-border',
-    dotCls:    'bg-muted-foreground',
-    available: false,
+    question: '¿Cómo funciona el comparador de tarifas?',
+    answer:   'Subes la factura del cliente (o completas los datos a mano), el sistema extrae el consumo por OCR y calcula el ahorro estimado comparando contra las tarifas disponibles. Desde ahí puedes descargar el PDF de la comparativa o pasar directo a la solicitud de alta.',
+  },
+  {
+    question: '¿Cómo se calculan las comisiones por venta?',
+    answer:   'Depende del producto: la mayoría de tarifas pagan un porcentaje configurado en tu perfil (o el de tu comercial superior si eres sub-usuario), calculado sobre el consumo anual estimado. Algunos productos de precio fijo (como Snap o Vibra) pagan un importe fijo en euros en vez de un porcentaje.',
   },
 ];
 

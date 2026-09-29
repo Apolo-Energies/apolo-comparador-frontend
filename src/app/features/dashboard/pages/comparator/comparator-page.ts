@@ -84,8 +84,9 @@ export class Comparator {
   );
 
   // Signals expuestos por referencia directa (mismo objeto) para no tocar el .html existente.
-  readonly loading        = this.comparison.loading;
-  readonly modalOpen      = this.comparison.modalOpen;
+  readonly loading         = this.comparison.loading;
+  readonly downloadingType = this.comparison.downloadingType;
+  readonly modalOpen       = this.comparison.modalOpen;
   readonly result         = this.comparison.result;
   readonly ocrResult      = this.comparison.ocrResult;
   readonly fileId         = this.comparison.fileId;

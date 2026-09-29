@@ -72,7 +72,8 @@ export class ComparatorMultiple {
   // Signals expuestos por referencia directa (mismo objeto) para no tocar el .html existente.
   readonly phase          = this.results.phase;
   readonly viewMode       = this.results.viewMode;
-  readonly processing     = this.results.processing;
+  readonly processing      = this.results.processing;
+  readonly downloadingType = this.results.downloadingType;
   readonly items          = this.results.items;
   readonly periodosOpen   = this.results.periodosOpen;
 

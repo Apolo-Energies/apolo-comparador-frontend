@@ -28,6 +28,7 @@ export class StatisticsDashboardComponent {
   dailySummary = input<DailySummaryApiItem[]>([]);
   monthlySummary = input<MonthlySummaryApiItem[]>([]);
   loading = input(false);
+  exportingReport = input(false);
 
   rangeChange = output<DateRange>();
   retryRequest = output<void>();

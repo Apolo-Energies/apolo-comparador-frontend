@@ -9,6 +9,7 @@ import { environment } from '../../../../../environments/environment';
 import { GlobalLoadingService } from '../../../../core/services/global-loading.service';
 import { CollaboratorScopeService } from '../../../../core/services/collaborator-scope.service';
 import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
+import { EnergyRouteToggleComponent } from '../../../../shared/components/energy-route-toggle/energy-route-toggle.component';
 import { StatisticsDashboardComponent } from './components/statistics-dashboard/statistics-dashboard';
 import { UserDetailDialogComponent } from './components/user-detail-dialog/user-detail-dialog';
 import { DateRange } from './models/dashboard-ui.model';
@@ -18,7 +19,7 @@ import { StatisticsFiltersController, SortField } from './statistics-filters.con
 @Component({
   selector: 'app-statistics-page',
   standalone: true,
-  imports: [DataTableComponent, PaginatorComponent, InputFieldComponent, ButtonComponent, StatisticsDashboardComponent, UserDetailDialogComponent, TableSkeletonComponent],
+  imports: [DataTableComponent, PaginatorComponent, InputFieldComponent, ButtonComponent, StatisticsDashboardComponent, UserDetailDialogComponent, TableSkeletonComponent, EnergyRouteToggleComponent],
   templateUrl: './statistics-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -69,6 +70,8 @@ export class StatisticsPageComponent implements AfterViewInit {
   readonly summary        = this.filters.summary;
   readonly dailySummary   = this.filters.dailySummary;
   readonly monthlySummary = this.filters.monthlySummary;
+
+  readonly exportingReport = signal(false);
 
   // Modal de detalle
   readonly detailDialogOpen = signal(false);
@@ -152,6 +155,8 @@ export class StatisticsPageComponent implements AfterViewInit {
   }
 
   onExport(): void {
-    this.dashboardService.exportToExcel(this.dateRange());
+    if (this.exportingReport()) return;
+    this.exportingReport.set(true);
+    this.dashboardService.exportToExcel(this.dateRange(), () => this.exportingReport.set(false));
   }
 }

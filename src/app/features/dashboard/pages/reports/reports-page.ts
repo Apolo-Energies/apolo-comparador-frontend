@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { catchError, of } from 'rxjs';
 import { BrandLoaderComponent } from '../../../../shared/components/brand-loader/brand-loader.component';
+import { EnergyRouteToggleComponent } from '../../../../shared/components/energy-route-toggle/energy-route-toggle.component';
 import { DashboardStatsService } from '../../../../core/services/dashboard-stats.service';
 import { SummaryApiResult, DailySummaryApiItem, HistoryItem } from '../../../../core/models/dashboard-api.model';
 import { OpportunitySummary, OpportunityStatus } from '../../../../core/models/opportunity.model';
@@ -23,7 +24,7 @@ const CRITICAL_DAYS = 7;
 @Component({
   selector: 'app-reports-page',
   standalone: true,
-  imports: [BrandLoaderComponent, ReportsAnalyticsTabComponent, ReportsOpportunitiesTabComponent, ReportsAlertsTabComponent],
+  imports: [BrandLoaderComponent, ReportsAnalyticsTabComponent, ReportsOpportunitiesTabComponent, ReportsAlertsTabComponent, EnergyRouteToggleComponent],
   templateUrl: './reports-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -26,6 +26,7 @@ export interface ComparisonDeps {
  */
 export class ComparisonController {
   readonly loading        = signal(false);
+  readonly downloadingType = signal<'pdf' | 'excel' | null>(null);
   readonly modalOpen      = signal(false);
   readonly result         = signal<ComparadorResult | null>(null);
   readonly ocrResult      = signal<OcrResult | null>(null);
@@ -99,6 +100,8 @@ export class ComparisonController {
   }
 
   onDownload(event: ComparadorDownloadEvent): void {
+    if (this.downloadingType()) return;
+    this.downloadingType.set(event.type);
     const targetUserId = this.deps.isMaster() ? (this.selectedUserId() || undefined) : undefined;
     this.comparatorService.download(
       event.type,
@@ -108,6 +111,7 @@ export class ComparisonController {
       this.fileId(),
       targetUserId,
       this.sipsAnnualKwh(),
+      () => this.downloadingType.set(null),
     );
   }
 

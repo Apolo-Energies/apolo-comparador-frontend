@@ -128,7 +128,7 @@ export class DashboardStatsService {
   /**
    * Exporta el reporte de comparaciones a Excel
    */
-  exportToExcel(range?: DateRange): void {
+  exportToExcel(range?: DateRange, onSettled?: () => void): void {
     let params = new HttpParams();
     
     if (range?.from) params = params.set('startDate', this.formatDateParam(range.from));
@@ -165,13 +165,15 @@ export class DashboardStatsService {
         link.download = filename;
         document.body.appendChild(link);
         link.click();
-        
+
         // Limpiar
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
+        onSettled?.();
       },
       error: (error) => {
         console.error('Error al exportar:', error);
+        onSettled?.();
       }
     });
   }

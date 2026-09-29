@@ -24,7 +24,8 @@ export interface ResultsControllerContext {
 export class ResultsController {
   readonly phase         = signal<'upload' | 'results'>('upload');
   readonly viewMode      = signal<'grid' | 'detail'>('grid');
-  readonly processing    = signal(false);
+  readonly processing     = signal(false);
+  readonly downloadingType = signal<'pdf' | 'excel' | null>(null);
   readonly items         = signal<MultiItem[]>([]);
   readonly detailItemId  = signal<string | null>(null);
   readonly periodosOpen  = signal(true);
@@ -153,9 +154,10 @@ export class ResultsController {
 
   onDownload(type: 'pdf' | 'excel', isMaster: boolean, selectedUserId: string): void {
     const item = this.detailItem();
-    if (!item?.ocrResult || !item.result) return;
+    if (!item?.ocrResult || !item.result || this.downloadingType()) return;
     const targetUserId = isMaster ? (selectedUserId || undefined) : undefined;
-    this.comparatorService.download(type, item.form, item.result, item.ocrResult, item.fileId, targetUserId);
+    this.downloadingType.set(type);
+    this.comparatorService.download(type, item.form, item.result, item.ocrResult, item.fileId, targetUserId, undefined, () => this.downloadingType.set(null));
   }
 
   retryItem(item: MultiItem, userId: string | undefined): void {

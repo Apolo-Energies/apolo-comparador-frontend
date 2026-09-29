@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, switchMap, tap } from 'rxjs';
 import { ComparadorFormValue, ComparadorResult, OcrResult } from '../models/comparator.model';
 import { environment } from '../../../environments/environment';
 import { Tariff } from '../models/provider.model';
@@ -167,15 +167,13 @@ export class ComparatorService {
     fileId: string,
     targetUserId?: string,
     annualKwhOverride?: number,
-  ): Observable<SaveComparisonResponse> | undefined {
+  ): Observable<Blob> | undefined {
     if (!result || !ocr) return undefined;
 
     return this.saveComparison(form, result, ocr, fileId, targetUserId, annualKwhOverride).pipe(
-      tap(saved => {
-        this.downloadPdfFromHistory(saved.id).subscribe(blob => {
-          this.triggerBlobDownload(blob, `Comparacion_${saved.id}.pdf`);
-        });
-      })
+      switchMap(saved => this.downloadPdfFromHistory(saved.id).pipe(
+        tap(blob => this.triggerBlobDownload(blob, `Comparacion_${saved.id}.pdf`))
+      ))
     );
   }
 
@@ -185,21 +183,26 @@ export class ComparatorService {
     ocr: OcrResult | null,
     fileId: string,
     annualKwhOverride?: number,
+    onSettled?: () => void,
   ) {
-    if (!result || !ocr) return;
+    if (!result || !ocr) { onSettled?.(); return; }
     const payload = this.buildReportPayload(form, result, ocr, fileId, annualKwhOverride);
 
     return this.http.post(
       `${environment.apiUrl}/provider/excel`, payload, { responseType: 'blob' }
-    ).subscribe(blob => this.triggerBlobDownload(blob, 'comparador.xlsx'));
+    ).subscribe({
+      next: blob => { this.triggerBlobDownload(blob, 'comparador.xlsx'); onSettled?.(); },
+      error: () => onSettled?.(),
+    });
   }
 
   /** Compatibilidad con el flujo público (sin persistencia). */
-  downloadPublicPdf(form: ComparadorFormValue, result: ComparadorResult | null, ocr: OcrResult | null, fileId: string) {
-    if (!result || !ocr) return;
+  downloadPublicPdf(form: ComparadorFormValue, result: ComparadorResult | null, ocr: OcrResult | null, fileId: string, onSettled?: () => void) {
+    if (!result || !ocr) { onSettled?.(); return; }
     const payload = this.buildReportPayload(form, result, ocr, fileId);
-    return this.publicService.downloadPdf(payload).subscribe(blob => {
-      this.triggerBlobDownload(blob as Blob, 'comparador.pdf');
+    return this.publicService.downloadPdf(payload).subscribe({
+      next: blob => { this.triggerBlobDownload(blob as Blob, 'comparador.pdf'); onSettled?.(); },
+      error: () => onSettled?.(),
     });
   }
 
@@ -207,9 +210,12 @@ export class ComparatorService {
    * @deprecated Use saveAndDownloadPdf for PDFs and downloadExcel for Excel.
    * Mantenido temporalmente para que callers existentes no se rompan.
    */
-  download(type: 'pdf' | 'excel', form: ComparadorFormValue, result: ComparadorResult | null, ocr: OcrResult | null, fileId: string, targetUserId?: string, annualKwhOverride?: number) {
-    if (type === 'excel') return this.downloadExcel(form, result, ocr, fileId, annualKwhOverride);
-    return this.saveAndDownloadPdf(form, result, ocr, fileId, targetUserId, annualKwhOverride)?.subscribe();
+  download(type: 'pdf' | 'excel', form: ComparadorFormValue, result: ComparadorResult | null, ocr: OcrResult | null, fileId: string, targetUserId?: string, annualKwhOverride?: number, onSettled?: () => void) {
+    if (type === 'excel') return this.downloadExcel(form, result, ocr, fileId, annualKwhOverride, onSettled);
+    return this.saveAndDownloadPdf(form, result, ocr, fileId, targetUserId, annualKwhOverride)?.subscribe({
+      next: () => onSettled?.(),
+      error: () => onSettled?.(),
+    });
   }
 
   private triggerBlobDownload(blob: Blob, filename: string) {

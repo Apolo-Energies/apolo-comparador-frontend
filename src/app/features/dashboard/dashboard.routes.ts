@@ -151,6 +151,24 @@ export const DASHBOARD_ROUTES: Routes = [
             .then(m => m.LandingsPageComponent),
       },
 
+      // Master only — Marcas blancas (partner)
+      {
+        path: 'white-label-brands',
+        canActivate: [permissionGuard],
+        data: { roles: ['Master'] },
+        loadComponent: () =>
+          import('./pages/white-label-brands/white-label-brands-page')
+            .then(m => m.WhiteLabelBrandsPageComponent),
+      },
+      {
+        path: 'white-label-brands/:id',
+        canActivate: [permissionGuard],
+        data: { roles: ['Master'] },
+        loadComponent: () =>
+          import('./pages/white-label-brands/brand-edit-page')
+            .then(m => m.BrandEditPageComponent),
+      },
+
       // Master-only gas admin screens ('gas/...') + wizard "Alta Rápida" de gas.
       // Extraídos a gas-admin.routes.ts (mismo orden, guards y data).
       ...GAS_ADMIN_ROUTES,

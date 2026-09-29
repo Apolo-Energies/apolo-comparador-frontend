@@ -131,12 +131,16 @@ export class ComparatorGasService {
     result: GasResult | null,
     ocr:    GasOcrResult | null,
     fileId: string,
+    onSettled?: () => void,
   ): void {
-    if (!result || !ocr) return;
+    if (!result || !ocr) { onSettled?.(); return; }
     const payload = this.buildReportPayload(result, ocr, fileId);
     const obs = type === 'pdf' ? this.downloadPdf(payload) : this.downloadExcel(payload);
     const filename = type === 'pdf' ? 'comparativa-gas.pdf' : 'comparativa-gas.xlsx';
-    obs.subscribe(blob => this.triggerBlobDownload(blob, filename));
+    obs.subscribe({
+      next: blob => { this.triggerBlobDownload(blob, filename); onSettled?.(); },
+      error: () => onSettled?.(),
+    });
   }
 
   private triggerBlobDownload(blob: Blob, filename: string): void {

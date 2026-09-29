@@ -48,16 +48,19 @@ export function buildSidebarSections(params: BuildSidebarSectionsParams): Sideba
         ...(environment.features.contracts ? [
           { title: 'Plantillas', url: '/dashboard/templates', access: ['templates:view'] },
         ] : []),
+        // Tarifas unifica Luz/Gas: entra siempre por Luz (/dashboard/tariffs) y desde ahí
+        // se navega a Gas (Tramos/Parámetros/Productos) con el toggle propio de la página —
+        // ver EnergyRouteToggleComponent/GasTariffsNavComponent. Antes eran 3 ítems de sidebar
+        // sueltos ("Gas · Tramos/Parámetros/Productos"); las rutas siguen existiendo igual,
+        // solo se quitaron del sidebar.
         { title: 'Tarifas',    url: '/dashboard/tariffs',             access: ['support:view'] },
-        // Landings y Gas regulatorio son exclusivos de Apolo (Coexpal/Renovae solo usan Luz) y
-        // Master-only dentro de Apolo; comparten analytics:view con Analítica pero no deben
-        // aparecerle al Colaborador (defensa en profundidad para el edge case Colaborador en
-        // whitelabel no-Apolo, donde el ternario externo no lo excluye).
+        // Landings es exclusivo de Apolo (Coexpal/Renovae solo usan Luz) y Master-only dentro
+        // de Apolo; comparte analytics:view con Analítica pero no debe aparecerle al Colaborador
+        // (defensa en profundidad para el edge case Colaborador en whitelabel no-Apolo, donde el
+        // ternario externo no lo excluye).
         ...(isApolo && !isColaborador ? [
-          { title: 'Landings',         url: '/dashboard/landings',              access: ['analytics:view'] },
-          { title: 'Gas · Tramos',     url: '/dashboard/gas/access-tariffs',    access: ['analytics:view'] },
-          { title: 'Gas · Parámetros', url: '/dashboard/gas/regulatory-params', access: ['analytics:view'] },
-          { title: 'Gas · Productos',  url: '/dashboard/gas/products',          access: ['analytics:view'] },
+          { title: 'Landings', url: '/dashboard/landings', access: ['analytics:view'] },
+          { title: 'Marcas Blancas', url: '/dashboard/white-label-brands', access: ['analytics:view'] },
         ] : []),
       ];
 
@@ -95,21 +98,14 @@ export function buildSidebarSections(params: BuildSidebarSectionsParams): Sideba
           title: 'Analítica',
           icon: { type: 'apolo', icon: PieIcon, size: 20 },
           access: ['analytics:view'],
+          // Historial/Estadísticas/Reportes unifican Luz/Gas: el link del sidebar entra
+          // siempre por Luz, y desde la página se navega a Gas con EnergyRouteToggleComponent
+          // (mismo patrón que Tarifas). Antes eran 6 ítems (3 Luz + 3 Gas); las rutas de Gas
+          // siguen existiendo igual, solo se quitaron del sidebar.
           children: [
-            { title: 'Historial · Luz',    url: '/dashboard/analytics/history',        access: ['analytics.history:view'] },
-            // Gas de analítica es exclusivo de Apolo (Coexpal/Renovae solo usan Luz) y aún no
-            // disponible para Colaboradores dentro de Apolo.
-            ...(isApolo && !isColaborador ? [
-              { title: 'Historial · Gas',    url: '/dashboard/analytics/history/gas',    access: ['analytics.history:view'] },
-            ] : []),
-            { title: 'Estadísticas · Luz', url: '/dashboard/analytics/statistics',     access: ['analytics.statistics:view'] },
-            ...(isApolo && !isColaborador ? [
-              { title: 'Estadísticas · Gas', url: '/dashboard/analytics/statistics/gas', access: ['analytics.statistics:view'] },
-            ] : []),
-            { title: 'Reportes · Luz',     url: '/dashboard/analytics/reports',        access: ['analytics.statistics:view'] },
-            ...(isApolo && !isColaborador ? [
-              { title: 'Reportes · Gas',     url: '/dashboard/analytics/reports/gas',    access: ['analytics.statistics:view'] },
-            ] : []),
+            { title: 'Historial',    url: '/dashboard/analytics/history',    access: ['analytics.history:view'] },
+            { title: 'Estadísticas', url: '/dashboard/analytics/statistics', access: ['analytics.statistics:view'] },
+            { title: 'Reportes',     url: '/dashboard/analytics/reports',    access: ['analytics.statistics:view'] },
           ],
         },
         ...(isApolo && environment.features.contracts ? [{

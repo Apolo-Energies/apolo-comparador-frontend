@@ -37,8 +37,9 @@ export class ComparatorGas {
   private readonly platformId  = inject(PLATFORM_ID);
 
   readonly isApolo   = environment.clientName === 'apolo';
-  readonly loading   = signal(false);
-  readonly modalOpen = signal(false);
+  readonly loading         = signal(false);
+  readonly downloadingType = signal<'pdf' | 'excel' | null>(null);
+  readonly modalOpen       = signal(false);
   readonly ocrData   = signal<GasOcrResult | null>(null);
   readonly result    = signal<GasResult | null>(null);
   readonly fileId    = signal<string>('');
@@ -174,7 +175,9 @@ export class ComparatorGas {
   }
 
   onDownload(event: GasDownloadEvent): void {
-    this.gasService.download(event.type, this.result(), this.ocrData(), this.fileId());
+    if (this.downloadingType()) return;
+    this.downloadingType.set(event.type);
+    this.gasService.download(event.type, this.result(), this.ocrData(), this.fileId(), () => this.downloadingType.set(null));
   }
 
   // MIBGAS override requiere ida al backend (afecta al pricing base). Los otros

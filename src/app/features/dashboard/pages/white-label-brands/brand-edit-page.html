@@ -1,0 +1,161 @@
+<ui-alert />
+
+@if (loading()) {
+  <div class="p-10">
+    <app-brand-loader
+      [visible]="true"
+      [inline]="true"
+      [size]="64"
+      [showWordmark]="false"
+      [showDescription]="false"
+      [showBar]="false"
+      [showPercent]="false"
+      [showMicrocopy]="false"
+      title="Cargando marca…"
+    />
+  </div>
+} @else if (loadError() || !brand()) {
+  <div class="p-6 text-center text-sm text-muted-foreground">No se pudo cargar la marca.</div>
+} @else {
+  <div class="p-6 space-y-6">
+
+    <header>
+      <a [routerLink]="['/dashboard/white-label-brands']" class="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-1">
+        ← Marcas blancas
+      </a>
+      <h1 class="text-2xl font-bold text-foreground">Colores de {{ brand()!.name }}</h1>
+      <p class="text-sm text-muted-foreground mt-1">
+        Elegí los colores del informe en PDF. Los cambios se ven en la vista previa antes de guardar.
+      </p>
+      <p class="text-xs text-muted-foreground mt-1">¿Buscás las imágenes o los módulos? Se editan desde el listado.</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- ── Formulario de colores ────────────────────────────────────── -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-end gap-4">
+          <button type="button" class="text-xs font-medium text-blue-500 hover:underline shrink-0" (click)="toggleSettingsRawMode()">
+            {{ settingsRawMode() ? 'Volver al formulario' : 'Editar como JSON' }}
+          </button>
+        </div>
+
+        @if (settingsError()) {
+          <span class="text-red-500 text-xs block">{{ settingsError() }}</span>
+        }
+
+        @if (settingsRawMode()) {
+
+          <textarea
+            rows="16"
+            class="w-full px-3 py-2.5 text-xs font-mono rounded-lg border bg-card border-border text-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none resize-y"
+            [value]="settingsRawJson()"
+            (input)="setSettingsRawJson($any($event.target).value)"
+            placeholder='{"headerLeftColor": "#0D0D0D"}'
+          ></textarea>
+
+        } @else {
+
+          @for (g of colorGroups(); track g.group) {
+            <div class="rounded-lg border border-border bg-card p-4 space-y-3">
+              <div>
+                <h3 class="text-sm font-semibold text-foreground">{{ g.group }}</h3>
+                @if (g.hint) {
+                  <p class="text-xs text-muted-foreground mt-0.5">{{ g.hint }}</p>
+                }
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                @for (k of g.keys; track k.key) {
+                  <div>
+                    <label class="text-xs font-medium text-muted-foreground block mb-1">
+                      {{ k.label }}
+                      @if (k.optional) {
+                        <span class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground align-middle">opcional</span>
+                      }
+                    </label>
+                    <div class="flex items-center gap-2">
+                      <input
+                        type="color"
+                        class="h-9 w-9 shrink-0 rounded-full border border-border bg-card cursor-pointer"
+                        [value]="settingsFields()[k.key] || '#000000'"
+                        (input)="setSettingsField(k.key, $any($event.target).value)"
+                      />
+                      <input
+                        type="text"
+                        placeholder="#000000"
+                        class="w-full px-3 py-2 text-sm font-mono rounded-lg border bg-card border-border text-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+                        [value]="settingsFields()[k.key] || ''"
+                        (input)="setSettingsField(k.key, $any($event.target).value)"
+                      />
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <details class="rounded-lg border border-border bg-card/50">
+            <summary class="px-4 py-2.5 text-sm font-medium text-foreground cursor-pointer select-none">Ajustes avanzados</summary>
+            <div class="px-4 pb-4 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              @for (s of settingsSizeKeys; track s.key) {
+                <div>
+                  <label class="text-xs font-medium text-muted-foreground block mb-1">{{ s.label }}</label>
+                  <input
+                    type="number"
+                    [placeholder]="s.placeholder"
+                    class="w-full px-3 py-2 text-sm rounded-lg border bg-card border-border text-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+                    [value]="settingsSizeFields()[s.key] || ''"
+                    (input)="setSettingsSizeField(s.key, $any($event.target).value)"
+                  />
+                </div>
+              }
+            </div>
+          </details>
+
+        }
+
+        <div class="flex justify-end pt-2">
+          <ui-button [label]="savingSettings() ? 'Guardando…' : 'Guardar colores'" size="sm" [disabled]="savingSettings()" (click)="saveSettings()" />
+        </div>
+      </div>
+
+      <!-- ── Vista previa en vivo ─────────────────────────────────────── -->
+      <div class="lg:sticky lg:top-6 h-fit">
+        <div class="rounded-lg border border-border bg-card overflow-hidden">
+          <div class="flex items-center justify-between px-4 py-2 bg-muted/30 border-b border-border">
+            <p class="text-xs text-muted-foreground">Así se verá el informe (con datos de ejemplo)</p>
+            <button type="button" class="text-xs font-medium text-blue-500 hover:underline shrink-0" (click)="refreshPreviewNow()">
+              Actualizar ahora
+            </button>
+          </div>
+          <div class="relative bg-neutral-800" style="aspect-ratio: 1 / 1.414;">
+            @if (previewLoading()) {
+              <app-brand-loader
+                [visible]="true"
+                [size]="100"
+                [fullscreen]="false"
+                [showBackdrop]="false"
+                [showDescription]="false"
+                [showWordmark]="false"
+                [showBar]="true"
+                [showPercent]="false"
+                [showMicrocopy]="false"
+                title="Generando vista previa"
+              />
+            } @else if (previewError(); as err) {
+              <div class="absolute inset-0 flex items-center justify-center text-sm text-red-400 z-10 px-4 text-center">{{ err }}</div>
+            } @else if (previewUrl(); as url) {
+              <iframe [src]="url" class="w-full h-full border-0" title="Vista previa PDF"></iframe>
+            } @else {
+              <div class="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground px-4 text-center">
+                Editá un color para generar la vista previa.
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+}

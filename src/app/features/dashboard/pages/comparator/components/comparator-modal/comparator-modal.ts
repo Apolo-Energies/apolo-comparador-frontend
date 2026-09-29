@@ -42,6 +42,7 @@ export class ComparatorModalComponent {
   readonly maxFeeEnergia      = input(30);
   readonly maxFeePotencia     = input(5);
   readonly result             = input<ComparadorResult | null>(null);
+  readonly downloadingType    = input<'pdf' | 'excel' | 'contratar' | null>(null);
 
   // ── visibility flags (default = current private behavior) ──────────────────
   readonly showPrecioMedio      = input(true);

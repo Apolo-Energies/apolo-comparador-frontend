@@ -44,7 +44,8 @@ export class ComparatorGasModalComponent {
   // ── inputs ─────────────────────────────────────────────────────────────────
   readonly open         = input(false);
   readonly ocrResult    = input<GasOcrResult | null>(null);
-  readonly result       = input<GasResult | null>(null);
+  readonly result          = input<GasResult | null>(null);
+  readonly downloadingType = input<'pdf' | 'excel' | null>(null);
   readonly pricingError = input<string | null>(null);
   readonly pricingInfo  = input<ApoloGasPricing | null>(null);
 

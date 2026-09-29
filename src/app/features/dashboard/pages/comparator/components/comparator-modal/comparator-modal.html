@@ -332,32 +332,62 @@
   <!-- ── Footer ─────────────────────────────────────────────────────────── -->
   <div class="comparator-modal__footer flex items-center justify-between gap-2 px-6 py-4 border-t border-border">
     @if (showExcelButton()) {
-      <ui-button
-        label="Exportar Excel"
-        variant="secondary"
-        size="md"
-        [leadingIcon]="excelIcon"
-        [disabled]="!result()"
-        (click)="onDownload('excel')"
-      />
+      @if (downloadingType() === 'excel') {
+        <button disabled class="inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 border border-border bg-card text-foreground text-sm font-semibold cursor-not-allowed opacity-80">
+          <svg class="h-4 w-4 animate-spin shrink-0" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25" stroke-width="3"/>
+            <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/>
+          </svg>
+          Exportando…
+        </button>
+      } @else {
+        <ui-button
+          label="Exportar Excel"
+          variant="secondary"
+          size="md"
+          [leadingIcon]="excelIcon"
+          [disabled]="!result() || !!downloadingType()"
+          (click)="onDownload('excel')"
+        />
+      }
     }
     @if (showContratarButton()) {
+      @if (downloadingType() === 'contratar') {
+        <button disabled class="inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 border border-border bg-card text-foreground text-sm font-semibold cursor-not-allowed opacity-80">
+          <svg class="h-4 w-4 animate-spin shrink-0" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25" stroke-width="3"/>
+            <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/>
+          </svg>
+          Descargando…
+        </button>
+      } @else {
+        <ui-button
+          [label]="contratarButtonLabel()"
+          [variant]="contratarButtonVariant()"
+          size="md"
+          [disabled]="!result() || !!downloadingType()"
+          (click)="onContratar()"
+        />
+      }
+    }
+    @if (downloadingType() === 'pdf') {
+      <button disabled class="inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 bg-primary-button text-white text-sm font-semibold cursor-not-allowed opacity-80">
+        <svg class="h-4 w-4 animate-spin shrink-0" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+          <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="white"/>
+        </svg>
+        Descargando…
+      </button>
+    } @else {
       <ui-button
-        [label]="contratarButtonLabel()"
-        [variant]="contratarButtonVariant()"
+        [label]="pdfButtonLabel()"
+        [variant]="pdfButtonVariant()"
         size="md"
-        [disabled]="!result()"
-        (click)="onContratar()"
+        [leadingIcon]="pdfIcon"
+        [disabled]="!result() || !!downloadingType()"
+        (click)="onDownload('pdf')"
       />
     }
-    <ui-button
-      [label]="pdfButtonLabel()"
-      [variant]="pdfButtonVariant()"
-      size="md"
-      [leadingIcon]="pdfIcon"
-      [disabled]="!result()"
-      (click)="onDownload('pdf')"
-    />
   </div>
 
 </ui-dialog>

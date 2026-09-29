@@ -74,8 +74,9 @@ export class BrandedLandingComponent {
     });
   }
 
-  readonly loading        = signal(false);
-  readonly modalOpen      = signal(false);
+  readonly loading         = signal(false);
+  readonly downloadingType = signal<'contratar' | null>(null);
+  readonly modalOpen       = signal(false);
   readonly result         = signal<ComparadorResult | null>(null);
   readonly ocrResult      = signal<OcrResult | null>(null);
   readonly fileId         = signal<string>('');
@@ -129,11 +130,14 @@ export class BrandedLandingComponent {
   }
 
   onVerComparativa(formValue: ComparadorFormValue): void {
+    if (this.downloadingType()) return;
+    this.downloadingType.set('contratar');
     this.comparatorService.downloadPublicPdf(
       formValue,
       this.result(),
       this.ocrResult(),
       this.fileId(),
+      () => this.downloadingType.set(null),
     );
   }
 

@@ -1,0 +1,80 @@
+<ui-alert />
+
+<div class="p-6 space-y-6">
+
+  <header class="flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <h1 class="text-2xl font-bold text-foreground">Marcas blancas</h1>
+      <p class="text-sm text-muted-foreground">Crea y configura marcas partner: imágenes, módulos habilitados y settings.</p>
+    </div>
+    <ui-button label="Nueva marca" size="sm" (click)="openCreate()" />
+  </header>
+
+  <div class="rounded-lg border border-border bg-card overflow-x-auto">
+    @if (loading()) {
+      <div class="py-10">
+        <app-brand-loader
+          [visible]="true"
+          [inline]="true"
+          [size]="64"
+          [showWordmark]="false"
+          [showDescription]="false"
+          [showBar]="false"
+          [showPercent]="false"
+          [showMicrocopy]="false"
+          title="Cargando marcas…"
+        />
+      </div>
+    } @else {
+      <table class="w-full text-sm">
+        <thead class="bg-muted/40 text-left">
+          <tr>
+            <th class="px-4 py-3 font-medium text-muted-foreground">Slug</th>
+            <th class="px-4 py-3 font-medium text-muted-foreground">Nombre</th>
+            <th class="px-4 py-3 font-medium text-muted-foreground text-center">Estado</th>
+            <th class="px-4 py-3 font-medium text-muted-foreground text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (loadError()) {
+            <tr><td colspan="4" class="px-4 py-6 text-center text-muted-foreground">No se pudo cargar el listado de marcas.</td></tr>
+          } @else if (data().length === 0) {
+            <tr><td colspan="4" class="px-4 py-6 text-center text-muted-foreground">No hay marcas todavía.</td></tr>
+          } @else {
+            @for (row of data(); track row.id) {
+              <tr class="border-t border-border hover:bg-muted/20">
+                <td class="px-4 py-3 font-mono text-xs text-foreground">{{ row.slug }}</td>
+                <td class="px-4 py-3 text-foreground">{{ row.name }}</td>
+                <td class="px-4 py-3 text-center">
+                  @if (row.isActive) {
+                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">Activa</span>
+                  } @else {
+                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs bg-muted text-muted-foreground">Inactiva</span>
+                  }
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <button
+                    type="button"
+                    title="Editar"
+                    class="h-8 w-8 inline-flex items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                    (click)="openEdit(row)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+
+</div>
+
+<app-brand-form-dialog
+  [open]="formOpen()"
+  [brand]="formBrand()"
+  (openChange)="onFormOpenChange($event)"
+  (saved)="onFormSaved()"
+/>

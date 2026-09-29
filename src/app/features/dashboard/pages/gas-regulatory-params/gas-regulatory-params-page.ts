@@ -8,11 +8,13 @@ import { GasRegulatoryParams } from '../../../../core/models/gas-regulatory-para
 import { GasRegulatoryParamsDialogController } from './gas-regulatory-params-dialog.controller';
 import { GasRegulatoryParamsInlineEditController } from './gas-regulatory-params-inline-edit.controller';
 import { errorMessageOf, FormState, InlineEditForm, isActiveParams } from './gas-regulatory-params-page.helpers';
+import { EnergyRouteToggleComponent } from '../../../../shared/components/energy-route-toggle/energy-route-toggle.component';
+import { GasTariffsNavComponent } from '../../../../shared/components/gas-tariffs-nav/gas-tariffs-nav.component';
 
 @Component({
   selector: 'app-gas-regulatory-params-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonComponent],
+  imports: [CommonModule, FormsModule, ButtonComponent, EnergyRouteToggleComponent, GasTariffsNavComponent],
   templateUrl: './gas-regulatory-params-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

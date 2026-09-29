@@ -10,9 +10,9 @@ import { ComingSoonComponent } from '../../shared/components/coming-soon/coming-
 // Variantes Luz también accesibles para Colaboradores; Gas queda Master only.
 export const ANALYTICS_ROUTES: Routes = [
   { path: 'history',        component: HistoryPageComponent,      canActivate: [permissionGuard], data: { roles: ['Master', 'Colaborador', 'Colaborador - Referenciador'] } },
-  { path: 'history/gas',    component: ComingSoonComponent,       canActivate: [permissionGuard], data: { roles: ['Master'], title: 'Historial de gas' } },
+  { path: 'history/gas',    component: ComingSoonComponent,       canActivate: [permissionGuard], data: { roles: ['Master'], title: 'Historial de gas', luzUrl: '/dashboard/analytics/history' } },
   { path: 'statistics',     component: StatisticsPageComponent,   canActivate: [permissionGuard], data: { roles: ['Master', 'Colaborador', 'Colaborador - Referenciador'] } },
-  { path: 'statistics/gas', component: ComingSoonComponent,       canActivate: [permissionGuard], data: { roles: ['Master'], title: 'Estadísticas de gas' } },
+  { path: 'statistics/gas', component: ComingSoonComponent,       canActivate: [permissionGuard], data: { roles: ['Master'], title: 'Estadísticas de gas', luzUrl: '/dashboard/analytics/statistics' } },
   {
     path: 'opportunities',
     redirectTo: 'opportunities/luz',
@@ -45,7 +45,7 @@ export const ANALYTICS_ROUTES: Routes = [
   {
     path: 'reports/gas',
     canActivate: [permissionGuard, featureGuard],
-    data: { roles: ['Master'], feature: 'reports', title: 'Reportes de gas' },
+    data: { roles: ['Master'], feature: 'reports', title: 'Reportes de gas', luzUrl: '/dashboard/analytics/reports' },
     component: ComingSoonComponent,
   },
 ];

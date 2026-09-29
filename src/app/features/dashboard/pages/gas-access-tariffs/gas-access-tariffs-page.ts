@@ -5,6 +5,8 @@ import { ButtonComponent } from '@apolo-energies/ui';
 import { StarIcon, UiIconSource } from '@apolo-energies/icons';
 import { GasAccessTariffService } from '../../../../core/services/gas-access-tariff.service';
 import { GasAccessTariff } from '../../../../core/models/gas-access-tariff.model';
+import { EnergyRouteToggleComponent } from '../../../../shared/components/energy-route-toggle/energy-route-toggle.component';
+import { GasTariffsNavComponent } from '../../../../shared/components/gas-tariffs-nav/gas-tariffs-nav.component';
 
 type DialogMode = 'create' | 'updatePrices' | 'updateMargin' | 'close';
 
@@ -23,7 +25,7 @@ interface FormState {
 @Component({
   selector: 'app-gas-access-tariffs-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonComponent],
+  imports: [CommonModule, FormsModule, ButtonComponent, EnergyRouteToggleComponent, GasTariffsNavComponent],
   templateUrl: './gas-access-tariffs-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -31,8 +31,9 @@ export class UsersDataController {
   readonly pageSize    = signal(10);
   readonly totalCount  = signal(0);
 
-  readonly loading = signal(false);
-  readonly data    = signal<UserRow[]>([]);
+  readonly loading   = signal(false);
+  readonly exporting = signal(false);
+  readonly data      = signal<UserRow[]>([]);
 
   readonly potentialParents = signal<PotentialParent[]>([]);
   readonly allCommissions   = signal<CommissionRow[]>([]);
@@ -132,8 +133,11 @@ export class UsersDataController {
   }
 
   onExport(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
     this.deps.userService.downloadExcel().subscribe({
       next: (blob) => {
+        this.exporting.set(false);
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -141,6 +145,7 @@ export class UsersDataController {
         link.click();
         URL.revokeObjectURL(url);
       },
+      error: () => { this.exporting.set(false); },
     });
   }
 }

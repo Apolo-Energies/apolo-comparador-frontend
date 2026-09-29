@@ -10,13 +10,14 @@ import { HistoryService, HistoryItem } from '../../../../core/services/history.s
 import { GlobalLoadingService } from '../../../../core/services/global-loading.service';
 import { CollaboratorScopeService } from '../../../../core/services/collaborator-scope.service';
 import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
+import { EnergyRouteToggleComponent } from '../../../../shared/components/energy-route-toggle/energy-route-toggle.component';
 import { environment } from '../../../../../environments/environment';
 import { EsNumberPipe } from '../../../../shared/pipes/es-number.pipe';
 
 @Component({
   selector: 'app-history-page',
   standalone: true,
-  imports: [DataTableComponent, PaginatorComponent, InputFieldComponent, ButtonComponent, ApoloIcons, TableSkeletonComponent],
+  imports: [DataTableComponent, PaginatorComponent, InputFieldComponent, ButtonComponent, ApoloIcons, TableSkeletonComponent, EnergyRouteToggleComponent],
   templateUrl: './history-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -49,8 +50,9 @@ export class HistoryPageComponent implements AfterViewInit {
   readonly pageSize    = signal(10);
   readonly totalCount  = signal(0);
 
-  readonly loading = signal(false);
-  readonly data    = signal<HistoryItem[]>([]);
+  readonly loading   = signal(false);
+  readonly exporting = signal(false);
+  readonly data      = signal<HistoryItem[]>([]);
   readonly isApolo = environment.features.userDetail;
 
   @ViewChild('emailCellTpl') emailCellTpl!: TemplateRef<{ $implicit: HistoryItem }>;
@@ -135,8 +137,11 @@ export class HistoryPageComponent implements AfterViewInit {
   }
 
   onExport(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
     this.historyService.downloadExcel().subscribe({
       next: (blob) => {
+        this.exporting.set(false);
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -144,6 +149,7 @@ export class HistoryPageComponent implements AfterViewInit {
         link.click();
         URL.revokeObjectURL(url);
       },
+      error: () => { this.exporting.set(false); },
     });
   }
 

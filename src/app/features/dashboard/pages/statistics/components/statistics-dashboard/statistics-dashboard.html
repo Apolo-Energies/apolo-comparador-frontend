@@ -2,13 +2,23 @@
 
   <div class="flex items-center justify-between gap-4">
     <app-date-range-picker (rangeSelected)="onDateRangeChange($event)" />
-    <ui-button
-      label="Descargar reporte"
-      variant="secondary"
-      size="md"
-      [leadingIcon]="downloadIcon"
-      (click)="onExportReport()"
-    />
+    @if (exportingReport()) {
+      <button disabled class="inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 border border-border bg-card text-foreground text-sm font-semibold cursor-not-allowed opacity-80">
+        <svg class="h-4 w-4 animate-spin shrink-0" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25" stroke-width="3"/>
+          <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor"/>
+        </svg>
+        Descargando…
+      </button>
+    } @else {
+      <ui-button
+        label="Descargar reporte"
+        variant="secondary"
+        size="md"
+        [leadingIcon]="downloadIcon"
+        (click)="onExportReport()"
+      />
+    }
   </div>
 
   @if (isLoading()) {
