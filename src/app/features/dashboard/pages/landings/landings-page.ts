@@ -8,8 +8,8 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AlertComponent, AlertService, ButtonComponent, DialogComponent, InputFieldComponent } from '@apolo-energies/ui';
-import { LandingService } from '../../../../services/landing.service';
-import { LandingSummary } from '../../../../entities/landing.model';
+import { LandingService } from '../../../../core/services/landing.service';
+import { LandingSummary } from '../../../../core/models/landing.model';
 import { LandingFormDialogComponent } from './landing-form-dialog';
 
 @Component({

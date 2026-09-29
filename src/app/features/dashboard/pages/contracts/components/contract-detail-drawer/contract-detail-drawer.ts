@@ -13,13 +13,13 @@ import {
   NoteIcon, UiIconSource, UserSimpleIcon, XIcon,
 } from '@apolo-energies/icons';
 import { AuthService } from '@apolo-energies/auth';
-import { ContratoClienteRow } from '../../../../../../entities/contrato.model';
-import { ServicioListItem } from '../../../../../../entities/servicio.model';
-import { ContractService } from '../../../../../../services/contract.service';
-import { IncidenceService, Incidence, INCIDENCE_TYPES, INCIDENCE_TYPE_LABELS, INCIDENCE_STATUS_LABELS } from '../../../../../../services/incidence.service';
+import { ContratoClienteRow } from '../../../../../../core/models/contrato.model';
+import { ServicioListItem } from '../../../../../../core/models/servicio.model';
+import { ContractService } from '../../../../../../core/services/contract.service';
+import { IncidenceService, Incidence, INCIDENCE_TYPES, INCIDENCE_TYPE_LABELS, INCIDENCE_STATUS_LABELS } from '../../../../../../core/services/incidence.service';
 import { BrandLoaderComponent } from '../../../../../../shared/components/brand-loader/brand-loader.component';
 import { calcDias, dedupeServiciosByCups, estadoCls, estadoLabel, fmtDate, fmtKwh } from '../../contracts-utils';
-import { getUserRoles } from '../../../../../../utils/auth.utils';
+import { getUserRoles } from '../../../../../../core/helpers/auth.utils';
 
 @Component({
   selector: 'app-contract-detail-drawer',

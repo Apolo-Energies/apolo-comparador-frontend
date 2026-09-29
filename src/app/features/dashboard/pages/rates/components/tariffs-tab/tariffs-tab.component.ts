@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
-import { Tariff, Product, ProductPeriod } from '../../../../../../entities/provider.model';
+import { Tariff, Product, ProductPeriod } from '../../../../../../core/models/provider.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RatesService } from '../../../../../../services/rates.service';
+import { RatesService } from '../../../../../../core/services/rates.service';
 import { PeriodEditorComponent } from '../period-editor/period-editor.component';
 import { LucideAngularModule, Calculator } from 'lucide-angular';
 

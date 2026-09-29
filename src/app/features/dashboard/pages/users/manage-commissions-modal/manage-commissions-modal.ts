@@ -4,7 +4,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { AlertComponent, AlertService, ButtonComponent, DialogComponent } from '@apolo-energies/ui';
 import { ApoloIcons, XIcon, UiIconSource } from '@apolo-energies/icons';
-import { SubUsersService, SubUser } from '../../../../../services/sub-users.service';
+import { SubUsersService, SubUser } from '../../../../../core/services/sub-users.service';
 
 export interface CommissionsParent {
   id:       string;

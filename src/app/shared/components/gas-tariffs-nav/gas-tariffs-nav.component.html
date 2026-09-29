@@ -1,0 +1,32 @@
+<div class="mb-6 grid grid-cols-3 gap-1 bg-card border border-border rounded-lg p-1">
+  <a
+    #tramosLink="routerLinkActive"
+    routerLink="/dashboard/gas/access-tariffs"
+    routerLinkActive="bg-accent text-foreground"
+    [routerLinkActiveOptions]="{ exact: true }"
+    [class.text-muted-foreground]="!tramosLink.isActive"
+    class="flex items-center justify-center px-4 py-2.5 text-sm font-medium rounded-md transition-all"
+  >
+    Tramos
+  </a>
+  <a
+    #parametrosLink="routerLinkActive"
+    routerLink="/dashboard/gas/regulatory-params"
+    routerLinkActive="bg-accent text-foreground"
+    [routerLinkActiveOptions]="{ exact: true }"
+    [class.text-muted-foreground]="!parametrosLink.isActive"
+    class="flex items-center justify-center px-4 py-2.5 text-sm font-medium rounded-md transition-all"
+  >
+    Parámetros
+  </a>
+  <a
+    #productosLink="routerLinkActive"
+    routerLink="/dashboard/gas/products"
+    routerLinkActive="bg-accent text-foreground"
+    [routerLinkActiveOptions]="{ exact: true }"
+    [class.text-muted-foreground]="!productosLink.isActive"
+    class="flex items-center justify-center px-4 py-2.5 text-sm font-medium rounded-md transition-all"
+  >
+    Productos
+  </a>
+</div>

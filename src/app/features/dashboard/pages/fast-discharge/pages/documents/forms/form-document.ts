@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { DocumentKey, DocumentState, TramiteType } from '../../../models/person.models';
+import { DocumentKey, DocumentState, TramiteType } from '../../../models/person.model';
 
 interface DocDef {
   key: DocumentKey;
@@ -20,47 +20,7 @@ const DOC_LABELS: Record<DocumentKey, string> = {
 @Component({
   selector: 'app-form-document',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <div class="grid grid-cols-1 gap-3">
-      @for (doc of requiredDocs(); track doc.key) {
-        <div
-          class="flex items-center justify-between rounded-lg border p-4 transition-colors"
-          [class.border-green-500]="!!documents()[doc.key]"
-          [class.bg-green-50]="!!documents()[doc.key]"
-          [class.dark:bg-green-950]="!!documents()[doc.key]"
-          [class.border-border]="!documents()[doc.key]"
-        >
-          <div class="flex flex-col gap-0.5 min-w-0 mr-4">
-            <span class="text-sm font-medium text-foreground truncate">{{ doc.label }}</span>
-            @if (documents()[doc.key]; as file) {
-              <span class="text-xs text-green-600 truncate">{{ file.name }}</span>
-            } @else {
-              <span class="text-xs text-muted-foreground">Sin archivo seleccionado</span>
-            }
-          </div>
-
-          <label class="shrink-0 cursor-pointer">
-            <span
-              class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md border transition-colors"
-              [class.border-green-500]="!!documents()[doc.key]"
-              [class.text-green-700]="!!documents()[doc.key]"
-              [class.border-border]="!documents()[doc.key]"
-              [class.text-muted-foreground]="!documents()[doc.key]"
-              [class.hover:bg-muted]="!documents()[doc.key]"
-            >
-              {{ documents()[doc.key] ? 'Cambiar' : 'Subir' }}
-            </span>
-            <input
-              type="file"
-              class="hidden"
-              accept=".pdf,.jpg,.jpeg,.png,.webp"
-              (change)="onFileChange(doc.key, $event)"
-            />
-          </label>
-        </div>
-      }
-    </div>
-  `,
+  templateUrl: './form-document.html',
 })
 export class FormDocumentComponent {
   readonly isCompany = input(false);

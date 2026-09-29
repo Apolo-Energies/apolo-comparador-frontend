@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { Provider } from '../../../../../../entities/provider.model';
+import { Provider } from '../../../../../../core/models/provider.model';
 import { CommonModule } from '@angular/common';
 
 @Component({

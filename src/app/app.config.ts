@@ -12,9 +12,9 @@ import { MessageService } from 'primeng/api';
 import Aura from '@primeuix/themes/aura';
 import { environment } from '../environments/environment';
 import { routes } from './app.routes';
-import { authResponseInterceptor } from './interceptors/auth-response.interceptor';
-import { tokenExpiryInterceptor } from './interceptors/token-expiry.interceptor';
-import { RefreshTokenService } from './services/refresh-token.service';
+import { authResponseInterceptor } from './core/interceptors/auth-response.interceptor';
+import { tokenExpiryInterceptor } from './core/interceptors/token-expiry.interceptor';
+import { RefreshTokenService } from './core/services/refresh-token.service';
 
 function isJwtExpired(token: string): boolean {
   try {

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { OpportunityStatus, OPPORTUNITY_STATUS_LABEL } from '../../../../../../entities/opportunity.model';
+import { OpportunityStatus, OPPORTUNITY_STATUS_LABEL } from '../../../../../../core/models/opportunity.model';
 
 const STATUS_CLASSES: Record<OpportunityStatus, string> = {
   [OpportunityStatus.Pending]:     'bg-zinc-700/40    text-zinc-200    ring-zinc-600/40',
@@ -12,12 +12,7 @@ const STATUS_CLASSES: Record<OpportunityStatus, string> = {
   selector: 'app-opportunity-status-badge',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <span
-      class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset"
-      [class]="classes()"
-    >{{ label() }}</span>
-  `,
+  templateUrl: './opportunity-status-badge.html',
 })
 export class OpportunityStatusBadgeComponent {
   readonly status = input.required<OpportunityStatus>();

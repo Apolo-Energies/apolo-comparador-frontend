@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DialogComponent, ButtonComponent, AlertService, ComboboxComponent, ComboboxOption } from '@apolo-energies/ui';
-import { UserService } from '../../../../../services/user.service';
-import { PotentialParent } from '../../../../../entities/user.model';
+import { UserService } from '../../../../../core/services/user.service';
+import { PotentialParent } from '../../../../../core/models/user.model';
 import { FormIndividualUserComponent } from './form-individual-user';
 import { FormCompanyUserComponent } from './form-company-user';
 import { environment } from '../../../../../../environments/environment';

@@ -10,19 +10,19 @@ import {
   InvoicesKpis,
   LiquidacionesKpis,
   ServicesKpis,
-} from '../../../../services/energy-expert.service';
-import { GlobalLoadingService } from '../../../../services/global-loading.service';
-import { RefreshTokenService } from '../../../../services/refresh-token.service';
+} from '../../../../core/services/energy-expert.service';
+import { GlobalLoadingService } from '../../../../core/services/global-loading.service';
+import { RefreshTokenService } from '../../../../core/services/refresh-token.service';
 import { EsNumberPipe } from '../../../../shared/pipes/es-number.pipe';
-import { getUserRoles } from '../../../../utils/auth.utils';
+import { getUserRoles } from '../../../../core/helpers/auth.utils';
 import { StatusPieChartComponent } from './components/pie-chart/pie-chart';
 import { AltasBajasChartComponent } from './components/altas-bajas-chart/altas-bajas-chart';
-import { DelegacionesDialogComponent } from './components/delegaciones-dialog/delegaciones-dialog';
+import { DelegationsDialogComponent } from './components/delegations-dialog/delegations-dialog';
 
 @Component({
   selector: 'app-energies-invoices-page',
   standalone: true,
-  imports: [EsNumberPipe, StatusPieChartComponent, AltasBajasChartComponent, DelegacionesDialogComponent],
+  imports: [EsNumberPipe, StatusPieChartComponent, AltasBajasChartComponent, DelegationsDialogComponent],
   templateUrl: './invoices-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

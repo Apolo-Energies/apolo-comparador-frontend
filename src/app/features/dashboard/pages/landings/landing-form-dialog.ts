@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   PLATFORM_ID,
+  Signal,
   computed,
   effect,
   inject,
@@ -13,13 +14,11 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AlertService, ButtonComponent, DialogComponent, InputFieldComponent } from '@apolo-energies/ui';
-import { LandingService } from '../../../../services/landing.service';
-import { ProductService, ProductCatalogEntry } from '../../../../services/product.service';
-import { LandingDetail, LandingPayload, LandingStats } from '../../../../entities/landing.model';
-
-const SLUG_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
-type Section = 'general' | 'images';
+import { LandingService } from '../../../../core/services/landing.service';
+import { ProductService, ProductCatalogEntry } from '../../../../core/services/product.service';
+import { FormController } from './landing-form.controller';
+import { AssetsController } from './landing-assets.controller';
+import { LandingDataController } from './landing-data.controller';
 
 interface ProductGroup {
   providerName: string;
@@ -45,22 +44,39 @@ export class LandingFormDialogComponent {
   private readonly alert          = inject(AlertService);
   private readonly platformId     = inject(PLATFORM_ID);
 
-  readonly section    = signal<Section>('general');
-  readonly editingId  = signal<string | null>(null);
-  readonly isEdit     = computed(() => !!this.editingId());
+  // ── controllers: formulario, imágenes y carga/guardado de la landing ──────
+  private readonly form: FormController = new FormController(this.alert, { isEdit: () => this.isEdit() });
+  private readonly assets = new AssetsController(this.landingService, this.alert);
+  private readonly data   = new LandingDataController(this.landingService, this.alert, this.form, this.assets);
 
-  readonly loading    = signal(false);
-  readonly saving     = signal(false);
-  readonly uploading  = signal(false);
+  // Signals expuestos por referencia directa (mismo objeto) para no tocar el .html existente.
+  readonly editingId = this.data.editingId;
+  readonly isEdit: Signal<boolean> = this.data.isEdit;
+  readonly detail    = this.data.detail;
+  readonly stats     = this.data.stats;
+  readonly loading   = this.data.loading;
+  readonly saving    = this.data.saving;
+  readonly uploading = this.data.uploading;
 
-  readonly slug         = signal('');
-  readonly name         = signal('');
-  readonly productId    = signal<number | null>(null);
-  readonly heroTitle    = signal('');
-  readonly heroSubtitle = signal('');
-  readonly formTitle    = signal('');
-  readonly formSubtitle = signal('');
-  readonly touched      = signal<Record<string, boolean>>({});
+  readonly section      = this.form.section;
+  readonly slug         = this.form.slug;
+  readonly name         = this.form.name;
+  readonly heroTitle    = this.form.heroTitle;
+  readonly heroSubtitle = this.form.heroSubtitle;
+  readonly formTitle    = this.form.formTitle;
+  readonly formSubtitle = this.form.formSubtitle;
+  readonly touched      = this.form.touched;
+  readonly productId    = this.form.productId;
+
+  readonly isStep1     = this.form.isStep1;
+  readonly isStep2     = this.form.isStep2;
+  readonly formValid   = this.form.formValid;
+
+  readonly logoFile         = this.assets.logoFile;
+  readonly logoPreview      = this.assets.logoPreview;
+  readonly heroImageFiles   = this.assets.heroImageFiles;
+  readonly heroPreviews     = this.assets.heroPreviews;
+  readonly hasPendingAssets = this.assets.hasPendingAssets;
 
   readonly catalog = signal<ProductCatalogEntry[]>([]);
   private readonly productSelect = viewChild<ElementRef<HTMLSelectElement>>('productSelect');
@@ -89,34 +105,61 @@ export class LandingFormDialogComponent {
     return id == null ? null : this.catalog().find(p => p.id === id) ?? null;
   });
 
-  readonly detail = signal<LandingDetail | null>(null);
-  readonly stats  = signal<LandingStats | null>(null);
-
-  readonly logoFile        = signal<File | null>(null);
-  readonly logoPreview     = signal<string | null>(null);
-  readonly heroImageFiles  = signal<File[]>([]);
-  readonly heroPreviews    = signal<string[]>([]);
-
-  readonly errors = computed(() => ({
-    slug:         !SLUG_REGEX.test(this.slug().trim()) || this.slug().trim().length > 80,
-    name:         this.name().trim().length === 0 || this.name().trim().length > 120,
-    productId:    this.productId() == null,
-    heroTitle:    this.heroTitle().trim().length === 0 || this.heroTitle().trim().length > 200,
-    heroSubtitle: this.heroSubtitle().trim().length === 0 || this.heroSubtitle().trim().length > 500,
-    formTitle:    this.formTitle().length > 200,
-    formSubtitle: this.formSubtitle().length > 500,
-  }));
-
-  readonly formValid = computed(() => Object.values(this.errors()).every(v => !v));
-
-  readonly hasPendingAssets = computed(() => this.logoFile() != null || this.heroImageFiles().length > 0);
-
   readonly copied = signal(false);
   readonly publicUrl = computed(() => {
     const slug = this.detail()?.slug ?? this.slug();
     if (!slug || !isPlatformBrowser(this.platformId)) return `/${slug}`;
     return `${window.location.origin}/${slug}`;
   });
+
+  readonly saveButtonLabel = computed(() => {
+    if (this.uploading()) return 'Subiendo imágenes…';
+    if (this.saving())    return 'Guardando…';
+    if (this.isEdit())    return 'Guardar cambios';
+    return this.hasPendingAssets() ? 'Crear landing y subir imágenes' : 'Crear landing';
+  });
+
+  constructor() {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    effect(() => {
+      const isOpen = this.open();
+      if (!isOpen) return;
+      const id = this.landingId();
+      this.data.reset(id);
+      // Cargamos el catálogo PRIMERO para que el <select> tenga sus
+      // <option>s renderizados cuando loadDetail asigne el productId.
+      // Si los ponemos en paralelo, el detail llega antes y el browser
+      // no reconcilia el value cuando las options aparecen después.
+      this.loadCatalog(() => {
+        if (id) this.data.loadDetail(id, () => this.syncProductSelect(), () => this.close());
+      });
+    });
+  }
+
+  isFieldInvalid(field: string): boolean { return this.form.isFieldInvalid(field); }
+  markTouched(field: string): void { this.form.markTouched(field); }
+  setSection(s: 'general' | 'images'): void { this.form.setSection(s); }
+  onProductChange(value: string): void { this.form.onProductChange(value); }
+  goToStep2(): void { this.form.goToStep2(); }
+  goBackToStep1(): void { this.form.goBackToStep1(); }
+
+  onLogoSelected(event: Event): void { this.assets.onLogoSelected(event); }
+  onHeroImagesSelected(event: Event): void { this.assets.onHeroImagesSelected(event); }
+  removeLogoFile(): void { this.assets.removeLogoFile(this.detail()?.logoUrl ?? null); }
+
+  close(): void {
+    if (this.saving() || this.uploading()) return;
+    this.openChange.emit(false);
+  }
+
+  save(): void {
+    this.data.save({ onSaved: () => this.saved.emit(), onClose: () => this.openChange.emit(false) });
+  }
+
+  uploadAssets(): void {
+    this.data.uploadAssets({ onSaved: () => this.saved.emit(), onClose: () => this.openChange.emit(false) });
+  }
 
   copyPublicUrl(): void {
     if (!isPlatformBrowser(this.platformId)) return;
@@ -129,230 +172,10 @@ export class LandingFormDialogComponent {
     });
   }
 
-  readonly isStep1 = computed(() => this.section() === 'general');
-  readonly isStep2 = computed(() => this.section() === 'images');
-
-  readonly step1Errors = computed(() => {
-    const e = this.errors() as Record<string, boolean>;
-    const step1Fields = ['slug', 'name', 'productId', 'heroTitle', 'heroSubtitle', 'formTitle', 'formSubtitle'];
-    return step1Fields.some(f => e[f]);
-  });
-
-  readonly saveButtonLabel = computed(() => {
-    if (this.uploading()) return 'Subiendo imágenes…';
-    if (this.saving())    return 'Guardando…';
-    if (this.isEdit())    return 'Guardar cambios';
-    return this.hasPendingAssets() ? 'Crear landing y subir imágenes' : 'Crear landing';
-  });
-
-  goToStep2(): void {
-    const step1Fields = ['slug', 'name', 'productId', 'heroTitle', 'heroSubtitle', 'formTitle', 'formSubtitle'];
-    step1Fields.forEach(k => this.markTouched(k));
-    if (this.step1Errors()) {
-      this.alert.show('Revisa los campos antes de continuar.', 'error', 3500);
-      return;
-    }
-    this.section.set('images');
-  }
-
-  goBackToStep1(): void {
-    this.section.set('general');
-  }
-
-  constructor() {
-    if (!isPlatformBrowser(this.platformId)) return;
-
-    effect(() => {
-      const isOpen = this.open();
-      if (!isOpen) return;
-      const id = this.landingId();
-      this.reset(id);
-      // Cargamos el catálogo PRIMERO para que el <select> tenga sus
-      // <option>s renderizados cuando loadDetail asigne el productId.
-      // Si los ponemos en paralelo, el detail llega antes y el browser
-      // no reconcilia el value cuando las options aparecen después.
-      this.loadCatalog(() => {
-        if (id) this.loadDetail(id);
-      });
-    });
-  }
-
-  isFieldInvalid(field: string): boolean {
-    const e = this.errors() as Record<string, boolean>;
-    return !!this.touched()[field] && !!e[field];
-  }
-
-  markTouched(field: string): void {
-    this.touched.update(t => ({ ...t, [field]: true }));
-  }
-
-  setSection(s: Section): void {
-    if (s === 'images' && !this.isEdit()) return;
-    this.section.set(s);
-  }
-
-  close(): void {
-    if (this.saving() || this.uploading()) return;
-    this.openChange.emit(false);
-  }
-
-  onProductChange(value: string): void {
-    this.productId.set(value ? Number(value) : null);
-    this.markTouched('productId');
-  }
-
-  save(): void {
-    Object.keys(this.errors()).forEach(k => this.markTouched(k));
-    if (!this.formValid()) {
-      this.alert.show('Revisa los campos del formulario.', 'error', 3500);
-      return;
-    }
-
-    const payload: LandingPayload = {
-      slug:         this.slug().trim(),
-      name:         this.name().trim(),
-      productId:    this.productId() as number,
-      heroTitle:    this.heroTitle().trim(),
-      heroSubtitle: this.heroSubtitle().trim(),
-      formTitle:    this.formTitle().trim() || undefined,
-      formSubtitle: this.formSubtitle().trim() || undefined,
-    };
-
-    this.saving.set(true);
-    const id = this.editingId();
-    const obs = id ? this.landingService.update(id, payload) : this.landingService.create(payload);
-    obs.subscribe({
-      next: detail => {
-        this.saving.set(false);
-        this.detail.set(detail);
-        this.editingId.set(detail.id);
-        this.saved.emit();
-
-        if (id) {
-          this.logoPreview.set(detail.logoUrl ?? null);
-          this.heroPreviews.set(detail.heroImageUrls ?? []);
-          this.alert.show('Landing actualizada.', 'success', 3000);
-          return;
-        }
-
-        if (this.hasPendingAssets()) {
-          this.uploadAssetsForCreated(detail.id);
-        } else {
-          this.alert.show('Landing creada.', 'success', 3000);
-          this.openChange.emit(false);
-        }
-      },
-      error: err => {
-        this.saving.set(false);
-        const message = err?.error?.message ?? 'No se pudo guardar la landing.';
-        this.alert.show(message, 'error', 4500);
-      },
-    });
-  }
-
-  private uploadAssetsForCreated(id: string): void {
-    this.uploading.set(true);
-    this.landingService.uploadAssets(id, this.logoFile(), this.heroImageFiles()).subscribe({
-      next: detail => {
-        this.uploading.set(false);
-        this.detail.set(detail);
-        this.logoFile.set(null);
-        this.heroImageFiles.set([]);
-        this.alert.show('Landing creada e imágenes subidas.', 'success', 3500);
-        this.saved.emit();
-        this.openChange.emit(false);
-      },
-      error: () => {
-        this.uploading.set(false);
-        this.alert.show('La landing se creó, pero las imágenes no se subieron. Inténtalo desde edición.', 'error', 5000);
-        this.openChange.emit(false);
-      },
-    });
-  }
-
-  onLogoSelected(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
-    if (!file) return;
-    if (file.size > MAX_IMAGE_BYTES) {
-      this.alert.show('El logo no puede superar 2 MB.', 'error', 3500);
-      return;
-    }
-    this.logoFile.set(file);
-    const reader = new FileReader();
-    reader.onload = () => this.logoPreview.set(reader.result as string);
-    reader.readAsDataURL(file);
-  }
-
-  removeLogoFile(): void {
-    this.logoFile.set(null);
-    this.logoPreview.set(this.detail()?.logoUrl ?? null);
-  }
-
-  onHeroImagesSelected(event: Event): void {
-    const files = Array.from((event.target as HTMLInputElement).files ?? []);
-    if (files.length > 3) {
-      this.alert.show('Máximo 3 imágenes hero.', 'error', 3500);
-      return;
-    }
-    if (files.some(f => f.size > MAX_IMAGE_BYTES)) {
-      this.alert.show('Cada imagen debe pesar 2 MB o menos.', 'error', 3500);
-      return;
-    }
-    this.heroImageFiles.set(files);
-    Promise.all(files.map(f => this.readAsDataUrl(f))).then(urls => this.heroPreviews.set(urls));
-  }
-
-  uploadAssets(): void {
-    const id = this.editingId();
-    if (!id) return;
-    const logo = this.logoFile();
-    const heroes = this.heroImageFiles();
-    if (!logo && heroes.length === 0) {
-      this.alert.show('Selecciona al menos una imagen.', 'error', 3000);
-      return;
-    }
-    this.uploading.set(true);
-    this.landingService.uploadAssets(id, logo, heroes).subscribe({
-      next: detail => {
-        this.uploading.set(false);
-        this.detail.set(detail);
-        this.logoPreview.set(detail.logoUrl ?? null);
-        this.logoFile.set(null);
-        this.heroPreviews.set(detail.heroImageUrls ?? []);
-        this.heroImageFiles.set([]);
-        this.alert.show('Imágenes guardadas.', 'success', 3000);
-        this.saved.emit();
-      },
-      error: () => {
-        this.uploading.set(false);
-        this.alert.show('No se pudieron subir las imágenes.', 'error', 4000);
-      },
-    });
-  }
-
   openPublic(): void {
     const slug = this.detail()?.slug ?? this.slug();
     if (!slug || !isPlatformBrowser(this.platformId)) return;
     window.open(`/${slug}`, '_blank');
-  }
-
-  private reset(id: string | null): void {
-    this.section.set('general');
-    this.editingId.set(id);
-    this.detail.set(null);
-    this.stats.set(null);
-    this.slug.set('');
-    this.name.set('');
-    this.productId.set(null);
-    this.heroTitle.set('');
-    this.heroSubtitle.set('');
-    this.formTitle.set('');
-    this.formSubtitle.set('');
-    this.touched.set({});
-    this.logoFile.set(null);
-    this.logoPreview.set(null);
-    this.heroImageFiles.set([]);
-    this.heroPreviews.set([]);
   }
 
   private loadCatalog(then?: () => void): void {
@@ -369,52 +192,17 @@ export class LandingFormDialogComponent {
     });
   }
 
-  private loadDetail(id: string): void {
-    this.loading.set(true);
-    this.landingService.getById(id).subscribe({
-      next: detail => {
-        this.detail.set(detail);
-        this.slug.set(detail.slug);
-        this.name.set(detail.name);
-        this.productId.set(detail.productId);
-        this.heroTitle.set(detail.heroTitle);
-        this.heroSubtitle.set(detail.heroSubtitle);
-        this.formTitle.set(detail.formTitle ?? '');
-        this.formSubtitle.set(detail.formSubtitle ?? '');
-        this.logoPreview.set(detail.logoUrl ?? null);
-        this.heroPreviews.set(detail.heroImageUrls ?? []);
-        this.loading.set(false);
-        // Forzamos la sincronización del <select> nativo. Aunque el
-        // signal productId esté correcto, el browser no aplica el value
-        // a un <select> hasta que sus <option>s están renderizadas.
-        setTimeout(() => {
-          const sel = this.productSelect()?.nativeElement;
-          if (sel && this.productId() != null) {
-            sel.value = String(this.productId());
-          }
-        }, 0);
-      },
-      error: () => {
-        this.loading.set(false);
-        this.alert.show('No se pudo cargar la landing.', 'error', 4000);
-        this.close();
-      },
-    });
-    this.refreshStats(id);
-  }
-
-  private refreshStats(id: string): void {
-    this.landingService.getStats(id).subscribe({
-      next: s => this.stats.set(s),
-    });
-  }
-
-  private readAsDataUrl(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload  = () => resolve(reader.result as string);
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(file);
-    });
+  /**
+   * Fuerza la sincronización del <select> nativo. Aunque el signal
+   * productId esté correcto, el browser no aplica el value a un <select>
+   * hasta que sus <option>s están renderizadas.
+   */
+  private syncProductSelect(): void {
+    setTimeout(() => {
+      const sel = this.productSelect()?.nativeElement;
+      if (sel && this.productId() != null) {
+        sel.value = String(this.productId());
+      }
+    }, 0);
   }
 }

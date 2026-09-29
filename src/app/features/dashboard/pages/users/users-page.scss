@@ -1,0 +1,79 @@
+:host ::ng-deep lib-data-table th:first-child,
+:host ::ng-deep lib-data-table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  box-shadow: 4px 0 8px -4px rgba(0, 0, 0, 0.4);
+}
+:host ::ng-deep lib-data-table th:first-child {
+  background: var(--color-card);
+}
+:host ::ng-deep lib-data-table td:first-child {
+  background: var(--color-card);
+}
+:host ::ng-deep lib-data-table tr:hover td:first-child {
+  background: var(--color-body);
+}
+
+/* Recolor the expand-row badge ("2" next to the chevron) to the primary brand color. */
+:host ::ng-deep lib-data-table tbody button > span.rounded-full {
+  background-color: color-mix(in srgb, var(--color-primary-button) 18%, transparent);
+  color: var(--color-primary-button);
+}
+
+/* "Asignado a" badge — compact chip with the Master name. */
+:host ::ng-deep .parent-badge {
+  background-color: color-mix(in srgb, var(--color-primary-button) 15%, transparent);
+  color: var(--color-primary-button);
+  border: 1px solid color-mix(in srgb, var(--color-primary-button) 30%, transparent);
+}
+
+/* Header filter icon — keep th div as flex-row, make the icon span block so
+   when expanded the input fills available space rather than overflowing. */
+:host ::ng-deep lib-data-table thead th > div > span:last-child {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+/* "Añadir comercial" contextual CTA at the bottom of an expanded collaborator. */
+:host ::ng-deep .add-commercial-row:hover {
+  background-color: color-mix(in srgb, var(--color-primary-button) 8%, transparent);
+}
+:host ::ng-deep .add-commercial-btn {
+  color: color-mix(in srgb, var(--color-primary-button) 85%, transparent);
+  cursor: pointer;
+}
+:host ::ng-deep .add-commercial-btn:hover {
+  color: var(--color-primary-button);
+}
+:host ::ng-deep .add-commercial-plus {
+  border-color: color-mix(in srgb, var(--color-primary-button) 50%, transparent);
+  color: var(--color-primary-button);
+  background-color: color-mix(in srgb, var(--color-primary-button) 10%, transparent);
+}
+:host ::ng-deep .add-commercial-btn:hover .add-commercial-plus {
+  border-color: var(--color-primary-button);
+  background-color: color-mix(in srgb, var(--color-primary-button) 18%, transparent);
+}
+
+/* "Gestionar comisiones" contextual link — matches the "Añadir comercial" tone. */
+:host ::ng-deep .manage-commissions-row:hover {
+  background-color: color-mix(in srgb, var(--color-primary-button) 8%, transparent);
+}
+:host ::ng-deep .manage-commissions-btn {
+  color: color-mix(in srgb, var(--color-primary-button) 85%, transparent);
+  cursor: pointer;
+}
+:host ::ng-deep .manage-commissions-btn:hover {
+  color: var(--color-primary-button);
+}
+:host ::ng-deep .manage-commissions-icon {
+  border-color: color-mix(in srgb, var(--color-primary-button) 50%, transparent);
+  color: var(--color-primary-button);
+  background-color: color-mix(in srgb, var(--color-primary-button) 10%, transparent);
+}
+:host ::ng-deep .manage-commissions-btn:hover .manage-commissions-icon {
+  border-color: var(--color-primary-button);
+  background-color: color-mix(in srgb, var(--color-primary-button) 18%, transparent);
+}

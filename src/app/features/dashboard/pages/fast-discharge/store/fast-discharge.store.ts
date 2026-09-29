@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
-import { Person, DocumentState, SupplyPoint, Product } from '../models/person.models';
-import { SipsConsumo } from '../../../../../entities/sips.model';
+import { Person, DocumentState, SupplyPoint, Product } from '../models/person.model';
+import { SipsConsumo } from '../../../../../core/models/sips.model';
 
 @Injectable({ providedIn: 'root' })
 export class FastDischargeStore {

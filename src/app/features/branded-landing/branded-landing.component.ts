@@ -9,22 +9,19 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ComparatorService } from '../../services/comparator.service';
-import { PublicComparatorService } from '../../services/public-comparator.service';
-import { LandingService } from '../../services/landing.service';
+import { ComparatorService } from '../../core/services/comparator.service';
+import { PublicComparatorService } from '../../core/services/public-comparator.service';
+import { LandingService } from '../../core/services/landing.service';
 import { ComparatorUploadComponent } from '../dashboard/pages/comparator/components/comparator-upload/comparator-upload';
 import { ComparatorModalComponent } from '../dashboard/pages/comparator/components/comparator-modal/comparator-modal';
 import { OfferRequestWizardComponent } from '../dashboard/pages/comparator/components/offer-request-wizard/offer-request-wizard';
 import { BrandLoaderComponent } from '../../shared/components/brand-loader/brand-loader.component';
-import {
-  ComparadorCompareEvent,
-  ComparadorFormValue,
-  ComparadorResult,
-  ComparatorProductsByTariff,
-  OcrResult,
-} from '../dashboard/pages/comparator/comparator.models';
-import { PublicLanding } from '../../entities/landing.model';
+import { ComparadorFormValue, ComparadorResult, OcrResult } from '../../core/models/comparator.model';
+import { ComparadorCompareEvent } from '../dashboard/pages/comparator/comparator-events.model';
+import { ComparatorProductsByTariff } from '../dashboard/pages/comparator/comparator-ui.model';
+import { PublicLanding } from '../../core/models/landing.model';
 import { EFFICIENCY_TIPS_LEAD, pickRandomEfficiencyTip } from '../../shared/constants/efficiency-tips';
+import { FEE_LOCKED_PRODUCTS } from '../../shared/constants/flat-commission-products';
 
 const DEFAULT_FORM_TITLE = 'Calculamos tu ahorro por ti';
 const DEFAULT_FORM_SUBTITLE = 'Rellena los datos manualmente o sube tu última factura. Comparamos tu tarifa de luz para que sepas cuánto ahorrarías.';
@@ -77,8 +74,9 @@ export class BrandedLandingComponent {
     });
   }
 
-  readonly loading        = signal(false);
-  readonly modalOpen      = signal(false);
+  readonly loading         = signal(false);
+  readonly downloadingType = signal<'contratar' | null>(null);
+  readonly modalOpen       = signal(false);
   readonly result         = signal<ComparadorResult | null>(null);
   readonly ocrResult      = signal<OcrResult | null>(null);
   readonly fileId         = signal<string>('');
@@ -97,10 +95,7 @@ export class BrandedLandingComponent {
     return { [p.tariffCode]: [p.name] };
   });
 
-  readonly feeLockedProducts = [
-    'Fijo Snap Mini', 'Fijo Snap', 'Fijo Snap Maxi', 'Vibra',
-    'Promo 3M Lite', 'Promo 3M Pro', 'Promo 3M Plus',
-  ];
+  readonly feeLockedProducts = FEE_LOCKED_PRODUCTS;
 
   readonly landingSlug = computed(() => this.landing()?.slug ?? null);
 
@@ -135,11 +130,14 @@ export class BrandedLandingComponent {
   }
 
   onVerComparativa(formValue: ComparadorFormValue): void {
+    if (this.downloadingType()) return;
+    this.downloadingType.set('contratar');
     this.comparatorService.downloadPublicPdf(
       formValue,
       this.result(),
       this.ocrResult(),
       this.fileId(),
+      () => this.downloadingType.set(null),
     );
   }
 

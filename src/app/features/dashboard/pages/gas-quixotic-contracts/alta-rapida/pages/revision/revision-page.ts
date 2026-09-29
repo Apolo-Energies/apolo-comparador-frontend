@@ -3,9 +3,9 @@ import { Router } from '@angular/router';
 import { ButtonComponent, AlertComponent, AlertService } from '@apolo-energies/ui';
 import { AuthService } from '@apolo-energies/auth';
 import { AltaRapidaGasStore } from '../../store/alta-rapida-gas.store';
-import { AltaRapidaGasService } from '../../../../../../../services/alta-rapida-gas.service';
-import { AltaRapidaGasErrorBody, AltaRapidaGasRequest } from '../../../../../../../entities/alta-rapida-gas.model';
-import { getUserRoles } from '../../../../../../../utils/auth.utils';
+import { AltaRapidaGasService } from '../../../../../../../core/services/alta-rapida-gas.service';
+import { AltaRapidaGasErrorBody, AltaRapidaGasRequest } from '../../../../../../../core/models/alta-rapida-gas.model';
+import { getUserRoles } from '../../../../../../../core/helpers/auth.utils';
 
 @Component({
   selector: 'app-arg-revision-page',

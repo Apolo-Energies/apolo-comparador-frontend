@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, NgZone, OnInit, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { MarketDataService } from '../../../../services/market-data.service';
-import { MarketKpis, MarketSeries } from '../../../../entities/market-data.model';
+import { MarketDataService } from '../../../../core/services/market-data.service';
+import { MarketKpis, MarketSeries } from '../../../../core/models/market-data.model';
 import { MarketKpiCardComponent } from './components/market-kpi-card/market-kpi-card';
 import { MarketLineChartComponent } from './components/market-line-chart/market-line-chart';
 import { environment } from '../../../../../environments/environment';
-import { GlobalLoadingService } from '../../../../services/global-loading.service';
+import { GlobalLoadingService } from '../../../../core/services/global-loading.service';
 
 @Component({
   selector: 'app-markets-page',

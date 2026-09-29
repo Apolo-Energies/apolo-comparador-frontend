@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { MarketSpot } from '../../../../../../entities/market-data.model';
+import { MarketSpot } from '../../../../../../core/models/market-data.model';
 
 @Component({
   selector: 'app-market-kpi-card',

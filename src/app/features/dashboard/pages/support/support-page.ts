@@ -1,164 +1,85 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, HostListener, ViewChild, computed, inject, signal } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { ButtonComponent } from '@apolo-energies/ui';
-import { ApoloIcons, chevronRightIcon, InfoIcon, XIcon, UiIconSource } from '@apolo-energies/icons';
+import { InputFieldComponent } from '@apolo-energies/ui';
+import { ApoloIcons, chevronDownIcon, InfoIcon, SearchIcon, XIcon, UiIconSource } from '@apolo-energies/icons';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, LucideAngularModule, X } from 'lucide-angular';
 import { environment } from '../../../../../environments/environment';
-import { ProviderService } from '../../../../services/provider.service';
+import { ProviderService } from '../../../../core/services/provider.service';
 import { BrandLoaderComponent } from '../../../../shared/components/brand-loader/brand-loader.component';
-
-interface CrmVideo {
-  title:       string;
-  description: string;
-  url:         string;
-}
-
-interface SupportTopic {
-  title:         string;
-  tag:           string;
-  tagCls:        string;
-  dotCls:        string;
-  available:     boolean;
-  videos?:       CrmVideo[];
-  excelPreview?: true;
-}
-
-const CRM_VIDEOS: CrmVideo[] = [
-  {
-    title:       'Presentación e inicio',
-    description: 'Introducción al CRM de Apolo Energies: primeros pasos y navegación general.',
-    url:         'https://www.youtube.com/embed/Mh1siN7Im2E',
-  },
-  {
-    title:       'Autofactura',
-    description: 'Aprende a gestionar el módulo de autofactura dentro del CRM.',
-    url:         'https://www.youtube.com/embed/Kut9_pvgjQA',
-  },
-  {
-    title:       'Carga Rápida',
-    description: 'Cómo utilizar la función de carga rápida para agilizar el alta de nuevos clientes.',
-    url:         'https://www.youtube.com/embed/HrmmFwVe4zk',
-  },
-  {
-    title:       'Contratos',
-    description: 'Gestión y seguimiento de contratos desde el CRM.',
-    url:         'https://www.youtube.com/embed/2JYBpzvodJ0',
-  },
-  {
-    title:       'Delegación',
-    description: 'Cómo funciona el módulo de delegación y asignación de clientes.',
-    url:         'https://www.youtube.com/embed/jRrH7MmV6zY',
-  },
-  {
-    title:       'Facturas',
-    description: 'Consulta y gestión de facturas desde el panel del CRM.',
-    url:         'https://www.youtube.com/embed/X_Czq_GzT-k',
-  },
-];
-
-const TOPICS: SupportTopic[] = [
-  {
-    title:     'CRM',
-    tag:       'Aprende a usar el CRM y todo su potencial',
-    tagCls:    'bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/20',
-    dotCls:    'bg-blue-400',
-    available: true,
-    videos:    CRM_VIDEOS,
-  },
-  {
-    title:        'Tarifas De Luz',
-    tag:          'Guía de tarifas eléctricas',
-    tagCls:       'bg-indigo-500/15 text-indigo-400 ring-1 ring-indigo-500/20',
-    dotCls:       'bg-indigo-400',
-    available:    true,
-    excelPreview: true,
-  },
-  {
-    title:     'Tarifas De Gas',
-    tag:       'Guía de tarifas de gas',
-    tagCls:    'bg-pink-500/15 text-pink-400 ring-1 ring-pink-500/20',
-    dotCls:    'bg-pink-400',
-    available: true,
-    videos: [
-      {
-        title:       'Tarifas De Gas',
-        description: 'Guía de tarifas de gas.',
-        url:         'https://www.youtube.com/embed/',
-      },
-    ],
-  },
-  {
-    title:     'Comparador',
-    tag:       'Cómo usar el comparador',
-    tagCls:    'bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/20',
-    dotCls:    'bg-purple-400',
-    available: true,
-    videos: [
-      {
-        title:       'Comparador',
-        description: 'Cómo usar el comparador.',
-        url:         'https://www.youtube.com/embed/',
-      },
-    ],
-  },
-  {
-    title:     'Proceso de Firma',
-    tag:       'Próximamente',
-    tagCls:    'bg-muted text-muted-foreground ring-1 ring-border',
-    dotCls:    'bg-muted-foreground',
-    available: false,
-  },
-  {
-    title:     'Postventa y Soporte',
-    tag:       'Próximamente',
-    tagCls:    'bg-muted text-muted-foreground ring-1 ring-border',
-    dotCls:    'bg-muted-foreground',
-    available: false,
-  },
-  {
-    title:     'Comunidad Apolo',
-    tag:       'Próximamente',
-    tagCls:    'bg-muted text-muted-foreground ring-1 ring-border',
-    dotCls:    'bg-muted-foreground',
-    available: false,
-  },
-];
-
-const WHATSAPP_NUMBERS: Record<string, string> = {
-  renova:  'PENDIENTE_RENOVAE',
-  coexpal: 'PENDIENTE_COEXPAL',
-};
-
-const TARIFF_PROVIDER_ID = 1;
+import { SupportTopic, SUPPORT_TOPICS, SUPPORT_FAQS, WHATSAPP_NUMBERS, TARIFF_PROVIDER_ID, youtubeThumbnail } from './support-page.helpers';
+import { TariffPreviewController } from './tariff-preview.controller';
 
 @Component({
   selector: 'app-support-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './support-page.html',
-  imports: [ApoloIcons, ButtonComponent, BrandLoaderComponent],
+  styleUrl: './support-page.scss',
+  imports: [ApoloIcons, InputFieldComponent, BrandLoaderComponent, LucideAngularModule],
 })
 export class SupportPageComponent {
   private sanitizer       = inject(DomSanitizer);
   private providerService = inject(ProviderService);
 
-  readonly topics     = TOPICS;
-  readonly infoIcon:  UiIconSource = { type: 'apolo', icon: InfoIcon,        size: 12 };
-  readonly arrowIcon: UiIconSource = { type: 'apolo', icon: chevronRightIcon, size: 14 };
-  readonly closeIcon: UiIconSource = { type: 'apolo', icon: XIcon,            size: 14 };
+  readonly topics     = SUPPORT_TOPICS;
+  readonly faqs       = SUPPORT_FAQS;
+  readonly infoIcon:   UiIconSource = { type: 'apolo', icon: InfoIcon,         size: 12 };
+  readonly closeIcon:  UiIconSource = { type: 'apolo', icon: XIcon,            size: 14 };
+  readonly searchIcon: UiIconSource = { type: 'apolo', icon: SearchIcon,       size: 16 };
+  readonly chevronIcon: UiIconSource = { type: 'apolo', icon: chevronDownIcon, size: 16 };
+  readonly chevronLeftIcon  = ChevronLeft;
+  readonly chevronRightIcon = ChevronRight;
+  readonly reelPrevIcon     = ChevronUp;
+  readonly reelNextIcon     = ChevronDown;
+  readonly closeReelIcon    = X;
+
+  @ViewChild('videoScroller') private videoScroller?: ElementRef<HTMLElement>;
+
+  readonly searchQuery = signal('');
+  readonly openFaqIndex = signal<number | null>(0);
+
+  readonly filteredCardTopics = computed(() => {
+    const q = this.searchQuery().trim().toLowerCase();
+    if (!q) return this.topics;
+    return this.topics.filter(t => t.title.toLowerCase().includes(q) || t.tag.toLowerCase().includes(q));
+  });
+
+  readonly filteredFaqs = computed(() => {
+    const q = this.searchQuery().trim().toLowerCase();
+    if (!q) return this.faqs;
+    return this.faqs.filter(f => f.question.toLowerCase().includes(q) || f.answer.toLowerCase().includes(q));
+  });
+
+  toggleFaq(index: number): void {
+    this.openFaqIndex.update(current => current === index ? null : index);
+  }
+
+  isFaqOpen(index: number): boolean {
+    return this.openFaqIndex() === index;
+  }
 
   readonly isApolo     = environment.clientName === 'apolo';
   readonly whatsappUrl = `https://wa.me/${WHATSAPP_NUMBERS[environment.clientName] ?? ''}`;
 
+  /** 'home' = Estado A (buscador + cards + FAQ); si no, key del topic abierto (Estado B). */
+  readonly activeTab        = signal('home');
   readonly selected          = signal<SupportTopic | null>(null);
   readonly currentVideoIndex = signal(0);
   readonly expanded          = signal(false);
+  readonly reelOpen          = signal(false);
+  private touchStartY?: number;
 
-  readonly previewLoading = signal(false);
-  readonly previewError   = signal<string | null>(null);
-  readonly pdfUrl         = signal<SafeResourceUrl | null>(null);
+  // "Tarifas De Luz" Excel/PDF preview flow (state + handlers live in the
+  // controller; R1).
+  private readonly tariffPreview = new TariffPreviewController({
+    providerService: this.providerService,
+    sanitizer:       this.sanitizer,
+  });
+  readonly previewLoading = this.tariffPreview.previewLoading;
+  readonly previewError   = this.tariffPreview.previewError;
+  readonly pdfUrl         = this.tariffPreview.pdfUrl;
 
-  private excelBlob: Blob | null = null;
-  private pdfObjectUrl: string | null = null;
+  readonly totalVideos = computed(() => this.selected()?.videos?.length ?? 0);
 
   readonly currentVideo = computed(() => {
     const topic = this.selected();
@@ -166,101 +87,89 @@ export class SupportPageComponent {
     return topic.videos[this.currentVideoIndex()] ?? null;
   });
 
-  readonly totalVideos = computed(() => this.selected()?.videos?.length ?? 0);
-
   safeUrl(url: string): SafeResourceUrl {
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 
   thumbnail(url: string): string {
-    const id = url.split('/').pop()?.split('?')[0] ?? '';
-    return `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
+    return youtubeThumbnail(url);
   }
 
-  open(topic: SupportTopic): void {
-    this.revokePdfUrl();
-    this.previewError.set(null);
+  selectTopic(topic: SupportTopic): void {
+    this.tariffPreview.revoke();
+    this.tariffPreview.clearError();
+    this.activeTab.set(topic.key);
     this.selected.set(topic);
     this.currentVideoIndex.set(0);
     this.expanded.set(false);
     if (topic.excelPreview) {
-      this.loadTariffPreview();
+      this.tariffPreview.load(TARIFF_PROVIDER_ID);
     }
     const main = document.querySelector('main');
     if (main) main.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  close(): void {
-    this.revokePdfUrl();
+  goHome(): void {
+    this.tariffPreview.revoke();
+    this.activeTab.set('home');
     this.selected.set(null);
     this.currentVideoIndex.set(0);
     this.expanded.set(false);
-    this.previewError.set(null);
-    this.excelBlob = null;
+    this.tariffPreview.clearError();
+    this.tariffPreview.clearExcelBlob();
   }
 
   toggleExpand(): void {
     this.expanded.update(v => !v);
   }
 
-  toggle(topic: SupportTopic): void {
-    if (this.selected()?.title === topic.title) {
-      this.close();
-    } else {
-      this.open(topic);
-    }
+  isActiveTab(key: string): boolean {
+    return this.activeTab() === key;
   }
 
-  isOpen(topic: SupportTopic): boolean {
-    return this.selected()?.title === topic.title;
+  scrollVideos(direction: number): void {
+    this.videoScroller?.nativeElement.scrollBy({ left: direction * 320, behavior: 'smooth' });
   }
 
-  selectVideo(index: number): void {
+  openReel(index: number): void {
     this.currentVideoIndex.set(index);
+    this.reelOpen.set(true);
+  }
+
+  closeReel(): void {
+    this.reelOpen.set(false);
+  }
+
+  nextReel(): void {
+    const total = this.totalVideos();
+    if (total === 0) return;
+    this.currentVideoIndex.update(i => (i + 1) % total);
+  }
+
+  prevReel(): void {
+    const total = this.totalVideos();
+    if (total === 0) return;
+    this.currentVideoIndex.update(i => (i - 1 + total) % total);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.reelOpen()) this.closeReel();
+  }
+
+  onReelTouchStart(event: TouchEvent): void {
+    this.touchStartY = event.touches[0]?.clientY;
+  }
+
+  onReelTouchEnd(event: TouchEvent): void {
+    if (this.touchStartY === undefined) return;
+    const deltaY = event.changedTouches[0]?.clientY - this.touchStartY;
+    this.touchStartY = undefined;
+    if (Math.abs(deltaY) < 50) return;
+    if (deltaY < 0) this.nextReel(); else this.prevReel();
   }
 
   downloadExcel(): void {
-    if (!this.excelBlob) return;
-    const url = URL.createObjectURL(this.excelBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'tarifarios-luz.xlsx';
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  private loadTariffPreview(): void {
-    this.previewLoading.set(true);
-    this.previewError.set(null);
-    this.excelBlob = null;
-
-    // PDF for inline preview
-    this.providerService.downloadTariffPdf(TARIFF_PROVIDER_ID).subscribe({
-      next: pdfBlob => {
-        const url = URL.createObjectURL(pdfBlob);
-        this.pdfObjectUrl = url;
-        this.pdfUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
-        this.previewLoading.set(false);
-      },
-      error: err => {
-        console.error('Tariff PDF preview error:', err);
-        this.previewError.set('No se pudo cargar la vista previa.');
-        this.previewLoading.set(false);
-      },
-    });
-
-    // Excel blob in parallel for the download button (doesn't gate the loader)
-    this.providerService.downloadExcel(TARIFF_PROVIDER_ID).subscribe({
-      next: blob => { this.excelBlob = blob; },
-      error: err => { console.warn('Excel prefetch failed:', err); },
-    });
-  }
-
-  private revokePdfUrl(): void {
-    if (this.pdfObjectUrl) {
-      URL.revokeObjectURL(this.pdfObjectUrl);
-      this.pdfObjectUrl = null;
-    }
-    this.pdfUrl.set(null);
+    this.tariffPreview.downloadExcel();
   }
 }

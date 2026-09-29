@@ -1,0 +1,52 @@
+@if (isApolo) {
+  <app-brand-loader
+    [visible]="loading()"
+    [fullscreen]="true"
+    [showBar]="true"
+    [showWordmark]="false"
+    [showTitle]="true"
+    title="Procesando factura de gas…"
+    [showDescription]="false"
+    [showMicrocopy]="false"
+    [showBackdrop]="true"
+    [showMicrocopyIcon]="false"
+    [size]="100"
+  />
+} @else {
+  <app-loading-overlay [loading]="loading()" />
+}
+
+<div class="h-full flex flex-col gap-3">
+
+  <app-comparator-upload
+    [showUserSelector]="isMaster()"
+    [users]="users()"
+    [usersLoading]="usersLoading()"
+    [selectedUserId]="selectedUserId()"
+    [loading]="loading()"
+    (compare)="onCompare($event)"
+    (userChange)="selectedUserId.set($event)"
+  />
+
+  @if (errorMsg(); as err) {
+    <div class="rounded-lg border border-destructive bg-destructive/10 p-3 text-sm text-destructive">
+      {{ err }}
+    </div>
+  }
+
+  <app-comparator-gas-modal
+    [open]="modalOpen()"
+    [ocrResult]="ocrData()"
+    [result]="result()"
+    [pricingError]="pricingError()"
+    [pricingInfo]="pricingInfo()"
+    [downloadingType]="downloadingType()"
+    [awaitingManualConsumption]="awaitingManualConsumption()"
+    [suggestedManualKwh]="suggestedManualKwh()"
+    (openChange)="modalOpen.set($event)"
+    (download)="onDownload($event)"
+    (overridesChange)="onOverridesChange($event)"
+    (manualConsumptionSubmit)="onManualConsumptionSubmit($event)"
+  />
+
+</div>

@@ -3,21 +3,24 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { DomSanitizer } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '@apolo-energies/auth';
 import { AlertComponent, AlertService, ButtonComponent, DialogComponent } from '@apolo-energies/ui';
-import { UserService } from '../../../../../services/user.service';
-import { ContractService } from '../../../../../services/contract.service';
-import { UserDetail } from '../../../../../entities/user-detail.model';
-import { UserRole, UserRoleLabel } from '../../../../../entities/user-role';
-import { getUserRoles } from '../../../../../utils/auth.utils';
-import { REQUIRED_DOCS_BY_PERSON_TYPE } from './configs/doc-by-person-type.config';
+import { UserService } from '../../../../../core/services/user.service';
+import { ContractService } from '../../../../../core/services/contract.service';
+import { UserDetail } from '../../../../../core/models/user-detail.model';
+import { getUserRoles } from '../../../../../core/helpers/auth.utils';
 import { EditUserModalComponent } from './edit-user-modal/edit-user-modal';
 import { CustomerModalComponent } from './customer-modal/customer-modal';
 import { DocumentsSectionComponent } from './documents-section/documents-section';
 import { ContractActionButtonComponent } from '../../../../../shared/components/contract-action-button/contract-action-button.component';
-import { GlobalLoadingService } from '../../../../../services/global-loading.service';
+import { GlobalLoadingService } from '../../../../../core/services/global-loading.service';
+import {
+  buildPersonalDataRows, buildUserDataRows, computeAllDocsVerified, computeDocUploadProgress,
+} from './user-detail.helpers';
+import { ContractPreviewController } from './contract-preview.controller';
+import { ContractActionsController } from './contract-actions.controller';
 
 @Component({
   selector: 'app-user-detail',
@@ -46,23 +49,40 @@ export class UserDetailPageComponent implements OnInit {
   private readonly platformId      = inject(PLATFORM_ID);
   private readonly globalLoading   = inject(GlobalLoadingService);
 
-  readonly loading                 = signal(false);
-  readonly user                    = signal<UserDetail | null>(null);
-  readonly showEditUserModal       = signal(false);
-  readonly showCustomerModal       = signal(false);
-  readonly customerModalMode       = signal<'create' | 'edit'>('create');
-  readonly contractPreviewOpen     = signal(false);
-  readonly contractPreviewUrl      = signal<SafeResourceUrl | null>(null);
-  readonly loadingPreview          = signal(false);
-  readonly requestingSignature     = signal(false);
-  readonly requestingContract      = signal(false);
-  readonly validatingContract      = signal(false);
-  readonly rejectingContract       = signal(false);
-  readonly showContractRejectInput = signal(false);
-  readonly contractRejectReason    = signal('');
+  readonly loading           = signal(false);
+  readonly user              = signal<UserDetail | null>(null);
+  readonly showEditUserModal = signal(false);
+  readonly showCustomerModal = signal(false);
+  readonly customerModalMode = signal<'create' | 'edit'>('create');
 
-  private userId           = '';
-  private previewObjectUrl: string | null = null;
+  private userId = '';
+
+  // ── controllers: preview del contrato y acciones sobre el contrato ─────────
+  private readonly preview = new ContractPreviewController(
+    this.contractService, this.alertService, this.sanitizer,
+    { isMaster: () => this.isMaster(), getContractId: () => this.user()?.contract?.id },
+  );
+  private readonly contractActions = new ContractActionsController(
+    this.contractService, this.alertService,
+    {
+      getUserId:     () => this.userId,
+      getContractId: () => this.user()?.contract?.id,
+      onSuccess:     () => this.load(),
+      onClosePreview: () => this.preview.close(),
+    },
+  );
+
+  // Signals expuestos por referencia directa (mismo objeto) para no tocar el .html existente.
+  readonly contractPreviewOpen = this.preview.open;
+  readonly contractPreviewUrl  = this.preview.url;
+  readonly loadingPreview      = this.preview.loading;
+
+  readonly requestingSignature     = this.contractActions.requestingSignature;
+  readonly requestingContract      = this.contractActions.requestingContract;
+  readonly validatingContract      = this.contractActions.validatingContract;
+  readonly rejectingContract       = this.contractActions.rejectingContract;
+  readonly showContractRejectInput = this.contractActions.showContractRejectInput;
+  readonly contractRejectReason    = this.contractActions.contractRejectReason;
 
   readonly isMaster = computed(() => {
     const roles = getUserRoles(this.auth.currentUser());
@@ -88,27 +108,13 @@ export class UserDetailPageComponent implements OnInit {
   // Master can validate/reject a contract when it is pending review
   readonly canReviewContract = computed(() => this.isMaster() && this.isSignedPending());
 
-  readonly isExpiringSoon    = computed(() => {
+  readonly isExpiringSoon = computed(() => {
     const d = this.daysUntilExpiration();
     return d !== null && d >= 0 && d < 30;
   });
 
   // Document upload progress based on personType required list (works even without a contract)
-  readonly docUploadProgress = computed(() => {
-    const u = this.user();
-    if (!u?.customer) return { count: 0, total: 0, pct: 0 };
-    const contract = u.contract;
-    const required = (contract?.documents.required.length
-      ? contract.documents.required
-      : REQUIRED_DOCS_BY_PERSON_TYPE[u.customer.personType]) ?? [];
-    if (required.length === 0) return { count: 0, total: 0, pct: 0 };
-    const uploaded = contract?.documents.uploaded ?? [];
-    const done = new Set(
-      uploaded.filter(d => d.status !== 'Rejected').map(d => d.documentType),
-    );
-    const count = required.filter(t => done.has(t)).length;
-    return { count, total: required.length, pct: Math.round((count / required.length) * 100) };
-  });
+  readonly docUploadProgress = computed(() => computeDocUploadProgress(this.user()));
 
   readonly missingDocCount = computed(() => {
     const p = this.docUploadProgress();
@@ -125,18 +131,7 @@ export class UserDetailPageComponent implements OnInit {
     return !blocked.includes(status ?? '');
   });
 
-  readonly allDocsVerified = computed(() => {
-    const contract = this.user()?.contract;
-    if (!contract) return false;
-    const required = contract.documents.required;
-    if (required.length === 0) return false;
-    const approvedTypes = new Set(
-      contract.documents.uploaded
-        .filter(d => d.status === 'Validated')
-        .map(d => d.documentType),
-    );
-    return required.every(type => approvedTypes.has(type));
-  });
+  readonly allDocsVerified = computed(() => computeAllDocsVerified(this.user()?.contract));
 
   readonly hasSignatureRequest = computed(() => {
     const id = this.user()?.contract?.signatureRequestId;
@@ -145,64 +140,8 @@ export class UserDetailPageComponent implements OnInit {
 
   readonly isSigned = computed(() => this.isSignedPending() || this.isSignedVerified());
 
-  readonly personalDataRows = computed<[string, string][]>(() => {
-    const u = this.user();
-    const c = u?.customer;
-    const contract = u?.contract;
-
-    const estadoContrato: [string, string] = ['Estado contrato', contract?.isActive ? 'Activo' : 'Inactivo'];
-    const vigencia:       [string, string] = ['Vigencia',        this.vigencia(contract?.endDate ?? null)];
-
-    if (c?.personType === 'Company') {
-      const representante = `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() || '-';
-      return [
-        ['Razón social',             c.companyName             ?? '-'],
-        ['CIF',                      c.cif                     ?? '-'],
-        ['Tipo de cliente',          'Empresa'],
-        ['Correo',                   c.email                   ?? '-'],
-        ['Representante legal',      representante],
-        ['DNI representante legal',  c.dni                     ?? '-'],
-        ['Teléfono',                 c.phone                   ?? '-'],
-        ['Dirección legal',          c.legalAddress            ?? '-'],
-        ['Ciudad legal',             c.cityLegal               ?? '-'],
-        ['CP legal',                 c.postalCodeLegal         ?? '-'],
-        ['Dirección notificación',   c.notificationAddress     ?? '-'],
-        ['Ciudad notificación',      c.cityNotification        ?? '-'],
-        ['CP notificación',          c.postalCodeNotification  ?? '-'],
-        estadoContrato,
-        vigencia,
-      ];
-    }
-
-    const fullName = `${c?.firstName ?? ''} ${c?.lastName ?? ''} ${c?.secondLastName ?? ''}`.trim() || '-';
-    return [
-      ['Nombre',                 fullName],
-      ['DNI',                    c?.dni                ?? '-'],
-      ['Tipo de cliente',        'Individual'],
-      ['Correo',                 c?.email              ?? '-'],
-      ['Teléfono',               c?.phone              ?? '-'],
-      ['Dirección legal',        c?.legalAddress           ?? '-'],
-      ['Ciudad legal',           c?.cityLegal              ?? '-'],
-      ['CP legal',               c?.postalCodeLegal        ?? '-'],
-      ['Dirección notificación', c?.notificationAddress    ?? '-'],
-      ['Ciudad notificación',    c?.cityNotification       ?? '-'],
-      ['CP notificación',        c?.postalCodeNotification ?? '-'],
-      estadoContrato,
-      vigencia,
-    ];
-  });
-
-  readonly userDataRows = computed<[string, string][]>(() => {
-    const u = this.user();
-    return [
-      ['Nombre completo',  u?.fullName                          ?? '-'],
-      ['Correo de acceso', u?.email                             ?? '-'],
-      ['Teléfono',         u?.phone                             ?? '-'],
-      ['Rol',              UserRoleLabel[u?.role as UserRole]    ?? '-'],
-      ['Estado',           u?.isActive ? 'Activo' : 'Inactivo'],
-      ['Identificador',    u?.identifier                         ?? '-'],
-    ];
-  });
+  readonly personalDataRows = computed(() => buildPersonalDataRows(this.user()));
+  readonly userDataRows     = computed(() => buildUserDataRows(this.user()));
 
   ngOnInit(): void {
     this.userId = this.route.snapshot.paramMap.get('id') ?? '';
@@ -230,128 +169,16 @@ export class UserDetailPageComponent implements OnInit {
     this.showCustomerModal.set(true);
   }
 
-  openContractPreview(): void {
-    this.loadingPreview.set(true);
-    this.contractPreviewOpen.set(true);
-    const contractId = this.user()?.contract?.id;
-    const preview$ = this.isMaster() && contractId
-      ? this.contractService.getPreviewById(contractId)
-      : this.contractService.getMyPreview();
-    preview$.subscribe({
-      next: blob => {
-        this.revokePreviewUrl();
-        this.previewObjectUrl = URL.createObjectURL(blob);
-        this.contractPreviewUrl.set(
-          this.sanitizer.bypassSecurityTrustResourceUrl(this.previewObjectUrl),
-        );
-        this.loadingPreview.set(false);
-      },
-      error: () => {
-        this.alertService.show('No se pudo cargar la vista previa del contrato', 'error');
-        this.loadingPreview.set(false);
-        this.contractPreviewOpen.set(false);
-      },
-    });
-  }
+  openContractPreview(): void { this.preview.openPreview(); }
+  onContractSent(): void { this.preview.onContractSent(); }
+  closeContractPreview(): void { this.preview.close(); }
 
-  onContractSent(): void {
-    this.closeContractPreview();
-  }
-
-  closeContractPreview(): void {
-    this.contractPreviewOpen.set(false);
-    this.contractPreviewUrl.set(null);
-    this.revokePreviewUrl();
-  }
-
-  private revokePreviewUrl(): void {
-    if (this.previewObjectUrl) {
-      URL.revokeObjectURL(this.previewObjectUrl);
-      this.previewObjectUrl = null;
-    }
-  }
-
-  onRequestSignature(): void {
-    this.requestingSignature.set(true);
-    this.contractService.requestSignature(this.userId).subscribe({
-      next: () => {
-        this.alertService.show('Solicitud enviada. El equipo de Apolo procesará tu contrato.', 'success');
-        this.requestingSignature.set(false);
-        this.closeContractPreview();
-        this.load();
-      },
-      error: () => {
-        this.alertService.show('Error al enviar la solicitud', 'error');
-        this.requestingSignature.set(false);
-      },
-    });
-  }
-
-  handleRequestContract(): void {
-    const contractId = this.user()?.contract?.id;
-    if (!contractId) return;
-    this.requestingContract.set(true);
-    this.contractService.sendContract(contractId).subscribe({
-      next: () => {
-        this.alertService.show('Solicitud enviada correctamente', 'success');
-        this.requestingContract.set(false);
-        this.closeContractPreview();
-        this.load();
-      },
-      error: () => {
-        this.alertService.show('Error al solicitar el contrato', 'error');
-        this.requestingContract.set(false);
-      },
-    });
-  }
-
-  onValidateContract(): void {
-    const contractId = this.user()?.contract?.id;
-    if (!contractId) return;
-    this.validatingContract.set(true);
-    this.contractService.validateContract(contractId).subscribe({
-      next: () => {
-        this.alertService.show('Contrato validado correctamente', 'success');
-        this.validatingContract.set(false);
-        this.load();
-      },
-      error: () => {
-        this.alertService.show('Error al validar el contrato', 'error');
-        this.validatingContract.set(false);
-      },
-    });
-  }
-
-  onRejectContractSubmit(): void {
-    const reason     = this.contractRejectReason().trim();
-    const contractId = this.user()?.contract?.id;
-    if (!reason || !contractId) return;
-    this.rejectingContract.set(true);
-    this.contractService.rejectContract(contractId, reason).subscribe({
-      next: () => {
-        this.alertService.show('Contrato rechazado', 'success');
-        this.rejectingContract.set(false);
-        this.showContractRejectInput.set(false);
-        this.contractRejectReason.set('');
-        this.load();
-      },
-      error: () => {
-        this.alertService.show('Error al rechazar el contrato', 'error');
-        this.rejectingContract.set(false);
-      },
-    });
-  }
+  onRequestSignature(): void { this.contractActions.onRequestSignature(); }
+  handleRequestContract(): void { this.contractActions.handleRequestContract(); }
+  onValidateContract(): void { this.contractActions.onValidateContract(); }
+  onRejectContractSubmit(): void { this.contractActions.onRejectContractSubmit(); }
 
   goBack(): void {
     this.router.navigate(['/dashboard/settings/users']);
-  }
-
-  private vigencia(endDate: string | null): string {
-    if (!endDate) return 'Sin vencimiento';
-    const d    = new Date(endDate);
-    const diff = d.getTime() - Date.now();
-    if (diff < 0) return 'Vencido';
-    const days = Math.ceil(diff / 86_400_000);
-    return `Vence en ${days} día${days === 1 ? '' : 's'}`;
   }
 }

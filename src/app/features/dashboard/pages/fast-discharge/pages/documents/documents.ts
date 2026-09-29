@@ -3,51 +3,14 @@ import { Router } from '@angular/router';
 import { ButtonComponent, AlertService } from '@apolo-energies/ui';
 import { AlertComponent } from '@apolo-energies/ui';
 import { FastDischargeStore } from '../../store/fast-discharge.store';
-import { DocumentKey, DocumentState } from '../../models/person.models';
+import { DocumentKey, DocumentState } from '../../models/person.model';
 import { FormDocumentComponent } from './forms/form-document';
 
 @Component({
   selector: 'app-fd-documents',
   imports: [ButtonComponent, AlertComponent, FormDocumentComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <ui-alert />
-
-    <div class="flex items-center justify-center min-h-full px-4 py-8">
-      <div class="w-full max-w-xl bg-card border border-border rounded-lg shadow-xl px-8 py-8 flex flex-col" style="max-height: 90vh">
-
-        <!-- Header fijo -->
-        <div class="shrink-0 space-y-2">
-          <div class="flex justify-between text-sm text-muted-foreground">
-            <span>Documentación</span>
-            <span>{{ progress() }}%</span>
-          </div>
-          <div class="w-full bg-muted rounded-full h-1.5">
-            <div
-              class="bg-primary-button h-1.5 rounded-full transition-all duration-300"
-              [style.width.%]="progress()"
-            ></div>
-          </div>
-        </div>
-
-        <!-- Cuerpo con scroll -->
-        <div class="flex-1 overflow-y-auto mt-4 pr-1">
-          <app-form-document
-            [isCompany]="isCompany()"
-            [documents]="documents()"
-            (fileSelect)="onFileSelect($event)"
-          />
-        </div>
-
-        <!-- Footer fijo -->
-        <div class="shrink-0 border-t border-border pt-4 mt-4 flex items-center justify-between">
-          <ui-button label="Volver"    variant="secondary" size="sm" type="button" (click)="onBack()" />
-          <ui-button label="Siguiente" size="sm"           [disabled]="loading()" (click)="onSubmit()" />
-        </div>
-
-      </div>
-    </div>
-  `,
+  templateUrl: './documents.html',
 })
 export class DocumentsPage {
   private readonly router = inject(Router);

@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
-import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password';
-import { ResetPasswordComponent } from './pages/reset-password/reset-password';
+import { ForgotPasswordComponent } from './features/auth/pages/forgot-password/forgot-password';
+import { ResetPasswordComponent } from './features/auth/pages/reset-password/reset-password';
 
 export const routes: Routes = [
 
