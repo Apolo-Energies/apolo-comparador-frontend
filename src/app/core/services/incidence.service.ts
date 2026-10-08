@@ -3,8 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-// Alineado con TipoCambio de Control (tabla `cambio`). El backend .NET traduce
-// PascalCase → snake_case ("CambioPotencia" → "cambio_potencia") antes de reenviar.
+// Debe coincidir con TipoCambio de Control; el .NET mapea PascalCase ↔ snake_case.
 export type IncidenceType =
   | 'CambioPotencia'
   | 'CambioTitularidad'
@@ -44,26 +43,26 @@ export const INCIDENCE_STATUS_LABELS: Record<IncidenceStatus, string> = {
 
 export interface Incidence {
   id:               string;
-  contratoExtId:    number;                 // Deprecado: siempre 0 (control no lo trackea).
+  contratoExtId:    number;
   type:             IncidenceType;
-  title:            string;                 // Siempre "" (control solo tiene `comentarios`).
-  description:      string;                 // = comentarios de control.
+  title:            string;
+  description:      string;
   status:           IncidenceStatus;
-  createdByUserId:  string;                 // "" — control no lo trackea.
+  createdByUserId:  string;
   createdByName:    string | null;
   createdAt:        string;
   closedByUserId:   string | null;
   closedByName:     string | null;
   closedAt:         string | null;
-  resolutionNote:   string | null;          // null — control usa `comentarios`.
+  resolutionNote:   string | null;
 }
 
 export interface CreateIncidenceRequest {
   cups:            string;
   clienteNombre:   string;
-  clienteNif?:     string | null;   // Para que control auto-vincule el cliente por NIF.
+  clienteNif?:     string | null;
   type:            IncidenceType;
-  description:     string;          // Texto único de la incidencia (va a `comentarios` en control).
+  description:     string;
 }
 
 export interface CloseIncidenceRequest {
@@ -74,7 +73,6 @@ export interface CloseIncidenceRequest {
 export class IncidenceService {
   private http = inject(HttpClient);
 
-  /** Lista los cambios (incidencias) asociados a un CUPS. */
   listByCups(cups: string): Observable<Incidence[]> {
     return this.http.get<Incidence[]>(
       `${environment.apiUrl}/incidences`,

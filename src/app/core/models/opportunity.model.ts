@@ -91,13 +91,11 @@ export interface OpportunityPaged {
   totalPages:  number;
 }
 
-/** Contadores de pendientes por energyType para los badges del sidebar. */
 export interface OpportunitySidebarBadges {
   electricity: number;
   gas:         number;
 }
 
-/** Columna del tablero Kanban devuelta por GET /opportunities/board. */
 export interface OpportunityBoardColumn {
   status:      OpportunityStatus;
   items:       OpportunitySummary[];
@@ -107,10 +105,6 @@ export interface OpportunityBoardColumn {
   totalPages:  number;
 }
 
-/**
- * Respuesta consolidada de GET /opportunities/board: 4 columnas (una por status) en una sola
- * llamada, más los contadores del sidebar (evita las 2 llamadas separadas del layout).
- */
 export interface OpportunityBoardResponse {
   columns:       OpportunityBoardColumn[];
   sidebarBadges: OpportunitySidebarBadges;
