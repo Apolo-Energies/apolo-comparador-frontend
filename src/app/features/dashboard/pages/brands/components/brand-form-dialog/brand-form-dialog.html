@@ -39,6 +39,24 @@
           >Módulos</button>
           <button
             type="button"
+            class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
+            [class.border-blue-500]="section() === 'user'"
+            [class.text-foreground]="section() === 'user'"
+            [class.border-transparent]="section() !== 'user'"
+            [class.text-muted-foreground]="section() !== 'user'"
+            (click)="setSection('user')"
+          >Usuario</button>
+          <button
+            type="button"
+            class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
+            [class.border-blue-500]="section() === 'providers'"
+            [class.text-foreground]="section() === 'providers'"
+            [class.border-transparent]="section() !== 'providers'"
+            [class.text-muted-foreground]="section() !== 'providers'"
+            (click)="setSection('providers')"
+          >Proveedores</button>
+          <button
+            type="button"
             title="Va a la página de colores"
             class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-blue-500 transition-colors inline-flex items-center gap-1.5"
             (click)="goToColors()"
@@ -64,7 +82,7 @@
             label="Nombre"
             placeholder="Marca Ejemplo"
             [value]="name()"
-            (valueChange)="name.set($event); markTouched('name')"
+            (valueChange)="setName($event); markTouched('name')"
           />
           @if (isFieldInvalid('name')) {
             <span class="text-red-500 text-xs mt-1 block">Obligatorio.</span>
@@ -76,7 +94,7 @@
             label="Slug"
             placeholder="marca-ejemplo"
             [value]="slug()"
-            (valueChange)="slug.set($event); markTouched('slug')"
+            (valueChange)="setSlug($event); markTouched('slug')"
           />
           @if (isFieldInvalid('slug')) {
             <span class="text-red-500 text-xs mt-1 block">Solo minúsculas, números y guiones (ej. marca-ejemplo).</span>
@@ -207,6 +225,170 @@
           }
         </div>
 
+      } @else if (section() === 'user') {
+
+        @if (loadingUser()) {
+
+          <div class="py-8">
+            <app-brand-loader
+              [visible]="true"
+              [inline]="true"
+              [size]="64"
+              [showWordmark]="false"
+              [showDescription]="false"
+              [showBar]="false"
+              [showPercent]="false"
+              [showMicrocopy]="false"
+              title="Buscando colaborador…"
+            />
+          </div>
+
+        } @else if (existingUser(); as u) {
+
+          <div class="rounded-lg border border-border bg-card p-4 space-y-1">
+            <p class="text-sm font-semibold text-foreground">{{ u.fullName }}</p>
+            <p class="text-xs text-muted-foreground">{{ u.email }}</p>
+            <p class="text-xs text-muted-foreground">{{ u.role }}</p>
+          </div>
+
+        } @else {
+
+          <p class="text-xs text-muted-foreground">
+            Esta marca todavía no tiene un colaborador. Al crearlo, le llega un mail para que
+            ponga su contraseña y pueda loguearse.
+          </p>
+
+          <div>
+            <ui-input
+              label="Email"
+              placeholder="colaborador@marca.com"
+              [value]="userEmail()"
+              (valueChange)="userEmail.set($event); markUserTouched('email')"
+            />
+            @if (isUserFieldInvalid('email')) {
+              <span class="text-red-500 text-xs mt-1 block">Email inválido.</span>
+            }
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <ui-input
+                label="Nombre"
+                placeholder="Juan"
+                [value]="userName()"
+                (valueChange)="userName.set($event); markUserTouched('name')"
+              />
+              @if (isUserFieldInvalid('name')) {
+                <span class="text-red-500 text-xs mt-1 block">Obligatorio.</span>
+              }
+            </div>
+            <div>
+              <ui-input
+                label="Apellidos"
+                placeholder="Pérez"
+                [value]="userSurnames()"
+                (valueChange)="userSurnames.set($event); markUserTouched('surnames')"
+              />
+              @if (isUserFieldInvalid('surnames')) {
+                <span class="text-red-500 text-xs mt-1 block">Obligatorio.</span>
+              }
+            </div>
+          </div>
+
+          <div>
+            <ui-input
+              label="Teléfono (opcional)"
+              placeholder="600000000"
+              [value]="userPhone()"
+              (valueChange)="userPhone.set($event)"
+            />
+          </div>
+
+        }
+
+      } @else if (section() === 'providers') {
+
+        <p class="text-xs text-muted-foreground">
+          Qué proveedor(es) ve esta marca en su pantalla de tarifas. El primero de la lista
+          es el "principal" — el que se usa en pantallas de un solo proveedor.
+        </p>
+
+        @if (selectedProviders().length === 0) {
+          <p class="text-sm text-muted-foreground text-center py-4">Sin proveedores asignados todavía.</p>
+        } @else {
+          <div class="space-y-2">
+            @for (p of selectedProviders(); track p.providerId; let i = $index) {
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-muted-foreground w-5 shrink-0 text-center">{{ i === 0 ? '★' : i + 1 }}</span>
+                <select
+                  class="flex-1 px-3 py-1.5 text-sm rounded-lg border bg-card border-border text-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+                  [value]="p.providerId"
+                  (change)="setProviderId(i, $any($event.target).value)"
+                >
+                  @for (opt of providerCatalog(); track opt.id) {
+                    <option [value]="opt.id">{{ opt.name }}</option>
+                  }
+                </select>
+                <button type="button" title="Subir" class="h-8 w-8 shrink-0 inline-flex items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:text-foreground disabled:opacity-30" [disabled]="i === 0" (click)="moveProviderUp(i)">↑</button>
+                <button type="button" title="Bajar" class="h-8 w-8 shrink-0 inline-flex items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:text-foreground disabled:opacity-30" [disabled]="i === selectedProviders().length - 1" (click)="moveProviderDown(i)">↓</button>
+                <button type="button" title="Quitar" class="h-8 w-8 shrink-0 inline-flex items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/30" (click)="removeProviderRow(i)">✕</button>
+              </div>
+            }
+          </div>
+        }
+
+        <ui-button label="+ Agregar otro" size="sm" variant="secondary" [disabled]="providerCatalog().length === 0" (click)="addProviderRow()" />
+
+        @if (selectedProviders().length > 0) {
+          <details class="rounded-lg border border-border bg-card/50 mt-2">
+            <summary class="px-4 py-2.5 text-sm font-medium text-foreground cursor-pointer select-none">
+              Restringir tarifas y productos (opcional)
+            </summary>
+            <div class="px-4 pb-4 pt-2 space-y-3">
+              <p class="text-xs text-muted-foreground">
+                Sin nada marcado acá, la marca ve el catálogo completo de su proveedor principal.
+                Marcá una tarifa para habilitarla entera, o un producto puntual sin marcar toda su tarifa.
+              </p>
+
+              @if (loadingTariffTree()) {
+                <div class="py-4">
+                  <app-brand-loader
+                    [visible]="true" [inline]="true" [size]="48"
+                    [showWordmark]="false" [showDescription]="false" [showBar]="false"
+                    [showPercent]="false" [showMicrocopy]="false" title="Cargando tarifas…"
+                  />
+                </div>
+              } @else if (tariffTree(); as tree) {
+                <div class="space-y-2 max-h-64 overflow-y-auto">
+                  @for (t of tree.tariffs; track t.id) {
+                    <div class="rounded-md border border-border p-2">
+                      <label class="flex items-center gap-2 cursor-pointer select-none">
+                        <input type="checkbox" class="h-4 w-4 rounded border-border accent-blue-500" [checked]="isTariffEnabled(t.id)" (change)="toggleTariff(t.id)" />
+                        <span class="text-sm font-medium text-foreground">{{ t.code }}</span>
+                      </label>
+                      @if (t.products.length > 0) {
+                        <div class="pl-6 mt-1 space-y-1">
+                          @for (prod of t.products; track prod.id) {
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                              <input type="checkbox" class="h-3.5 w-3.5 rounded border-border accent-blue-500" [checked]="isTariffEnabled(t.id) || isProductEnabled(prod.id)" [disabled]="isTariffEnabled(t.id)" (change)="toggleProduct(prod.id)" />
+                              <span class="text-xs text-muted-foreground">{{ prod.name }}</span>
+                            </label>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+                <div class="flex justify-end">
+                  <ui-button [label]="savingTariffScope() ? 'Guardando…' : 'Guardar restricciones'" size="sm" [disabled]="savingTariffScope()" (click)="saveTariffScope()" />
+                </div>
+              } @else {
+                <p class="text-sm text-muted-foreground text-center py-2">No se pudo cargar el catálogo del proveedor principal.</p>
+              }
+            </div>
+          </details>
+        }
+
       }
     </div>
 
@@ -220,6 +402,10 @@
         <ui-button [label]="savingImages() ? 'Guardando…' : 'Guardar imágenes'" size="sm" [disabled]="savingImages() || loading()" (click)="saveImages()" />
       } @else if (section() === 'modules') {
         <ui-button [label]="savingModules() ? 'Guardando…' : 'Guardar módulos'" size="sm" [disabled]="savingModules() || loading()" (click)="saveModules()" />
+      } @else if (section() === 'user' && !existingUser()) {
+        <ui-button [label]="creatingUser() ? 'Creando…' : 'Crear usuario'" size="sm" [disabled]="creatingUser() || loadingUser()" (click)="createUser()" />
+      } @else if (section() === 'providers') {
+        <ui-button [label]="savingProviders() ? 'Guardando…' : 'Guardar proveedores'" size="sm" [disabled]="savingProviders() || loading()" (click)="saveProviders()" />
       }
     </footer>
   </div>

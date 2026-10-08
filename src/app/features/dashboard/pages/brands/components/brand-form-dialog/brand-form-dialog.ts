@@ -4,10 +4,15 @@ import { Router } from '@angular/router';
 import { AlertService, ButtonComponent, DialogComponent, InputFieldComponent } from '@apolo-energies/ui';
 import { FileText, LucideAngularModule } from 'lucide-angular';
 import { BrandService } from '../../../../../../core/services/brand.service';
+import { UserService } from '../../../../../../core/services/user.service';
+import { ProviderService } from '../../../../../../core/services/provider.service';
 import { BrandSummary, BRAND_IMAGE_KIND_DEFS, BRAND_MODULE_DEFS } from '../../../../../../core/models/brand.model';
 import { BrandFormController, BrandFormSection } from '../../brand-form.controller';
 import { BrandImagesController } from '../../brand-images.controller';
 import { BrandModulesController } from '../../brand-modules.controller';
+import { BrandUserController } from '../../brand-user.controller';
+import { BrandProvidersController } from '../../brand-providers.controller';
+import { BrandTariffScopeController } from '../../brand-tariff-scope.controller';
 import { BrandLoaderComponent } from '../../../../../../shared/components/brand-loader/brand-loader.component';
 
 /**
@@ -29,14 +34,19 @@ export class BrandFormDialogComponent {
   readonly openChange = output<boolean>();
   readonly saved      = output<void>();
 
-  private readonly brandService = inject(BrandService);
-  private readonly alert        = inject(AlertService);
-  private readonly platformId   = inject(PLATFORM_ID);
-  private readonly router       = inject(Router);
+  private readonly brandService    = inject(BrandService);
+  private readonly userService    = inject(UserService);
+  private readonly providerService = inject(ProviderService);
+  private readonly alert          = inject(AlertService);
+  private readonly platformId     = inject(PLATFORM_ID);
+  private readonly router         = inject(Router);
 
-  private readonly imagesCtrl  = new BrandImagesController(this.brandService, this.alert);
-  private readonly modulesCtrl = new BrandModulesController(this.brandService, this.alert);
-  private readonly form        = new BrandFormController(this.brandService, this.alert, this.imagesCtrl, this.modulesCtrl);
+  private readonly imagesCtrl    = new BrandImagesController(this.brandService, this.alert);
+  private readonly modulesCtrl   = new BrandModulesController(this.brandService, this.alert);
+  private readonly userCtrl      = new BrandUserController(this.userService, this.brandService, this.alert);
+  private readonly providersCtrl   = new BrandProvidersController(this.brandService, this.providerService, this.alert);
+  private readonly tariffScopeCtrl = new BrandTariffScopeController(this.brandService, this.providerService, this.alert);
+  private readonly form            = new BrandFormController(this.brandService, this.alert, this.imagesCtrl, this.modulesCtrl, this.userCtrl, this.providersCtrl, this.tariffScopeCtrl);
 
   readonly imageKindDefs = BRAND_IMAGE_KIND_DEFS;
   readonly colorsIcon    = FileText;
@@ -66,6 +76,22 @@ export class BrandFormDialogComponent {
   readonly modules       = this.modulesCtrl.modules;
   readonly savingModules = this.modulesCtrl.saving;
 
+  readonly loadingUser  = this.userCtrl.loading;
+  readonly existingUser = this.userCtrl.existing;
+  readonly userEmail    = this.userCtrl.email;
+  readonly userName     = this.userCtrl.name;
+  readonly userSurnames = this.userCtrl.surnames;
+  readonly userPhone    = this.userCtrl.phone;
+  readonly creatingUser = this.userCtrl.creating;
+
+  readonly providerCatalog   = this.providersCtrl.catalog;
+  readonly selectedProviders = this.providersCtrl.selected;
+  readonly savingProviders   = this.providersCtrl.saving;
+
+  readonly tariffTree         = this.tariffScopeCtrl.tree;
+  readonly loadingTariffTree  = this.tariffScopeCtrl.loadingTree;
+  readonly savingTariffScope  = this.tariffScopeCtrl.saving;
+
   constructor() {
     if (!isPlatformBrowser(this.platformId)) return;
     effect(() => {
@@ -79,6 +105,8 @@ export class BrandFormDialogComponent {
     });
   }
 
+  setName(value: string): void { this.form.setName(value); }
+  setSlug(value: string): void { this.form.setSlug(value); }
   isFieldInvalid(field: string): boolean { return this.form.isFieldInvalid(field); }
   markTouched(field: string): void { this.form.markTouched(field); }
   setSection(s: BrandFormSection): void { this.form.setSection(s); }
@@ -115,6 +143,45 @@ export class BrandFormDialogComponent {
     const id = this.form.brandId();
     if (!id) return;
     this.modulesCtrl.save(id, { onSaved: () => this.saved.emit() });
+  }
+
+  isUserFieldInvalid(field: string): boolean { return this.userCtrl.isFieldInvalid(field); }
+  markUserTouched(field: string): void { this.userCtrl.markTouched(field); }
+
+  createUser(): void {
+    const id = this.form.brandId();
+    if (!id) return;
+    this.userCtrl.create(id);
+  }
+
+  addProviderRow(): void { this.providersCtrl.addRow(); }
+  removeProviderRow(i: number): void { this.providersCtrl.removeRow(i); }
+  setProviderId(i: number, providerId: string): void { this.providersCtrl.setProviderId(i, Number(providerId)); }
+  moveProviderUp(i: number): void { this.providersCtrl.moveUp(i); }
+  moveProviderDown(i: number): void { this.providersCtrl.moveDown(i); }
+
+  saveProviders(): void {
+    const id = this.form.brandId();
+    if (!id) return;
+    this.providersCtrl.save(id, {
+      onSaved: () => {
+        this.saved.emit();
+        // El principal pudo haber cambiado de orden — recarga el árbol de tarifas con el nuevo.
+        const principal = this.providersCtrl.selected()[0]?.providerId;
+        if (principal != null) this.tariffScopeCtrl.loadTree(principal);
+      },
+    });
+  }
+
+  isTariffEnabled(id: number):  boolean { return this.tariffScopeCtrl.isTariffEnabled(id); }
+  isProductEnabled(id: number): boolean { return this.tariffScopeCtrl.isProductEnabled(id); }
+  toggleTariff(id: number):  void { this.tariffScopeCtrl.toggleTariff(id); }
+  toggleProduct(id: number): void { this.tariffScopeCtrl.toggleProduct(id); }
+
+  saveTariffScope(): void {
+    const id = this.form.brandId();
+    if (!id) return;
+    this.tariffScopeCtrl.save(id, { onSaved: () => this.saved.emit() });
   }
 
   goToColors(): void {

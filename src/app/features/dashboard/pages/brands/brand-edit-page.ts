@@ -5,19 +5,22 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AlertComponent, AlertService, ButtonComponent } from '@apolo-energies/ui';
 import { BrandService } from '../../../../core/services/brand.service';
 import {
-  BrandImage, BrandPreviewPdfRequest, BrandSummary,
+  BrandPreviewPdfRequest, BrandSummary,
   BRAND_SETTINGS_COLOR_KEYS, BRAND_SETTINGS_GROUP_HINTS, BRAND_SETTINGS_SIZE_KEYS,
 } from '../../../../core/models/brand.model';
 import { BrandSettingsController } from './brand-settings.controller';
 import { BrandPreviewController } from './brand-preview.controller';
+import { BrandLogoSelectorController } from './brand-logo-selector.controller';
 import { BrandLoaderComponent } from '../../../../shared/components/brand-loader/brand-loader.component';
 
 /**
- * Página propia (no modal) para colores + tamaños: necesita el espacio para
+ * Página propia (no modal) para colores + logos: necesita el espacio para
  * mostrar el formulario y la vista previa en vivo del PDF lado a lado.
- * Imágenes y módulos se editan desde el modal del listado
- * (`BrandFormDialogComponent`) — acá solo se leen (read-only) para armar el
- * payload del preview (logo/logo_secondary).
+ * Módulos se editan desde el modal del listado (`BrandFormDialogComponent`).
+ * Qué imagen usar como logo del header / fondo claro se elige acá
+ * explícitamente (ver BrandLogoSelectorController) — ya no se asume por
+ * `kind`, porque eso fallaba cuando había más de una imagen con el mismo
+ * kind (caso Vibra).
  */
 @Component({
   selector: 'app-brand-edit-page',
@@ -34,10 +37,10 @@ export class BrandEditPageComponent {
   private readonly sanitizer    = inject(DomSanitizer);
 
   private readonly brandId = this.route.snapshot.paramMap.get('id')!;
-  private readonly images  = signal<BrandImage[]>([]);
 
   private readonly settingsCtrl = new BrandSettingsController(this.brandService, this.alert);
   private readonly previewCtrl  = new BrandPreviewController(this.brandService, this.sanitizer);
+  private readonly logoCtrl     = new BrandLogoSelectorController(this.brandService, this.alert);
 
   readonly settingsColorKeys = BRAND_SETTINGS_COLOR_KEYS;
   readonly settingsSizeKeys  = BRAND_SETTINGS_SIZE_KEYS;
@@ -70,16 +73,23 @@ export class BrandEditPageComponent {
   readonly previewLoading = this.previewCtrl.loading;
   readonly previewError   = this.previewCtrl.error;
 
+  readonly logoImages       = this.logoCtrl.selectable;
+  readonly logoKey          = this.logoCtrl.logoKey;
+  readonly logoSecondaryKey = this.logoCtrl.logoSecondaryKey;
+  readonly savingLogos      = this.logoCtrl.saving;
+
   constructor() {
     if (!isPlatformBrowser(this.platformId)) return;
     this.loadBrand();
 
-    // Cualquier cambio en colores/tamaños reprograma el preview (debounce interno).
+    // Cualquier cambio en colores/tamaños/logos elegidos reprograma el preview (debounce interno).
     effect(() => {
       this.settingsFields();
       this.settingsSizeFields();
       this.settingsRawJson();
       this.settingsRawMode();
+      this.logoKey();
+      this.logoSecondaryKey();
       if (!this.loading()) this.previewCtrl.schedule(() => this.buildPreviewPayload());
     });
   }
@@ -98,7 +108,7 @@ export class BrandEditPageComponent {
         this.brand.set(found);
         this.brandService.getConfig(found.slug).subscribe({
           next: config => {
-            this.images.set(config.images);
+            this.logoCtrl.reset(config.images);
             this.settingsCtrl.reset(config.settingsJson);
             this.previewCtrl.reset(this.brandId);
             this.loading.set(false);
@@ -119,12 +129,10 @@ export class BrandEditPageComponent {
   }
 
   private buildPreviewPayload(): BrandPreviewPdfRequest {
-    const logo          = this.images().find(r => r.kind === 'logo' && r.objectKey);
-    const logoSecondary = this.images().find(r => r.kind === 'logo_secondary' && r.objectKey);
     return {
       settingsJson:           this.settingsCtrl.snapshotJson(),
-      logoObjectKey:          logo?.objectKey || undefined,
-      logoSecondaryObjectKey: logoSecondary?.objectKey || undefined,
+      logoObjectKey:          this.logoKey() || undefined,
+      logoSecondaryObjectKey: this.logoSecondaryKey() || undefined,
     };
   }
 
@@ -133,6 +141,10 @@ export class BrandEditPageComponent {
   setSettingsRawJson(value: string): void { this.settingsCtrl.setRawJson(value); }
   toggleSettingsRawMode(): void { this.settingsCtrl.toggleRawMode(); }
   saveSettings(): void { this.settingsCtrl.save(this.brandId, { onSaved: () => {} }); }
+
+  selectLogo(objectKey: string): void { this.logoCtrl.selectLogo(objectKey); }
+  selectLogoSecondary(objectKey: string): void { this.logoCtrl.selectLogoSecondary(objectKey); }
+  saveLogos(): void { this.logoCtrl.save(this.brandId, { onSaved: () => {} }); }
 
   refreshPreviewNow(): void {
     this.previewCtrl.runNow(() => this.buildPreviewPayload());
