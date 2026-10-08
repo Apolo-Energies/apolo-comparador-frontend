@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, catchError, of, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   BrandConfig,
@@ -8,7 +8,9 @@ import {
   BrandImageUploadResponse,
   BrandModule,
   BrandPreviewPdfRequest,
+  BrandProvider,
   BrandSummary,
+  BrandUser,
   CreateBrandRequest,
   CreateBrandResponse,
 } from '../models/brand.model';
@@ -42,6 +44,28 @@ export class BrandService {
   /** Fija el set final de imágenes (reemplaza todas). Usar después de subir con uploadImage(). */
   updateImages(id: string, images: BrandImage[]): Observable<void> {
     return this.http.put<void>(`${this.base}/${id}/images`, { images });
+  }
+
+  /** null si la marca todavía no tiene un colaborador asignado (404). */
+  getUser(id: string): Observable<BrandUser | null> {
+    return this.http.get<BrandUser>(`${this.base}/${id}/user`).pipe(
+      catchError(err => err?.status === 404 ? of(null) : throwError(() => err)),
+    );
+  }
+
+  /** Reemplaza el conjunto completo de proveedores de la marca (no es incremental). */
+  updateProviders(id: string, providers: Pick<BrandProvider, 'providerId' | 'sortOrder'>[]): Observable<void> {
+    return this.http.put<void>(`${this.base}/${id}/providers`, { providers });
+  }
+
+  /** Opcional: restringe a estas tarifas completas (habilita todos sus productos). Reemplaza el set completo. */
+  updateTariffs(id: string, tariffIds: number[]): Observable<void> {
+    return this.http.put<void>(`${this.base}/${id}/tariffs`, { tariffIds });
+  }
+
+  /** Opcional: habilita estos productos puntuales, sin importar si su tarifa está en updateTariffs. Reemplaza el set completo. */
+  updateProducts(id: string, productIds: number[]): Observable<void> {
+    return this.http.put<void>(`${this.base}/${id}/products`, { productIds });
   }
 
   updateModules(id: string, modules: BrandModule[]): Observable<void> {

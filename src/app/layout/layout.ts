@@ -13,10 +13,16 @@ import { environment } from '../../environments/environment';
 import { RefreshTokenService } from '../core/services/refresh-token.service';
 import { OpportunityCountsStore } from '../core/services/opportunity-counts.store';
 import { GlobalLoadingService } from '../core/services/global-loading.service';
+import { BrandService } from '../core/services/brand.service';
+import { UserService } from '../core/services/user.service';
 import { BrandLoaderComponent } from '../shared/components/brand-loader/brand-loader.component';
 import { CollaboratorScopeSelectorComponent } from '../shared/components/collaborator-scope-selector/collaborator-scope-selector';
 import { buildSidebarSections, hasAccess } from './layout.helpers';
 import { OpportunitiesBadgeController } from './opportunities-badge.controller';
+import { BrandThemeController } from './brand-theme.controller';
+
+/** SVG vacío (transparente) — placeholder de logoSrc mientras se resuelve la marca del colaborador. */
+const TRANSPARENT_LOGO_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciLz4=';
 
 @Component({
   selector: 'app-layout',
@@ -30,6 +36,8 @@ export class Layout {
   private http = inject(HttpClient);
   private refreshTokenService = inject(RefreshTokenService);
   private countsStore = inject(OpportunityCountsStore);
+  private brandService = inject(BrandService);
+  private userService = inject(UserService);
   private platformId = inject(PLATFORM_ID);
   private destroyRef = inject(DestroyRef);
   readonly globalLoading = inject(GlobalLoadingService);
@@ -55,8 +63,17 @@ export class Layout {
     destroyRef: this.destroyRef,
   });
 
+  // Si el colaborador pertenece a una marca blanca, reemplaza el logo del
+  // header/sidebar y el favicon de la pestaña por los de esa marca.
+  private readonly brandTheme = new BrandThemeController({
+    brandService: this.brandService,
+    userService: this.userService,
+    auth: this.auth,
+  });
+
   constructor() {
     if (!isPlatformBrowser(this.platformId)) return;
+    this.brandTheme.load();
     if (environment.features.opportunities) {
       this.oppBadge.refresh();
       afterNextRender(() => this.oppBadge.setupDomMarker());
@@ -75,7 +92,13 @@ export class Layout {
     else document.documentElement.style.removeProperty(name);
   }
 
-  readonly logoSrc = environment.logoUrl;
+  // Mientras se resuelve si el colaborador tiene marca blanca asignada, se
+  // muestra un SVG vacío en vez del logo del tenant — evita el flash del
+  // logo de Apolo para colaboradores de marca blanca.
+  readonly logoSrc = computed(() => {
+    if (this.brandTheme.loading()) return TRANSPARENT_LOGO_PLACEHOLDER;
+    return this.brandTheme.logoUrl() ?? environment.logoUrl;
+  });
 
   readonly userMenuIcon = {
     type: 'apolo' as const,

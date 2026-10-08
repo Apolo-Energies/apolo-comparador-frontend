@@ -16,6 +16,8 @@ export interface UserDetail {
   isSubUser: boolean;
   availableActions: string[];
   parentUserId: string | null;
+  /** Resuelto siempre fresco contra la base en cada llamada — nunca viene del JWT. */
+  brandSlug: string | null;
 }
 
 export interface UserDetailCommission {
