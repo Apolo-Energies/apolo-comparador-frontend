@@ -24,6 +24,8 @@ export interface CreateUserRequest {
   cif?:                string;
   companyName?:        string;
   parentUserId?:       string;
+  /** Si el usuario pertenece a una marca blanca (colaborador raíz de esa marca). */
+  brandId?:            string;
 }
 
 export interface UpdateUserRequest {

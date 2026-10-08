@@ -20,6 +20,11 @@ export class ProviderService {
     return this.http.get<Provider>(`${environment.apiUrl}/provider/tariffs`);
   }
 
+  /** Árbol completo (Tariffs → Products) de un proveedor puntual, sin filtrar por marca. */
+  getTree(id: number) {
+    return this.http.get<Provider>(`${environment.apiUrl}/provider/providers/${id}`);
+  }
+
   downloadExcel(providerId: number) {
     return this.http.post(
       `${environment.apiUrl}/provider/excel/${providerId}`, {}, { responseType: 'blob' }

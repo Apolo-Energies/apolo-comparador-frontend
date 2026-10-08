@@ -23,6 +23,41 @@ export interface BrandSummary {
   isActive: boolean;
 }
 
+/**
+ * Proveedor(es) que ve la marca al llamar /provider/tariffs. El de menor
+ * sortOrder es el "principal" — el que usan las pantallas de un solo
+ * proveedor. providerName solo viene en el GET (de solo lectura); el PUT
+ * /brand/{id}/providers solo necesita providerId/sortOrder.
+ */
+export interface BrandProvider {
+  providerId:    number;
+  providerName?: string;
+  sortOrder:     number;
+}
+
+/**
+ * Restricción opcional por tarifa completa (PUT /brand/{id}/tariffs) — si la
+ * marca no tiene nada configurado acá, sigue viendo el catálogo completo de
+ * su proveedor. tariffCode/providerId solo vienen en el GET.
+ */
+export interface BrandTariff {
+  tariffId:    number;
+  tariffCode?: string;
+  providerId?: number;
+}
+
+/**
+ * Restricción opcional por producto puntual (PUT /brand/{id}/products) —
+ * habilita ese producto aunque su tarifa no esté en BrandTariff. Se puede
+ * combinar con BrandTariff. productName/tariffCode/providerId solo vienen en el GET.
+ */
+export interface BrandProduct {
+  productId:    number;
+  productName?: string;
+  tariffCode?:  string;
+  providerId?:  number;
+}
+
 /** Respuesta de GET /brand/{slug}/config — pública, sin id. */
 export interface BrandConfig {
   slug:         string;
@@ -31,6 +66,17 @@ export interface BrandConfig {
   modules:      BrandModule[];
   images:       BrandImage[];
   settingsJson: string | null;
+  providers:    BrandProvider[];
+  tariffs:      BrandTariff[];
+  products:     BrandProduct[];
+}
+
+/** Colaborador raíz asociado a la marca (GET /brand/{id}/user). null si todavía no tiene uno. */
+export interface BrandUser {
+  id:       string;
+  fullName: string;
+  email:    string;
+  role:     string;
 }
 
 export interface CreateBrandRequest {
