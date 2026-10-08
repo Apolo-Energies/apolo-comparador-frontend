@@ -1,8 +1,9 @@
 import { APP_INITIALIZER, ApplicationConfig, LOCALE_ID, PLATFORM_ID, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
-import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { HttpBackend, HttpClient, provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { isPlatformBrowser, registerLocaleData } from '@angular/common';
+import { firstValueFrom } from 'rxjs';
 import localeEs from '@angular/common/locales/es';
 
 registerLocaleData(localeEs, 'es-ES');
@@ -16,12 +17,64 @@ import { authResponseInterceptor } from './core/interceptors/auth-response.inter
 import { tokenExpiryInterceptor } from './core/interceptors/token-expiry.interceptor';
 import { RefreshTokenService } from './core/services/refresh-token.service';
 
+interface RefreshResponse {
+  accessToken?:  string;
+  access_token?: string;
+  refreshToken?:  string;
+  refresh_token?: string;
+}
+
 function isJwtExpired(token: string): boolean {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
     return Date.now() >= payload.exp * 1000;
   } catch {
     return true;
+  }
+}
+
+function saveAccessToken(token: string): void {
+  if (environment.auth.tokenStorage === 'cookie') {
+    const secure = environment.production ? '; Secure' : '';
+    document.cookie = `${environment.auth.accessTokenKey}=${encodeURIComponent(token)}; path=/; SameSite=Strict${secure}`;
+  } else {
+    localStorage.setItem(environment.auth.accessTokenKey, token);
+  }
+}
+
+// Refresh proactivo al arrancar; usa HttpBackend para esquivar el tokenExpiryInterceptor.
+async function refreshSessionIfPossible(
+  auth: AuthService,
+  refreshTokenSvc: RefreshTokenService,
+  httpBackend: HttpBackend,
+): Promise<void> {
+  const refresh = refreshTokenSvc.getRefreshToken();
+  const userId  = refreshTokenSvc.getUserIdFromToken();
+
+  if (!refresh || !userId) {
+    const current = auth.token();
+    if (current && isJwtExpired(current)) {
+      refreshTokenSvc.clear();
+      auth.signOut();
+    }
+    return;
+  }
+
+  try {
+    const http = new HttpClient(httpBackend);
+    const res  = await firstValueFrom(
+      http.post<RefreshResponse>(`${environment.apiUrl}/auth/refresh`, { userId, refreshToken: refresh }),
+    );
+    const newToken   = res.accessToken  ?? res.access_token  ?? '';
+    const newRefresh = res.refreshToken ?? res.refresh_token ?? '';
+    if (newToken) {
+      auth.token.set(newToken);
+      saveAccessToken(newToken);
+    }
+    if (newRefresh) refreshTokenSvc.save(newRefresh);
+  } catch {
+    refreshTokenSvc.clear();
+    auth.signOut();
   }
 }
 
@@ -46,12 +99,16 @@ export const appConfig: ApplicationConfig = {
     }),
     {
       provide: APP_INITIALIZER,
-      useFactory: (auth: AuthService, platformId: object, refreshTokenSvc: RefreshTokenService) => () => {
+      useFactory: (
+        auth:            AuthService,
+        platformId:      object,
+        refreshTokenSvc: RefreshTokenService,
+        httpBackend:     HttpBackend,
+      ) => async () => {
         if (!isPlatformBrowser(platformId)) return;
-        const token = auth.token();
-        if (token && isJwtExpired(token) && !refreshTokenSvc.getRefreshToken()) {
-          auth.signOut();
-        }
+
+        await refreshSessionIfPossible(auth, refreshTokenSvc, httpBackend);
+
         const env = environment as { faviconUrl?: string; appTitle?: string };
         if (env.faviconUrl) {
           const link = document.querySelector<HTMLLinkElement>("link[rel='icon']");
@@ -61,7 +118,7 @@ export const appConfig: ApplicationConfig = {
           document.title = env.appTitle;
         }
       },
-      deps: [AuthService, PLATFORM_ID, RefreshTokenService],
+      deps: [AuthService, PLATFORM_ID, RefreshTokenService, HttpBackend],
       multi: true,
     },
   ],
