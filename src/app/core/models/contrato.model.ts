@@ -21,6 +21,9 @@ export interface ContratoClienteRow {
   EstadoResumen:          string;
   ProximoVencimiento:     string | null;
   UltimoMovimiento:       string | null;
+  Tarifa:                 string | null;
+  FechaCreacion:          string | null;
+  FechaFin:               string | null;
 }
 
 export interface ContratosPageResponse {
