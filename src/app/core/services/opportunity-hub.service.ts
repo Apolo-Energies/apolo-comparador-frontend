@@ -27,7 +27,7 @@ export class OpportunityHubService implements OnDestroy {
       });
     });
 
-    this.connection.start().catch(err =>
+    this.connection.start().catch((err: unknown) =>
       console.warn('[OpportunityHub] connection error:', err)
     );
   }
