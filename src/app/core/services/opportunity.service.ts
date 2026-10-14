@@ -57,11 +57,7 @@ export class OpportunityService {
     );
   }
 
-  /**
-   * Página 1 de las 4 columnas del tablero Kanban en una sola llamada + contadores de badges
-   * del sidebar. Sustituye al forkJoin de 4 list() en la carga inicial del board.
-   * El scroll infinito por columna sigue usando list() con status filtrado.
-   */
+  // Página 1 de las 4 columnas + badges del sidebar en una sola llamada.
   board(filters: OpportunityFilters = {}): Observable<OpportunityBoardResponse> {
     let params = new HttpParams()
       .set('pageSize', String(filters.pageSize ?? 20));
@@ -88,7 +84,6 @@ export class OpportunityService {
     );
   }
 
-  /** Contadores globales de pendientes por energyType para los badges del sidebar. */
   summary(): Observable<OpportunitySidebarBadges> {
     return this.http.get<OpportunitySidebarBadges>(`${this.base}/summary`);
   }
