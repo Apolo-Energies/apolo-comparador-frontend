@@ -107,9 +107,7 @@ export class ContractDetailDrawerComponent {
       const c = this.client();
       if (c) {
         this.visible.set(true);
-        // Cada fila de la tabla ahora es 1 contrato/CUPS: filtramos el drawer por ese
-        // CUPS específico. Si por algún motivo la fila tiene múltiples CUPS (legacy),
-        // caemos al fetch por cliente completo.
+        // Si la fila trae 1 CUPS, filtramos para no mostrar los demás servicios del cliente.
         const singleCups = c.CUPS.length === 1 ? c.CUPS[0] : undefined;
         this.loadServices(c.IdCliente, singleCups);
       } else {
@@ -127,8 +125,6 @@ export class ContractDetailDrawerComponent {
     this.loading.set(true);
     this.contractService.getServiciosByCliente(idCliente, 100, cups).subscribe({
       next: rows => {
-        // Dedup por CUPS con la misma winner-logic que el backend usa en /contratos,
-        // así el drawer muestra 1 card por CUPS y coincide con NumServicios del header.
         this.services.set(dedupeServiciosByCups(rows));
         this.loading.set(false);
         this.cdr.markForCheck();
@@ -355,8 +351,7 @@ export class ContractDetailDrawerComponent {
     this.submittingCloseIncidence.set(true);
     this.incidenceService.close(inc.id, note ? { resolutionNote: note } : {}).subscribe({
       next: updated => {
-        // contratoExtId ya no viene del backend (control no lo trackea); localizamos el
-        // servicio en cuyo cache está la incidencia recorriendo el mapa.
+        // Buscamos la incidencia por id en todas las caches (contratoExtId ya no es key fiable).
         const cache = this.incidenciasCache();
         const nextCache: Record<number, Incidence[] | 'loading' | 'error'> = { ...cache };
         for (const key of Object.keys(nextCache)) {
