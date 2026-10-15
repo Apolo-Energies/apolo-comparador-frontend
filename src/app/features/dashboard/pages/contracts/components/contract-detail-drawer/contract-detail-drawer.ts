@@ -18,7 +18,7 @@ import { ServicioListItem } from '../../../../../../core/models/servicio.model';
 import { ContractService } from '../../../../../../core/services/contract.service';
 import { IncidenceService, Incidence, INCIDENCE_TYPES, INCIDENCE_TYPE_LABELS, INCIDENCE_STATUS_LABELS } from '../../../../../../core/services/incidence.service';
 import { BrandLoaderComponent } from '../../../../../../shared/components/brand-loader/brand-loader.component';
-import { calcDias, dedupeServiciosByCups, estadoCls, estadoLabel, fmtDate, fmtKwh } from '../../contracts-utils';
+import { calcDias, dedupeServiciosByCups, estadoCls, estadoLabel, fmtDate, fmtKwh, isEstadoPendiente, isEstadoTerminado } from '../../contracts-utils';
 import { getUserRoles } from '../../../../../../core/helpers/auth.utils';
 
 @Component({
@@ -77,9 +77,32 @@ export class ContractDetailDrawerComponent {
     });
   }
 
-  // 'P' = Pendiente de firma.
+  // Contratos aún en tramitación (previo, para firma, para tramitar…).
   isEditableEstado(estado: string | null | undefined): boolean {
-    return (estado ?? '').toUpperCase() === 'P';
+    return isEstadoPendiente(estado);
+  }
+
+  // Tarjetas de servicio plegables: con varios servicios solo el primero arranca abierto.
+  readonly openServicios = signal<ReadonlySet<number>>(new Set());
+
+  isServicioOpen(id: number): boolean {
+    return this.openServicios().has(id);
+  }
+
+  toggleServicio(id: number): void {
+    this.openServicios.update(set => toggleInSet(set, id));
+  }
+
+  // Solo contratos vigentes que vencen en los próximos 60 días.
+  canRenovar(s: ServicioListItem): boolean {
+    if (isEstadoTerminado(s.Estado)) return false;
+    const dias = calcDias(s.FechaFin);
+    return dias !== null && dias >= 0 && dias <= 60;
+  }
+
+  // En indexados EE informa el fee sobre el índice, no un precio final de energía.
+  esIndexado(s: ServicioListItem): boolean {
+    return (s.TipoPrecioOfertaCTF ?? '').toUpperCase() === 'I';
   }
 
   readonly incidenceTypes = INCIDENCE_TYPES;
@@ -125,7 +148,9 @@ export class ContractDetailDrawerComponent {
     this.loading.set(true);
     this.contractService.getServiciosByCliente(idCliente, 100, cups).subscribe({
       next: rows => {
-        this.services.set(dedupeServiciosByCups(rows));
+        const services = dedupeServiciosByCups(rows);
+        this.services.set(services);
+        this.openServicios.set(new Set(services.length > 0 ? [services[0].Id] : []));
         this.loading.set(false);
         this.cdr.markForCheck();
       },
@@ -145,6 +170,35 @@ export class ContractDetailDrawerComponent {
     this.closed.emit();
   }
 
+  /**
+   * Periodos P1–P6 con precio o consumo informado (los que EE deja a 0 en todo se ocultan:
+   * una 2.0TD solo usa P1–P3). La API de EE solo expone el precio final por periodo,
+   * en c€/kWh (energía) y c€/kW·día (potencia); los consumos por periodo vienen en MWh.
+   */
+  periodos(s: ServicioListItem): { p: string; energia: number | null; potencia: number | null; consumo: number | null }[] {
+    const energia  = [s.PrecioEnergiaP1, s.PrecioEnergiaP2, s.PrecioEnergiaP3, s.PrecioEnergiaP4, s.PrecioEnergiaP5, s.PrecioEnergiaP6];
+    const potencia = [s.PrecioPotenciaP1, s.PrecioPotenciaP2, s.PrecioPotenciaP3, s.PrecioPotenciaP4, s.PrecioPotenciaP5, s.PrecioPotenciaP6];
+    const consumo  = [s.ConsumoAnualP1, s.ConsumoAnualP2, s.ConsumoAnualP3, s.ConsumoAnualP4, s.ConsumoAnualP5, s.ConsumoAnualP6];
+    return energia
+      .map((_, i) => ({
+        p:        `P${i + 1}`,
+        energia:  energia[i]  ?? null,
+        potencia: potencia[i] ?? null,
+        consumo:  consumo[i] ? consumo[i] * 1000 : null, // MWh → kWh
+      }))
+      .filter(r => !!r.energia || !!r.potencia || !!r.consumo);
+  }
+
+  /** EE envía el tipo de precio como letra. */
+  tipoPrecioLabel(code: string | null | undefined): string {
+    const labels: Record<string, string> = { F: 'Fijo', I: 'Indexado', M: 'Mixto' };
+    return code ? (labels[code.toUpperCase()] ?? code) : '—';
+  }
+
+  fmtPrecio(v: number | null): string {
+    return v ? v.toLocaleString('es-ES', { minimumFractionDigits: 4, maximumFractionDigits: 6 }) : '—';
+  }
+
   localizacion(s: ServicioListItem): string {
     const parts = [s.PoblacionSuministro, s.ProvinciaSuministro].filter(Boolean);
     return parts.join(', ') || s.DireccionSuministro || '—';
@@ -160,13 +214,14 @@ export class ContractDetailDrawerComponent {
     const porCups = this.client()?.ConsumoPorCups ?? {};
     const fromContract = s.CUPS ? porCups[s.CUPS] : undefined;
     if (fromContract && fromContract > 0) return fromContract;
-    if (s.ConsumoAnualContrato)   return s.ConsumoAnualContrato;
-    if (s.ConsumoAnualSuministro) return s.ConsumoAnualSuministro;
+    // Los consumos del servicio de EE vienen en MWh → kWh.
+    if (s.ConsumoAnualContrato)   return s.ConsumoAnualContrato * 1000;
+    if (s.ConsumoAnualSuministro) return s.ConsumoAnualSuministro * 1000;
     const periodos = [
       s.ConsumoAnualP1, s.ConsumoAnualP2, s.ConsumoAnualP3,
       s.ConsumoAnualP4, s.ConsumoAnualP5, s.ConsumoAnualP6,
     ];
-    return periodos.reduce((acc, v) => acc + (v ?? 0), 0);
+    return periodos.reduce((acc, v) => acc + (v ?? 0), 0) * 1000;
   }
 
   estadoEntries(bd: Record<string, number> | null | undefined): { estado: string; count: number }[] {
@@ -179,12 +234,30 @@ export class ContractDetailDrawerComponent {
 
   // ── Acciones sobre un servicio ──────────────────────────────────────────
 
-  downloadContrato(s: ServicioListItem): void {
-    this.contractService.downloadContratoPdf(s.Id, s.CUPS).subscribe({
-      next: blob => this.saveBlob(blob, `contrato_${s.Id}.pdf`),
-      error: () => this.showFeedback('error', 'Descarga no disponible',
-        'No se pudo descargar el contrato. Puede que aún no tenga PDF disponible.'),
+  readonly downloadingFirmado = signal<number | null>(null);
+
+  downloadContratoFirmado(s: ServicioListItem): void {
+    this.downloadingFirmado.set(s.Id);
+    this.contractService.downloadContratoFirmado(s.Id).subscribe({
+      next: blob => {
+        this.downloadingFirmado.set(null);
+        this.saveBlob(blob, `contrato_firmado_${s.Id}.pdf`);
+      },
+      error: () => {
+        this.downloadingFirmado.set(null);
+        this.showFeedback('error', 'Descarga no disponible',
+          'No se pudo descargar el contrato firmado desde Energy Expert.');
+      },
     });
+  }
+
+  direccionFiscal(s: ServicioListItem): string {
+    const linea2 = [s.CPCliente, s.PoblacionCliente].filter(Boolean).join(' ');
+    return [s.DireccionCliente, linea2, s.ProvinciaCliente].filter(Boolean).join(', ') || '—';
+  }
+
+  fmtEuros(v: number | null | undefined): string {
+    return v ? v.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }) : '—';
   }
 
   renovar(s: ServicioListItem): void {
@@ -453,4 +526,10 @@ interface InvoiceRow {
   importe:      number | null;
   consumoKwh:   number | null;
   idArchivo:    number | null;
+}
+
+function toggleInSet(set: ReadonlySet<number>, id: number): ReadonlySet<number> {
+  const next = new Set(set);
+  if (!next.delete(id)) next.add(id);
+  return next;
 }
