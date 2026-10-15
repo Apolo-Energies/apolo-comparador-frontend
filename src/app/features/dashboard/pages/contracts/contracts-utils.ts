@@ -138,14 +138,29 @@ function estadoRank(s: ServicioDedupItem): number {
   const estado = (s.Estado ?? '').toUpperCase();
   const vigente = s.FechaFin ? new Date(s.FechaFin).getTime() >= Date.now() : false;
   switch (estado) {
-    case 'A': return 100;
-    case 'F': return vigente ? 80 : 60;
-    case 'R': return 40;
-    case 'P': return 40;
-    case 'B': return 20;
-    case 'C': return 20;
-    default:  return 10;
+    case 'A': case 'ACTIVO':
+      return 100;
+    case 'F': case 'VALIDO': case 'CONFIRMADO':
+      return vigente ? 80 : 60;
+    case 'R': case 'RENOVADO':
+    case 'P': case 'PREVIO': case 'PARA_ESTUDIO': case 'PARA_TRAMITAR': case 'PARA_FIRMA': case 'INCIDENCIA':
+      return 40;
+    case 'B': case 'C': case 'BAJA': case 'FINALIZADO': case 'ANULADO':
+    case 'DESESTIMADO': case 'KO': case 'RECHAZADO':
+      return 20;
+    default:
+      return 10;
   }
+}
+
+/** Estados en curso (aún no firmados/activos): admiten edición previa a la firma. */
+export function isEstadoPendiente(code: string | null | undefined): boolean {
+  return estadoCategory(code ?? '') === 'pendientes';
+}
+
+/** Estados terminados: no tiene sentido ofrecer acciones de renovación. */
+export function isEstadoTerminado(code: string | null | undefined): boolean {
+  return estadoCategory(code ?? '') === 'bajas';
 }
 
 /**

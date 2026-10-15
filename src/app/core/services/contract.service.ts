@@ -115,12 +115,11 @@ export class ContractService {
     );
   }
 
-  // Requiere CUPS: el backend resuelve el idArchivo consultando facturas por ese CUPS.
-  downloadContratoPdf(idContrato: number, cups: string): Observable<Blob> {
-    const params = new HttpParams().set('cups', cups.trim().toUpperCase());
+  // PDF del contrato de servicio firmado. El backend valida que el servicio sea de la delegación.
+  downloadContratoFirmado(idServicio: number): Observable<Blob> {
     return this.http.get(
-      `${environment.apiUrl}/energy-expert/contratos/${idContrato}/archivo`,
-      { responseType: 'blob', params },
+      `${environment.apiUrl}/energy-expert/servicios/${idServicio}/contrato-firmado`,
+      { responseType: 'blob' },
     );
   }
 
