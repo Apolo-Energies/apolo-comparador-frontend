@@ -58,6 +58,13 @@ export interface ServicioListItem {
   PrecioEnergiaP4:              number;
   PrecioEnergiaP5:              number;
   PrecioEnergiaP6:              number;
+  // IdArchivo EE del contrato de servicio firmado (se descarga vía /servicios/{Id}/contrato-firmado).
+  IdContratoFirmado?:           number | null;
+  // Dirección fiscal del cliente (EE no expone la dirección de facturación del servicio).
+  DireccionCliente?:            string | null;
+  CPCliente?:                   string | null;
+  PoblacionCliente?:            string | null;
+  ProvinciaCliente?:            string | null;
   // Inyectado por el backend a partir de la última factura EE — null si no hay PDF.
   idArchivo?:                   number | null;
 }
