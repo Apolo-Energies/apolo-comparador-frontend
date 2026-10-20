@@ -1,0 +1,98 @@
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import { MessageService } from 'primeng/api';
+import {
+  TRAMITACION_TIPO_LABELS, TramitacionCierre, TramitacionDocumento, TramitacionItem, TramitacionService, TramitacionTipo,
+} from '../../../../../../core/services/tramitacion.service';
+import { fmtDate } from '../../contracts-utils';
+
+/**
+ * Pestaña "En tramitación": qué le falta a cada contrato (rechazo, incidencia o documentación).
+ * El colaborador sube el documento que falte; el Master además lo cierra.
+ */
+@Component({
+  selector: 'app-tramitacion-panel',
+  standalone: true,
+  templateUrl: './tramitacion-panel.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class TramitacionPanelComponent {
+  readonly items    = input<TramitacionItem[]>([]);
+  readonly loading  = input(false);
+  readonly isMaster = input(false);
+  /** Algo cambió (documento subido, registro cerrado): el padre recarga la lista. */
+  readonly changed  = output<void>();
+
+  private readonly tramitacion = inject(TramitacionService);
+  private readonly toast       = inject(MessageService);
+
+  readonly uploadingId = signal<string | null>(null);
+  readonly closingId   = signal<string | null>(null);
+
+  readonly fmtDate = fmtDate;
+
+  tipoLabel(tipo: TramitacionTipo): string {
+    return TRAMITACION_TIPO_LABELS[tipo] ?? tipo;
+  }
+
+  tipoCls(tipo: TramitacionTipo): string {
+    switch (tipo) {
+      case 'rechazado':  return 'bg-red-500/10 text-red-400';
+      case 'incidencia': return 'bg-orange-500/10 text-orange-400';
+      default:           return 'bg-amber-500/10 text-amber-300';
+    }
+  }
+
+  /** Revisión pendiente de Operaciones tras subir el colaborador lo que faltaba. */
+  isTramitadoDeNuevo(item: TramitacionItem): boolean {
+    return item.resultado === 'tramitado_de_nuevo';
+  }
+
+  onFileSelected(item: TramitacionItem, event: Event): void {
+    const inputEl = event.target as HTMLInputElement;
+    const file = inputEl.files?.[0];
+    inputEl.value = '';
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) {
+      this.notify('error', 'Archivo demasiado grande', 'El archivo supera los 20 MB.');
+      return;
+    }
+
+    this.uploadingId.set(item.id);
+    this.tramitacion.subirDocumento(item.id, file).subscribe({
+      next: () => {
+        this.uploadingId.set(null);
+        this.notify('success', 'Documento enviado', 'Queda como "Tramitado de nuevo" hasta que Operaciones lo revise.');
+        this.changed.emit();
+      },
+      error: err => {
+        this.uploadingId.set(null);
+        this.notify('error', 'No se pudo subir', err?.error?.error ?? 'Inténtalo de nuevo.');
+      },
+    });
+  }
+
+  openDocumento(item: TramitacionItem, doc: TramitacionDocumento): void {
+    this.tramitacion.getDocumentoUrl(item.id, doc.id).subscribe({
+      next: url => window.open(url, '_blank', 'noopener'),
+      error: () => this.notify('error', 'No disponible', 'No se pudo abrir el documento.'),
+    });
+  }
+
+  cerrar(item: TramitacionItem, resultado: TramitacionCierre): void {
+    this.closingId.set(item.id);
+    this.tramitacion.cerrar(item.id, resultado).subscribe({
+      next: () => {
+        this.closingId.set(null);
+        this.changed.emit();
+      },
+      error: () => {
+        this.closingId.set(null);
+        this.notify('error', 'No se pudo cerrar', 'Inténtalo de nuevo.');
+      },
+    });
+  }
+
+  private notify(severity: 'success' | 'error', summary: string, detail: string): void {
+    this.toast.add({ severity, summary, detail, life: 4500 });
+  }
+}

@@ -374,7 +374,46 @@
                           (click)="toggleIncidencias(s.Id)">
                     Incidencias
                   </button>
+                  @if (isMaster()) {
+                    <button type="button"
+                            class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20"
+                            (click)="toggleFalta(s.Id)">
+                      Registrar qué falta
+                    </button>
+                  }
                 </div>
+
+              <!-- Sección expandida: REGISTRAR QUÉ FALTA (Master) -->
+              @if (faltaFor() === s.Id) {
+                <div class="px-4 py-3 border-t border-zinc-800/60 bg-amber-500/5 space-y-2">
+                  <p class="text-[11px] font-semibold text-amber-300 uppercase tracking-wider">
+                    Qué falta en este contrato
+                  </p>
+                  <select class="w-full bg-zinc-950 border border-zinc-700 rounded-md px-2 py-1.5 text-xs text-zinc-100"
+                          [ngModel]="faltaTipo()" (ngModelChange)="faltaTipo.set($event)">
+                    @for (t of faltaTipos; track t) {
+                      <option [value]="t">{{ faltaTipoLabels[t] }}</option>
+                    }
+                  </select>
+                  <textarea rows="2"
+                            class="w-full bg-zinc-950 border border-zinc-700 rounded-md px-2 py-1.5 text-xs text-zinc-100"
+                            placeholder="Motivo (p. ej. rechazado por la distribuidora: la potencia no coincide)"
+                            [ngModel]="faltaMotivo()" (ngModelChange)="faltaMotivo.set($event)"></textarea>
+                  <input type="text"
+                         class="w-full bg-zinc-950 border border-zinc-700 rounded-md px-2 py-1.5 text-xs text-zinc-100"
+                         placeholder="Documento que falta (p. ej. copia del DNI del titular)"
+                         [ngModel]="faltaDocumentacion()" (ngModelChange)="faltaDocumentacion.set($event)" />
+                  <div class="flex items-center justify-end gap-2">
+                    <button type="button" class="text-[11px] text-zinc-400 hover:text-zinc-200"
+                            (click)="faltaFor.set(null)" [disabled]="savingFalta()">Cancelar</button>
+                    <button type="button"
+                            class="text-[11px] font-semibold px-3 py-1 rounded-md bg-amber-500 text-black hover:bg-amber-400 disabled:opacity-50"
+                            (click)="guardarFalta(s)" [disabled]="savingFalta()">
+                      {{ savingFalta() ? 'Guardando…' : 'Guardar' }}
+                    </button>
+                  </div>
+                </div>
+              }
 
               <!-- Sección expandida: EDICIÓN ANTES DE FIRMA -->
               @if (editingServicioId() === s.Id) {

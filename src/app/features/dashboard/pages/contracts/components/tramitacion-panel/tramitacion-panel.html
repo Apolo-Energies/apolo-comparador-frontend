@@ -1,0 +1,102 @@
+@if (loading()) {
+  <div class="flex items-center justify-center py-16 text-sm text-muted-foreground">Cargando…</div>
+} @else if (items().length === 0) {
+  <div class="flex flex-col items-center justify-center py-16 px-6 text-center text-muted-foreground">
+    <p class="text-sm font-medium text-foreground">Nada pendiente</p>
+    <p class="text-xs mt-1">Ningún contrato tiene rechazos, incidencias ni documentación pendiente.</p>
+  </div>
+} @else {
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-accent/40 text-[11px] uppercase tracking-wider text-muted-foreground">
+        <tr>
+          <th class="text-left font-semibold px-4 py-3">ID</th>
+          <th class="text-left font-semibold px-4 py-3">Cliente</th>
+          <th class="text-left font-semibold px-4 py-3">CUPS</th>
+          <th class="text-left font-semibold px-4 py-3">Estado</th>
+          <th class="text-left font-semibold px-4 py-3">Desde</th>
+          <th class="text-left font-semibold px-4 py-3">Qué falta</th>
+          <th class="text-right font-semibold px-4 py-3">Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of items(); track item.id) {
+          <tr class="border-t border-border align-top">
+            <td class="px-4 py-3 font-mono text-xs text-muted-foreground">#{{ item.idServicio ?? '—' }}</td>
+            <td class="px-4 py-3">
+              <p class="font-medium text-foreground">{{ item.clienteNombre || '—' }}</p>
+              <p class="text-xs text-muted-foreground">{{ item.clienteNif || '' }}</p>
+              @if (isMaster() && item.nombreDelegacion) {
+                <p class="text-[11px] text-muted-foreground mt-0.5">{{ item.nombreDelegacion }}</p>
+              }
+            </td>
+            <td class="px-4 py-3 font-mono text-xs text-muted-foreground">{{ item.cups || '—' }}</td>
+            <td class="px-4 py-3">
+              <div class="flex flex-col items-start gap-1">
+                <span class="px-2 py-0.5 rounded-md text-xs font-semibold" [class]="tipoCls(item.tipo)">
+                  {{ tipoLabel(item.tipo) }}
+                </span>
+                @if (isTramitadoDeNuevo(item)) {
+                  <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-500/10 text-blue-400">
+                    Tramitado de nuevo
+                  </span>
+                }
+              </div>
+            </td>
+            <td class="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{{ fmtDate(item.desde) }}</td>
+            <td class="px-4 py-3 max-w-md">
+              @if (item.motivo) {
+                <p class="text-foreground">{{ item.motivo }}</p>
+              }
+              @if (item.documentacionNecesaria) {
+                <p class="text-xs mt-1" [class.text-amber-300]="!isTramitadoDeNuevo(item)"
+                   [class.text-muted-foreground]="isTramitadoDeNuevo(item)">
+                  Falta: {{ item.documentacionNecesaria }}
+                </p>
+              }
+              @if (item.documentos.length > 0) {
+                <ul class="mt-2 space-y-0.5">
+                  @for (doc of item.documentos; track doc.id) {
+                    <li>
+                      <button type="button" class="text-xs text-primary-button hover:underline text-left"
+                              (click)="openDocumento(item, doc)">
+                        {{ doc.nombreArchivo }} · {{ fmtDate(doc.subidoEn.slice(0, 10)) }}
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex flex-col items-end gap-1.5">
+                <label class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer text-primary-button bg-primary-button/10 hover:bg-primary-button/20"
+                       [class.opacity-50]="uploadingId() === item.id"
+                       [class.pointer-events-none]="uploadingId() === item.id">
+                  {{ uploadingId() === item.id ? 'Subiendo…' : 'Subir documento' }}
+                  <input type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png,.heic,.doc,.docx"
+                         (change)="onFileSelected(item, $event)" />
+                </label>
+                @if (isMaster()) {
+                  <div class="flex items-center gap-1">
+                    <button type="button"
+                            class="px-2 py-1 rounded-md text-[11px] font-semibold text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 disabled:opacity-50"
+                            [disabled]="closingId() === item.id"
+                            (click)="cerrar(item, 'resuelta')">
+                      Resuelta
+                    </button>
+                    <button type="button"
+                            class="px-2 py-1 rounded-md text-[11px] font-semibold text-red-300 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-50"
+                            [disabled]="closingId() === item.id"
+                            (click)="cerrar(item, 'ko')">
+                      KO
+                    </button>
+                  </div>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
