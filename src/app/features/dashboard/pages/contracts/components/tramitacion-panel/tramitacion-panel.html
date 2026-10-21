@@ -81,6 +81,17 @@
               {{ fmtDate(item.fechaEstado ?? reg?.desde) }}
             </td>
             <td class="px-4 py-3 max-w-md">
+              <!-- De Energy Expert: Información Complementaria y Observaciones de la ficha del servicio -->
+              @if (item.informacionComplementaria || item.observacionesServicio) {
+                <div class="mb-2">
+                  @if (item.informacionComplementaria) {
+                    <p class="text-foreground">{{ item.informacionComplementaria }}</p>
+                  }
+                  @if (item.observacionesServicio) {
+                    <p class="text-xs text-muted-foreground mt-0.5">{{ item.observacionesServicio }}</p>
+                  }
+                </div>
+              }
               @if (reg && (reg.motivo || reg.documentacionNecesaria)) {
                 <p class="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-0.5">
                   {{ tipoLabel(reg.tipo) }}
@@ -94,8 +105,10 @@
                     Falta: {{ reg.documentacionNecesaria }}
                   </p>
                 }
-              } @else {
-                <p class="text-xs text-muted-foreground">—</p>
+              } @else if (!item.informacionComplementaria && !item.observacionesServicio) {
+                <p class="text-xs text-muted-foreground">
+                  {{ item.idServicio != null && !item.infoServicioLeidaAt ? 'Pendiente de leer de Energy Expert' : '—' }}
+                </p>
               }
               @if (reg && reg.documentos.length > 0) {
                 <ul class="mt-2 space-y-0.5">
