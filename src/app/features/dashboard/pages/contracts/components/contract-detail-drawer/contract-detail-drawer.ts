@@ -17,6 +17,7 @@ import { ContratoClienteRow } from '../../../../../../core/models/contrato.model
 import { ServicioListItem } from '../../../../../../core/models/servicio.model';
 import { ContractService } from '../../../../../../core/services/contract.service';
 import { IncidenceService, Incidence, INCIDENCE_TYPES, INCIDENCE_TYPE_LABELS, INCIDENCE_STATUS_LABELS } from '../../../../../../core/services/incidence.service';
+import { TRAMITACION_TIPO_LABELS, TramitacionService, TramitacionTipo } from '../../../../../../core/services/tramitacion.service';
 import { BrandLoaderComponent } from '../../../../../../shared/components/brand-loader/brand-loader.component';
 import { calcDias, dedupeServiciosByCups, estadoCls, estadoLabel, fmtDate, fmtKwh, isEstadoPendiente, isEstadoTerminado } from '../../contracts-utils';
 import { getUserRoles } from '../../../../../../core/helpers/auth.utils';
@@ -36,6 +37,7 @@ export class ContractDetailDrawerComponent {
 
   private contractService  = inject(ContractService);
   private incidenceService = inject(IncidenceService);
+  private tramitacion      = inject(TramitacionService);
   private auth             = inject(AuthService);
   private router           = inject(Router);
   private cdr              = inject(ChangeDetectorRef);
@@ -110,6 +112,51 @@ export class ContractDetailDrawerComponent {
   readonly incidenceStatusLabels = INCIDENCE_STATUS_LABELS;
 
   readonly isMaster = () => getUserRoles(this.auth.currentUser()).includes('Master');
+
+  // Registrar qué falta en un contrato (Master): aparece en la pestaña "En tramitación".
+  readonly faltaTipos: TramitacionTipo[] = ['activo', 'incidencia', 'rechazado'];
+  readonly faltaTipoLabels = TRAMITACION_TIPO_LABELS;
+  readonly faltaFor           = signal<number | null>(null);
+  readonly faltaTipo          = signal<TramitacionTipo>('activo');
+  readonly faltaMotivo        = signal('');
+  readonly faltaDocumentacion = signal('');
+  readonly savingFalta        = signal(false);
+
+  toggleFalta(id: number): void {
+    const opening = this.faltaFor() !== id;
+    this.faltaFor.set(opening ? id : null);
+    if (opening) {
+      this.faltaTipo.set('activo');
+      this.faltaMotivo.set('');
+      this.faltaDocumentacion.set('');
+    }
+  }
+
+  guardarFalta(s: ServicioListItem): void {
+    const motivo = this.faltaMotivo().trim();
+    const documentacion = this.faltaDocumentacion().trim();
+    if (!motivo && !documentacion) {
+      this.showFeedback('error', 'Falta información', 'Indica el motivo o el documento que falta.');
+      return;
+    }
+    this.savingFalta.set(true);
+    this.tramitacion.crear({
+      idServicio: s.Id,
+      tipo: this.faltaTipo(),
+      motivo: motivo || undefined,
+      documentacionNecesaria: documentacion || undefined,
+    }).subscribe({
+      next: () => {
+        this.savingFalta.set(false);
+        this.faltaFor.set(null);
+        this.showFeedback('info', 'Registrado', 'El colaborador lo verá en la pestaña "En tramitación".');
+      },
+      error: () => {
+        this.savingFalta.set(false);
+        this.showFeedback('error', 'No se pudo registrar', 'Inténtalo de nuevo.');
+      },
+    });
+  }
 
   readonly iconClose:  UiIconSource = { type: 'apolo', icon: XIcon,          size: 16 };
   readonly iconInfo:   UiIconSource = { type: 'apolo', icon: InfoIcon,       size: 14 };

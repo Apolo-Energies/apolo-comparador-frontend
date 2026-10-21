@@ -1,0 +1,154 @@
+@if (loading()) {
+  <div class="flex items-center justify-center py-16 text-sm text-muted-foreground">Cargando…</div>
+} @else if (items().length === 0) {
+  <div class="flex flex-col items-center justify-center py-16 px-6 text-center text-muted-foreground">
+    <p class="text-sm font-medium text-foreground">Nada pendiente</p>
+    <p class="text-xs mt-1">Ningún contrato tiene rechazos, incidencias ni documentación pendiente.</p>
+  </div>
+} @else {
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-accent/40 text-[11px] uppercase tracking-wider text-muted-foreground">
+        <tr>
+          <th class="text-left font-semibold px-4 py-3">ID</th>
+          <th class="text-left font-semibold px-4 py-3">Cliente</th>
+          <th class="text-left font-semibold px-4 py-3">CUPS</th>
+          <th class="text-left font-semibold px-4 py-3">Estado</th>
+          <th class="text-left font-semibold px-4 py-3">Desde</th>
+          <th class="text-left font-semibold px-4 py-3">Qué falta</th>
+          <th class="text-right font-semibold px-4 py-3 w-56">Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of items(); track item.id) {
+          <tr class="border-t border-border align-top">
+            <td class="px-4 py-3 font-mono text-xs text-muted-foreground">#{{ item.idServicio ?? '—' }}</td>
+            <td class="px-4 py-3">
+              <p class="font-medium text-foreground">{{ item.clienteNombre || '—' }}</p>
+              <p class="text-xs text-muted-foreground">{{ item.clienteNif || '' }}</p>
+              @if (isMaster() && item.nombreDelegacion) {
+                <p class="text-[11px] text-muted-foreground mt-0.5">{{ item.nombreDelegacion }}</p>
+              }
+            </td>
+            <td class="px-4 py-3 font-mono text-xs text-muted-foreground">{{ item.cups || '—' }}</td>
+            <td class="px-4 py-3">
+              <div class="flex flex-col items-start gap-1">
+                <span class="px-2 py-0.5 rounded-md text-xs font-semibold" [class]="tipoCls(item.tipo)">
+                  {{ tipoLabel(item.tipo) }}
+                </span>
+                @if (isTramitadoDeNuevo(item)) {
+                  <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-500/10 text-blue-400">
+                    Tramitado de nuevo
+                  </span>
+                }
+              </div>
+            </td>
+            <td class="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{{ fmtDate(item.desde) }}</td>
+            <td class="px-4 py-3 max-w-md">
+              @if (item.motivo) {
+                <p class="text-foreground">{{ item.motivo }}</p>
+              }
+              @if (item.documentacionNecesaria) {
+                <p class="text-xs mt-1" [class.text-amber-300]="!isTramitadoDeNuevo(item)"
+                   [class.text-muted-foreground]="isTramitadoDeNuevo(item)">
+                  Falta: {{ item.documentacionNecesaria }}
+                </p>
+              }
+              @if (item.documentos.length > 0) {
+                <ul class="mt-2 space-y-0.5">
+                  @for (doc of item.documentos; track doc.id) {
+                    <li>
+                      <button type="button" class="text-xs text-primary-button hover:underline text-left"
+                              (click)="openDocumento(item, doc)">
+                        {{ doc.nombreArchivo }} · {{ fmtDate(doc.subidoEn.slice(0, 10)) }}
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            </td>
+            <td class="px-4 py-3 w-56">
+              <div class="flex flex-col gap-1.5 w-52 ml-auto">
+                <!-- Subir: acción principal del colaborador -->
+                <label class="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors"
+                       [class]="uploadCls(item)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                  {{ uploadingId() === item.id ? 'Subiendo…' : (isTramitadoDeNuevo(item) ? 'Subir otro' : 'Subir documento') }}
+                  <input type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png,.heic,.doc,.docx"
+                         (change)="onFileSelected(item, $event)" />
+                </label>
+
+                <!-- Cerrar: solo Operaciones -->
+                @if (isMaster()) {
+                  <div class="grid grid-cols-2 gap-1.5">
+                    <button type="button"
+                            class="inline-flex items-center justify-center gap-1 h-7 rounded-md border border-emerald-500/40 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-50 transition-colors"
+                            [disabled]="closingId() === item.id"
+                            title="Cerrar como resuelta"
+                            (click)="pedirCierre(item, 'resuelta')">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                      Resuelta
+                    </button>
+                    <button type="button"
+                            class="inline-flex items-center justify-center gap-1 h-7 rounded-md border border-red-500/40 text-[11px] font-semibold text-red-300 hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+                            [disabled]="closingId() === item.id"
+                            title="Cerrar como KO"
+                            (click)="pedirCierre(item, 'ko')">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      KO
+                    </button>
+                  </div>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<!-- Confirmación de cierre -->
+<p-dialog
+  [visible]="!!confirmTarget()"
+  (visibleChange)="$event ? null : cancelarCierre()"
+  [modal]="true"
+  [closable]="!closingId()"
+  [dismissableMask]="!closingId()"
+  [style]="{ width: '28rem' }"
+  [header]="confirmTarget()?.resultado === 'ko' ? 'Cerrar como KO' : 'Cerrar como resuelta'">
+  @if (confirmTarget(); as t) {
+    <div class="space-y-3">
+      <p class="text-sm text-zinc-300">
+        @if (t.resultado === 'ko') {
+          ¿Confirmas que este contrato queda como <span class="font-semibold text-red-300">KO</span>?
+        } @else {
+          ¿Confirmas que lo que faltaba está <span class="font-semibold text-emerald-300">resuelto</span>?
+        }
+      </p>
+      <div class="rounded-md border border-zinc-800 bg-zinc-950/50 px-3 py-2 text-xs space-y-0.5">
+        <p class="font-medium text-zinc-200">{{ t.item.clienteNombre || '—' }}</p>
+        <p class="font-mono text-zinc-500">#{{ t.item.idServicio ?? '—' }} · {{ t.item.cups || '—' }}</p>
+        @if (t.item.documentacionNecesaria || t.item.motivo) {
+          <p class="text-zinc-400 pt-1">{{ t.item.documentacionNecesaria || t.item.motivo }}</p>
+        }
+      </div>
+      <p class="text-xs text-zinc-500">Desaparecerá de "En tramitación" para el colaborador.</p>
+      <div class="flex justify-end gap-2 pt-2 border-t border-zinc-800">
+        <button type="button"
+                class="px-3 py-1.5 text-sm rounded-md border border-zinc-700 text-zinc-300 hover:bg-zinc-800/60 disabled:opacity-50"
+                [disabled]="!!closingId()"
+                (click)="cancelarCierre()">Cancelar</button>
+        <button type="button"
+                class="px-3 py-1.5 text-sm font-semibold rounded-md text-white disabled:opacity-50"
+                [class]="t.resultado === 'ko' ? 'bg-red-600 hover:bg-red-500' : 'bg-emerald-600 hover:bg-emerald-500'"
+                [disabled]="!!closingId()"
+                (click)="confirmarCierre()">
+          {{ closingId() ? 'Cerrando…' : (t.resultado === 'ko' ? 'Sí, cerrar como KO' : 'Sí, marcar resuelta') }}
+        </button>
+      </div>
+    </div>
+  }
+</p-dialog>
