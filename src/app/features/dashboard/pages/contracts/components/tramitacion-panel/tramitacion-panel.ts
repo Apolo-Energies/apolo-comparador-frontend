@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { MessageService } from 'primeng/api';
+import { Dialog } from 'primeng/dialog';
 import {
   TRAMITACION_TIPO_LABELS, TramitacionCierre, TramitacionDocumento, TramitacionItem, TramitacionService, TramitacionTipo,
 } from '../../../../../../core/services/tramitacion.service';
@@ -12,6 +13,7 @@ import { fmtDate } from '../../contracts-utils';
 @Component({
   selector: 'app-tramitacion-panel',
   standalone: true,
+  imports: [Dialog],
   templateUrl: './tramitacion-panel.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -47,6 +49,14 @@ export class TramitacionPanelComponent {
     return item.resultado === 'tramitado_de_nuevo';
   }
 
+  /** Primario mientras falta el documento; secundario ("Subir otro") cuando ya se respondió. */
+  uploadCls(item: TramitacionItem): string {
+    const base = this.isTramitadoDeNuevo(item)
+      ? 'border border-border text-foreground hover:bg-accent'
+      : 'bg-primary-button text-white hover:bg-primary-button/90';
+    return this.uploadingId() === item.id ? `${base} opacity-60 pointer-events-none` : base;
+  }
+
   onFileSelected(item: TramitacionItem, event: Event): void {
     const inputEl = event.target as HTMLInputElement;
     const file = inputEl.files?.[0];
@@ -78,11 +88,27 @@ export class TramitacionPanelComponent {
     });
   }
 
-  cerrar(item: TramitacionItem, resultado: TramitacionCierre): void {
+  // Cerrar pide confirmación: el registro desaparece de la lista y no se puede reabrir desde aquí.
+  readonly confirmTarget = signal<{ item: TramitacionItem; resultado: TramitacionCierre } | null>(null);
+
+  pedirCierre(item: TramitacionItem, resultado: TramitacionCierre): void {
+    this.confirmTarget.set({ item, resultado });
+  }
+
+  cancelarCierre(): void {
+    if (!this.closingId()) this.confirmTarget.set(null);
+  }
+
+  confirmarCierre(): void {
+    const target = this.confirmTarget();
+    if (!target) return;
+    const { item, resultado } = target;
     this.closingId.set(item.id);
     this.tramitacion.cerrar(item.id, resultado).subscribe({
       next: () => {
         this.closingId.set(null);
+        this.confirmTarget.set(null);
+        this.notify('success', resultado === 'ko' ? 'Cerrado como KO' : 'Cerrado como resuelta', item.clienteNombre ?? '');
         this.changed.emit();
       },
       error: () => {
