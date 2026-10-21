@@ -26,6 +26,8 @@ import { CollaboratorScopeService } from '../../../../core/services/collaborator
 import { RefreshTokenService } from '../../../../core/services/refresh-token.service';
 import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
 import { ContractDetailDrawerComponent } from './components/contract-detail-drawer/contract-detail-drawer';
+import { TramitacionPanelComponent } from './components/tramitacion-panel/tramitacion-panel';
+import { TramitacionItem, TramitacionService } from '../../../../core/services/tramitacion.service';
 import {
   applyContratosColumnTemplates, estadoCategory, estadoCls, estadoEntries, estadoLabel, fmtDate, fmtKwh, singleEstado,
 } from './contracts-utils';
@@ -40,6 +42,7 @@ import { ContractsListController } from './contracts-list.controller';
     InputFieldComponent, ButtonComponent,
     TableSkeletonComponent,
     ContractDetailDrawerComponent,
+    TramitacionPanelComponent,
     SvgIcon,
   ],
   templateUrl: './contracts-page.html',
@@ -65,6 +68,7 @@ export class ContractsPageComponent implements AfterViewInit {
   private readonly cdr               = inject(ChangeDetectorRef);
   private readonly auth              = inject(AuthService);
   private readonly refreshToken      = inject(RefreshTokenService);
+  private readonly tramitacion       = inject(TramitacionService);
   private isFirstLoad                = true;
 
   readonly searchIcon: UiIconSource = { type: 'apolo', icon: SearchIcon, size: 16 };
@@ -83,6 +87,11 @@ export class ContractsPageComponent implements AfterViewInit {
   readonly hasDelegation = computed(() => this.isMaster() || this.delegationId() !== null);
 
   readonly selectedClient = signal<ContratoClienteRow | null>(null);
+
+  // Pestañas: listado de contratos o lo que falta en los contratos en tramitación.
+  readonly tab = signal<'contratos' | 'tramitacion'>('contratos');
+  readonly tramitacionItems   = signal<TramitacionItem[]>([]);
+  readonly tramitacionLoading = signal(false);
 
   readonly filterMode = signal<
     'todos' | 'activos' | 'pendientes' | 'renovados' | 'bajas' | 'porCaducar' | 'caducados'
@@ -210,6 +219,7 @@ export class ContractsPageComponent implements AfterViewInit {
       this.delegationId.set(this.refreshToken.getDelegationIdFromToken());
       if (this.hasDelegation()) {
         this.load();
+        this.loadTramitacion();
       }
     }
     effect(() => {
@@ -243,5 +253,19 @@ export class ContractsPageComponent implements AfterViewInit {
 
   closeDetail(): void {
     this.selectedClient.set(null);
+  }
+
+  loadTramitacion(): void {
+    this.tramitacionLoading.set(true);
+    this.tramitacion.getAbiertos().subscribe({
+      next: items => {
+        this.tramitacionItems.set(items);
+        this.tramitacionLoading.set(false);
+      },
+      error: () => {
+        this.tramitacionItems.set([]);
+        this.tramitacionLoading.set(false);
+      },
+    });
   }
 }
