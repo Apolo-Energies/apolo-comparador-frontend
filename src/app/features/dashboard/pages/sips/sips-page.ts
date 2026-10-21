@@ -91,13 +91,20 @@ export class SipsPageComponent {
 
     this.sipsService.getByCups(cups).subscribe({
       next: ({ ps, consumos }) => {
-        this.rawPs.set(ps);
-        this.rawConsumos.set(consumos);
+        if (!ps) {
+          this.error.set('No se encontraron datos SIPS para el CUPS indicado. Puede que no esté registrado o que el sufijo sea distinto.');
+          this.rawPs.set(null);
+          this.rawConsumos.set([]);
+        } else {
+          this.rawPs.set(ps);
+          this.rawConsumos.set(consumos);
+          this.error.set(null);
+        }
         this.loading.set(false);
         this.globalLoading.stop();
       },
       error: () => {
-        this.error.set('No se encontraron datos para el CUPS indicado');
+        this.error.set('Error al consultar el CUPS. Inténtalo de nuevo.');
         this.rawPs.set(null);
         this.rawConsumos.set([]);
         this.loading.set(false);
