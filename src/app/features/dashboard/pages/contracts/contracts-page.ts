@@ -257,7 +257,7 @@ export class ContractsPageComponent implements AfterViewInit {
 
   loadTramitacion(): void {
     this.tramitacionLoading.set(true);
-    this.tramitacion.getAbiertos().subscribe({
+    this.tramitacion.getEnTramitacion().subscribe({
       next: items => {
         this.tramitacionItems.set(items);
         this.tramitacionLoading.set(false);
