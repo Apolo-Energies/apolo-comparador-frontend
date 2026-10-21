@@ -1,9 +1,40 @@
+<!-- Filtros: estado en EE + búsqueda -->
+<div class="px-6 py-4 bg-card border-b border-border space-y-3">
+  <div class="flex flex-wrap items-center gap-2">
+    @for (c of chips(); track c.key) {
+      <button type="button" (click)="setFiltro(c.key)"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border transition-colors"
+              [class.bg-primary]="filtro() === c.key" [class.text-white]="filtro() === c.key"
+              [class.border-primary]="filtro() === c.key"
+              [class.text-muted-foreground]="filtro() !== c.key" [class.border-border]="filtro() !== c.key">
+        {{ c.label }}
+        <span class="inline-flex items-center px-1.5 rounded text-[10px] font-mono"
+              [class.bg-white]="filtro() === c.key" [class.text-primary]="filtro() === c.key"
+              [class.bg-accent]="filtro() !== c.key" [class.text-foreground]="filtro() !== c.key">
+          {{ c.count }}
+        </span>
+      </button>
+    }
+  </div>
+  <input type="search"
+         class="w-full sm:max-w-sm bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+         placeholder="Buscar cliente, NIF, CUPS o ID…"
+         [value]="busqueda()"
+         (input)="setBusqueda($any($event.target).value)" />
+</div>
+
 @if (loading()) {
   <div class="flex items-center justify-center py-16 text-sm text-muted-foreground">Cargando…</div>
-} @else if (items().length === 0) {
+} @else if (filtrados().length === 0) {
   <div class="flex flex-col items-center justify-center py-16 px-6 text-center text-muted-foreground">
-    <p class="text-sm font-medium text-foreground">Nada pendiente</p>
-    <p class="text-xs mt-1">Ningún contrato tiene rechazos, incidencias ni documentación pendiente.</p>
+    <p class="text-sm font-medium text-foreground">
+      {{ items().length === 0 ? 'Nada en tramitación' : 'Sin resultados' }}
+    </p>
+    <p class="text-xs mt-1">
+      {{ items().length === 0
+         ? 'Ningún contrato está en previo, para estudio, para firma, para tramitar, incidencia, válido ni KO.'
+         : 'Prueba con otro estado o búsqueda.' }}
+    </p>
   </div>
 } @else {
   <div class="overflow-x-auto">
@@ -16,11 +47,12 @@
           <th class="text-left font-semibold px-4 py-3">Estado</th>
           <th class="text-left font-semibold px-4 py-3">Desde</th>
           <th class="text-left font-semibold px-4 py-3">Qué falta</th>
-          <th class="text-right font-semibold px-4 py-3 w-56">Acción</th>
+          <th class="text-right font-semibold px-4 py-3 w-44">Acción</th>
         </tr>
       </thead>
       <tbody>
-        @for (item of items(); track item.id) {
+        @for (item of pagina(); track item.idServicio ?? item.registro?.id) {
+          @let reg = item.registro;
           <tr class="border-t border-border align-top">
             <td class="px-4 py-3 font-mono text-xs text-muted-foreground">#{{ item.idServicio ?? '—' }}</td>
             <td class="px-4 py-3">
@@ -33,9 +65,11 @@
             <td class="px-4 py-3 font-mono text-xs text-muted-foreground">{{ item.cups || '—' }}</td>
             <td class="px-4 py-3">
               <div class="flex flex-col items-start gap-1">
-                <span class="px-2 py-0.5 rounded-md text-xs font-semibold" [class]="tipoCls(item.tipo)">
-                  {{ tipoLabel(item.tipo) }}
-                </span>
+                @if (item.estadoContrato) {
+                  <span class="px-2 py-0.5 rounded-md text-xs font-semibold" [class]="estadoCls(item.estadoContrato)">
+                    {{ estadoLabel(item.estadoContrato) }}
+                  </span>
+                }
                 @if (isTramitadoDeNuevo(item)) {
                   <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-500/10 text-blue-400">
                     Tramitado de nuevo
@@ -43,20 +77,29 @@
                 }
               </div>
             </td>
-            <td class="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{{ fmtDate(item.desde) }}</td>
+            <td class="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+              {{ fmtDate(item.fechaEstado ?? reg?.desde) }}
+            </td>
             <td class="px-4 py-3 max-w-md">
-              @if (item.motivo) {
-                <p class="text-foreground">{{ item.motivo }}</p>
-              }
-              @if (item.documentacionNecesaria) {
-                <p class="text-xs mt-1" [class.text-amber-300]="!isTramitadoDeNuevo(item)"
-                   [class.text-muted-foreground]="isTramitadoDeNuevo(item)">
-                  Falta: {{ item.documentacionNecesaria }}
+              @if (reg && (reg.motivo || reg.documentacionNecesaria)) {
+                <p class="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-0.5">
+                  {{ tipoLabel(reg.tipo) }}
                 </p>
+                @if (reg.motivo) {
+                  <p class="text-foreground">{{ reg.motivo }}</p>
+                }
+                @if (reg.documentacionNecesaria) {
+                  <p class="text-xs mt-1" [class.text-amber-300]="!isTramitadoDeNuevo(item)"
+                     [class.text-muted-foreground]="isTramitadoDeNuevo(item)">
+                    Falta: {{ reg.documentacionNecesaria }}
+                  </p>
+                }
+              } @else {
+                <p class="text-xs text-muted-foreground">—</p>
               }
-              @if (item.documentos.length > 0) {
+              @if (reg && reg.documentos.length > 0) {
                 <ul class="mt-2 space-y-0.5">
-                  @for (doc of item.documentos; track doc.id) {
+                  @for (doc of reg.documentos; track doc.id) {
                     <li>
                       <button type="button" class="text-xs text-primary-button hover:underline text-left"
                               (click)="openDocumento(item, doc)">
@@ -67,25 +110,26 @@
                 </ul>
               }
             </td>
-            <td class="px-4 py-3 w-56">
-              <div class="flex flex-col gap-1.5 w-52 ml-auto">
-                <!-- Subir: acción principal del colaborador -->
-                <label class="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors"
-                       [class]="uploadCls(item)">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-                  </svg>
-                  {{ uploadingId() === item.id ? 'Subiendo…' : (isTramitadoDeNuevo(item) ? 'Subir otro' : 'Subir documento') }}
-                  <input type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png,.heic,.doc,.docx"
-                         (change)="onFileSelected(item, $event)" />
-                </label>
+            <td class="px-4 py-3 w-44">
+              <div class="flex flex-col gap-1.5 w-40 ml-auto">
+                @if (item.idServicio != null) {
+                  <label class="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold whitespace-nowrap cursor-pointer transition-colors"
+                         [class]="uploadCls(item)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    {{ uploadingId() === item.idServicio ? 'Subiendo…' : (isTramitadoDeNuevo(item) ? 'Subir otro' : 'Subir documento') }}
+                    <input type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png,.heic,.doc,.docx"
+                           (change)="onFileSelected(item, $event)" />
+                  </label>
+                }
 
-                <!-- Cerrar: solo Operaciones -->
-                @if (isMaster()) {
+                <!-- Cerrar: solo Operaciones y solo si hay algo registrado -->
+                @if (isMaster() && reg) {
                   <div class="grid grid-cols-2 gap-1.5">
                     <button type="button"
                             class="inline-flex items-center justify-center gap-1 h-7 rounded-md border border-emerald-500/40 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-50 transition-colors"
-                            [disabled]="closingId() === item.id"
+                            [disabled]="closingId() === reg.id"
                             title="Cerrar como resuelta"
                             (click)="pedirCierre(item, 'resuelta')">
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
@@ -93,7 +137,7 @@
                     </button>
                     <button type="button"
                             class="inline-flex items-center justify-center gap-1 h-7 rounded-md border border-red-500/40 text-[11px] font-semibold text-red-300 hover:bg-red-500/10 disabled:opacity-50 transition-colors"
-                            [disabled]="closingId() === item.id"
+                            [disabled]="closingId() === reg.id"
                             title="Cerrar como KO"
                             (click)="pedirCierre(item, 'ko')">
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -107,6 +151,15 @@
         }
       </tbody>
     </table>
+  </div>
+
+  <div class="flex items-center justify-between px-6 py-3 border-t border-border text-xs text-muted-foreground">
+    <span>Mostrando {{ pagina().length }} de {{ filtrados().length }}</span>
+    @if (pagina().length < filtrados().length) {
+      <button type="button" class="font-semibold text-primary-button hover:underline" (click)="mostrarMas()">
+        Mostrar más
+      </button>
+    }
   </div>
 }
 
@@ -131,11 +184,14 @@
       <div class="rounded-md border border-zinc-800 bg-zinc-950/50 px-3 py-2 text-xs space-y-0.5">
         <p class="font-medium text-zinc-200">{{ t.item.clienteNombre || '—' }}</p>
         <p class="font-mono text-zinc-500">#{{ t.item.idServicio ?? '—' }} · {{ t.item.cups || '—' }}</p>
-        @if (t.item.documentacionNecesaria || t.item.motivo) {
-          <p class="text-zinc-400 pt-1">{{ t.item.documentacionNecesaria || t.item.motivo }}</p>
+        @if (t.item.registro?.documentacionNecesaria || t.item.registro?.motivo) {
+          <p class="text-zinc-400 pt-1">{{ t.item.registro?.documentacionNecesaria || t.item.registro?.motivo }}</p>
         }
       </div>
-      <p class="text-xs text-zinc-500">Desaparecerá de "En tramitación" para el colaborador.</p>
+      <p class="text-xs text-zinc-500">
+        Dejará de figurar como pendiente para el colaborador.
+        El estado del contrato en Energy Expert no cambia.
+      </p>
       <div class="flex justify-end gap-2 pt-2 border-t border-zinc-800">
         <button type="button"
                 class="px-3 py-1.5 text-sm rounded-md border border-zinc-700 text-zinc-300 hover:bg-zinc-800/60 disabled:opacity-50"
