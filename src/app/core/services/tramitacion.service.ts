@@ -47,6 +47,11 @@ export interface TramitacionItem {
   fechaEstado:      string | null;
   idDelegacion:     number | null;
   nombreDelegacion: string | null;
+  /** "Información Complementaria" de la ficha del servicio en EE (no está en la API). */
+  informacionComplementaria: string | null;
+  observacionesServicio:     string | null;
+  /** null = aún no se ha leído de EE. */
+  infoServicioLeidaAt:       string | null;
   registro:         TramitacionRegistro | null;
 }
 

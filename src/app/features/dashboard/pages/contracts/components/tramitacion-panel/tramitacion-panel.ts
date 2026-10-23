@@ -65,7 +65,7 @@ export class TramitacionPanelComponent {
       if (filtro === 'por_revisar' && !this.isTramitadoDeNuevo(i)) return false;
       if (filtro !== 'todos' && filtro !== 'por_revisar' && i.estadoContrato !== filtro) return false;
       if (!q) return true;
-      return [i.clienteNombre, i.clienteNif, i.cups, i.idServicio?.toString(), i.nombreDelegacion]
+      return [i.clienteNombre, i.clienteNif, i.cups, i.idServicio?.toString(), i.nombreDelegacion, i.informacionComplementaria]
         .some(v => v && this.normalizar(v).includes(q));
     });
   });
