@@ -7,6 +7,7 @@ import { ArtificialPerson, DocumentKey, NaturalPerson } from '../../models/perso
 import { ContractService } from '../../../../../../core/services/contract.service';
 import { SipsConsumo } from '../../../../../../core/models/sips.model';
 import { toEeDecimal } from '../../utils/format.utils';
+import { normalizeBic } from '../data/data.helpers';
 
 const fmt2 = (n: number) =>
   n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -16,6 +17,7 @@ const TRAMITE_LABELS: Record<string, string> = {
   NUEVO_TITULAR:   'Nuevo titular',
   CAMBIO_TARIFA:   'Cambio tarifa',
   CAMBIO_POTENCIA: 'Cambio potencia',
+  AUTOCONSUMO:     'Autoconsumo',
 };
 
 @Component({
@@ -101,6 +103,8 @@ export class ReviewPage {
     // Domiciliación
     const iban = person.bank_account?.replace(/\s/g, '') ?? '';
     if (iban) fd.append('Iban', iban);
+    const bic = person.bic ? normalizeBic(person.bic) : '';
+    if (bic) fd.append('Bic', bic);
 
     // Dirección cliente
     fd.append('DireccionCliente',    person.address_1 ?? '');

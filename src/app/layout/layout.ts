@@ -7,7 +7,7 @@ import { HttpClient } from '@angular/common/http';
 import { ApoloSidebar, SidebarSection } from '@apolo-energies/sidebar';
 import { ApoloHeader, HeaderWelcomeContent, HeaderActionLink, UserMenuItem } from '@apolo-energies/header';
 import { AuthService } from '@apolo-energies/auth';
-import { chevronDownIcon, chevronRightIcon, CircleIcon, InfoIcon, LightningIcon, LogoutIcon, NoteIcon, StarIcon, UiIconSource, UserIcon } from '@apolo-energies/icons';
+import { chevronDownIcon, chevronRightIcon, CircleIcon, InfoIcon, LogoutIcon, StarIcon, UiIconSource, UserIcon } from '@apolo-energies/icons';
 import { getUserRoles } from '../core/helpers/auth.utils';
 import { environment } from '../../environments/environment';
 import { RefreshTokenService } from '../core/services/refresh-token.service';
@@ -144,37 +144,15 @@ export class Layout {
     },
   };
 
+  // Lleva al selector de tipo (Luz/Gas) — ver fast-discharge/pages/select-type.
   readonly quickAction = signal<HeaderActionLink | null>(
     environment.features.quickAction ? {
       label: 'Alta Rápida',
       type: 'internal',
-      url: '/dashboard/fast-discharge',
+      url: '/dashboard/fast-discharge/select-type',
       icon: { type: 'apolo', icon: StarIcon, className: 'text-current', size: 14, strokeWidth: 0.2 },
     } : null
   );
-
-  // Dropdown de "Alta Rápida": Luz sigue al flujo de siempre; Gas va al wizard
-  // de alta rápida Quixotic (ver gas-quixotic-contracts/alta-rapida).
-  readonly quickActionItems = signal<HeaderActionLink[] | null>(
-    environment.features.quickAction ? [
-      {
-        label: 'Luz',
-        type: 'internal',
-        url: '/dashboard/fast-discharge/data',
-        icon: { type: 'apolo', icon: LightningIcon, size: 16 },
-      },
-      {
-        label: 'Gas',
-        type: 'internal',
-        url: '/dashboard/gas/quixotic-contracts/new',
-        icon: { type: 'apolo', icon: NoteIcon, size: 16 },
-      },
-    ] : null
-  );
-
-  onQuickActionItemSelected(_item: HeaderActionLink): void {
-    // Hook para analítica si se necesita más adelante.
-  }
 
   readonly menuItems = computed<UserMenuItem[]>(() => {
     const items: UserMenuItem[] = [];

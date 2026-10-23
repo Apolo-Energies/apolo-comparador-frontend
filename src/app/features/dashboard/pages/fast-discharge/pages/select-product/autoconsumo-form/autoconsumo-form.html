@@ -1,0 +1,161 @@
+<div class="space-y-6">
+
+  <!-- Indicador de paso -->
+  <div class="flex items-center gap-2">
+    @for (step of steps; track step; let i = $index) {
+      <div class="flex-1 h-1 rounded-full" [class.bg-primary-button]="i <= currentStep()" [class.bg-muted]="i > currentStep()"></div>
+    }
+  </div>
+  <p class="text-xs text-muted-foreground -mt-4">Paso {{ currentStep() + 1 }} de {{ steps.length }} — {{ steps[currentStep()] }}</p>
+
+  @if (currentStep() === 0) {
+
+    <div>
+      <h3 class="text-sm font-semibold text-foreground mb-2">Datos Generales</h3>
+      <div class="rounded-lg border border-border bg-card p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <ui-select
+          label="Tipo Autoconsumo (Anterior)"
+          placeholder="Seleccionar..."
+          [options]="tipoAutoconsumoAnteriorOptions()"
+          [value]="value().tipoAutoconsumoAnterior"
+          (valueChange)="set('tipoAutoconsumoAnterior', $event)"
+        />
+        <ui-select
+          label="Tipo CUPS Autoconsumo"
+          placeholder="Seleccionar..."
+          [options]="tipoCupsOptions()"
+          [value]="value().tipoCupsAutoconsumo"
+          (valueChange)="set('tipoCupsAutoconsumo', $event)"
+        />
+      </div>
+    </div>
+
+    <div class="rounded-lg border border-border bg-card p-4 grid grid-cols-1 sm:grid-cols-4 gap-3">
+      <ui-input label="CAU" [value]="value().cau" (valueChange)="set('cau', $event)" />
+      <ui-select
+        label="Tipo Autoconsumo"
+        placeholder="Seleccionar..."
+        [options]="tipoAutoconsumoOptions()"
+        [value]="value().tipoAutoconsumo"
+        (valueChange)="set('tipoAutoconsumo', $event)"
+      />
+      <ui-select
+        label="Compensación"
+        placeholder="Seleccionar..."
+        [options]="compensacionOptions()"
+        [value]="value().compensacion"
+        (valueChange)="set('compensacion', $event)"
+      />
+      <ui-select
+        label="Colectivo"
+        placeholder="Seleccionar..."
+        [options]="colectivoOptions()"
+        [value]="value().colectivo"
+        (valueChange)="set('colectivo', $event)"
+      />
+    </div>
+
+    <div class="rounded-lg border border-border bg-card p-4 space-y-3">
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+        <ui-input label="CIL" [value]="value().cil" (valueChange)="set('cil', $event)" />
+        <ui-input label="Pot. Instalada" [value]="value().potInstalada" (valueChange)="set('potInstalada', $event)" />
+        <ui-input label="Ref. Catastral" [value]="value().refCatastral" (valueChange)="set('refCatastral', $event)" />
+        <ui-select
+          label="Tipo Instalación"
+          placeholder="Seleccionar..."
+          [options]="tipoInstalacionOptions()"
+          [value]="value().tipoInstalacion"
+          (valueChange)="set('tipoInstalacion', $event)"
+        />
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <ui-select
+          label="Esquema Medida"
+          placeholder="Seleccionar..."
+          [options]="esquemaMedidaOptions()"
+          [value]="value().esquemaMedida"
+          (valueChange)="set('esquemaMedida', $event)"
+        />
+        <ui-select
+          label="SSAA"
+          placeholder="Seleccionar..."
+          [options]="ssaaOptions()"
+          [value]="value().ssaa"
+          (valueChange)="set('ssaa', $event)"
+        />
+        <ui-select
+          label="Único Contrato"
+          placeholder="Seleccionar..."
+          [options]="unicoContratoOptions()"
+          [value]="value().unicoContrato"
+          (valueChange)="set('unicoContrato', $event)"
+        />
+      </div>
+    </div>
+
+  } @else if (currentStep() === 1) {
+
+    <div>
+      <h3 class="text-sm font-semibold text-foreground mb-2">Coordenadas de la Instalación</h3>
+      <div class="rounded-lg border border-border bg-card p-4 grid grid-cols-1 sm:grid-cols-4 gap-3">
+        <ui-input label="X UTM" [value]="value().xUtm" (valueChange)="set('xUtm', $event)" />
+        <ui-input label="Y UTM" [value]="value().yUtm" (valueChange)="set('yUtm', $event)" />
+        <ui-input label="Huso UTM" [value]="value().husoUtm" (valueChange)="set('husoUtm', $event)" />
+        <ui-input label="Banda UTM" [value]="value().bandaUtm" (valueChange)="set('bandaUtm', $event)" />
+      </div>
+    </div>
+
+  } @else if (currentStep() === 2) {
+
+    <div>
+      <h3 class="text-sm font-semibold text-foreground mb-2">Datos del Titular Generación</h3>
+      <div class="rounded-lg border border-border bg-card p-4 space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <ui-select
+            label="Tipo Documentación"
+            placeholder="Seleccionar..."
+            [options]="tipoDocumentacionOptions()"
+            [value]="value().tipoDocumentacion"
+            (valueChange)="set('tipoDocumentacion', $event)"
+          />
+          <ui-input label="Num. Documento" [value]="value().numDocumento" (valueChange)="set('numDocumento', $event)" />
+          <ui-input label="Razon Social" [value]="value().razonSocial" (valueChange)="set('razonSocial', $event)" />
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <ui-input label="Nombre" [value]="value().nombre" (valueChange)="set('nombre', $event)" />
+          <ui-input label="1º Apellido" [value]="value().apellido1" (valueChange)="set('apellido1', $event)" />
+          <ui-input label="2º Apellido" [value]="value().apellido2" (valueChange)="set('apellido2', $event)" />
+          <ui-input label="Telefono" [value]="value().telefono" (valueChange)="set('telefono', $event)" />
+        </div>
+        <ui-input label="Email" type="email" [value]="value().email" (valueChange)="set('email', $event)" />
+      </div>
+    </div>
+
+  } @else if (currentStep() === 3) {
+
+    <div>
+      <h3 class="text-sm font-semibold text-foreground mb-2">Otros Datos</h3>
+      <div class="rounded-lg border border-border bg-card p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <ui-input label="Tipo Documento 1" [value]="value().tipoDocumento1" (valueChange)="set('tipoDocumento1', $event)" />
+        <ui-input label="Url Documento 1" [value]="value().urlDocumento1" (valueChange)="set('urlDocumento1', $event)" />
+      </div>
+    </div>
+
+  }
+
+  <!-- Navegación entre pasos (no manda el wizard completo — ese "Siguiente" es el de la página) -->
+  <div class="flex justify-between">
+    <ui-button
+      label="Atrás"
+      variant="secondary"
+      size="sm"
+      type="button"
+      [disabled]="isFirstStep()"
+      (click)="prevStep()"
+    />
+    @if (!isLastStep()) {
+      <ui-button label="Siguiente paso" size="sm" type="button" (click)="nextStep()" />
+    }
+  </div>
+
+</div>

@@ -48,13 +48,42 @@ export interface DataFormFields {
   provinciaId: number;
   municipioId: number;
   iban: string;
+  bic: string;
+  nombreTitular: string;
+  otroFirmante: boolean;
+  firmanteNif: string;
+  firmanteNombre: string;
+  firmanteApellido1: string;
+  firmanteApellido2: string;
 }
 
-/** Pure form-validation for the customer-data step. Extracted to keep DataPage under R1. */
+// BIC/SWIFT: 4 letras banco + 2 letras país + 2 alfanum + 3 opcionales.
+const BIC_REGEX = /^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/;
+
+export function isValidBic(raw: string): boolean {
+  const clean = raw.trim().toUpperCase();
+  return (clean.length === 8 || clean.length === 11) && BIC_REGEX.test(clean);
+}
+
+/** Completa con "XXX" si vino sin sucursal (8 → 11 caracteres). */
+export function normalizeBic(raw: string): string {
+  const clean = raw.trim().toUpperCase();
+  return clean.length === 8 ? clean + 'XXX' : clean;
+}
+
+function computeBicError(raw: string): string | null {
+  if (!raw.trim()) return 'Obligatorio';
+  return isValidBic(raw)
+    ? null
+    : 'El BIC no es válido. Formato esperado: 4 letras + ES + 2 o 5 caracteres (ej. CAIXESBBXXX).';
+}
+
+/** Validación del formulario de datos del cliente. */
 export function computeDataErrors(f: DataFormFields): Record<string, string | null> {
   const none: Record<string, string | null> = {
     nif: null, nombre: null, apellido1: null, email: null,
-    phone: null, direccion: null, cp: null, provincia: null, municipio: null, iban: null,
+    phone: null, direccion: null, cp: null, provincia: null, municipio: null, iban: null, bic: null, nombreTitular: null,
+    firmanteNif: null, firmanteNombre: null, firmanteApellido1: null,
   };
   if (!f.submitted) return none;
   const ibanVal = f.iban.replace(/\s/g, '');
@@ -73,5 +102,10 @@ export function computeDataErrors(f: DataFormFields): Record<string, string | nu
     provincia: f.provinciaId === 0 ? 'Selecciona una provincia' : null,
     municipio: f.municipioId  === 0 ? 'Selecciona un municipio'  : null,
     iban:      ibanVal && ibanVal.length < 15 ? 'IBAN inválido' : null,
+    bic:       computeBicError(f.bic),
+    nombreTitular: !f.nombreTitular.trim() ? 'Obligatorio' : null,
+    firmanteNif:       f.otroFirmante && !f.firmanteNif.trim()       ? 'Obligatorio' : null,
+    firmanteNombre:    f.otroFirmante && !f.firmanteNombre.trim()    ? 'Obligatorio' : null,
+    firmanteApellido1: f.otroFirmante && !f.firmanteApellido1.trim() ? 'Obligatorio' : null,
   };
 }

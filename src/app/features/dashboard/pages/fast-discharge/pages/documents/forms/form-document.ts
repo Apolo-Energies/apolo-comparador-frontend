@@ -32,7 +32,8 @@ export class FormDocumentComponent {
     const showCIE =
       this.tramite() === 'ALTA_NUEVA' ||
       this.tramite() === 'CAMBIO_TARIFA' ||
-      this.tramite() === 'CAMBIO_POTENCIA';
+      this.tramite() === 'CAMBIO_POTENCIA' ||
+      this.tramite() === 'AUTOCONSUMO';
 
     const showJustoTitulo = this.tramite() === 'NUEVO_TITULAR';
 
