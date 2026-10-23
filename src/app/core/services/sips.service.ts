@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { SipsApiResponse, SipsConsumo } from '../models/sips.model';
@@ -17,8 +17,14 @@ export class SipsService {
     return this.http.post(`${environment.apiUrl}/sips/sips-excel`, { cups }, { responseType: 'blob' });
   }
 
-  downloadMultiExcel(cups: string[]): Observable<Blob> {
-    return this.http.post(`${environment.apiUrl}/sips/multi-excel`, { cups }, { responseType: 'blob' });
+  // >30 CUPS el backend responde 202 (JSON en vez de archivo) y lo manda por correo — hay que leer el status.
+  downloadMultiExcel(cups: string[], recipientEmail?: string): Observable<HttpResponse<Blob>> {
+    const body: { cups: string[]; recipientEmail?: string } = { cups };
+    if (recipientEmail) body.recipientEmail = recipientEmail;
+    return this.http.post(`${environment.apiUrl}/sips/multi-excel`, body, {
+      responseType: 'blob',
+      observe: 'response',
+    });
   }
 }
 

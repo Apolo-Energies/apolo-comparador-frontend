@@ -39,56 +39,64 @@
         <span class="text-red-500 text-xs -mt-2 block">Selecciona al menos un tipo de trámite</span>
       }
 
-      <!-- Tarifa + Tipo de producto + OMIE -->
-      <div class="grid grid-cols-3 gap-3">
-        <div>
-          <ui-select
-            label="Tarifa"
-            placeholder="Seleccionar..."
-            [options]="tariffOptions()"
-            [value]="localTariffCode()"
-            (valueChange)="onTariffChange($event)"
-          />
-        </div>
-        <div>
-          <ui-select
-            label="Tipo de producto"
-            placeholder="Seleccionar..."
-            [options]="productOptions()"
-            [value]="selectedProduct()"
-            (valueChange)="selectedProduct.set($event)"
-          />
-        </div>
-        <div>
-          <ui-input
-            label="OMIE (€/MWh)"
-            type="number"
-            placeholder="50"
-            [value]="omiePrice().toString()"
-            (valueChange)="omiePrice.set(+$event || 0)"
-          />
-        </div>
-      </div>
+      @if (isSelected('AUTOCONSUMO')) {
+        <app-fd-autoconsumo-form [catalogs]="autoconsumoCatalogs()" (valueChange)="onAutoconsumoNext($event)" />
+      }
 
-      <!-- Fee energía -->
-      <div class="space-y-1">
-        <div class="flex items-center justify-between">
-          <p class="text-sm font-medium text-foreground">Fee energía</p>
-          <span class="text-sm font-bold text-primary-button">{{ feeEnergia() }}</span>
-        </div>
-        <ui-slider [value]="feeEnergia()" [min]="0" [max]="25" (valueChange)="feeEnergia.set($event)" />
-        <div class="flex justify-between text-xs text-muted-foreground"><span>0</span><span>25</span></div>
-      </div>
+      @if (!isSelected('AUTOCONSUMO')) {
 
-      <!-- Fee potencia -->
-      <div class="space-y-1">
-        <div class="flex items-center justify-between">
-          <p class="text-sm font-medium text-foreground">Fee potencia</p>
-          <span class="text-sm font-bold text-primary-button">{{ feePotencia() }}</span>
+        <!-- Tarifa + Tipo de producto + OMIE -->
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <ui-select
+              label="Tarifa"
+              placeholder="Seleccionar..."
+              [options]="tariffOptions()"
+              [value]="localTariffCode()"
+              (valueChange)="onTariffChange($event)"
+            />
+          </div>
+          <div>
+            <ui-select
+              label="Tipo de producto"
+              placeholder="Seleccionar..."
+              [options]="productOptions()"
+              [value]="selectedProduct()"
+              (valueChange)="selectedProduct.set($event)"
+            />
+          </div>
+          <div>
+            <ui-input
+              label="OMIE (€/MWh)"
+              type="number"
+              placeholder="50"
+              [value]="omiePrice().toString()"
+              (valueChange)="omiePrice.set(+$event || 0)"
+            />
+          </div>
         </div>
-        <ui-slider [value]="feePotencia()" [min]="0" [max]="5" (valueChange)="feePotencia.set($event)" />
-        <div class="flex justify-between text-xs text-muted-foreground"><span>0</span><span>5</span></div>
-      </div>
+
+        <!-- Fee energía -->
+        <div class="space-y-1">
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-medium text-foreground">Fee energía</p>
+            <span class="text-sm font-bold text-primary-button">{{ feeEnergia() }}</span>
+          </div>
+          <ui-slider [value]="feeEnergia()" [min]="0" [max]="25" (valueChange)="feeEnergia.set($event)" />
+          <div class="flex justify-between text-xs text-muted-foreground"><span>0</span><span>25</span></div>
+        </div>
+
+        <!-- Fee potencia -->
+        <div class="space-y-1">
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-medium text-foreground">Fee potencia</p>
+            <span class="text-sm font-bold text-primary-button">{{ feePotencia() }}</span>
+          </div>
+          <ui-slider [value]="feePotencia()" [min]="0" [max]="5" (valueChange)="feePotencia.set($event)" />
+          <div class="flex justify-between text-xs text-muted-foreground"><span>0</span><span>5</span></div>
+        </div>
+
+      }
 
       <!-- Price table -->
       @if (priceTable().length > 0) {

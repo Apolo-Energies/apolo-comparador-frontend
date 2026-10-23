@@ -1,11 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { ButtonComponent } from '@apolo-energies/ui';
+import { AlertService, ButtonComponent, ComboboxComponent } from '@apolo-energies/ui';
+import { AuthService } from '@apolo-energies/auth';
 import { SipsInfoCardComponent } from './components/sips-info-card.component';
 import { DownloadIcon, SearchIcon, UiIconSource } from '@apolo-energies/icons';
 import { SipsService } from '../../../../core/services/sips.service';
+import { UserService } from '../../../../core/services/user.service';
 import { environment } from '../../../../../environments/environment';
 import { GlobalLoadingService } from '../../../../core/services/global-loading.service';
+import { getUserRoles } from '../../../../core/helpers/auth.utils';
+import { SipsRecipientController } from './sips-recipient.controller';
 import { SipsDonutChartComponent } from './components/donut-chart/donut-chart.component';
 import { SipsPowerChartComponent } from './components/power-chart/power-chart.component';
 import { SipsMonthlyChartComponent } from './components/monthly-chart/monthly-chart.component';
@@ -13,11 +17,15 @@ import { SipsConsumo, SipsPs } from '../../../../core/models/sips.model';
 import { getMonthlyStackedChartData, MonthlyRowDatum } from '../../../../shared/utils/chart.utils';
 import { buildPeriodSummary, buildPowerData, buildTrend, parseCupsInput } from './sips-page.helpers';
 
+// A partir de acá el backend genera el Excel en segundo plano y lo manda por correo.
+const MULTI_EXCEL_EMAIL_THRESHOLD = 30;
+
 @Component({
   selector: 'app-sips-page',
   standalone: true,
   imports: [
     ButtonComponent,
+    ComboboxComponent,
     SipsInfoCardComponent,
     SipsDonutChartComponent,
     SipsPowerChartComponent,
@@ -30,8 +38,26 @@ export class SipsPageComponent {
   private readonly sipsService  = inject(SipsService);
   private readonly router       = inject(Router);
   private readonly globalLoading = inject(GlobalLoadingService);
+  private readonly auth         = inject(AuthService);
+  private readonly alertService = inject(AlertService);
+  private readonly userService  = inject(UserService);
 
   readonly isApolo = environment.features.userDetail;
+  readonly isMaster = computed(() => getUserRoles(this.auth.currentUser()).includes('Master'));
+
+  private readonly recipient = new SipsRecipientController({ userService: this.userService });
+  readonly usersLoading    = this.recipient.usersLoading;
+  readonly usersAsOptions  = this.recipient.usersAsOptions;
+  readonly recipientUserId = this.recipient.recipientUserId;
+  readonly recipientEmail  = this.recipient.recipientEmail;
+
+  constructor() {
+    if (this.isMaster()) this.recipient.loadUsers();
+  }
+
+  onRecipientChange(value: string | number): void {
+    this.recipient.onRecipientChange(value);
+  }
 
   //readonly searchIcon: UiIconSource = { type: 'apolo', icon: SearchIcon, size: 16 };
   readonly downloadIcon: UiIconSource = { type: 'apolo', icon: DownloadIcon, size: 16 };
@@ -48,6 +74,12 @@ export class SipsPageComponent {
   readonly invalidCount = computed(() => this.parsedCups().invalid);
   readonly isSingle = computed(() => this.validCount() === 1);
   readonly isMulti = computed(() => this.validCount() > 1);
+  readonly isOverEmailThreshold = computed(() => this.validCount() > MULTI_EXCEL_EMAIL_THRESHOLD);
+
+  // Solo aplica a Master: por encima del umbral, el envío va por correo — hay que elegir a quién.
+  readonly needsRecipientEmail = computed(() =>
+    this.isMaster() && this.isOverEmailThreshold() && !this.recipientEmail()
+  );
 
   private readonly rawPs = signal<SipsPs | null>(null);
   private readonly rawConsumos = signal<SipsConsumo[]>([]);
@@ -77,7 +109,10 @@ export class SipsPageComponent {
     this.cups.set(el.value);
     // Auto-grow: shrink first to let scrollHeight recalc, then size to content.
     el.style.height = 'auto';
+    const overflowing = el.scrollHeight > 240;
     el.style.height = `${Math.min(el.scrollHeight, 240)}px`;
+    // Scrollbar solo cuando hace falta — si no, se ve el borde limpio de siempre.
+    el.style.overflowY = overflowing ? 'auto' : 'hidden';
   }
 
   onConsultar(): void {
@@ -151,12 +186,22 @@ export class SipsPageComponent {
     this.exporting.set(true);
     this.globalLoading.start();
     this.error.set(null);
-    this.sipsService.downloadMultiExcel(cups).subscribe({
-      next: (blob) => {
-        const stamp = new Date().toISOString().slice(0, 10);
-        this.triggerDownload(blob, `multicups-${stamp}.xlsx`);
+    const recipientEmail = this.isMaster() ? this.recipientEmail().trim() || undefined : undefined;
+    this.sipsService.downloadMultiExcel(cups, recipientEmail).subscribe({
+      next: (response) => {
         this.exporting.set(false);
         this.globalLoading.stop();
+        if (response.status === 202) {
+          response.body?.text().then(text => {
+            const message = JSON.parse(text)?.message ?? 'Se está generando en segundo plano, te llegará por correo.';
+            this.alertService.show(message, 'info');
+          });
+          return;
+        }
+        if (response.body) {
+          const stamp = new Date().toISOString().slice(0, 10);
+          this.triggerDownload(response.body, `multicups-${stamp}.xlsx`);
+        }
       },
       error: () => {
         this.error.set('No se pudo generar el Excel multi-CUPS');
