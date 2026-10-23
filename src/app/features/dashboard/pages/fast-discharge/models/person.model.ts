@@ -1,5 +1,5 @@
 export type PersonType = 'Individual' | 'Company';
-export type TramiteType = 'ALTA_NUEVA' | 'CAMBIO_TARIFA' | 'CAMBIO_POTENCIA' | 'NUEVO_TITULAR';
+export type TramiteType = 'ALTA_NUEVA' | 'CAMBIO_TARIFA' | 'CAMBIO_POTENCIA' | 'NUEVO_TITULAR' | 'AUTOCONSUMO';
 
 export interface NaturalPerson {
   type: 'Individual';
@@ -16,6 +16,13 @@ export interface NaturalPerson {
   townName: string;
   email: string;
   bank_account: string;
+  bic: string;
+  nombreTitular: string;
+  otroFirmante: boolean;
+  firmanteNif: string;
+  firmanteNombre: string;
+  firmanteApellido1: string;
+  firmanteApellido2: string;
   phone: string;
 }
 
@@ -36,6 +43,13 @@ export interface ArtificialPerson {
   townName: string;
   email: string;
   bank_account: string;
+  bic: string;
+  nombreTitular: string;
+  otroFirmante: boolean;
+  firmanteNif: string;
+  firmanteNombre: string;
+  firmanteApellido1: string;
+  firmanteApellido2: string;
   phone: string;
 }
 

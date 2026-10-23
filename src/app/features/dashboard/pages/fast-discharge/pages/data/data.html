@@ -24,6 +24,23 @@
             </div>
           </div>
 
+          <!-- Teléfono -->
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-muted-foreground">Teléfono *</label>
+            <div class="flex">
+              <select [class]="selectCls" [value]="countryCode()"
+                      (change)="countryCode.set($any($event.target).value)">
+                @for (c of phoneCountries; track c.code) {
+                  <option [value]="c.code">{{ c.flag }} {{ c.code }}</option>
+                }
+              </select>
+              <input type="tel" placeholder="612 345 678" [class]="numberCls"
+                     [attr.maxlength]="phoneMaxLength()"
+                     [value]="phoneNumber()" (input)="onPhoneInput($event)" />
+            </div>
+            @if (errors()['phone']) { <span class="text-red-500 text-xs">{{ errors()['phone'] }}</span> }
+          </div>
+
           <!-- Nombre + Apellido 1 + Apellido 2 -->
           <div class="grid grid-cols-3 gap-4">
             <div class="flex flex-col gap-1">
@@ -45,29 +62,91 @@
             </div>
           </div>
 
-          <!-- Teléfono + IBAN -->
-          <div class="grid grid-cols-2 gap-4">
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-muted-foreground">Teléfono *</label>
-              <div class="flex">
-                <select [class]="selectCls" [value]="countryCode()"
-                        (change)="countryCode.set($any($event.target).value)">
-                  @for (c of phoneCountries; track c.code) {
-                    <option [value]="c.code">{{ c.flag }} {{ c.code }}</option>
-                  }
-                </select>
-                <input type="tel" placeholder="612 345 678" [class]="numberCls"
-                       [attr.maxlength]="phoneMaxLength()"
-                       [value]="phoneNumber()" (input)="onPhoneInput($event)" />
+          <!-- Otro firmante -->
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-medium text-foreground">El firmante es otra persona distinta del cliente</span>
+            <button
+              type="button" role="switch" [attr.aria-checked]="otroFirmante()"
+              class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors"
+              [class.bg-blue-500]="otroFirmante()" [class.bg-muted]="!otroFirmante()"
+              (click)="toggleOtroFirmante()"
+            >
+              <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+                    [class.translate-x-6]="otroFirmante()" [class.translate-x-1]="!otroFirmante()"></span>
+            </button>
+          </div>
+
+          @if (otroFirmante()) {
+            <div class="grid grid-cols-3 gap-4">
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-muted-foreground">NIF Firmante *</label>
+                <input [class]="inputCls" placeholder="12345678A"
+                       [value]="firmanteNif()" (input)="firmanteNif.set($any($event.target).value)" />
+                @if (errors()['firmanteNif']) { <span class="text-red-500 text-xs">{{ errors()['firmanteNif'] }}</span> }
               </div>
-              @if (errors()['phone']) { <span class="text-red-500 text-xs">{{ errors()['phone'] }}</span> }
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-muted-foreground">Nombre Firmante *</label>
+                <input [class]="inputCls" placeholder="Francisco"
+                       [value]="firmanteNombre()" (input)="firmanteNombre.set($any($event.target).value)" />
+                @if (errors()['firmanteNombre']) { <span class="text-red-500 text-xs">{{ errors()['firmanteNombre'] }}</span> }
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-muted-foreground">Apellido 1 Firmante *</label>
+                <input [class]="inputCls" placeholder="García"
+                       [value]="firmanteApellido1()" (input)="firmanteApellido1.set($any($event.target).value)" />
+                @if (errors()['firmanteApellido1']) { <span class="text-red-500 text-xs">{{ errors()['firmanteApellido1'] }}</span> }
+              </div>
             </div>
             <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-muted-foreground">IBAN</label>
+              <label class="text-sm font-medium text-muted-foreground">Apellido 2 Firmante</label>
+              <input [class]="inputCls" placeholder="López"
+                     [value]="firmanteApellido2()" (input)="firmanteApellido2.set($any($event.target).value)" />
+            </div>
+          }
+
+          <!-- Nombre completo del titular de la cuenta -->
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-muted-foreground">Nombre completo del titular de la cuenta *</label>
+            <input [class]="inputCls" placeholder="Como figura en la cuenta bancaria"
+                   [value]="nombreTitular()" (input)="onNombreTitularInput($any($event.target).value)" />
+            @if (errors()['nombreTitular']) { <span class="text-red-500 text-xs">{{ errors()['nombreTitular'] }}</span> }
+          </div>
+
+          <!-- IBAN + BIC -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-muted-foreground">IBAN *</label>
               <input [class]="inputCls" placeholder="ES83 0182 6517 7302 0197 5760"
                      [value]="iban()" (input)="onIbanInput($event)" />
               @if (errors()['iban']) { <span class="text-red-500 text-xs">{{ errors()['iban'] }}</span> }
             </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-muted-foreground">BIC / SWIFT *</label>
+              <input [class]="inputCls" placeholder="CAIXESBBXXX" maxlength="11"
+                     [value]="bic()" (input)="onBicInput($event)" />
+              @if (errors()['bic']) { <span class="text-red-500 text-xs">{{ errors()['bic'] }}</span> }
+            </div>
+          </div>
+
+          <!-- Verificación manual del titular (botón, para no quemar el rate limit) -->
+          <div class="flex items-center gap-3">
+            <button type="button"
+                    class="px-3 py-1.5 text-xs font-medium rounded-md border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    [disabled]="!canVerifyIban() || ibanVerifying()"
+                    (click)="onVerifyIbanClick()">
+              {{ ibanVerifying() ? 'Verificando…' : 'Verificar titular' }}
+            </button>
+            @if (ibanResult(); as v) {
+              @if (v.result === 'OK') {
+                <span class="text-green-500 text-xs">✓ Titular verificado</span>
+              } @else if (v.result === 'CP') {
+                <span class="text-amber-500 text-xs">El banco sugiere el nombre "{{ v.suggestedName }}" — confirmá que es el titular.</span>
+              } @else if (v.result === 'KO') {
+                <span class="text-red-500 text-xs">El titular del IBAN no coincide con el nombre ingresado.</span>
+              } @else if (v.result === 'ERROR') {
+                <span class="text-red-500 text-xs">No se pudo verificar el IBAN{{ v.errorCode ? ' (' + v.errorCode + ')' : '' }}.</span>
+              }
+            }
           </div>
 
           <!-- Dirección -->

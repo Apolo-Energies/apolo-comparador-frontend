@@ -23,6 +23,7 @@ export const TRAMITE_OPTIONS: TramiteOption[] = [
   { value: 'NUEVO_TITULAR',   label: 'Nuevo titular'   },
   { value: 'CAMBIO_TARIFA',   label: 'Cambio tarifa'   },
   { value: 'CAMBIO_POTENCIA', label: 'Cambio potencia' },
+  { value: 'AUTOCONSUMO',     label: 'Autoconsumo'     },
 ];
 
 export const fmt2 = (n: number) =>

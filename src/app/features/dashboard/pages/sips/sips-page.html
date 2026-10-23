@@ -13,7 +13,7 @@
             rows="1"
             [value]="cups()"
             (input)="onCupsInput($any($event.target))"
-            placeholder="Ingrese uno o varios CUPS (uno por línea para exportar varios)"
+            placeholder="Ingresa los CUPS separados por comas"
             class="w-full resize-none overflow-hidden rounded-md border border-input bg-background px-3 py-2 text-sm leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-input"
             style="min-height: 38px; max-height: 240px;"
           ></textarea>
@@ -32,6 +32,30 @@
           @if (error()) {
             <p class="text-xs text-red-500 mt-1">{{ error() }}</p>
           }
+
+          @if (isMaster() && isOverEmailThreshold()) {
+            <div class="mt-3 max-w-xs">
+              <label class="block text-xs font-medium text-muted-foreground mb-1.5">
+                Enviar a otro usuario *
+              </label>
+              @if (usersLoading()) {
+                <div class="flex items-center gap-2 h-10 px-3 rounded-md border border-border bg-muted/40 animate-pulse">
+                  <div class="h-4 w-4 rounded-full bg-muted-foreground/20 shrink-0"></div>
+                  <div class="h-3 w-40 rounded bg-muted-foreground/20"></div>
+                </div>
+              } @else {
+                <ui-combobox
+                  placeholder="Buscar usuario"
+                  [options]="usersAsOptions()"
+                  [value]="recipientUserId()"
+                  (valueChange)="onRecipientChange($event)"
+                />
+              }
+              <p class="text-xs text-amber-500 mt-1.5">
+                Son más de 30 CUPS — se envía por correo. Selecciona a quién para poder exportar.
+              </p>
+            </div>
+          }
         </div>
 
         <div class="flex gap-2 mt-4 md:mt-6">
@@ -48,7 +72,7 @@
             variant="secondary"
             size="sm"
             [leadingIcon]="downloadIcon"
-            [disabled]="validCount() === 0 || loading() || exporting()"
+            [disabled]="validCount() === 0 || loading() || exporting() || needsRecipientEmail()"
             (click)="onExportClick()"
           />
         </div>

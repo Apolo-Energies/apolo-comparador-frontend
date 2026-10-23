@@ -6,6 +6,10 @@ import { AuthService } from '@apolo-energies/auth';
 import { ButtonComponent, InputFieldComponent, SelectFieldComponent, SliderComponent } from '@apolo-energies/ui';
 import { CommissionService } from '../../../../../../core/services/commission.service';
 import { ProviderService } from '../../../../../../core/services/provider.service';
+import { EnergyExpertCatalogsService } from '../../../../../../core/services/energy-expert-catalogs.service';
+import { AutoconsumoFormComponent } from './autoconsumo-form/autoconsumo-form';
+import { AutoconsumoFormValue } from './autoconsumo-form/autoconsumo-form.helpers';
+import { AutoconsumoController } from './autoconsumo.controller';
 import { FastDischargeStore } from '../../store/fast-discharge.store';
 import { TramiteType } from '../../models/person.model';
 import { SipsConsumo } from '../../../../../../core/models/sips.model';
@@ -28,7 +32,7 @@ import {
 
 @Component({
   selector: 'app-fd-select-product',
-  imports: [DecimalPipe, ButtonComponent, InputFieldComponent, SelectFieldComponent, SliderComponent, LoadingOverlayComponent],
+  imports: [DecimalPipe, ButtonComponent, InputFieldComponent, SelectFieldComponent, SliderComponent, LoadingOverlayComponent, AutoconsumoFormComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './select-product.html',
 })
@@ -37,7 +41,12 @@ export class SelectProductPage {
   readonly store                     = inject(FastDischargeStore);
   private readonly providerService   = inject(ProviderService);
   private readonly commissionService = inject(CommissionService);
+  private readonly catalogsService   = inject(EnergyExpertCatalogsService);
   private readonly auth              = inject(AuthService);
+
+  private readonly autoconsumoCtrl = new AutoconsumoController(this.catalogsService);
+  readonly autoconsumoCatalogs     = this.autoconsumoCtrl.catalogs;
+  readonly autoconsumoFormValue    = this.autoconsumoCtrl.formValue;
 
   readonly submitted       = signal(false);
   readonly tramites        = signal<TramiteType[]>([]);
@@ -199,6 +208,11 @@ export class SelectProductPage {
   toggle(v: TramiteType): void {
     const cur = this.tramites();
     this.tramites.set(cur.includes(v) ? cur.filter(t => t !== v) : [...cur, v]);
+    if (v === 'AUTOCONSUMO' && this.isSelected(v)) this.autoconsumoCtrl.maybeLoadCatalogs();
+  }
+
+  onAutoconsumoNext(value: AutoconsumoFormValue): void {
+    this.autoconsumoCtrl.setFormValue(value);
   }
 
   onBack(): void {
