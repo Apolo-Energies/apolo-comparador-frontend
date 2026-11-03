@@ -14,3 +14,35 @@
 :host ::ng-deep lib-data-table tr:hover td:first-child {
   background: var(--color-body);
 }
+:host ::ng-deep .contracts-table tbody tr {
+  cursor: pointer;
+}
+
+// Estilo del kit (Sigma): cabeceras sin mayúsculas, filas compactas, badges con borde.
+:host ::ng-deep .contracts-table th {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.75rem;
+}
+:host ::ng-deep .contracts-table td {
+  padding-top: 0.625rem;
+  padding-bottom: 0.625rem;
+}
+:host ::ng-deep .contracts-table tbody tr + tr td {
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  white-space: nowrap;
+}

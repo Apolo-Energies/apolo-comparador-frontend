@@ -365,55 +365,24 @@
                     </button>
                   }
                   <button type="button"
-                          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold text-zinc-300 bg-zinc-700/40 hover:bg-zinc-700/60"
+                          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors"
+                          [class]="expandedFacturas() === s.Id
+                            ? 'text-zinc-50 bg-zinc-600 border-zinc-400'
+                            : 'text-zinc-200 bg-zinc-800 border-zinc-600 hover:bg-zinc-700 hover:border-zinc-400'"
                           (click)="toggleFacturas(s)">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>
                     Facturas
                   </button>
                   <button type="button"
-                          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold text-zinc-300 bg-zinc-700/40 hover:bg-zinc-700/60"
+                          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors"
+                          [class]="expandedIncidencias() === s.Id
+                            ? 'text-white bg-red-500/80 border-red-400'
+                            : 'text-red-300 bg-red-500/10 border-red-500/50 hover:bg-red-500/20 hover:border-red-400'"
                           (click)="toggleIncidencias(s.Id)">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
                     Incidencias
                   </button>
-                  @if (isMaster()) {
-                    <button type="button"
-                            class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20"
-                            (click)="toggleFalta(s.Id)">
-                      Registrar qué falta
-                    </button>
-                  }
                 </div>
-
-              <!-- Sección expandida: REGISTRAR QUÉ FALTA (Master) -->
-              @if (faltaFor() === s.Id) {
-                <div class="px-4 py-3 border-t border-zinc-800/60 bg-amber-500/5 space-y-2">
-                  <p class="text-[11px] font-semibold text-amber-300 uppercase tracking-wider">
-                    Qué falta en este contrato
-                  </p>
-                  <select class="w-full bg-zinc-950 border border-zinc-700 rounded-md px-2 py-1.5 text-xs text-zinc-100"
-                          [ngModel]="faltaTipo()" (ngModelChange)="faltaTipo.set($event)">
-                    @for (t of faltaTipos; track t) {
-                      <option [value]="t">{{ faltaTipoLabels[t] }}</option>
-                    }
-                  </select>
-                  <textarea rows="2"
-                            class="w-full bg-zinc-950 border border-zinc-700 rounded-md px-2 py-1.5 text-xs text-zinc-100"
-                            placeholder="Motivo (p. ej. rechazado por la distribuidora: la potencia no coincide)"
-                            [ngModel]="faltaMotivo()" (ngModelChange)="faltaMotivo.set($event)"></textarea>
-                  <input type="text"
-                         class="w-full bg-zinc-950 border border-zinc-700 rounded-md px-2 py-1.5 text-xs text-zinc-100"
-                         placeholder="Documento que falta (p. ej. copia del DNI del titular)"
-                         [ngModel]="faltaDocumentacion()" (ngModelChange)="faltaDocumentacion.set($event)" />
-                  <div class="flex items-center justify-end gap-2">
-                    <button type="button" class="text-[11px] text-zinc-400 hover:text-zinc-200"
-                            (click)="faltaFor.set(null)" [disabled]="savingFalta()">Cancelar</button>
-                    <button type="button"
-                            class="text-[11px] font-semibold px-3 py-1 rounded-md bg-amber-500 text-black hover:bg-amber-400 disabled:opacity-50"
-                            (click)="guardarFalta(s)" [disabled]="savingFalta()">
-                      {{ savingFalta() ? 'Guardando…' : 'Guardar' }}
-                    </button>
-                  </div>
-                </div>
-              }
 
               <!-- Sección expandida: EDICIÓN ANTES DE FIRMA -->
               @if (editingServicioId() === s.Id) {
@@ -530,39 +499,80 @@
                     </p>
                     @if (incidenceFormFor() !== s.Id) {
                       <button type="button"
-                              class="text-[11px] font-semibold text-primary-button hover:underline"
+                              class="text-[11px] font-semibold px-2.5 py-1 rounded-md border border-red-500/50 text-red-300 bg-red-500/10 hover:bg-red-500/20"
                               (click)="openIncidenceForm(s.Id)">
-                        + Reportar nueva
+                        + Reportar incidencia
                       </button>
                     }
                   </div>
 
                   @if (incidenceFormFor() === s.Id) {
-                    <div class="rounded-lg border border-zinc-700 bg-zinc-900 p-3 mb-3 space-y-2">
-                      <div class="flex gap-2">
-                        <select class="flex-1 bg-zinc-950 border border-zinc-700 rounded-md px-2 py-1 text-xs text-zinc-100"
+                    <div class="rounded-xl border border-zinc-700 bg-zinc-900 p-4 mb-3 space-y-4">
+                      <div>
+                        <p class="text-sm font-semibold text-zinc-100">Nueva incidencia</p>
+                        <p class="text-xs text-zinc-400 mt-0.5">
+                          Cuéntanos qué necesitas sobre el suministro {{ s.CUPS }}. El equipo de operaciones lo revisará y te avisará de cualquier cambio.
+                        </p>
+                      </div>
+
+                      <label class="flex flex-col gap-1.5">
+                        <span class="text-xs font-medium text-zinc-300">¿Qué tipo de incidencia es?</span>
+                        <select class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary-button/40"
                                 [ngModel]="newIncidenceType()"
                                 (ngModelChange)="newIncidenceType.set($event)">
-                          @for (t of incidenceTypes; track t) {
-                            <option [value]="t">{{ incidenceTypeLabels[t] }}</option>
+                          <optgroup label="Cambios en el contrato">
+                            @for (t of incidenceChangeTypes; track t) {
+                              <option [value]="t">{{ incidenceTypeLabels[t] }}</option>
+                            }
+                          </optgroup>
+                          <optgroup label="Problemas">
+                            @for (t of incidenceProblemTypes; track t) {
+                              <option [value]="t">{{ incidenceTypeLabels[t] }}</option>
+                            }
+                          </optgroup>
+                          @if (isMaster()) {
+                            <optgroup label="Trámite pendiente (lo verá el colaborador)">
+                              @for (t of faltaTipos; track t) {
+                                <option [value]="'tram:' + t">{{ faltaTipoLabels[t] }}</option>
+                              }
+                            </optgroup>
                           }
                         </select>
-                      </div>
-                      <textarea rows="4"
-                                class="w-full bg-zinc-950 border border-zinc-700 rounded-md px-2 py-1 text-xs text-zinc-100"
-                                placeholder="Describe la incidencia..."
-                                [ngModel]="newIncidenceDescription()"
-                                (ngModelChange)="newIncidenceDescription.set($event)"></textarea>
-                      <div class="flex items-center justify-end gap-2">
+                      </label>
+
+                      <label class="flex flex-col gap-1.5">
+                        <span class="text-xs font-medium text-zinc-300">
+                          {{ isFaltaType() ? 'Motivo' : 'Descripción' }}
+                        </span>
+                        <textarea rows="4"
+                                  class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary-button/40"
+                                  [placeholder]="incidenceHint()"
+                                  [ngModel]="newIncidenceDescription()"
+                                  (ngModelChange)="newIncidenceDescription.set($event)"></textarea>
+                      </label>
+
+                      @if (isFaltaType()) {
+                        <label class="flex flex-col gap-1.5">
+                          <span class="text-xs font-medium text-zinc-300">
+                            Documento que falta <span class="text-zinc-500 font-normal">(opcional)</span>
+                          </span>
+                          <input type="text"
+                                 class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary-button/40"
+                                 placeholder="Ej.: copia del DNI del titular"
+                                 [ngModel]="faltaDocumentacion()" (ngModelChange)="faltaDocumentacion.set($event)" />
+                        </label>
+                      }
+
+                      <div class="flex items-center justify-end gap-2 pt-1">
                         <button type="button"
-                                class="text-[11px] text-zinc-400 hover:text-zinc-200"
+                                class="text-xs font-medium px-3 py-2 rounded-lg text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800"
                                 (click)="cancelIncidenceForm()"
                                 [disabled]="submittingIncidence()">Cancelar</button>
                         <button type="button"
-                                class="text-[11px] font-semibold px-3 py-1 rounded-md bg-primary-button text-white hover:bg-primary-button/90 disabled:opacity-50"
+                                class="text-xs font-semibold px-4 py-2 rounded-lg bg-primary-button text-white hover:bg-primary-button/90 disabled:opacity-50"
                                 (click)="submitIncidence(s.Id)"
                                 [disabled]="submittingIncidence()">
-                          {{ submittingIncidence() ? 'Enviando…' : 'Enviar' }}
+                          {{ submittingIncidence() ? 'Enviando…' : (isFaltaType() ? 'Registrar trámite' : 'Crear incidencia') }}
                         </button>
                       </div>
                     </div>
@@ -573,7 +583,7 @@
                   } @else if (incs === 'error') {
                     <p class="text-xs text-red-400">No se pudieron cargar las incidencias.</p>
                   } @else if (!incs || incs.length === 0) {
-                    <p class="text-xs text-zinc-500">Sin incidencias.</p>
+                    <p class="text-xs text-zinc-500">Este suministro no tiene incidencias abiertas.</p>
                   } @else {
                     <ul class="space-y-2">
                       @for (inc of incs; track inc.id) {

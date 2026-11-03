@@ -2,12 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output, si
 import { MessageService } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
 import {
-  ESTADOS_TRAMITACION, TRAMITACION_TIPO_LABELS, TramitacionCierre, TramitacionDocumento, TramitacionItem,
+  TRAMITACION_TIPO_LABELS, TramitacionCierre, TramitacionDocumento, TramitacionItem,
   TramitacionService, TramitacionTipo,
 } from '../../../../../../core/services/tramitacion.service';
 import { estadoCls, estadoLabel, fmtDate } from '../../contracts-utils';
-
-type FiltroEstado = 'todos' | 'por_revisar' | (typeof ESTADOS_TRAMITACION)[number];
 
 const PAGE_SIZE = 50;
 
@@ -33,7 +31,6 @@ export class TramitacionPanelComponent {
   private readonly tramitacion = inject(TramitacionService);
   private readonly toast       = inject(MessageService);
 
-  readonly filtro   = signal<FiltroEstado>('todos');
   readonly busqueda = signal('');
   readonly visibles = signal(PAGE_SIZE);
 
@@ -44,26 +41,9 @@ export class TramitacionPanelComponent {
   readonly estadoCls   = estadoCls;
   readonly estadoLabel = estadoLabel;
 
-  /** Chips de filtro: solo los estados que tienen contratos, con su contador. */
-  readonly chips = computed(() => {
-    const items = this.items();
-    const porEstado = (e: string) => items.filter(i => i.estadoContrato === e).length;
-    const porRevisar = items.filter(i => this.isTramitadoDeNuevo(i)).length;
-    return [
-      { key: 'todos' as FiltroEstado, label: 'Todos', count: items.length },
-      ...(porRevisar ? [{ key: 'por_revisar' as FiltroEstado, label: 'Tramitado de nuevo', count: porRevisar }] : []),
-      ...ESTADOS_TRAMITACION
-        .map(e => ({ key: e as FiltroEstado, label: estadoLabel(e), count: porEstado(e) }))
-        .filter(c => c.count > 0),
-    ];
-  });
-
   readonly filtrados = computed(() => {
-    const filtro = this.filtro();
     const q = this.normalizar(this.busqueda());
     return this.items().filter(i => {
-      if (filtro === 'por_revisar' && !this.isTramitadoDeNuevo(i)) return false;
-      if (filtro !== 'todos' && filtro !== 'por_revisar' && i.estadoContrato !== filtro) return false;
       if (!q) return true;
       return [i.clienteNombre, i.clienteNif, i.cups, i.idServicio?.toString(), i.nombreDelegacion, i.informacionComplementaria]
         .some(v => v && this.normalizar(v).includes(q));
@@ -71,11 +51,6 @@ export class TramitacionPanelComponent {
   });
 
   readonly pagina = computed(() => this.filtrados().slice(0, this.visibles()));
-
-  setFiltro(f: FiltroEstado): void {
-    this.filtro.set(f);
-    this.visibles.set(PAGE_SIZE);
-  }
 
   setBusqueda(q: string): void {
     this.busqueda.set(q);
