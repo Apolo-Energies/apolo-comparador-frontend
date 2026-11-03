@@ -1,36 +1,83 @@
 <!-- Cell templates -->
-<ng-template #clienteTpl let-row>
-  <p class="font-medium text-foreground">{{ row.RazonSocialCliente || row.NombreCliente || '—' }}</p>
-</ng-template>
-
-<ng-template #nifTpl let-row>
-  <span class="text-sm text-foreground">{{ row.NIF || '—' }}</span>
-</ng-template>
-
-<ng-template #cupsTpl let-row>
-  @if (row.CUPS && row.CUPS.length > 0) {
-    <div class="flex items-center justify-center gap-1.5">
-      <span class="font-mono text-xs text-foreground">{{ row.CUPS[0] }}</span>
-      @if (row.CUPS.length > 1) {
-        <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary"
-              [title]="row.CUPS.join(', ')">
-          +{{ row.CUPS.length - 1 }}
-        </span>
-      }
-    </div>
+<ng-template #tipoTpl let-row>
+  @if (row.TipoEnergia === 'gas') {
+    <span class="badge bg-sky-500/10 text-sky-400">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-3 2-4 2-7 1.5 1 2 2.5 2 4 1-2 1-5 1-8Z"/></svg>
+      Gas
+    </span>
+  } @else if (row.TipoEnergia === 'luz') {
+    <span class="badge bg-yellow-500/10 text-yellow-400">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Luz
+    </span>
   } @else {
     <span class="text-xs text-muted-foreground">—</span>
   }
 </ng-template>
 
-<ng-template #colaboradorTpl let-row>
-  <span class="text-sm text-foreground">{{ row.NombreComercialCliente || '—' }}</span>
+<ng-template #nombreTpl let-row>
+  @let cliente = row.RazonSocialCliente || row.NombreCliente;
+  <p class="font-medium text-foreground">{{ row.Producto ? (cliente || '—') + ' - ' + row.Producto : (cliente || '—') }}</p>
+</ng-template>
+
+<ng-template #clienteTpl let-row>
+  <p class="text-sm text-foreground">{{ row.RazonSocialCliente || row.NombreCliente || '—' }}</p>
+  @if (row.NIF) {
+    <p class="text-xs text-muted-foreground">{{ row.NIF }}</p>
+  }
+</ng-template>
+
+<ng-template #cupsTpl let-row>
+  <span class="font-mono text-xs text-foreground">{{ row.CUPS?.[0] || '—' }}</span>
+</ng-template>
+
+<ng-template #fechaInicioTpl let-row>
+  <span class="text-sm text-muted-foreground whitespace-nowrap">{{ fmtDate(row.FechaInicio) }}</span>
+</ng-template>
+
+<ng-template #fechaFinTpl let-row>
+  <span class="text-sm text-muted-foreground whitespace-nowrap">{{ fmtDate(row.FechaFin) }}</span>
+</ng-template>
+
+<ng-template #fechaCreacionTpl let-row>
+  <span class="text-sm text-muted-foreground whitespace-nowrap">{{ fmtDate(row.FechaCreacion) }}</span>
+</ng-template>
+
+<ng-template #firmaTpl let-row>
+  @switch (row.EstadoFirma) {
+    @case ('firmado') {
+      <span class="badge bg-[#1AD5981A] text-[#1AD598]">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+        Firmado
+      </span>
+    }
+    @case ('pendiente') {
+      <span class="badge bg-amber-500/10 text-amber-400">
+        <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+        Pendiente de firma
+      </span>
+    }
+    @default {
+      <span class="text-xs text-muted-foreground">—</span>
+    }
+  }
+</ng-template>
+
+<ng-template #incidenciaTpl let-row>
+  @if (row.TieneIncidencia) {
+    <span class="badge bg-orange-500/10 text-orange-400">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Sí
+    </span>
+  } @else {
+    <span class="text-xs text-muted-foreground">No</span>
+  }
 </ng-template>
 
 <ng-template #estadoTpl let-row>
   @let single = singleEstado(row);
   @if (single) {
-    <span class="px-2 py-0.5 rounded-md text-xs font-semibold" [class]="estadoCls(single)">
+    <span class="badge" [class]="'badge ' + estadoCls(single)">
       {{ estadoLabel(single) }}
     </span>
   } @else {
@@ -46,67 +93,13 @@
   }
 </ng-template>
 
-<ng-template #tarifaTpl let-row>
-  <span class="text-sm text-foreground">{{ row.Tarifa || '—' }}</span>
+<ng-template #colaboradorTpl let-row>
+  <span class="text-sm text-foreground">{{ row.NombreDelegacion || '—' }}</span>
 </ng-template>
 
-<ng-template #fechaCreacionTpl let-row>
-  <span class="text-sm text-muted-foreground">{{ fmtDate(row.FechaCreacion) }}</span>
-</ng-template>
+<div class="border border-border rounded-xl overflow-hidden bg-card">
 
-<ng-template #fechaFinTpl let-row>
-  <span class="text-sm text-muted-foreground">{{ fmtDate(row.FechaFin) }}</span>
-</ng-template>
-
-<ng-template #consumoTpl let-row>
-  <span class="font-mono text-sm text-foreground">{{ fmtKwh(row.ConsumoTotal) }}</span>
-</ng-template>
-
-<ng-template #detalleTpl let-row>
-  <button
-    type="button"
-    class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-primary-button bg-primary-button/10 hover:bg-primary-button/20 transition-colors cursor-pointer"
-    (click)="openDetail(row)"
-    title="Ver detalle del cliente y sus servicios">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-    </svg>
-    Ver detalle
-  </button>
-</ng-template>
-
-<div class="border border-border rounded-lg overflow-hidden shadow-sm">
-
-  @if (hasDelegation()) {
-    <!-- Pestañas -->
-    <div class="flex items-center gap-1 px-6 pt-4 bg-card border-b border-border">
-      <button type="button" (click)="tab.set('contratos')"
-              class="px-3 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors"
-              [class.border-primary]="tab() === 'contratos'" [class.text-foreground]="tab() === 'contratos'"
-              [class.border-transparent]="tab() !== 'contratos'" [class.text-muted-foreground]="tab() !== 'contratos'">
-        Mis contratos
-      </button>
-      <button type="button" (click)="tab.set('tramitacion'); loadTramitacion()"
-              class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors"
-              [class.border-primary]="tab() === 'tramitacion'" [class.text-foreground]="tab() === 'tramitacion'"
-              [class.border-transparent]="tab() !== 'tramitacion'" [class.text-muted-foreground]="tab() !== 'tramitacion'">
-        En tramitación
-        @if (tramitacionItems().length > 0) {
-          <span class="inline-flex items-center px-1.5 rounded text-[10px] font-mono bg-amber-500/20 text-amber-300">
-            {{ tramitacionItems().length }}
-          </span>
-        }
-      </button>
-    </div>
-  }
-
-  @if (hasDelegation() && tab() === 'tramitacion') {
-    <app-tramitacion-panel
-      [items]="tramitacionItems()"
-      [loading]="tramitacionLoading()"
-      [isMaster]="isMaster()"
-      (changed)="loadTramitacion()" />
-  } @else if (!hasDelegation()) {
+  @if (!hasDelegation()) {
     <div class="flex flex-col items-center justify-center py-16 px-6 text-center text-muted-foreground">
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-3 opacity-40">
         <path d="M12 2 3 6v6c0 5 3.8 8.4 9 10 5.2-1.6 9-5 9-10V6l-9-4Z"/>
@@ -117,148 +110,72 @@
     </div>
   } @else {
 
-  <!-- Header -->
-  <div class="bg-card px-6 py-5 space-y-4">
-    <!-- Fila 1: Búsqueda + acciones -->
-    <div class="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
-      <div class="flex-1">
-        <ui-input
-          label="Buscar"
-          placeholder="Cliente, CUPS, NIF..."
-          [value]="filter()"
-          [leadingIcon]="searchIcon"
-          (valueChange)="filter.set($event)"
-          (keydown.enter)="onSearch()"
-        />
+  <!-- Toolbar: tipo + tramitación a la izquierda; búsqueda y acciones a la derecha -->
+  <div class="bg-card px-5 py-4 space-y-3">
+    <div class="flex flex-col lg:flex-row lg:items-center gap-3">
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="inline-flex items-center rounded-md border border-border bg-background p-0.5" role="group" aria-label="Tipo de suministro">
+          @for (t of tipoOptions; track t.value) {
+            <button type="button"
+                    (click)="onTipoChange(t.value)"
+                    class="px-3 py-1 text-xs font-medium rounded transition-colors"
+                    [class.bg-accent]="filterTipo() === t.value" [class.text-foreground]="filterTipo() === t.value"
+                    [class.text-muted-foreground]="filterTipo() !== t.value"
+                    [attr.aria-pressed]="filterTipo() === t.value">
+              {{ t.label }}
+            </button>
+          }
+        </div>
+
+        <button type="button"
+                (click)="toggleTramitacion()"
+                class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-md border transition-colors"
+                [class.bg-amber-500/10]="showTramitacion()" [class.text-amber-300]="showTramitacion()"
+                [class.border-amber-500/40]="showTramitacion()"
+                [class.text-muted-foreground]="!showTramitacion()" [class.border-border]="!showTramitacion()"
+                [class.hover:text-foreground]="!showTramitacion()"
+                [attr.aria-pressed]="showTramitacion()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          En tramitación
+          @if (tramitacionItems().length > 0) {
+            <span class="inline-flex items-center px-1.5 rounded text-[10px] font-mono bg-amber-500/15 text-amber-300">
+              {{ tramitacionItems().length }}
+            </span>
+          }
+        </button>
       </div>
-      <div class="flex items-center gap-2">
-        <ui-button label="Limpiar" variant="secondary" size="md" [leadingIcon]="xIcon"      (click)="onClear()" />
-        <ui-button label="Buscar"  variant="default"   size="md" [leadingIcon]="searchIcon" (click)="onSearch()" />
-      </div>
+
+      @if (!showTramitacion()) {
+        <div class="flex flex-wrap items-center gap-2 lg:ml-auto">
+          <label class="relative">
+            <span class="sr-only">Buscar</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                 class="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="search"
+                   placeholder="Buscar cliente, CUPS, NIF, colaborador…"
+                   [value]="filter()"
+                   (input)="filter.set($any($event.target).value)"
+                   (keydown.enter)="onSearch()"
+                   class="h-8 w-full sm:w-72 rounded-md border border-border bg-background pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40" />
+          </label>
+
+          <button type="button" (click)="onSearch()"
+                  class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold rounded-md bg-primary-button text-white hover:opacity-90 transition-opacity">
+            Buscar
+          </button>
+        </div>
+      }
     </div>
 
-    <!-- Fila 2: Pills de estado del contrato -->
-    <div class="flex flex-wrap items-center gap-2">
-      @let mode = filterMode();
-
-      <button type="button"
-              (click)="setFilterMode('todos')"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border transition-colors"
-              [class.bg-primary]="mode === 'todos'"
-              [class.text-white]="mode === 'todos'"
-              [class.border-primary]="mode === 'todos'"
-              [class.bg-transparent]="mode !== 'todos'"
-              [class.text-muted-foreground]="mode !== 'todos'"
-              [class.border-border]="mode !== 'todos'">
-        <lib-svg-icon [icon]="pillAllIcon" [size]="12" />
-        Todos
-        <span class="inline-flex items-center px-1.5 rounded text-[10px] font-mono"
-              [class.bg-white]="mode === 'todos'" [class.text-primary]="mode === 'todos'"
-              [class.bg-accent]="mode !== 'todos'" [class.text-foreground]="mode !== 'todos'">
-          {{ data().length }}
-        </span>
-      </button>
-
-      <button type="button"
-              (click)="setFilterMode('activos')"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border transition-colors"
-              [class.bg-emerald-500/20]="mode === 'activos'" [class.text-emerald-300]="mode === 'activos'"
-              [class.border-emerald-500/40]="mode === 'activos'"
-              [class.text-muted-foreground]="mode !== 'activos'" [class.border-border]="mode !== 'activos'">
-        <lib-svg-icon [icon]="pillActivosIcon" [size]="12" />
-        Activos
-        @if (countActivos() > 0) {
-          <span class="inline-flex items-center px-1.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300">
-            {{ countActivos() }}
-          </span>
-        }
-      </button>
-
-      <button type="button"
-              (click)="setFilterMode('pendientes')"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border transition-colors"
-              [class.bg-yellow-500/20]="mode === 'pendientes'" [class.text-yellow-300]="mode === 'pendientes'"
-              [class.border-yellow-500/40]="mode === 'pendientes'"
-              [class.text-muted-foreground]="mode !== 'pendientes'" [class.border-border]="mode !== 'pendientes'">
-        <lib-svg-icon [icon]="pillPendientesIcon" [size]="12" />
-        Pendientes
-        @if (countPendientes() > 0) {
-          <span class="inline-flex items-center px-1.5 rounded text-[10px] font-mono bg-yellow-500/20 text-yellow-300">
-            {{ countPendientes() }}
-          </span>
-        }
-      </button>
-
-      <button type="button"
-              (click)="setFilterMode('renovados')"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border transition-colors"
-              [class.bg-violet-500/20]="mode === 'renovados'" [class.text-violet-300]="mode === 'renovados'"
-              [class.border-violet-500/40]="mode === 'renovados'"
-              [class.text-muted-foreground]="mode !== 'renovados'" [class.border-border]="mode !== 'renovados'">
-        <lib-svg-icon [icon]="pillRenovadosIcon" [size]="12" />
-        Renovados
-        @if (countRenovados() > 0) {
-          <span class="inline-flex items-center px-1.5 rounded text-[10px] font-mono bg-violet-500/20 text-violet-300">
-            {{ countRenovados() }}
-          </span>
-        }
-      </button>
-
-      <button type="button"
-              (click)="setFilterMode('bajas')"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border transition-colors"
-              [class.bg-red-500/20]="mode === 'bajas'" [class.text-red-300]="mode === 'bajas'"
-              [class.border-red-500/40]="mode === 'bajas'"
-              [class.text-muted-foreground]="mode !== 'bajas'" [class.border-border]="mode !== 'bajas'">
-        <lib-svg-icon [icon]="pillBajasIcon" [size]="12" />
-        Bajas
-        @if (countBajas() > 0) {
-          <span class="inline-flex items-center px-1.5 rounded text-[10px] font-mono bg-red-500/20 text-red-300">
-            {{ countBajas() }}
-          </span>
-        }
-      </button>
-
-      <span class="w-px h-6 bg-border mx-1"></span>
-
-      <button type="button"
-              (click)="setFilterMode('porCaducar')"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border transition-colors"
-              [class.bg-amber-500/20]="mode === 'porCaducar'" [class.text-amber-300]="mode === 'porCaducar'"
-              [class.border-amber-500/40]="mode === 'porCaducar'"
-              [class.text-muted-foreground]="mode !== 'porCaducar'" [class.border-border]="mode !== 'porCaducar'">
-        <lib-svg-icon [icon]="pillPorCaducarIcon" [size]="12" />
-        Por caducar
-        @if (countPorCaducar() > 0) {
-          <span class="inline-flex items-center px-1.5 rounded text-[10px] font-mono bg-amber-500/20 text-amber-300">
-            {{ countPorCaducar() }}
-          </span>
-        }
-      </button>
-
-      <button type="button"
-              (click)="setFilterMode('caducados')"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border transition-colors"
-              [class.bg-red-600/20]="mode === 'caducados'" [class.text-red-400]="mode === 'caducados'"
-              [class.border-red-600/40]="mode === 'caducados'"
-              [class.text-muted-foreground]="mode !== 'caducados'" [class.border-border]="mode !== 'caducados'">
-        <lib-svg-icon [icon]="pillCaducadosIcon" [size]="12" />
-        Caducados
-        @if (countCaducados() > 0) {
-          <span class="inline-flex items-center px-1.5 rounded text-[10px] font-mono bg-red-600/20 text-red-400">
-            {{ countCaducados() }}
-          </span>
-        }
-      </button>
-    </div>
-
-    <!-- Fila 3: Filtros avanzados en línea (fase alta / campo faltante / fechas) -->
-    <div class="flex flex-wrap items-center gap-x-4 gap-y-2 pt-3 border-t border-border/50 text-xs">
-      <label class="inline-flex items-center gap-2">
-        <span class="text-muted-foreground">Fase alta</span>
+    @if (!showTramitacion()) {
+    <!-- Filtros siempre visibles. El borde se resalta cuando el filtro está aplicado. -->
+    <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-border/50">
+      <label class="flex items-center h-8 rounded-md border bg-background text-xs transition-colors focus-within:ring-2 focus-within:ring-primary/40"
+             [class.border-primary]="!!filterEstado()" [class.border-border]="!filterEstado()">
+        <span class="pl-2.5 pr-1.5 text-muted-foreground whitespace-nowrap">Fase alta</span>
         <select [value]="filterEstado()"
                 (change)="onEstadoChange($any($event.target).value)"
-                class="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 min-w-[9rem]">
+                class="h-full bg-transparent pr-2 text-foreground focus:outline-none cursor-pointer">
           <option value="">Todas</option>
           <option value="previo">Previo</option>
           <option value="para_estudio">Para estudio</option>
@@ -268,11 +185,12 @@
         </select>
       </label>
 
-      <label class="inline-flex items-center gap-2">
-        <span class="text-muted-foreground">Campo faltante</span>
+      <label class="flex items-center h-8 rounded-md border bg-background text-xs transition-colors focus-within:ring-2 focus-within:ring-primary/40"
+             [class.border-primary]="!!filterFaltante()" [class.border-border]="!filterFaltante()">
+        <span class="pl-2.5 pr-1.5 text-muted-foreground whitespace-nowrap">Campo faltante</span>
         <select [value]="filterFaltante()"
                 (change)="onFaltanteChange($any($event.target).value)"
-                class="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 min-w-[11rem]">
+                class="h-full bg-transparent pr-2 text-foreground focus:outline-none cursor-pointer">
           <option value="">Ninguno</option>
           <optgroup label="Datos del cliente">
             <option value="nif">Sin NIF / CIF</option>
@@ -292,43 +210,53 @@
         </select>
       </label>
 
-      <label class="inline-flex items-center gap-2">
-        <span class="text-muted-foreground">Último mov.</span>
-        <input type="date"
-               class="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+      <div class="flex items-center h-8 rounded-md border bg-background text-xs transition-colors focus-within:ring-2 focus-within:ring-primary/40"
+           [class.border-primary]="!!fechaDesde() || !!fechaHasta()" [class.border-border]="!fechaDesde() && !fechaHasta()">
+        <span class="pl-2.5 pr-1.5 text-muted-foreground whitespace-nowrap">Último mov.</span>
+        <input type="date" aria-label="Último movimiento desde"
+               class="h-full bg-transparent text-foreground focus:outline-none"
                [value]="fechaDesde()"
                (change)="setFechaDesde($any($event.target).value)" />
-        <span class="text-muted-foreground">→</span>
-        <input type="date"
-               class="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+        <span class="px-1.5 text-muted-foreground">→</span>
+        <input type="date" aria-label="Último movimiento hasta"
+               class="h-full bg-transparent pr-2 text-foreground focus:outline-none"
                [value]="fechaHasta()"
                (change)="setFechaHasta($any($event.target).value)" />
-      </label>
+      </div>
 
-      @if (hasFilters || hasDateFilter()) {
-        <button type="button"
-                (click)="clearFilters(); clearDateFilter()"
-                class="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-border text-muted-foreground hover:bg-accent/40 transition-colors">
-          Limpiar filtros
-        </button>
-        <span class="ml-auto text-muted-foreground">
-          {{ totalCount() }} coinciden
-        </span>
-      }
+      <div class="flex items-center gap-3 ml-auto text-xs">
+        @if (!loading()) {
+          <span class="text-muted-foreground">{{ total() }} {{ total() === 1 ? 'contrato' : 'contratos' }}</span>
+        }
+        @if (hasAnyFilter) {
+          <button type="button" (click)="onClear()"
+                  class="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-primary/50 bg-primary/10 text-primary font-semibold hover:bg-primary/20 transition-colors">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Limpiar filtros
+          </button>
+        }
+      </div>
     </div>
+    }
   </div>
 
+  @if (showTramitacion()) {
+    <app-tramitacion-panel
+      [items]="tramitacionItems()"
+      [loading]="tramitacionLoading()"
+      [isMaster]="isMaster()"
+      (changed)="loadTramitacion()" />
+  } @else {
+
   <!-- Table -->
-  <div class="relative">
+  <div class="relative contracts-table" (click)="onTableClick($event)">
     @if (loading()) {
-      <app-table-skeleton [cols]="10" [rows]="10" />
+      <app-table-skeleton [cols]="11" [rows]="10" />
     } @else if (visibleData().length === 0) {
       <div class="flex flex-col items-center justify-center py-16 text-muted-foreground">
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-3 opacity-40"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <p class="text-sm">
-          @if (viewMode() === 'porCaducar') { Sin contratos por caducar en los próximos 60 días. }
-          @else if (viewMode() === 'caducados') { Sin contratos caducados. }
-          @else { Sin resultados }
+          Sin resultados
         </p>
       </div>
     } @else {
@@ -365,6 +293,8 @@
     (pageChange)="onPageChange($event)"
     (pageSizeChange)="onPageSizeChange($event)"
   />
+
+  }
 
   }
 

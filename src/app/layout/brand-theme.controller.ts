@@ -1,15 +1,12 @@
 import { signal } from '@angular/core';
-import { AuthService } from '@apolo-energies/auth';
-import { BrandService } from '../core/services/brand.service';
-import { UserService } from '../core/services/user.service';
+import { BrandModulesService } from '../core/services/brand-modules.service';
+import { BrandConfig } from '../core/models/brand.model';
 import { environment } from '../../environments/environment';
 
 const TENANT_BRANDING = environment as { faviconUrl?: string; appTitle?: string };
 
 export interface BrandThemeDeps {
-  brandService: BrandService;
-  userService:  UserService;
-  auth:         AuthService;
+  brandModules: BrandModulesService;
 }
 
 /**
@@ -19,8 +16,8 @@ export interface BrandThemeDeps {
  * suben desde el admin de Marcas Blancas. El título de pestaña por defecto
  * (`environment.appTitle`, ej. "APOLO ENERGIES") lo setea app.config.ts al
  * arrancar la app, antes del login — acá solo lo pisamos si hay marca.
- * `brandSlug` nunca viene en el JWT (dato mutable): se resuelve siempre
- * fresco vía GET /user/{id}, con el id que sí trae el token (claim `sub`).
+ * La marca se resuelve en BrandModulesService (misma carga que usan el
+ * menú y los guards para los módulos habilitados).
  * Sin marca asignada, o si falla alguna carga, se queda con el branding por
  * defecto del tenant. Extraído de Layout para mantenerlo bajo el límite de
  * líneas (R1).
@@ -34,15 +31,9 @@ export class BrandThemeController {
   readonly logoUrl = signal<string | null>(null);
 
   load(): void {
-    const userId = this.deps.auth.currentUser()?.id;
-    if (!userId) { this.resetToTenantDefault(); return; }
-
-    this.deps.userService.getById(String(userId)).subscribe({
-      next: user => {
-        if (user.brandSlug) this.loadBrand(user.brandSlug);
-        else this.resetToTenantDefault();
-      },
-      error: () => this.resetToTenantDefault(),
+    this.deps.brandModules.ensureLoaded().subscribe(config => {
+      if (config) this.applyBrand(config);
+      else this.resetToTenantDefault();
     });
   }
 
@@ -60,21 +51,16 @@ export class BrandThemeController {
     this.loading.set(false);
   }
 
-  private loadBrand(slug: string): void {
-    this.deps.brandService.getConfig(slug).subscribe({
-      next: config => {
-        const logo = config.images.find(img => img.kind === 'logo')?.url;
-        if (logo) this.logoUrl.set(logo);
+  private applyBrand(config: BrandConfig): void {
+    const logo = config.images.find(img => img.kind === 'logo')?.url;
+    if (logo) this.logoUrl.set(logo);
 
-        const favicon = config.images.find(img => img.kind === 'favicon')?.url;
-        if (favicon) this.applyFavicon(favicon);
+    const favicon = config.images.find(img => img.kind === 'favicon')?.url;
+    if (favicon) this.applyFavicon(favicon);
 
-        if (config.name) document.title = config.name;
+    if (config.name) document.title = config.name;
 
-        this.loading.set(false);
-      },
-      error: () => this.resetToTenantDefault(), // sin marca válida
-    });
+    this.loading.set(false);
   }
 
   private applyFavicon(url: string): void {

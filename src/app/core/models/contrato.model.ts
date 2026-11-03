@@ -24,7 +24,19 @@ export interface ContratoClienteRow {
   Tarifa:                 string | null;
   FechaCreacion:          string | null;
   FechaFin:               string | null;
+  FechaInicio:            string | null;
+  /** Producto contratado (NombreOfertaCTF de EE). */
+  Producto:               string | null;
+  TipoEnergia:            TipoEnergia | null;
+  /** null = aún no se ha enviado a firma, o no aplica (KO, baja…). */
+  EstadoFirma:            'firmado' | 'pendiente' | null;
+  /** Estado incidencia en EE o registro abierto de Operaciones. */
+  TieneIncidencia:        boolean;
+  /** Colaborador (delegación) al que pertenece el contrato. */
+  NombreDelegacion:       string | null;
 }
+
+export type TipoEnergia = 'luz' | 'gas';
 
 export interface ContratosPageResponse {
   page:     number;
