@@ -107,11 +107,7 @@ export const appConfig: ApplicationConfig = {
       ) => async () => {
         if (!isPlatformBrowser(platformId)) return;
 
-        // El comparador público (iframe en la web) no usa sesión: si se intentara renovar una
-        // sesión caducada, signOut() redirigiría al login dentro del iframe.
-        if (!window.location.pathname.startsWith('/comparador-publico')) {
-          await refreshSessionIfPossible(auth, refreshTokenSvc, httpBackend);
-        }
+        await refreshSessionIfPossible(auth, refreshTokenSvc, httpBackend);
 
         const env = environment as { faviconUrl?: string; appTitle?: string };
         if (env.faviconUrl) {

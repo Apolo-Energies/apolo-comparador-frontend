@@ -85,9 +85,7 @@ export class PublicComparator implements AfterViewInit, OnDestroy {
     const ocr = this.ocrResult();
     const tariffsLoaded = this.comparatorService.tariffs().length > 0;
     const result: ComparatorProductsByTariff = {};
-    for (const [tarifa, todos] of Object.entries(FIXED_CANDIDATES)) {
-      const candidatos = tariffsLoaded ? this.availableCandidates(tarifa, todos) : todos;
-      if (candidatos.length === 0) continue;
+    for (const [tarifa, candidatos] of Object.entries(FIXED_CANDIDATES)) {
       result[tarifa] = (!ocr || !tariffsLoaded)
         ? [candidatos[0]]
         : [this.pickBestFixedProduct(tarifa, candidatos, ocr)];
@@ -119,16 +117,6 @@ export class PublicComparator implements AfterViewInit, OnDestroy {
   private postHeight(): void {
     const height = this.rootEl.nativeElement.scrollHeight;
     window.parent?.postMessage({ type: 'apolo-comparador:resize', height }, '*');
-  }
-
-  // Solo candidatos que existen en la tarifa, están disponibles y tienen precio de energía:
-  // un producto ausente se calcula con energía a 0 y "ganaría" con un ahorro irreal.
-  private availableCandidates(tarifa: string, candidatos: string[]): string[] {
-    const products = this.comparatorService.tariffs().find(t => t.code === tarifa)?.products ?? [];
-    return candidatos.filter(nombre => {
-      const p = products.find(x => x.name === nombre);
-      return !!p && p.isAvailable !== false && p.periods.some(per => (per.value ?? 0) > 0);
-    });
   }
 
   private pickBestFixedProduct(tarifa: string, candidatos: string[], ocr: OcrResult): string {
