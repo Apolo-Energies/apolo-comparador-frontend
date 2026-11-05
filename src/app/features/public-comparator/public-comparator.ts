@@ -121,13 +121,14 @@ export class PublicComparator implements AfterViewInit, OnDestroy {
     window.parent?.postMessage({ type: 'apolo-comparador:resize', height }, '*');
   }
 
-  // Solo candidatos que existen en la tarifa, están disponibles y tienen precio de energía:
-  // un producto ausente se calcula con energía a 0 y "ganaría" con un ahorro irreal.
+  // Solo candidatos que existen en la tarifa y tienen precio de energía: un producto ausente se
+  // calcula con energía a 0 y "ganaría" con un ahorro irreal. No se mira isAvailable: ese flag
+  // oculta productos en el comparador de colaboradores, pero el público los usa igualmente.
   private availableCandidates(tarifa: string, candidatos: string[]): string[] {
     const products = this.comparatorService.tariffs().find(t => t.code === tarifa)?.products ?? [];
     return candidatos.filter(nombre => {
       const p = products.find(x => x.name === nombre);
-      return !!p && p.isAvailable !== false && p.periods.some(per => (per.value ?? 0) > 0);
+      return !!p && p.periods.some(per => (per.value ?? 0) > 0);
     });
   }
 
