@@ -7,7 +7,7 @@ import { HttpClient } from '@angular/common/http';
 import { ApoloSidebar, SidebarSection } from '@apolo-energies/sidebar';
 import { ApoloHeader, HeaderWelcomeContent, HeaderActionLink, UserMenuItem } from '@apolo-energies/header';
 import { AuthService } from '@apolo-energies/auth';
-import { chevronDownIcon, chevronRightIcon, CircleIcon, InfoIcon, LogoutIcon, StarIcon, UiIconSource, UserIcon } from '@apolo-energies/icons';
+import { chevronDownIcon, chevronRightIcon, CircleIcon, CompassIcon, InfoIcon, LogoutIcon, StarIcon, UiIconSource, UserIcon } from '@apolo-energies/icons';
 import { getUserRoles } from '../core/helpers/auth.utils';
 import { environment } from '../../environments/environment';
 import { RefreshTokenService } from '../core/services/refresh-token.service';
@@ -19,6 +19,9 @@ import { CollaboratorScopeSelectorComponent } from '../shared/components/collabo
 import { buildSidebarSections, hasAccess } from './layout.helpers';
 import { OpportunitiesBadgeController } from './opportunities-badge.controller';
 import { BrandThemeController } from './brand-theme.controller';
+import { OnboardingTourService } from '../shared/components/onboarding-tour/onboarding-tour.service';
+import { OnboardingTourController } from './onboarding-tour.controller';
+import { TOUR_MENU_ITEM_ID } from './onboarding-tour-steps';
 
 /** SVG vacío (transparente) — placeholder de logoSrc mientras se resuelve la marca del colaborador. */
 const TRANSPARENT_LOGO_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciLz4=';
@@ -38,6 +41,7 @@ export class Layout {
   private brandModules = inject(BrandModulesService);
   private platformId = inject(PLATFORM_ID);
   private destroyRef = inject(DestroyRef);
+  private tour = inject(OnboardingTourService);
   readonly globalLoading = inject(GlobalLoadingService);
 
   readonly isApolo = environment.features.userDetail;
@@ -67,6 +71,12 @@ export class Layout {
     brandModules: this.brandModules,
   });
 
+  private readonly tourController = new OnboardingTourController({
+    tour: this.tour,
+    refreshTokenService: this.refreshTokenService,
+    quickAction: () => this.quickAction(),
+  });
+
   constructor() {
     if (!isPlatformBrowser(this.platformId)) return;
     this.brandTheme.load();
@@ -81,6 +91,11 @@ export class Layout {
       this.setCssCount('--opp-count-gas', gas);
       this.setCssCount('--opp-count',     luz + gas);
     });
+    afterNextRender(() => this.tourController.maybeAutoStart());
+  }
+
+  onMenuItemSelected(item: UserMenuItem): void {
+    this.tourController.onMenuItemSelected(item);
   }
 
   private setCssCount(name: string, value: number): void {
@@ -167,6 +182,13 @@ export class Layout {
         url: `/dashboard/settings/users/${userId}`,
       });
     }
+
+    items.push({
+      id: TOUR_MENU_ITEM_ID,
+      label: 'Ver tour guiado',
+      icon: { type: 'apolo', icon: CompassIcon, size: 20 },
+      type: 'action',
+    });
 
     items.push({
       id: 'logout',

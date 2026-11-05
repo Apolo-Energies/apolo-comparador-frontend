@@ -1,0 +1,27 @@
+<div class="w-80 bg-card border border-border rounded-lg shadow-2xl p-5 flex flex-col gap-3">
+
+  <div class="flex items-center gap-3">
+    <div class="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+      <div class="h-full rounded-full bg-primary transition-all duration-300" [style.width.%]="progressPct"></div>
+    </div>
+    <button type="button" class="shrink-0 whitespace-nowrap text-xs text-muted-foreground hover:text-foreground transition-colors" (click)="skipClick.emit()">
+      Saltar tour
+    </button>
+  </div>
+
+  <div>
+    <p class="text-sm font-semibold text-foreground">{{ step().title }}</p>
+    <p class="text-sm text-muted-foreground mt-1">{{ step().description }}</p>
+  </div>
+
+  <div class="flex items-center justify-between pt-1">
+    <span class="text-xs text-muted-foreground">Paso {{ index() + 1 }} de {{ total() }}</span>
+    <div class="flex gap-2">
+      @if (!isFirst) {
+        <ui-button label="Atrás" variant="outline" size="sm" (click)="prevClick.emit()" />
+      }
+      <ui-button [label]="isLast ? 'Finalizar' : 'Siguiente'" size="sm" (click)="nextClick.emit()" />
+    </div>
+  </div>
+
+</div>
