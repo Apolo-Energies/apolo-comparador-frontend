@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <!-- Comparador público (iframe en la web): fondo claro desde el primer pintado, antes de que
+       arranque Angular; si no, se ve un bloque oscuro mientras carga. -->
+  <script>if (location.pathname.indexOf('/comparador-publico') === 0) document.documentElement.classList.add('apolo-public');</script>
   <title>RComparatorFrontend</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
