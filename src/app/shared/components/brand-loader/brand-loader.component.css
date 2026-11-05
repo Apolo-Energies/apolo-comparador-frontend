@@ -37,6 +37,15 @@
   animation: bl-content-in 420ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
 }
 
+/* Ventanas bajas (p. ej. el comparador público en un iframe de ~435px): el contenido mide
+   ~600px y se cortaba por arriba y por abajo. Se reduce para que quepa entero. */
+@media (max-height: 640px) {
+  .bl-content { zoom: 0.7; }
+}
+@media (max-height: 460px) {
+  .bl-content { zoom: 0.6; }
+}
+
 .bl-spin {
   animation: bl-spin 2.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
   transform-origin: center;

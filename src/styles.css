@@ -386,6 +386,7 @@ body.apolo-light * { font-family: 'Space Grotesk', system-ui, sans-serif; }
 /* En modo claro (comparador público en iframe, landings) el html también debe ser blanco:
    si no, su fondo oscuro asoma como una franja bajo el contenido. */
 html:has(body.apolo-light) { background-color: #ffffff; }
+html.apolo-public, html.apolo-public body { background-color: #ffffff; }
 
 /* ─── ngx-editor — tema oscuro ──────────────────────────────────────────── */
 .NgxEditor__MenuBar {
