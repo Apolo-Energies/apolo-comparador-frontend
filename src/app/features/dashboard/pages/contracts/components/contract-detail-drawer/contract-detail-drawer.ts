@@ -1,6 +1,6 @@
 import {
   ChangeDetectionStrategy, ChangeDetectorRef, Component,
-  effect, inject, input, output, signal,
+  computed, effect, inject, input, output, signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -16,7 +16,7 @@ import { AuthService } from '@apolo-energies/auth';
 import { ContratoClienteRow } from '../../../../../../core/models/contrato.model';
 import { ServicioListItem } from '../../../../../../core/models/servicio.model';
 import { ContractService } from '../../../../../../core/services/contract.service';
-import { IncidenceService, Incidence, INCIDENCE_TYPES, INCIDENCE_TYPE_LABELS, INCIDENCE_STATUS_LABELS } from '../../../../../../core/services/incidence.service';
+import { IncidenceService, Incidence, IncidenceType, INCIDENCE_TYPES, INCIDENCE_TYPE_LABELS, INCIDENCE_STATUS_LABELS } from '../../../../../../core/services/incidence.service';
 import { TRAMITACION_TIPO_LABELS, TramitacionService, TramitacionTipo } from '../../../../../../core/services/tramitacion.service';
 import { BrandLoaderComponent } from '../../../../../../shared/components/brand-loader/brand-loader.component';
 import { calcDias, dedupeServiciosByCups, estadoCls, estadoLabel, fmtDate, fmtKwh, isEstadoPendiente, isEstadoTerminado } from '../../contracts-utils';
@@ -109,54 +109,32 @@ export class ContractDetailDrawerComponent {
 
   readonly incidenceTypes = INCIDENCE_TYPES;
   readonly incidenceTypeLabels = INCIDENCE_TYPE_LABELS;
+  readonly incidenceChangeTypes: IncidenceType[] = ['CambioPotencia', 'CambioTitularidad', 'CambioCuentaBancaria', 'CambioOferta', 'BajaPorCese'];
+  readonly incidenceProblemTypes: IncidenceType[] = ['ErrorFacturacion', 'Otra'];
+
+  // Texto de ayuda del campo descripción según el tipo elegido.
+  private readonly incidenceHints: Record<string, string> = {
+    CambioPotencia:       'Ej.: subir la potencia de P1 de 4,6 kW a 5,75 kW a partir del 1 de diciembre.',
+    CambioTitularidad:    'Ej.: el nuevo titular es Ana López (NIF 12345678Z) desde el 15 de noviembre.',
+    CambioCuentaBancaria: 'Ej.: domiciliar en ES91 2100 0418 4502 0005 1332, titular Ana López.',
+    CambioOferta:         'Ej.: pasar de la oferta fija a la indexada porque el cliente consume sobre todo de noche.',
+    BajaPorCese:          'Ej.: el negocio cierra el 31 de diciembre y el cliente pide la baja del suministro.',
+    ErrorFacturacion:     'Ej.: la factura de octubre cobra 2 meses de potencia; debería ser solo 1.',
+    Otra:                 'Explica qué ocurre con el máximo detalle posible.',
+    'tram:activo':        'Ej.: el CIF adjunto no se lee bien y no se puede tramitar el alta.',
+    'tram:rechazado':     'Ej.: la distribuidora lo rechaza porque la potencia no coincide con la del boletín.',
+  };
+  readonly incidenceHint = computed(() => this.incidenceHints[this.newIncidenceType()] ?? '');
   readonly incidenceStatusLabels = INCIDENCE_STATUS_LABELS;
 
   readonly isMaster = () => getUserRoles(this.auth.currentUser()).includes('Master');
 
-  // Registrar qué falta en un contrato (Master): aparece en la pestaña "En tramitación".
-  readonly faltaTipos: TramitacionTipo[] = ['activo', 'incidencia', 'rechazado'];
+  // Tipos de "qué falta" (Master): van en el mismo formulario de incidencias con valor 'tram:<tipo>'
+  // y se guardan como tramitación, que el colaborador ve en "En tramitación".
+  readonly faltaTipos: TramitacionTipo[] = ['activo', 'rechazado'];
   readonly faltaTipoLabels = TRAMITACION_TIPO_LABELS;
-  readonly faltaFor           = signal<number | null>(null);
-  readonly faltaTipo          = signal<TramitacionTipo>('activo');
-  readonly faltaMotivo        = signal('');
   readonly faltaDocumentacion = signal('');
-  readonly savingFalta        = signal(false);
-
-  toggleFalta(id: number): void {
-    const opening = this.faltaFor() !== id;
-    this.faltaFor.set(opening ? id : null);
-    if (opening) {
-      this.faltaTipo.set('activo');
-      this.faltaMotivo.set('');
-      this.faltaDocumentacion.set('');
-    }
-  }
-
-  guardarFalta(s: ServicioListItem): void {
-    const motivo = this.faltaMotivo().trim();
-    const documentacion = this.faltaDocumentacion().trim();
-    if (!motivo && !documentacion) {
-      this.showFeedback('error', 'Falta información', 'Indica el motivo o el documento que falta.');
-      return;
-    }
-    this.savingFalta.set(true);
-    this.tramitacion.crear({
-      idServicio: s.Id,
-      tipo: this.faltaTipo(),
-      motivo: motivo || undefined,
-      documentacionNecesaria: documentacion || undefined,
-    }).subscribe({
-      next: () => {
-        this.savingFalta.set(false);
-        this.faltaFor.set(null);
-        this.showFeedback('info', 'Registrado', 'El colaborador lo verá en la pestaña "En tramitación".');
-      },
-      error: () => {
-        this.savingFalta.set(false);
-        this.showFeedback('error', 'No se pudo registrar', 'Inténtalo de nuevo.');
-      },
-    });
-  }
+  readonly isFaltaType = computed(() => this.newIncidenceType().startsWith('tram:'));
 
   readonly iconClose:  UiIconSource = { type: 'apolo', icon: XIcon,          size: 16 };
   readonly iconInfo:   UiIconSource = { type: 'apolo', icon: InfoIcon,       size: 14 };
@@ -410,6 +388,7 @@ export class ContractDetailDrawerComponent {
     this.incidenceFormFor.set(idContrato);
     this.newIncidenceType.set('ErrorFacturacion');
     this.newIncidenceDescription.set('');
+    this.faltaDocumentacion.set('');
   }
 
   cancelIncidenceForm(): void {
@@ -417,6 +396,10 @@ export class ContractDetailDrawerComponent {
   }
 
   submitIncidence(idContrato: number): void {
+    if (this.isFaltaType()) {
+      this.submitFalta(idContrato);
+      return;
+    }
     const description = this.newIncidenceDescription().trim();
     if (!description) {
       this.showFeedback('info', 'Faltan datos', 'Escribe un comentario para la incidencia.');
@@ -448,6 +431,32 @@ export class ContractDetailDrawerComponent {
       error: () => {
         this.submittingIncidence.set(false);
         this.showFeedback('error', 'Error', 'No se pudo crear la incidencia.');
+      },
+    });
+  }
+
+  private submitFalta(idContrato: number): void {
+    const motivo = this.newIncidenceDescription().trim();
+    const documentacion = this.faltaDocumentacion().trim();
+    if (!motivo && !documentacion) {
+      this.showFeedback('info', 'Faltan datos', 'Indica el motivo o el documento que falta.');
+      return;
+    }
+    this.submittingIncidence.set(true);
+    this.tramitacion.crear({
+      idServicio: idContrato,
+      tipo: this.newIncidenceType().slice('tram:'.length) as TramitacionTipo,
+      motivo: motivo || undefined,
+      documentacionNecesaria: documentacion || undefined,
+    }).subscribe({
+      next: () => {
+        this.submittingIncidence.set(false);
+        this.incidenceFormFor.set(null);
+        this.showFeedback('info', 'Registrado', 'El colaborador lo verá en "En tramitación".');
+      },
+      error: () => {
+        this.submittingIncidence.set(false);
+        this.showFeedback('error', 'No se pudo registrar', 'Inténtalo de nuevo.');
       },
     });
   }

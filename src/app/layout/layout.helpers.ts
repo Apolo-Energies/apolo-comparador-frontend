@@ -24,6 +24,8 @@ export interface BuildSidebarSectionsParams {
   isApolo: boolean;
   userId: string | null;
   isSubUser: boolean;
+  /** Módulos de la marca blanca del usuario (BrandModulesService.brandAllows); true si no hay marca. */
+  brandAllows: (code: string) => boolean;
 }
 
 /**
@@ -33,13 +35,17 @@ export interface BuildSidebarSectionsParams {
  * copied as-is, same conditionals, same order, no behavior change.
  */
 export function buildSidebarSections(params: BuildSidebarSectionsParams): SidebarSection[] {
-  const { roles, isApolo, userId, isSubUser } = params;
+  const { roles, isApolo, userId, isSubUser, brandAllows } = params;
   const isColaborador = (roles.includes('Colaborador') || roles.includes('Colaborador - Referenciador')) && !roles.includes('Master');
 
   const ajustesChildren: SidebarChildItem[] = isColaborador && isApolo
     ? [
-        { title: 'Comerciales', url: '/dashboard/settings/my-comercials',       access: ['settings.colaborador:view'] },
-        { title: 'Comisiones',  url: '/dashboard/settings/sub-user-commissions', access: ['settings.colaborador:view'] },
+        ...(brandAllows('userDetail') ? [
+          { title: 'Comerciales', url: '/dashboard/settings/my-comercials',       access: ['settings.colaborador:view'] },
+        ] : []),
+        ...(brandAllows('commissions') ? [
+          { title: 'Comisiones',  url: '/dashboard/settings/sub-user-commissions', access: ['settings.colaborador:view'] },
+        ] : []),
       ]
     : [
         { title: 'Usuarios',   url: '/dashboard/settings/users',      access: ['settings.users:view'] },
@@ -64,6 +70,12 @@ export function buildSidebarSections(params: BuildSidebarSectionsParams): Sideba
         ] : []),
       ];
 
+  const analiticaChildren: SidebarChildItem[] = [
+    ...(brandAllows('history')    ? [{ title: 'Historial',    url: '/dashboard/analytics/history',    access: ['analytics.history:view'] }] : []),
+    ...(brandAllows('statistics') ? [{ title: 'Estadísticas', url: '/dashboard/analytics/statistics', access: ['analytics.statistics:view'] }] : []),
+    ...(brandAllows('reports')    ? [{ title: 'Reportes',     url: '/dashboard/analytics/reports',    access: ['analytics.statistics:view'] }] : []),
+  ];
+
   const sections: SidebarSection[] = [
     // APOLO ENERGIES > Facturación es Master-only (comparte analytics:view con Analítica).
     ...(isApolo && !isColaborador ? [{
@@ -75,7 +87,7 @@ export function buildSidebarSections(params: BuildSidebarSectionsParams): Sideba
           url: '/dashboard/energies/invoices',
           access: ['analytics:view'],
         },
-         ...(environment.features.markets ? [{
+         ...(environment.features.markets && brandAllows('markets') ? [{
           title: 'Mercados',
           icon: { type: 'apolo' as const, icon: PieIcon, size: 20 },
           url: '/dashboard/markets',
@@ -94,33 +106,25 @@ export function buildSidebarSections(params: BuildSidebarSectionsParams): Sideba
     {
       section: 'GENERAL',
       items: [
-        {
+        ...(analiticaChildren.length > 0 ? [{
           title: 'Analítica',
-          icon: { type: 'apolo', icon: PieIcon, size: 20 },
+          icon: { type: 'apolo' as const, icon: PieIcon, size: 20 },
           access: ['analytics:view'],
           // Historial/Estadísticas/Reportes unifican Luz/Gas: el link del sidebar entra
           // siempre por Luz, y desde la página se navega a Gas con EnergyRouteToggleComponent
           // (mismo patrón que Tarifas). Antes eran 6 ítems (3 Luz + 3 Gas); las rutas de Gas
           // siguen existiendo igual, solo se quitaron del sidebar.
-          children: [
-            { title: 'Historial',    url: '/dashboard/analytics/history',    access: ['analytics.history:view'] },
-            { title: 'Estadísticas', url: '/dashboard/analytics/statistics', access: ['analytics.statistics:view'] },
-            { title: 'Reportes',     url: '/dashboard/analytics/reports',    access: ['analytics.statistics:view'] },
-          ],
-        },
-        ...(isApolo && environment.features.contracts ? [{
+          children: analiticaChildren,
+        }] : []),
+        ...(isApolo && environment.features.contracts && brandAllows('contracts') ? [{
           title: 'Contratos',
           icon: { type: 'apolo' as const, icon: NoteIcon, size: 20 },
+          // Un solo ítem: Luz/Gas se filtran dentro de la página con el selector de tipo.
+          // La ruta de Gas (Quixotic) sigue existiendo, solo se quitó del sidebar.
+          url: '/dashboard/contratos/contratos',
           access: ['contratos:view'],
-          children: [
-            { title: 'Luz', url: '/dashboard/contratos/contratos', access: ['contratos:view'] },
-            // Gas de contratos (Quixotic) todavía no disponible para Colaboradores.
-            ...(isColaborador ? [] : [
-              { title: 'Gas', url: '/dashboard/gas/quixotic-contracts', access: ['contratos:view'] },
-            ]),
-          ],
         }] : []),
-        ...(environment.features.opportunities ? [{
+        ...(environment.features.opportunities && brandAllows('opportunities') ? [{
           title: 'Oportunidades',
           icon: { type: 'apolo' as const, icon: StarIcon, size: 20 },
           access: ['opportunities:view'],
@@ -132,9 +136,9 @@ export function buildSidebarSections(params: BuildSidebarSectionsParams): Sideba
             ]),
           ],
         }] : []),
-        {
+        ...(brandAllows('comparator') ? [{
           title: 'Comparador',
-          icon: { type: 'apolo', icon: ArrowDownBoxIcon, size: 20 },
+          icon: { type: 'apolo' as const, icon: ArrowDownBoxIcon, size: 20 },
           access: ['comparator:view'],
           children: [
             { title: 'Luz', url: '/dashboard/comparator', access: ['comparator:view'] },
@@ -143,16 +147,16 @@ export function buildSidebarSections(params: BuildSidebarSectionsParams): Sideba
               { title: 'Gas', url: '/dashboard/comparator/gas', access: ['comparator:view'] },
             ] : []),
           ],
-        },
-        ...(environment.features.myClients ? [{
+        }] : []),
+        ...(environment.features.myClients && brandAllows('myClients') ? [{
           title: 'Mis clientes',
           icon: { type: 'apolo' as const, icon: UserCircleIcon, size: 20 },
           url: '/dashboard/my-clients',
           access: ['clients:view'],
         }] : []),
-        {
+        ...(brandAllows('sips') ? [{
           title: 'Consultas SIPS',
-          icon: { type: 'apolo', icon: CompassIcon, size: 20 },
+          icon: { type: 'apolo' as const, icon: CompassIcon, size: 20 },
           access: ['sips:view'],
           children: [
             { title: 'Luz', url: '/dashboard/sips', access: ['sips:view'] },
@@ -161,21 +165,21 @@ export function buildSidebarSections(params: BuildSidebarSectionsParams): Sideba
               { title: 'Gas', url: '/dashboard/sips/gas', access: ['sips:view'] },
             ] : []),
           ],
-        },
+        }] : []),
       ],
     },
     {
       section: 'SOPORTE',
       items: [
-        {
+        ...(ajustesChildren.length > 0 ? [{
           title: 'Ajustes',
-          icon: { type: 'apolo', icon: SettingsIcon, size: 20 },
+          icon: { type: 'apolo' as const, icon: SettingsIcon, size: 20 },
           access: ['settings:view'],
           children: ajustesChildren,
-        },
+        }] : []),
         // "Soporte" para Colaborador es exclusivo de Apolo — en otros tenants (coexpal/renova/prod)
         // no debe aparecerle, aunque COLABORADOR_PERMISSIONS (compartido entre ambientes) lo incluya.
-        ...(isColaborador && !isApolo ? [] : [{
+        ...((isColaborador && !isApolo) || !brandAllows('support') ? [] : [{
           title: 'Soporte',
           icon: { type: 'apolo' as const, icon: SupportIcon, size: 20 },
           url: '/dashboard/support',

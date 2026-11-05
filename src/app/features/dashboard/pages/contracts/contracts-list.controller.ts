@@ -2,7 +2,7 @@ import { computed, signal } from '@angular/core';
 import { ContractService } from '../../../../core/services/contract.service';
 import { GlobalLoadingService } from '../../../../core/services/global-loading.service';
 import { CollaboratorScopeService } from '../../../../core/services/collaborator-scope.service';
-import { ContratoClienteRow } from '../../../../core/models/contrato.model';
+import { ContratoClienteRow, TipoEnergia } from '../../../../core/models/contrato.model';
 
 export interface ContractsListDeps {
   contractService:   ContractService;
@@ -27,12 +27,23 @@ export class ContractsListController {
   readonly loading     = signal(false);
   readonly data        = signal<ContratoClienteRow[]>([]);
   readonly hasMore     = signal(false);
+  /** Total de filas que cumplen los filtros (todas las páginas). */
+  readonly total       = signal(0);
 
   /** Filtros de incidencia. Server-side — dispara reload al cambiar. */
   readonly filterEstado   = signal<string>('');
   readonly filterFaltante = signal<string>('');
 
-  get hasFilters(): boolean { return !!(this.filterEstado() || this.filterFaltante()); }
+  /** Selector rápido Luz / Gas. '' = todos. Server-side. */
+  readonly filterTipo = signal<TipoEnergia | ''>('');
+
+  /** Rango de "Último mov." (yyyy-MM-dd). Server-side. */
+  readonly fechaDesde = signal('');
+  readonly fechaHasta = signal('');
+
+  get hasFilters(): boolean {
+    return !!(this.filterEstado() || this.filterFaltante() || this.fechaDesde() || this.fechaHasta());
+  }
 
   readonly totalPages = computed(() =>
     this.hasMore() ? this.currentPage() + 1 : this.currentPage()
@@ -49,8 +60,26 @@ export class ContractsListController {
     this.load();
   }
 
+  onTipoChange(v: TipoEnergia | ''): void {
+    this.filterTipo.set(v);
+    this.currentPage.set(1);
+    this.load();
+  }
+
   onFaltanteChange(v: string): void {
     this.filterFaltante.set(v);
+    this.currentPage.set(1);
+    this.load();
+  }
+
+  onFechaDesdeChange(v: string): void {
+    this.fechaDesde.set(v);
+    this.currentPage.set(1);
+    this.load();
+  }
+
+  onFechaHastaChange(v: string): void {
+    this.fechaHasta.set(v);
     this.currentPage.set(1);
     this.load();
   }
@@ -58,8 +87,17 @@ export class ContractsListController {
   clearFilters(): void {
     this.filterEstado.set('');
     this.filterFaltante.set('');
+    this.fechaDesde.set('');
+    this.fechaHasta.set('');
     this.currentPage.set(1);
     this.load();
+  }
+
+  /** "Limpiar" de la toolbar: búsqueda, tipo y filtros avanzados. */
+  clearAll(): void {
+    this.filter.set('');
+    this.filterTipo.set('');
+    this.clearFilters();
   }
 
   onSearch(): void {
@@ -93,11 +131,15 @@ export class ContractsListController {
       limit:        this.pageSize(),
       estado:       this.filterEstado() || undefined,
       faltante:     this.filterFaltante() || undefined,
+      tipo:         this.filterTipo() || undefined,
+      desde:        this.fechaDesde() || undefined,
+      hasta:        this.fechaHasta() || undefined,
       targetUserId: this.deps.collaboratorScope.selected()?.id,
     }).subscribe({
       next: res => {
         this.data.set(res?.data ?? []);
         this.hasMore.set(res?.hasMore ?? false);
+        this.total.set(res?.total ?? 0);
         this.loading.set(false);
         this.deps.globalLoading.stop();
       },

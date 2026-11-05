@@ -7,7 +7,7 @@ export const FLAT_COMMISSION_PRODUCTS: Record<string, number> = {
   'Fijo Snap Mini': 50,
   'Fijo Snap': 75,
   'Fijo Snap Maxi': 100,
-  'Vibra': 100,
+  'Vibra': 90,
 };
 
 export const FLAT_COMMISSION_PRODUCT_NAMES: readonly string[] = Object.keys(FLAT_COMMISSION_PRODUCTS);

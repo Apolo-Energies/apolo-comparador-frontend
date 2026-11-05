@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
+@import "@angular/cdk/overlay-prebuilt.css";
 @source "../node_modules/@apolo-energies/auth";
 @source "../node_modules/@apolo-energies/ui";
 @source "../node_modules/@apolo-energies/icons";
@@ -570,4 +571,13 @@ body.apolo-light * { font-family: 'Space Grotesk', system-ui, sans-serif; }
 /* Backdrop del modal */
 .p-dialog-mask {
   background-color: rgba(0, 0, 0, 0.55) !important;
+}
+
+/* Tour guiado: sube el elemento resaltado por encima del backdrop de CDK (z-index 1000). */
+.onboarding-tour-highlight {
+  position: relative !important;
+  z-index: 1001 !important;
+  outline: 3px solid var(--color-primary) !important;
+  outline-offset: 3px;
+  border-radius: 8px;
 }

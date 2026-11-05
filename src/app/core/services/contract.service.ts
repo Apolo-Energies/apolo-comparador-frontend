@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { ContractDetail } from '../models/user-detail.model';
-import { ContratosCards, ContratosPageResponse } from '../models/contrato.model';
+import { ContratosCards, ContratosPageResponse, TipoEnergia } from '../models/contrato.model';
 import { ContratoIncidencia } from '../models/contrato-incidencia.model';
 import { ServicioListItem } from '../models/servicio.model';
 import {
@@ -144,6 +144,10 @@ export class ContractService {
     limit?:        number;
     estado?:       string;
     faltante?:     string;
+    tipo?:         TipoEnergia;
+    /** Último movimiento, yyyy-MM-dd (inclusive). */
+    desde?:        string;
+    hasta?:        string;
     /** Colaborador seleccionado en el selector global "ver como" (Master, Apolo). */
     targetUserId?: string;
   }): Observable<ContratosPageResponse> {
@@ -154,6 +158,9 @@ export class ContractService {
       .set('limit',   String(params.limit   ?? 10));
     if (params.estado)   httpParams = httpParams.set('estado',   params.estado);
     if (params.faltante) httpParams = httpParams.set('faltante', params.faltante);
+    if (params.tipo)     httpParams = httpParams.set('tipo',     params.tipo);
+    if (params.desde)    httpParams = httpParams.set('desde',    params.desde);
+    if (params.hasta)    httpParams = httpParams.set('hasta',    params.hasta);
     if (params.targetUserId) httpParams = httpParams.set('targetUserId', params.targetUserId);
 
     return this.http.get<ContratosPageResponse>(

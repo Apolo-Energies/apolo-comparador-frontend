@@ -29,19 +29,21 @@ export const DASHBOARD_ROUTES: Routes = [
     children: [
       { path: '', redirectTo: 'comparator', pathMatch: 'full' },
 
-      // All roles
-      { path: 'comparator',          component: Comparator },
+      // All roles. `brandModule`: lo valida featureGuard contra los módulos de la marca blanca.
+      { path: 'comparator',          component: Comparator, canActivate: [featureGuard], data: { brandModule: 'comparator' } },
       {
         path: 'comparator/gas',
+        canActivate: [featureGuard],
+        data: { brandModule: 'comparator' },
         loadComponent: () =>
           import('./pages/comparator-gas/comparator-gas-page')
             .then(m => m.ComparatorGas),
       },
-      { path: 'comparator-multiple', component: ComparatorMultiple, canActivate: [permissionGuard], data: { excludeRoles: ['Comercial'] } },
-      { path: 'sips',                component: SipsPageComponent },
-      { path: 'sips/gas',            component: SipsGasPageComponent },
-      { path: 'fast-discharge', component: FastDischarge, children: FAST_DISCHARGE_ROUTES },
-      { path: 'altaRapida', component: FastDischarge, children: FAST_DISCHARGE_ROUTES },
+      { path: 'comparator-multiple', component: ComparatorMultiple, canActivate: [permissionGuard, featureGuard], data: { excludeRoles: ['Comercial'], brandModule: 'comparator' } },
+      { path: 'sips',                component: SipsPageComponent,    canActivate: [featureGuard], data: { brandModule: 'sips' } },
+      { path: 'sips/gas',            component: SipsGasPageComponent, canActivate: [featureGuard], data: { brandModule: 'sips' } },
+      { path: 'fast-discharge', component: FastDischarge, children: FAST_DISCHARGE_ROUTES, canActivate: [featureGuard], data: { brandModule: 'quickAction' } },
+      { path: 'altaRapida',     component: FastDischarge, children: FAST_DISCHARGE_ROUTES, canActivate: [featureGuard], data: { brandModule: 'quickAction' } },
       {
         path: 'markets',
         canActivate: [featureGuard],
@@ -126,11 +128,11 @@ export const DASHBOARD_ROUTES: Routes = [
         path: 'settings/sub-user-commissions',
         component: SubUserCommissionsPage,
         canActivate: [featureGuard, permissionGuard],
-        data: { feature: 'userDetail', roles: ['Colaborador', 'Colaborador - Referenciador', 'Master'] },
+        data: { feature: 'userDetail', brandModule: 'commissions', roles: ['Colaborador', 'Colaborador - Referenciador', 'Master'] },
       },
 
       // Master only
-      { path: 'support',   component: SupportPageComponent },
+      { path: 'support',   component: SupportPageComponent, canActivate: [featureGuard], data: { brandModule: 'support' } },
       { path: 'tariffs',   component: RatesPageComponent,   canActivate: [permissionGuard], data: { roles: ['Master'] } },
       {
         path: 'templates',
