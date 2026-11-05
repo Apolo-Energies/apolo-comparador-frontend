@@ -26,6 +26,11 @@ export const tokenExpiryInterceptor: HttpInterceptorFn = (req, next) => {
   const refreshTokenService = inject(RefreshTokenService);
   const httpBackend         = inject(HttpBackend);
 
+  // Endpoints públicos: sin token (uno caducado provocaría un 401) y un 401 nunca cierra sesión.
+  if (req.url.includes('/public/')) {
+    return next(req.headers.has('Authorization') ? req.clone({ headers: req.headers.delete('Authorization') }) : req);
+  }
+
   return next(req).pipe(
     catchError(error => {
       if (error.status !== 401)          return throwError(() => error);
