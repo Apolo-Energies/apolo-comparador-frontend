@@ -8,6 +8,8 @@ export interface ContractTemplateSubmitDeps {
   alertService:    AlertService;
   /** Called once the save/create request succeeds (resets the form and emits `saved`). */
   onSuccess: () => void;
+  /** Called on 409 (concurrencyVersion desactualizado) — debería recargar la plantilla. */
+  onConflict?: () => void;
 }
 
 export interface ContractTemplateSubmitParams {
@@ -50,9 +52,10 @@ export class ContractTemplateSubmitController {
       } else {
         this.deps.templateService.updateContent(tpl.id, {
           content: p.html, changeNotes, signatureWidgets: p.signatureWidgets,
+          concurrencyVersion: tpl.concurrencyVersion,
         }).subscribe({
           next:  () => this.finish('Plantilla actualizada correctamente'),
-          error: () => this.fail('Error al actualizar la plantilla'),
+          error: (err) => this.failUpdate(err),
         });
       }
     } else {
@@ -75,5 +78,20 @@ export class ContractTemplateSubmitController {
   private fail(message: string): void {
     this.saving.set(false);
     this.deps.alertService.show(message, 'error');
+  }
+
+  // 409 por concurrencyVersion desactualizado — el body viene como texto plano con el mensaje.
+  private failUpdate(err: unknown): void {
+    this.saving.set(false);
+    const httpErr = err as { status?: number; error?: unknown };
+    if (httpErr?.status === 409) {
+      const message = typeof httpErr.error === 'string'
+        ? httpErr.error
+        : 'La plantilla fue modificada por otra persona mientras editabas — recargá los datos e intentá de nuevo.';
+      this.deps.alertService.show(message, 'error');
+      this.deps.onConflict?.();
+      return;
+    }
+    this.deps.alertService.show('Error al actualizar la plantilla', 'error');
   }
 }

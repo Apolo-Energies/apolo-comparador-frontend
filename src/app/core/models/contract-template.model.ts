@@ -21,6 +21,11 @@ export interface ContractTemplate {
   changeNotes?:      string;
   createdAt:         string;
   signatureWidgets?: SignatureWidget[];
+  updatedAt?:          string;
+  updatedBy?:          string | null;
+  /** Control de concurrencia optimista — hay que mandar el mismo valor que trajo el último GET en cada PATCH. */
+  concurrencyVersion:  number;
+  patchRevision?:      number;
 }
 
 export interface CreateTemplateRequest {
@@ -41,7 +46,9 @@ export interface CreateVersionRequest {
 }
 
 export interface UpdateContentRequest {
-  content:           string;
-  changeNotes?:      string;
-  signatureWidgets?: SignatureWidget[];
+  content:            string;
+  changeNotes?:       string;
+  signatureWidgets?:  SignatureWidget[];
+  /** Obligatorio — el que trajo el último GET de esta misma plantilla. */
+  concurrencyVersion: number;
 }
