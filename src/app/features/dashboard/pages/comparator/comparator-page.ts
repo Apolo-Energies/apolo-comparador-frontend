@@ -67,6 +67,7 @@ export class Comparator {
   );
 
   readonly feeLockedProducts = FEE_LOCKED_PRODUCTS;
+  readonly avgOmiePrice      = this.comparatorService.avgOmiePrice;
 
   // ── comparison flow: compare/OCR/SIPS/form/download ─────────────────────────
 

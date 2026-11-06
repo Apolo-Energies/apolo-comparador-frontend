@@ -75,6 +75,13 @@ export class ComparisonController {
     const ocr = this.ocrResult();
     if (!ocr) return;
 
+    // Sin producto elegido todavía no hay nada que calcular — se deja el estado vacío.
+    if (!form.producto) {
+      this.result.set(null);
+      this.lastForm.set(null);
+      return;
+    }
+
     const selectedUser  = this.deps.isMaster() ? this.deps.users().find(u => u.id === this.selectedUserId()) : undefined;
     const commissionPct = this.deps.isMaster()
       ? (selectedUser?.commissionPct ?? undefined)

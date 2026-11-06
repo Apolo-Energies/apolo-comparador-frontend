@@ -5,10 +5,21 @@ export type ProductType = 'Fixed' | 'Indexed';
 export const PRODUCT_TYPES: ProductType[] = ['Fixed', 'Indexed'];
 
 export interface Provider {
-  id:      number;
-  name:    string;
-  users:   unknown[];
-  tariffs: Tariff[];
+  id:              number;
+  name:            string;
+  users:           unknown[];
+  tariffs:         Tariff[];
+  priceMedioOmie?: PriceMedioOmie;
+}
+
+export interface PriceMedioOmie {
+  from:         string;
+  to:           string;
+  zone:         string;
+  avgEurMwh:    number;
+  daysExpected: number;
+  daysUsed:     number;
+  source:       string;
 }
 
 export interface Tariff {

@@ -13,6 +13,7 @@ import { ComparadorFormValue, ComparadorResult, FeeMode, OcrResult } from '../..
 import { ComparadorDownloadEvent } from '../../comparator-events.model';
 import { ComparatorProductsByTariff } from '../../comparator-ui.model';
 import { PERIOD_NUMBERS } from '../../../../../../shared/constants/period';
+import { FIXED_NO_ADJUSTMENT_MESSAGE } from '../../../../../../shared/constants/fixed-no-adjustment-products';
 import { ComparatorFormController } from './comparator-form.controller';
 import {
   formatEurValue,
@@ -39,6 +40,7 @@ export class ComparatorModalComponent {
   readonly isReferrer         = input(false);
   readonly comisionBase       = input(0);
   readonly referrerDefaultFee = input(0.3);
+  readonly avgOmiePrice       = input<number | null>(null);
   readonly maxFeeEnergia      = input(30);
   readonly maxFeePotencia     = input(5);
   readonly result             = input<ComparadorResult | null>(null);
@@ -104,11 +106,13 @@ export class ComparatorModalComponent {
   readonly tarifaOptions   = this.form.tarifaOptions;
   readonly productoOptions = this.form.productoOptions;
   readonly isFeeBlocked    = this.form.isFeeBlocked;
+  readonly showFixedNoAdjustmentNotice = this.form.showFixedNoAdjustmentNotice;
 
   readonly effectiveComision = this.form.effectiveComision;
 
   // Expongo el enum a la template para poder hacer feeMode() === FeeMode.Global.
   protected readonly FeeMode = FeeMode;
+  readonly fixedNoAdjustmentMessage = FIXED_NO_ADJUSTMENT_MESSAGE;
 
   constructor() {
     effect(() => {
@@ -118,8 +122,8 @@ export class ComparatorModalComponent {
         const tarifas  = Object.keys(this.productsByTariff());
         const ocrTarifa = ocr.contrato?.tarifa ?? '';
         const tariff   = tarifas.includes(ocrTarifa) ? ocrTarifa : (tarifas[0] ?? '');
-        const producto = this.productsByTariff()[tariff]?.[0] ?? '';
-        this.form.reset(tariff, producto, this.referrerDefaultFee());
+        // No se auto-selecciona producto: el colaborador lo elige a mano antes de calcular.
+        this.form.reset(tariff, '', this.referrerDefaultFee(), this.avgOmiePrice() ?? 0);
         this.emitFormChange();
       });
     });

@@ -17,6 +17,7 @@ import { BrandLoaderComponent } from '../../../../shared/components/brand-loader
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
 import { ComparatorProductsByTariff, ComparadorUser } from '../comparator/comparator-ui.model';
 import { PERIOD_NUMBERS } from '../../../../shared/constants/period';
+import { FIXED_NO_ADJUSTMENT_MESSAGE, isFixedNoAdjustmentProduct } from '../../../../shared/constants/fixed-no-adjustment-products';
 import { environment } from '../../../../../environments/environment';
 import { MultiItem, getCups, truncateValue, getPrecioEnergia, getPrecioPotencia } from './comparator-multiple.helpers';
 import { UploadController } from './comparator-multiple-upload.controller';
@@ -81,6 +82,12 @@ export class ComparatorMultiple {
   readonly globalFeePotencia = this.results.globalFeePotencia;
   readonly globalPrecioMedio = this.results.globalPrecioMedio;
   readonly globalProducto    = this.results.globalProducto;
+
+  readonly fixedNoAdjustmentMessage = FIXED_NO_ADJUSTMENT_MESSAGE;
+  readonly isFixedNoAdjustmentProduct = isFixedNoAdjustmentProduct;
+  readonly showGlobalFixedNoAdjustmentNotice = computed(() =>
+    isFixedNoAdjustmentProduct(this.globalProducto())
+  );
 
   readonly pendingFiles = this.upload.pendingFiles;
   readonly previewIndex = this.upload.previewIndex;
