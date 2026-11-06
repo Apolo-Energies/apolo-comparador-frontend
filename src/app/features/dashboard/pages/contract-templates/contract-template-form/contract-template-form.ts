@@ -44,11 +44,16 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
   readonly placeholderGroups = PLACEHOLDER_GROUPS;
   readonly typeOptions       = TYPE_OPTIONS;
 
+  // Plantilla efectivamente cargada en el editor — separada del input porque
+  // tras un 409 hay que refrescarla con el GET sin esperar a que cambie el input.
+  private readonly currentTemplate = signal<ContractTemplate | null>(null);
+
   // Submit flow (create / new version / correction) — extracted controller (R1).
   private readonly submitFlow = new ContractTemplateSubmitController({
     templateService: this.templateService,
     alertService:    this.alertService,
     onSuccess:       () => { this.resetForm(); this.saved.emit(); },
+    onConflict:      () => this.reloadAfterConflict(),
   });
   readonly saving = this.submitFlow.saving;
 
@@ -81,7 +86,7 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
     alertService: this.alertService,
   });
 
-  readonly isEditMode = computed(() => this.template() !== null);
+  readonly isEditMode = computed(() => this.currentTemplate() !== null);
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
@@ -130,6 +135,7 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
   // ── Edit mode ────────────────────────────────────────────────────────────
 
   private applyTemplate(tpl: ContractTemplate | null): void {
+    this.currentTemplate.set(tpl);
     if (!tpl) {
       setBaseControls(this.form, 'enable');
       this.widgets.set([]);
@@ -151,9 +157,18 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
 
   setVersionMode(isNew: boolean): void {
     this.isNewVersion.set(isNew);
-    const tpl = this.template();
+    const tpl = this.currentTemplate();
     if (!tpl) return;
     applyVersionMode(this.form.controls.version, tpl, isNew);
+  }
+
+  /** 409 al guardar: alguien más editó esta plantilla — recarga el contenido/concurrencyVersion actuales. */
+  private reloadAfterConflict(): void {
+    const tpl = this.currentTemplate();
+    if (!tpl) return;
+    this.templateService.getActive(tpl.code).subscribe({
+      next: fresh => this.applyTemplate(fresh),
+    });
   }
 
   typeLabel(type: string): string { return resolveTypeLabel(type); }
@@ -193,7 +208,7 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
   }
 
   async loadPdfPreview(): Promise<void> {
-    const tpl = this.template();
+    const tpl = this.currentTemplate();
     if (!tpl) return;
     return this.canvas.loadPdfPreview(tpl.id);
   }
@@ -202,7 +217,7 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
 
   exportHtml(): void {
     const html = toHTML(this.editor.view.state.doc.toJSON() as Record<string, unknown>, this.editor.schema);
-    downloadHtmlExport(html, this.form.getRawValue().name || this.template()?.name || 'template');
+    downloadHtmlExport(html, this.form.getRawValue().name || this.currentTemplate()?.name || 'template');
   }
 
   onCodeInput(event: Event): void {
@@ -225,7 +240,7 @@ export class ContractTemplateFormComponent implements OnInit, OnDestroy {
     this.submitFlow.submit({
       isEditMode:   this.isEditMode(),
       isNewVersion: this.isNewVersion(),
-      template:     this.template(),
+      template:     this.currentTemplate(),
       code: code!, name: name!, type: type!, version: version!, changeNotes: changeNotes!,
       html,
       signatureWidgets: this.widgets().length ? this.widgets() : undefined,
