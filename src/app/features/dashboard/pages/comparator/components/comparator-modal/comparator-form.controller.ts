@@ -2,6 +2,7 @@ import { computed, signal } from '@angular/core';
 import { SelectOption } from '@apolo-energies/ui';
 import { ComparadorFormValue, FeeMode } from '../../../../../../core/models/comparator.model';
 import { ComparatorProductsByTariff } from '../../comparator-ui.model';
+import { isFixedNoAdjustmentProduct } from '../../../../../../shared/constants/fixed-no-adjustment-products';
 import { emptyPeriods } from './comparator-modal.helpers';
 
 /** Dependencias externas (inputs del componente) que el controller necesita leer. */
@@ -70,6 +71,10 @@ export class ComparatorFormController {
     this.ctx.feeLockedProducts().includes(this.producto())
   );
 
+  readonly showFixedNoAdjustmentNotice = computed(() =>
+    isFixedNoAdjustmentProduct(this.producto())
+  );
+
   readonly effectiveComision = computed(() =>
     this.ctx.isReferrer() ? this.comisionEnergia() : this.ctx.comisionBase()
   );
@@ -78,10 +83,10 @@ export class ComparatorFormController {
 
   /** Reset completo del formulario al llegar un OCR nuevo (factura distinta).
    *  No dispara onChange: el caller emite una sola vez tras resetear todo. */
-  reset(tariff: string, producto: string, referrerDefaultFee: number): void {
+  reset(tariff: string, producto: string, referrerDefaultFee: number, precioMedio = 0): void {
     this.tariff.set(tariff);
     this.producto.set(producto);
-    this.precioMedio.set(0);
+    this.precioMedio.set(precioMedio);
     this.feeEnergia.set(0);
     this.feePotencia.set(0);
     this.comisionEnergia.set(referrerDefaultFee);
