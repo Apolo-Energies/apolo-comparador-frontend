@@ -41,8 +41,11 @@
           </div>
         }
 
-      <!-- Producto -->
-
+      @if (showFixedNoAdjustmentNotice()) {
+        <div class="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3">
+          <p class="text-xs text-amber-300">{{ fixedNoAdjustmentMessage }}</p>
+        </div>
+      }
 
       <!-- Fees (con pestañas: Global / Por período) -->
       @if (showFeeEnergia() || showFeePotencia()) {

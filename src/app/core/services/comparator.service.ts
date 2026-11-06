@@ -34,10 +34,15 @@ export class ComparatorService {
   private publicService = inject(PublicComparatorService);
 
   readonly tariffs = signal<Tariff[]>([]);
+  /** Precio medio OMIE real (histórico, calculado por el backend) — precarga el input del modal. */
+  readonly avgOmiePrice = signal<number | null>(null);
 
   loadTariffs() {
     this.providerService.getByUser().pipe(
-      tap(res => this.tariffs.set(res.tariffs))
+      tap(res => {
+        this.tariffs.set(res.tariffs);
+        this.avgOmiePrice.set(res.priceMedioOmie?.avgEurMwh ?? null);
+      })
     ).subscribe();
   }
 
@@ -47,7 +52,10 @@ export class ComparatorService {
 
   loadTariffsPublic() {
     this.publicService.getTariffs().pipe(
-      tap(res => this.tariffs.set(res.tariffs))
+      tap(res => {
+        this.tariffs.set(res.tariffs);
+        this.avgOmiePrice.set(res.priceMedioOmie?.avgEurMwh ?? null);
+      })
     ).subscribe();
   }
 
