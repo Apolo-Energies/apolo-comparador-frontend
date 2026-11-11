@@ -11,6 +11,10 @@ export class OpportunityHubService implements OnDestroy {
   private readonly _opportunityUpdated$ = new Subject<OpportunitySummary>();
   readonly opportunityUpdated$ = this._opportunityUpdated$.asObservable();
 
+  // El webhook de Mensatek avisa (sin datos) de que cambió el estado de firma de algún contrato.
+  private readonly _contratoFirmaActualizada$ = new Subject<void>();
+  readonly contratoFirmaActualizada$ = this._contratoFirmaActualizada$.asObservable();
+
   start(): void {
     if (this.connection) return;
 
@@ -26,6 +30,8 @@ export class OpportunityHubService implements OnDestroy {
         status: parseOpportunityStatus(data.status as unknown as string | number),
       });
     });
+
+    this.connection.on('ContratoFirmaActualizada', () => this._contratoFirmaActualizada$.next());
 
     this.connection.start().catch((err: unknown) =>
       console.warn('[OpportunityHub] connection error:', err)

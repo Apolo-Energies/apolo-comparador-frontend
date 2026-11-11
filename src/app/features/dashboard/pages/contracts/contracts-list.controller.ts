@@ -122,10 +122,8 @@ export class ContractsListController {
     this.load();
   }
 
-  load(): void {
-    this.loading.set(true);
-    this.deps.globalLoading.start();
-    this.deps.contractService.getContratos({
+  private query() {
+    return {
       filter:       this.filter() || undefined,
       offset:       (this.currentPage() - 1) * this.pageSize(),
       limit:        this.pageSize(),
@@ -135,7 +133,13 @@ export class ContractsListController {
       desde:        this.fechaDesde() || undefined,
       hasta:        this.fechaHasta() || undefined,
       targetUserId: this.deps.collaboratorScope.selected()?.id,
-    }).subscribe({
+    };
+  }
+
+  load(): void {
+    this.loading.set(true);
+    this.deps.globalLoading.start();
+    this.deps.contractService.getContratos(this.query()).subscribe({
       next: res => {
         this.data.set(res?.data ?? []);
         this.hasMore.set(res?.hasMore ?? false);
@@ -151,5 +155,19 @@ export class ContractsListController {
 
     // Incidencias en paralelo (no bloquea la tabla).
     this.deps.onLoaded();
+  }
+
+  /** Recarga la página actual en segundo plano, sin skeleton ni loader global (estado de firma en vivo). */
+  refreshSilently(): void {
+    if (this.loading()) return;
+    this.deps.contractService.getContratos(this.query()).subscribe({
+      next: res => {
+        if (this.loading()) return; // una carga del usuario empezó mientras tanto: manda la suya
+        this.data.set(res?.data ?? []);
+        this.hasMore.set(res?.hasMore ?? false);
+        this.total.set(res?.total ?? 0);
+      },
+      error: () => {},
+    });
   }
 }

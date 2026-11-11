@@ -29,7 +29,7 @@ export interface ContratoClienteRow {
   Producto:               string | null;
   TipoEnergia:            TipoEnergia | null;
   /** null = aún no se ha enviado a firma, o no aplica (KO, baja…). */
-  EstadoFirma:            'firmado' | 'pendiente' | null;
+  EstadoFirma:            'firmado' | 'pendiente' | 'expirado' | 'cancelado' | null;
   /** Estado incidencia en EE o registro abierto de Operaciones. */
   TieneIncidencia:        boolean;
   /** Colaborador (delegación) al que pertenece el contrato. */

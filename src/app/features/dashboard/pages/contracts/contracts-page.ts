@@ -4,6 +4,7 @@ import {
   ChangeDetectorRef,
   Component,
   computed,
+  DestroyRef,
   effect,
   inject,
   PLATFORM_ID,
@@ -12,6 +13,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
 import { AuthService } from '@apolo-energies/auth';
 import { ContractService } from '../../../../core/services/contract.service';
@@ -23,6 +25,7 @@ import { TableSkeletonComponent } from '../../../../shared/components/table-skel
 import { ContractDetailDrawerComponent } from './components/contract-detail-drawer/contract-detail-drawer';
 import { TramitacionPanelComponent } from './components/tramitacion-panel/tramitacion-panel';
 import { TramitacionItem, TramitacionService } from '../../../../core/services/tramitacion.service';
+import { OpportunityHubService } from '../../../../core/services/opportunity-hub.service';
 import {
   applyContratosColumnTemplates, estadoCls, estadoEntries, estadoLabel, fmtDate, singleEstado,
 } from './contracts-utils';
@@ -63,6 +66,8 @@ export class ContractsPageComponent implements AfterViewInit {
   private readonly auth              = inject(AuthService);
   private readonly refreshToken      = inject(RefreshTokenService);
   private readonly tramitacion       = inject(TramitacionService);
+  private readonly destroyRef        = inject(DestroyRef);
+  private readonly hub               = inject(OpportunityHubService);
   private isFirstLoad                = true;
 
   readonly isMaster = computed(() => getUserRoles(this.auth.currentUser()).includes('Master'));
@@ -150,6 +155,14 @@ export class ContractsPageComponent implements AfterViewInit {
         this.load();
         this.loadTramitacion();
       }
+      // Cuando Mensatek avisa de una firma, el backend lo emite por SignalR y la página actual se
+      // recarga en segundo plano: el "Firmado" aparece sin recargar. Solo si hay filas pendientes de firma.
+      this.hub.start();
+      this.hub.contratoFirmaActualizada$
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => {
+          if (this.hasDelegation() && this.data().some(r => r.EstadoFirma === 'pendiente')) this.list.refreshSilently();
+        });
     }
     effect(() => {
       this.collaboratorScope.selected();
