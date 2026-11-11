@@ -57,6 +57,12 @@
         Pendiente de firma
       </span>
     }
+    @case ('expirado') {
+      <span class="badge bg-zinc-500/10 text-zinc-400">Firma expirada</span>
+    }
+    @case ('cancelado') {
+      <span class="badge bg-red-500/10 text-red-400">Firma cancelada</span>
+    }
     @default {
       <span class="text-xs text-muted-foreground">—</span>
     }
