@@ -14,6 +14,13 @@ const sidebarGroup = (title: string): TourStep['textMatch'] => ({ tag: 'lib-side
  */
 export function buildOnboardingTourSteps(flags: OnboardingTourFlags): TourStep[] {
   const steps: TourStep[] = [
+    // Siempre arranca por Soporte — si el rol no tiene acceso, el auto-skip
+    // de OnboardingTourService lo salta y el tour sigue por el paso de abajo.
+    {
+      selector: sidebarLink('/dashboard/support'),
+      title: 'Soporte',
+      description: 'Encuentra ayuda y soporte si lo necesitas.',
+    },
     {
       selector: 'lib-apolo-sidebar',
       title: 'Tu menú de navegación',
@@ -79,11 +86,6 @@ export function buildOnboardingTourSteps(flags: OnboardingTourFlags): TourStep[]
       textMatch: sidebarGroup('Ajustes'),
       title: 'Ajustes',
       description: 'Administra usuarios, comisiones, tarifas y otras configuraciones.',
-    },
-    {
-      selector: sidebarLink('/dashboard/support'),
-      title: 'Soporte',
-      description: 'Encuentra ayuda y soporte si lo necesitas.',
     },
   );
 

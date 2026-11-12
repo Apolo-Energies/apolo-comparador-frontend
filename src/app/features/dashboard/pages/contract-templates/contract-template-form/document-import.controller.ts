@@ -91,8 +91,9 @@ export class DocumentImportController {
       }
       this.previewOpen.set(false);
       this.clearPending();
-    } catch {
-      this.deps.alertService.show('Error al importar el documento', 'error');
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      this.deps.alertService.show(`Error al importar el documento: ${detail}`, 'error');
     } finally {
       this.confirming.set(false);
       this.deps.markForCheck();
@@ -102,24 +103,24 @@ export class DocumentImportController {
   private async importDocx(): Promise<void> {
     if (!this.pendingBuffer) return;
     const html = await convertDocxToHtml(this.pendingBuffer);
-    this.deps.getEditor().setContent(html);
-    this.deps.clearContentError();
-    this.deps.alertService.show('Word importado correctamente', 'success');
+    this.setEditorContent(html, 'Word importado correctamente');
   }
 
   private async importPdf(): Promise<void> {
     if (!this.pendingBuffer) return;
     const { html, pageCount } = await convertPdfToHtml(this.pendingBuffer);
-    this.deps.getEditor().setContent(html);
-    this.deps.clearContentError();
-    this.deps.alertService.show(`PDF importado como texto editable (${pageCount} páginas)`, 'success');
+    this.setEditorContent(html, `PDF importado como texto editable (${pageCount} páginas)`);
   }
 
   private importHtml(): void {
     if (!this.pendingHtml) return;
-    this.deps.getEditor().setContent(convertHtmlDocument(this.pendingHtml));
+    this.setEditorContent(convertHtmlDocument(this.pendingHtml), 'HTML importado correctamente');
+  }
+
+  private setEditorContent(html: string, successMessage: string): void {
+    this.deps.getEditor().setContent(html);
     this.deps.clearContentError();
-    this.deps.alertService.show('HTML importado correctamente', 'success');
+    this.deps.alertService.show(successMessage, 'success');
   }
 
   private clearPending(): void {
