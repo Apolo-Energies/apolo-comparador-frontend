@@ -101,17 +101,68 @@
           class="text-sm font-semibold text-zinc-200 tracking-wide inline-flex items-center gap-2"
         >
           <lib-apolo-icons [icon]="iconNote" class="flex items-center text-zinc-500" />
-          Servicios
+          {{ c.Origen === 'quixotic' ? 'Contrato de gas' : 'Servicios' }}
         </h3>
-        <span class="text-[11px] text-zinc-500">
-          {{ services().length }}
-          {{ services().length === 1 ? 'servicio' : 'servicios' }}
-        </span>
+        @if (c.Origen !== 'quixotic') {
+          <span class="text-[11px] text-zinc-500">
+            {{ services().length }}
+            {{ services().length === 1 ? 'servicio' : 'servicios' }}
+          </span>
+        }
       </div>
     </section>
 
     <section class="px-6 pb-8">
-      @if (loading()) {
+      @if (c.Origen === 'quixotic') {
+        <!-- Gas (Quixotic): sin servicios de EE, anexos, firma ni incidencias; los datos vienen en la propia fila. -->
+        <div class="rounded-xl border border-zinc-800/80 bg-zinc-950/50 p-4">
+          <div class="flex items-center gap-2 mb-4">
+            <span class="badge bg-sky-500/10 text-sky-400">Gas</span>
+            <span class="text-[11px] text-zinc-500">Gestionado en Quixotic</span>
+          </div>
+          <dl class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div class="col-span-2 md:col-span-3">
+              <dt class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">CUPS</dt>
+              <dd class="text-sm text-zinc-200 font-mono break-all">{{ c.CUPS[0] || '—' }}</dd>
+            </div>
+            <div>
+              <dt class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Tarifa</dt>
+              <dd class="text-sm text-zinc-200">{{ c.Tarifa || '—' }}</dd>
+            </div>
+            <div>
+              <dt class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Producto</dt>
+              <dd class="text-sm text-zinc-200">{{ c.Producto || '—' }}</dd>
+            </div>
+            <div>
+              <dt class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Consumo anual</dt>
+              <dd class="text-sm text-zinc-200 font-mono">{{ fmtKwh(c.ConsumoTotal) }}</dd>
+            </div>
+            <div>
+              <dt class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Inicio</dt>
+              <dd class="text-sm text-zinc-200">{{ fmtDate(c.FechaInicio) }}</dd>
+            </div>
+            <div>
+              <dt class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Fin</dt>
+              <dd class="text-sm text-zinc-200">{{ fmtDate(c.FechaFin) }}</dd>
+            </div>
+            <div>
+              <dt class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Colaborador</dt>
+              <dd class="text-sm text-zinc-200">{{ c.NombreDelegacion || '—' }}</dd>
+            </div>
+          </dl>
+          <div class="mt-5 pt-4 border-t border-zinc-800/60 flex justify-end">
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-800 text-zinc-100 hover:bg-zinc-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-wait"
+              [disabled]="downloadingGas() || !c.IdContratoQuixotic"
+              (click)="downloadContratoGas(c)"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              {{ downloadingGas() ? 'Descargando…' : 'Descargar contrato' }}
+            </button>
+          </div>
+        </div>
+      } @else if (loading()) {
         <div class="flex items-center justify-center py-10">
           <app-brand-loader
             [inline]="true"

@@ -16,7 +16,7 @@
     </p>
     <p class="text-xs mt-1">
       {{ items().length === 0
-         ? 'Ningún contrato está en previo, para estudio, para firma, para tramitar, incidencia, válido ni KO.'
+         ? 'Ningún contrato está en previo, para estudio, para firma, para tramitar, incidencia, válido ni KO, ni hay gas pendiente de activar.'
          : 'Prueba con otro estado o búsqueda.' }}
     </p>
   </div>
@@ -35,10 +35,16 @@
         </tr>
       </thead>
       <tbody>
-        @for (item of pagina(); track item.idServicio ?? item.registro?.id) {
+        @for (item of pagina(); track item.idServicio ?? item.registro?.id ?? item.idContratoQuixotic) {
           @let reg = item.registro;
           <tr class="border-t border-border align-top">
-            <td class="px-4 py-3 font-mono text-xs text-muted-foreground">#{{ item.idServicio ?? '—' }}</td>
+            <td class="px-4 py-3 font-mono text-xs text-muted-foreground">
+              @if (item.idContratoQuixotic) {
+                <span class="badge bg-sky-500/10 text-sky-400 font-sans">Gas</span>
+              } @else {
+                #{{ item.idServicio ?? '—' }}
+              }
+            </td>
             <td class="px-4 py-3">
               <p class="font-medium text-foreground">{{ item.clienteNombre || '—' }}</p>
               <p class="text-xs text-muted-foreground">{{ item.clienteNif || '' }}</p>
@@ -89,6 +95,10 @@
                     Falta: {{ reg.documentacionNecesaria }}
                   </p>
                 }
+              } @else if (item.idContratoQuixotic) {
+                <p class="text-xs text-muted-foreground">
+                  {{ item.estadoContrato === 'confirmado' ? 'En activación en Quixotic' : 'Alta registrada en Quixotic' }}
+                </p>
               } @else if (!item.informacionComplementaria && !item.observacionesServicio) {
                 <p class="text-xs text-muted-foreground">
                   {{ item.idServicio != null && !item.infoServicioLeidaAt ? 'Pendiente de leer de Energy Expert' : '—' }}
@@ -119,6 +129,18 @@
                     <input type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png,.heic,.doc,.docx"
                            (change)="onFileSelected(item, $event)" />
                   </label>
+                }
+
+                @if (item.idContratoQuixotic) {
+                  <button type="button"
+                          class="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-md border border-border text-xs font-semibold text-foreground hover:bg-accent whitespace-nowrap transition-colors disabled:opacity-60 disabled:cursor-wait"
+                          [disabled]="downloadingGas() === item.idContratoQuixotic"
+                          (click)="descargarContratoGas(item)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    {{ downloadingGas() === item.idContratoQuixotic ? 'Descargando…' : 'Descargar contrato' }}
+                  </button>
                 }
 
                 <!-- Cerrar: solo Operaciones y solo si hay algo registrado -->
