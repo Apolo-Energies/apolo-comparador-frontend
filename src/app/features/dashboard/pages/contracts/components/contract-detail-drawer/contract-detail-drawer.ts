@@ -16,6 +16,7 @@ import { AuthService } from '@apolo-energies/auth';
 import { ContratoClienteRow } from '../../../../../../core/models/contrato.model';
 import { ServicioListItem } from '../../../../../../core/models/servicio.model';
 import { ContractService } from '../../../../../../core/services/contract.service';
+import { QuixoticContractService } from '../../../../../../core/services/quixotic-contract.service';
 import { IncidenceService, Incidence, IncidenceType, INCIDENCE_TYPES, INCIDENCE_TYPE_LABELS, INCIDENCE_STATUS_LABELS } from '../../../../../../core/services/incidence.service';
 import { TRAMITACION_TIPO_LABELS, TramitacionService, TramitacionTipo } from '../../../../../../core/services/tramitacion.service';
 import { BrandLoaderComponent } from '../../../../../../shared/components/brand-loader/brand-loader.component';
@@ -36,6 +37,7 @@ export class ContractDetailDrawerComponent {
   readonly closed = output<void>();
 
   private contractService  = inject(ContractService);
+  private quixoticContracts = inject(QuixoticContractService);
   private incidenceService = inject(IncidenceService);
   private tramitacion      = inject(TramitacionService);
   private auth             = inject(AuthService);
@@ -258,6 +260,30 @@ export class ContractDetailDrawerComponent {
   trackByServicioId = (_: number, s: ServicioListItem) => s.Id;
 
   // ── Acciones sobre un servicio ──────────────────────────────────────────
+
+  readonly downloadingGas = signal(false);
+
+  // Contrato de gas (Quixotic): la URL viene firmada con Content-Disposition attachment, el navegador la descarga.
+  downloadContratoGas(c: ContratoClienteRow): void {
+    if (!c.IdContratoQuixotic) return;
+    this.downloadingGas.set(true);
+    this.quixoticContracts.getDocument(c.IdContratoQuixotic).subscribe({
+      next: doc => {
+        this.downloadingGas.set(false);
+        const a = document.createElement('a');
+        a.href = doc.publicUrl;
+        a.download = doc.fileName;
+        a.rel = 'noopener noreferrer';
+        a.click();
+      },
+      error: err => {
+        this.downloadingGas.set(false);
+        this.showFeedback('error', 'Contrato no disponible',
+          err?.status === 404 ? 'Este contrato de gas aún no tiene documento en Quixotic.'
+                              : 'No se pudo obtener el contrato desde Quixotic.');
+      },
+    });
+  }
 
   readonly downloadingFirmado = signal<number | null>(null);
 

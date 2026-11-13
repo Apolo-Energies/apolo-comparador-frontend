@@ -44,27 +44,31 @@
 </ng-template>
 
 <ng-template #firmaTpl let-row>
-  @switch (row.EstadoFirma) {
-    @case ('firmado') {
-      <span class="badge bg-[#1AD5981A] text-[#1AD598]">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-        Firmado
-      </span>
-    }
-    @case ('pendiente') {
-      <span class="badge bg-amber-500/10 text-amber-400">
-        <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
-        Pendiente de firma
-      </span>
-    }
-    @case ('expirado') {
-      <span class="badge bg-zinc-500/10 text-zinc-400">Firma expirada</span>
-    }
-    @case ('cancelado') {
-      <span class="badge bg-red-500/10 text-red-400">Firma cancelada</span>
-    }
-    @default {
-      <span class="text-xs text-muted-foreground">—</span>
+  @if (row.Origen === 'quixotic') {
+    <span class="text-xs text-muted-foreground" title="Los contratos de gas no se firman con Mensatek">No aplica</span>
+  } @else {
+    @switch (row.EstadoFirma) {
+      @case ('firmado') {
+        <span class="badge bg-[#1AD5981A] text-[#1AD598]">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+          Firmado
+        </span>
+      }
+      @case ('pendiente') {
+        <span class="badge bg-amber-500/10 text-amber-400">
+          <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+          Pendiente de firma
+        </span>
+      }
+      @case ('expirado') {
+        <span class="badge bg-zinc-500/10 text-zinc-400">Firma expirada</span>
+      }
+      @case ('cancelado') {
+        <span class="badge bg-red-500/10 text-red-400">Firma cancelada</span>
+      }
+      @default {
+        <span class="text-xs text-muted-foreground">—</span>
+      }
     }
   }
 </ng-template>
@@ -269,7 +273,7 @@
       <lib-data-table
         [data]="visibleData()"
         [columns]="columns()"
-        rowKey="IdCliente"
+        rowKey="RowKey"
         [borderTop]="false"
         [borderBottom]="true"
         [borderLeft]="false"

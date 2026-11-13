@@ -5,6 +5,7 @@ import {
   TRAMITACION_TIPO_LABELS, TramitacionCierre, TramitacionDocumento, TramitacionItem,
   TramitacionService, TramitacionTipo,
 } from '../../../../../../core/services/tramitacion.service';
+import { QuixoticContractService } from '../../../../../../core/services/quixotic-contract.service';
 import { estadoCls, estadoLabel, fmtDate } from '../../contracts-utils';
 
 const PAGE_SIZE = 50;
@@ -12,7 +13,8 @@ const PAGE_SIZE = 50;
 /**
  * Pestaña "En tramitación": contratos que Energy Expert tiene en previo, para estudio, para firma,
  * para tramitar, incidencia, válido o KO (de la BD, sync horario). El colaborador sube lo que falte;
- * Operaciones ve qué se ha subido ("Tramitado de nuevo") y lo cierra.
+ * Operaciones ve qué se ha subido ("Tramitado de nuevo") y lo cierra. Incluye el gas de Quixotic aún sin
+ * activar, solo para verlo y descargar su contrato.
  */
 @Component({
   selector: 'app-tramitacion-panel',
@@ -30,12 +32,14 @@ export class TramitacionPanelComponent {
 
   private readonly tramitacion = inject(TramitacionService);
   private readonly toast       = inject(MessageService);
+  private readonly quixoticContracts = inject(QuixoticContractService);
 
   readonly busqueda = signal('');
   readonly visibles = signal(PAGE_SIZE);
 
   readonly uploadingId = signal<number | null>(null);
   readonly closingId   = signal<string | null>(null);
+  readonly downloadingGas = signal<string | null>(null);
 
   readonly fmtDate     = fmtDate;
   readonly estadoCls   = estadoCls;
@@ -63,6 +67,29 @@ export class TramitacionPanelComponent {
 
   tipoLabel(tipo: TramitacionTipo): string {
     return TRAMITACION_TIPO_LABELS[tipo] ?? tipo;
+  }
+
+  /** Contrato de gas: la URL viene firmada con Content-Disposition attachment, el navegador la descarga. */
+  descargarContratoGas(item: TramitacionItem): void {
+    const id = item.idContratoQuixotic;
+    if (!id) return;
+    this.downloadingGas.set(id);
+    this.quixoticContracts.getDocument(id).subscribe({
+      next: doc => {
+        this.downloadingGas.set(null);
+        const a = document.createElement('a');
+        a.href = doc.publicUrl;
+        a.download = doc.fileName;
+        a.rel = 'noopener noreferrer';
+        a.click();
+      },
+      error: err => {
+        this.downloadingGas.set(null);
+        this.notify('error', 'Contrato no disponible',
+          err?.status === 404 ? 'Este contrato de gas aún no tiene documento en Quixotic.'
+                              : 'No se pudo obtener el contrato desde Quixotic.');
+      },
+    });
   }
 
   /** El colaborador ya subió algo y falta que Operaciones lo revise. */

@@ -53,6 +53,8 @@ export interface TramitacionItem {
   /** null = aún no se ha leído de EE. */
   infoServicioLeidaAt:       string | null;
   registro:         TramitacionRegistro | null;
+  /** Solo gas (Quixotic): sin idServicio de EE ni registro de Operaciones. */
+  idContratoQuixotic?: string | null;
 }
 
 export interface CrearTramitacionRequest {

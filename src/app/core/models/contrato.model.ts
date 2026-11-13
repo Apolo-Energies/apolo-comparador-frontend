@@ -34,6 +34,12 @@ export interface ContratoClienteRow {
   TieneIncidencia:        boolean;
   /** Colaborador (delegación) al que pertenece el contrato. */
   NombreDelegacion:       string | null;
+  /** ee = luz de Energy Expert; quixotic = gas de Quixotic (sin cliente de EE, firma ni incidencias). */
+  Origen:                 'ee' | 'quixotic';
+  /** Solo en gas: id del contrato en Quixotic, para descargar su contrato. */
+  IdContratoQuixotic:     string | null;
+  /** Clave única de la fila en la tabla (la pone el frontend). */
+  RowKey?:                string;
 }
 
 export type TipoEnergia = 'luz' | 'gas';
