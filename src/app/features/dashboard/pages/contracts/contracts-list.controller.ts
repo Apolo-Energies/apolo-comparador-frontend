@@ -141,7 +141,7 @@ export class ContractsListController {
     this.deps.globalLoading.start();
     this.deps.contractService.getContratos(this.query()).subscribe({
       next: res => {
-        this.data.set(res?.data ?? []);
+        this.data.set(withRowKeys(res?.data ?? []));
         this.hasMore.set(res?.hasMore ?? false);
         this.total.set(res?.total ?? 0);
         this.loading.set(false);
@@ -163,11 +163,19 @@ export class ContractsListController {
     this.deps.contractService.getContratos(this.query()).subscribe({
       next: res => {
         if (this.loading()) return; // una carga del usuario empezó mientras tanto: manda la suya
-        this.data.set(res?.data ?? []);
+        this.data.set(withRowKeys(res?.data ?? []));
         this.hasMore.set(res?.hasMore ?? false);
         this.total.set(res?.total ?? 0);
       },
       error: () => {},
     });
   }
+}
+
+/** IdCliente se repite (un cliente con varios contratos) y es 0 en todos los de gas: clave única por fila. */
+function withRowKeys(rows: ContratoClienteRow[]): ContratoClienteRow[] {
+  return rows.map((r, i) => ({
+    ...r,
+    RowKey: `${r.Origen ?? 'ee'}:${r.IdContratoQuixotic ?? r.IdCliente}:${r.CUPS?.[0] ?? ''}:${i}`,
+  }));
 }
