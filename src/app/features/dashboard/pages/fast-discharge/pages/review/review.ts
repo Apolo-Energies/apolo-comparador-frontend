@@ -35,6 +35,18 @@ export class ReviewPage {
   readonly phase = signal<'idle' | 'alta' | 'firma' | 'done'>('idle');
   readonly sending = () => this.phase() !== 'idle' && this.phase() !== 'done';
 
+  readonly activationAsap  = signal(true);
+  readonly activationDate  = signal('');
+  readonly todayStr = new Date().toISOString().slice(0, 10);
+
+  toggleActivationAsap(): void {
+    this.activationAsap.update(v => !v);
+  }
+
+  onActivationDateChange(value: string): void {
+    this.activationDate.set(value);
+  }
+
   readonly person      = computed(() => this.store.person());
   readonly supplyPoint = computed(() => this.store.supplyPoint());
   readonly product     = computed(() => this.store.product());
@@ -93,12 +105,29 @@ export class ReviewPage {
     const fd = new FormData();
 
     // Cliente
-    fd.append('NifCliente',       person.dni);
-    fd.append('NombreCliente',    person.name);
-    fd.append('Apellido1Cliente', person.apellido1 ?? '');
-    if (person.apellido2) fd.append('Apellido2Cliente', person.apellido2);
+    fd.append('NifCliente', person.dni);
+    if (person.type === 'Company') {
+      // Empresa: el backend exige TipoCliente y espera la razón social en RazonSocial
+      // (NombreCliente/ApellidoXCliente no se mandan en este caso).
+      fd.append('TipoCliente', 'empresa');
+      fd.append('RazonSocial', person.name);
+    } else {
+      fd.append('NombreCliente',    person.name);
+      fd.append('Apellido1Cliente', person.apellido1 ?? '');
+      if (person.apellido2) fd.append('Apellido2Cliente', person.apellido2);
+    }
     fd.append('Email',    person.email);
     fd.append('Telefono', person.phone);
+
+    // Firmante / representante legal (persona jurídica siempre lo tiene; persona física solo si "otro firmante").
+    if (person.otroFirmante) {
+      fd.append('NifFirmante',       person.firmanteNif);
+      fd.append('NombreFirmante',    person.firmanteNombre);
+      fd.append('Apellido1Firmante', person.firmanteApellido1);
+      if (person.firmanteApellido2) fd.append('Apellido2Firmante', person.firmanteApellido2);
+      if (person.firmanteTelefono)  fd.append('TelefonoFirmante', person.firmanteTelefono);
+      if (person.firmanteEmail)     fd.append('EmailFirmante', person.firmanteEmail);
+    }
 
     // Domiciliación
     const iban = person.bank_account?.replace(/\s/g, '') ?? '';
@@ -138,6 +167,11 @@ export class ReviewPage {
     fd.append('ConsumoAnualP4', toEeDecimal(consumos[3]));
     fd.append('ConsumoAnualP5', toEeDecimal(consumos[4]));
     fd.append('ConsumoAnualP6', toEeDecimal(consumos[5]));
+
+    // Fecha de activación (opcional — si no se marca una fecha concreta, el backend activa hoy)
+    if (!this.activationAsap() && this.activationDate()) {
+      fd.append('FechaActivacion', this.activationDate());
+    }
 
     // Producto
     const product = this.store.product();
