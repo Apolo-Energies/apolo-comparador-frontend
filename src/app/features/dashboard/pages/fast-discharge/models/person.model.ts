@@ -23,6 +23,8 @@ export interface NaturalPerson {
   firmanteNombre: string;
   firmanteApellido1: string;
   firmanteApellido2: string;
+  firmanteTelefono: string;
+  firmanteEmail: string;
   phone: string;
 }
 
@@ -50,6 +52,8 @@ export interface ArtificialPerson {
   firmanteNombre: string;
   firmanteApellido1: string;
   firmanteApellido2: string;
+  firmanteTelefono: string;
+  firmanteEmail: string;
   phone: string;
 }
 

@@ -42,21 +42,21 @@ function saveAccessToken(token: string): void {
   }
 }
 
-// Refresh proactivo al arrancar; usa HttpBackend para esquivar el tokenExpiryInterceptor.
+// Refresh al arrancar, solo si el token actual ya caducó; usa HttpBackend para esquivar el tokenExpiryInterceptor.
 async function refreshSessionIfPossible(
   auth: AuthService,
   refreshTokenSvc: RefreshTokenService,
   httpBackend: HttpBackend,
 ): Promise<void> {
+  const current = auth.token();
+  if (!current || !isJwtExpired(current)) return;
+
   const refresh = refreshTokenSvc.getRefreshToken();
   const userId  = refreshTokenSvc.getUserIdFromToken();
 
   if (!refresh || !userId) {
-    const current = auth.token();
-    if (current && isJwtExpired(current)) {
-      refreshTokenSvc.clear();
-      auth.signOut();
-    }
+    refreshTokenSvc.clear();
+    auth.signOut();
     return;
   }
 
@@ -72,9 +72,14 @@ async function refreshSessionIfPossible(
       saveAccessToken(newToken);
     }
     if (newRefresh) refreshTokenSvc.save(newRefresh);
-  } catch {
-    refreshTokenSvc.clear();
-    auth.signOut();
+  } catch (err) {
+    // Solo cerramos sesión si el backend rechazó el refresh token; un error de red o 5xx
+    // no debe tirar al usuario de una sesión que todavía podría ser válida.
+    const status = (err as { status?: number })?.status;
+    if (status === 401 || status === 403) {
+      refreshTokenSvc.clear();
+      auth.signOut();
+    }
   }
 }
 

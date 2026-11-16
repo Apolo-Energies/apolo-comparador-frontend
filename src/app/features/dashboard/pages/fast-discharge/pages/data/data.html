@@ -8,21 +8,68 @@
 
         <form (submit)="$event.preventDefault(); onSubmit()" class="space-y-5">
 
-          <!-- NIF + Email -->
-          <div class="grid grid-cols-2 gap-4">
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-muted-foreground">NIF / DNI *</label>
-              <input [class]="inputCls" placeholder="12345678A"
-                     [value]="nif()" (input)="nif.set($any($event.target).value)" />
-              @if (errors()['nif']) { <span class="text-red-500 text-xs">{{ errors()['nif'] }}</span> }
+          <!-- Tipo de persona -->
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-muted-foreground">Tipo de persona</label>
+            <div class="flex rounded-lg border border-border overflow-hidden">
+              <button type="button"
+                      class="flex-1 py-2.5 text-sm font-medium transition-colors cursor-pointer"
+                      [class.bg-blue-500]="!isCompany()" [class.text-white]="!isCompany()"
+                      [class.text-muted-foreground]="isCompany()"
+                      (click)="setTipoPersona('Individual')">
+                Persona física
+              </button>
+              <button type="button"
+                      class="flex-1 py-2.5 text-sm font-medium transition-colors cursor-pointer border-l border-border"
+                      [class.bg-blue-500]="isCompany()" [class.text-white]="isCompany()"
+                      [class.text-muted-foreground]="!isCompany()"
+                      (click)="setTipoPersona('Company')">
+                Persona jurídica
+              </button>
             </div>
+          </div>
+
+          @if (isCompany()) {
+            <!-- CIF + Razón social -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-muted-foreground">CIF *</label>
+                <input [class]="inputCls" placeholder="B12345678"
+                       [value]="cif()" (input)="cif.set($any($event.target).value)" />
+                @if (errors()['cif']) { <span class="text-red-500 text-xs">{{ errors()['cif'] }}</span> }
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-muted-foreground">Razón social *</label>
+                <input [class]="inputCls" placeholder="Empresa S.L."
+                       [value]="companyName()" (input)="companyName.set($any($event.target).value)" />
+                @if (errors()['companyName']) { <span class="text-red-500 text-xs">{{ errors()['companyName'] }}</span> }
+              </div>
+            </div>
+
+            <!-- Email -->
             <div class="flex flex-col gap-1">
               <label class="text-sm font-medium text-muted-foreground">Email *</label>
               <input [class]="inputCls" type="email" placeholder="cliente@ejemplo.es"
                      [value]="email()" (input)="email.set($any($event.target).value)" />
               @if (errors()['email']) { <span class="text-red-500 text-xs">{{ errors()['email'] }}</span> }
             </div>
-          </div>
+          } @else {
+            <!-- NIF + Email -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-muted-foreground">NIF / DNI *</label>
+                <input [class]="inputCls" placeholder="12345678A"
+                       [value]="nif()" (input)="nif.set($any($event.target).value)" />
+                @if (errors()['nif']) { <span class="text-red-500 text-xs">{{ errors()['nif'] }}</span> }
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-muted-foreground">Email *</label>
+                <input [class]="inputCls" type="email" placeholder="cliente@ejemplo.es"
+                       [value]="email()" (input)="email.set($any($event.target).value)" />
+                @if (errors()['email']) { <span class="text-red-500 text-xs">{{ errors()['email'] }}</span> }
+              </div>
+            </div>
+          }
 
           <!-- Teléfono -->
           <div class="flex flex-col gap-1">
@@ -41,70 +88,93 @@
             @if (errors()['phone']) { <span class="text-red-500 text-xs">{{ errors()['phone'] }}</span> }
           </div>
 
-          <!-- Nombre + Apellido 1 + Apellido 2 -->
-          <div class="grid grid-cols-3 gap-4">
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-muted-foreground">Nombre *</label>
-              <input [class]="inputCls" placeholder="Francisco"
-                     [value]="nombre()" (input)="nombre.set($any($event.target).value)" />
-              @if (errors()['nombre']) { <span class="text-red-500 text-xs">{{ errors()['nombre'] }}</span> }
-            </div>
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-muted-foreground">Primer apellido *</label>
-              <input [class]="inputCls" placeholder="García"
-                     [value]="apellido1()" (input)="apellido1.set($any($event.target).value)" />
-              @if (errors()['apellido1']) { <span class="text-red-500 text-xs">{{ errors()['apellido1'] }}</span> }
-            </div>
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-muted-foreground">Segundo apellido</label>
-              <input [class]="inputCls" placeholder="López"
-                     [value]="apellido2()" (input)="apellido2.set($any($event.target).value)" />
-            </div>
-          </div>
-
-          <!-- Otro firmante -->
-          <div class="flex items-center justify-between">
-            <span class="text-sm font-medium text-foreground">El firmante es otra persona distinta del cliente</span>
-            <button
-              type="button" role="switch" [attr.aria-checked]="otroFirmante()"
-              class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors"
-              [class.bg-blue-500]="otroFirmante()" [class.bg-muted]="!otroFirmante()"
-              (click)="toggleOtroFirmante()"
-            >
-              <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
-                    [class.translate-x-6]="otroFirmante()" [class.translate-x-1]="!otroFirmante()"></span>
-            </button>
-          </div>
-
-          @if (otroFirmante()) {
+          @if (!isCompany()) {
+            <!-- Nombre + Apellido 1 + Apellido 2 -->
             <div class="grid grid-cols-3 gap-4">
               <div class="flex flex-col gap-1">
-                <label class="text-sm font-medium text-muted-foreground">NIF Firmante *</label>
+                <label class="text-sm font-medium text-muted-foreground">Nombre *</label>
+                <input [class]="inputCls" placeholder="Francisco"
+                       [value]="nombre()" (input)="nombre.set($any($event.target).value)" />
+                @if (errors()['nombre']) { <span class="text-red-500 text-xs">{{ errors()['nombre'] }}</span> }
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-muted-foreground">Primer apellido *</label>
+                <input [class]="inputCls" placeholder="García"
+                       [value]="apellido1()" (input)="apellido1.set($any($event.target).value)" />
+                @if (errors()['apellido1']) { <span class="text-red-500 text-xs">{{ errors()['apellido1'] }}</span> }
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-muted-foreground">Segundo apellido</label>
+                <input [class]="inputCls" placeholder="López"
+                       [value]="apellido2()" (input)="apellido2.set($any($event.target).value)" />
+              </div>
+            </div>
+
+            <!-- Otro firmante -->
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-medium text-foreground">El firmante es otra persona distinta del cliente</span>
+              <button
+                type="button" role="switch" [attr.aria-checked]="otroFirmante()"
+                class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors"
+                [class.bg-blue-500]="otroFirmante()" [class.bg-muted]="!otroFirmante()"
+                (click)="toggleOtroFirmante()"
+              >
+                <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+                      [class.translate-x-6]="otroFirmante()" [class.translate-x-1]="!otroFirmante()"></span>
+              </button>
+            </div>
+          }
+
+          @if (showFirmante()) {
+            @if (isCompany()) {
+              <p class="text-sm font-medium text-foreground">Datos del representante legal</p>
+            }
+            <div class="grid grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-muted-foreground">{{ isCompany() ? 'NIF *' : 'NIF Firmante *' }}</label>
                 <input [class]="inputCls" placeholder="12345678A"
                        [value]="firmanteNif()" (input)="firmanteNif.set($any($event.target).value)" />
                 @if (errors()['firmanteNif']) { <span class="text-red-500 text-xs">{{ errors()['firmanteNif'] }}</span> }
               </div>
               <div class="flex flex-col gap-1">
-                <label class="text-sm font-medium text-muted-foreground">Nombre Firmante *</label>
+                <label class="text-sm font-medium text-muted-foreground">{{ isCompany() ? 'Nombre *' : 'Nombre Firmante *' }}</label>
                 <input [class]="inputCls" placeholder="Francisco"
                        [value]="firmanteNombre()" (input)="firmanteNombre.set($any($event.target).value)" />
                 @if (errors()['firmanteNombre']) { <span class="text-red-500 text-xs">{{ errors()['firmanteNombre'] }}</span> }
               </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
               <div class="flex flex-col gap-1">
-                <label class="text-sm font-medium text-muted-foreground">Apellido 1 Firmante *</label>
+                <label class="text-sm font-medium text-muted-foreground">{{ isCompany() ? 'Primer apellido *' : 'Apellido 1 Firmante *' }}</label>
                 <input [class]="inputCls" placeholder="García"
                        [value]="firmanteApellido1()" (input)="firmanteApellido1.set($any($event.target).value)" />
                 @if (errors()['firmanteApellido1']) { <span class="text-red-500 text-xs">{{ errors()['firmanteApellido1'] }}</span> }
               </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-muted-foreground">{{ isCompany() ? 'Segundo apellido' : 'Apellido 2 Firmante' }}</label>
+                <input [class]="inputCls" placeholder="López"
+                       [value]="firmanteApellido2()" (input)="firmanteApellido2.set($any($event.target).value)" />
+              </div>
             </div>
-            <div class="flex flex-col gap-1">
-              <label class="text-sm font-medium text-muted-foreground">Apellido 2 Firmante</label>
-              <input [class]="inputCls" placeholder="López"
-                     [value]="firmanteApellido2()" (input)="firmanteApellido2.set($any($event.target).value)" />
+            <div class="grid grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-muted-foreground">{{ isCompany() ? 'Teléfono' : 'Teléfono Firmante' }}</label>
+                <input type="tel" [class]="inputCls" placeholder="Si es diferente al del cliente"
+                       [value]="firmanteTelefono()" (input)="firmanteTelefono.set($any($event.target).value)" />
+                @if (errors()['firmanteTelefono']) { <span class="text-red-500 text-xs">{{ errors()['firmanteTelefono'] }}</span> }
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium text-muted-foreground">{{ isCompany() ? 'Email' : 'Email Firmante' }}</label>
+                <input type="email" [class]="inputCls" placeholder="Si es diferente al del cliente"
+                       [value]="firmanteEmail()" (input)="firmanteEmail.set($any($event.target).value)" />
+                @if (errors()['firmanteEmail']) { <span class="text-red-500 text-xs">{{ errors()['firmanteEmail'] }}</span> }
+              </div>
             </div>
           }
 
-          <!-- Nombre completo del titular de la cuenta -->
+          <!-- Cuenta bancaria -->
+          <p class="text-sm font-medium text-foreground">Cuenta bancaria</p>
+
           <div class="flex flex-col gap-1">
             <label class="text-sm font-medium text-muted-foreground">Nombre completo del titular de la cuenta *</label>
             <input [class]="inputCls" placeholder="Como figura en la cuenta bancaria"

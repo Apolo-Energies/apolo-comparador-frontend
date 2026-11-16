@@ -38,6 +38,9 @@ export const NUMBER_CLS = 'flex-1 min-w-0 px-4 py-2.5 text-sm rounded-r-lg borde
 
 export interface DataFormFields {
   submitted: boolean;
+  isCompany: boolean;
+  cif: string;
+  companyName: string;
   nif: string;
   nombre: string;
   apellido1: string;
@@ -55,6 +58,25 @@ export interface DataFormFields {
   firmanteNombre: string;
   firmanteApellido1: string;
   firmanteApellido2: string;
+  firmanteTelefono: string;
+  firmanteEmail: string;
+}
+
+// Código de entidad (4 primeros dígitos tras ES+control del IBAN) → BIC del banco.
+const BIC_BY_ENTITY_CODE: Record<string, string> = {
+  '0049': 'BSCHESMM', // Banco Santander
+  '0182': 'BBVAESMM', // BBVA
+  '2100': 'CAIXESBB', // CaixaBank
+  '0081': 'BSABESBB', // Banco Sabadell
+  '1465': 'INGDESMM', // ING
+  '0073': 'OPENESMM', // Openbank
+};
+
+/** Deduce el BIC a partir del código de entidad de un IBAN español (ESkk EEEE OOOO CC CCCCCCCCCC). */
+export function detectBicFromIban(iban: string): string | null {
+  const clean = iban.replace(/\s/g, '').toUpperCase();
+  if (!clean.startsWith('ES') || clean.length < 8) return null;
+  return BIC_BY_ENTITY_CODE[clean.slice(4, 8)] ?? null;
 }
 
 // BIC/SWIFT: 4 letras banco + 2 letras país + 2 alfanum + 3 opcionales.
@@ -81,17 +103,23 @@ function computeBicError(raw: string): string | null {
 /** Validación del formulario de datos del cliente. */
 export function computeDataErrors(f: DataFormFields): Record<string, string | null> {
   const none: Record<string, string | null> = {
+    cif: null, companyName: null,
     nif: null, nombre: null, apellido1: null, email: null,
     phone: null, direccion: null, cp: null, provincia: null, municipio: null, iban: null, bic: null, nombreTitular: null,
     firmanteNif: null, firmanteNombre: null, firmanteApellido1: null,
+    firmanteTelefono: null, firmanteEmail: null,
   };
   if (!f.submitted) return none;
   const ibanVal = f.iban.replace(/\s/g, '');
+  const needsFirmante = f.isCompany || f.otroFirmante;
   return {
-    nif:      !f.nif.trim()          ? 'Obligatorio'
+    cif:         f.isCompany && !f.cif.trim()         ? 'Obligatorio' : null,
+    companyName: f.isCompany && !f.companyName.trim() ? 'Obligatorio' : null,
+    nif:      f.isCompany ? null
+            : !f.nif.trim()           ? 'Obligatorio'
             : f.nif.trim().length < 9 ? 'Mínimo 9 caracteres' : null,
-    nombre:   !f.nombre.trim()       ? 'Obligatorio' : null,
-    apellido1:!f.apellido1.trim()    ? 'Obligatorio' : null,
+    nombre:   f.isCompany ? null : !f.nombre.trim()    ? 'Obligatorio' : null,
+    apellido1:f.isCompany ? null : !f.apellido1.trim() ? 'Obligatorio' : null,
     email:    !f.email.trim()        ? 'Obligatorio'
             : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email) ? 'Email inválido' : null,
     phone:    !f.phoneNumber.trim()  ? 'Obligatorio'
@@ -104,8 +132,13 @@ export function computeDataErrors(f: DataFormFields): Record<string, string | nu
     iban:      ibanVal && ibanVal.length < 15 ? 'IBAN inválido' : null,
     bic:       computeBicError(f.bic),
     nombreTitular: !f.nombreTitular.trim() ? 'Obligatorio' : null,
-    firmanteNif:       f.otroFirmante && !f.firmanteNif.trim()       ? 'Obligatorio' : null,
-    firmanteNombre:    f.otroFirmante && !f.firmanteNombre.trim()    ? 'Obligatorio' : null,
-    firmanteApellido1: f.otroFirmante && !f.firmanteApellido1.trim() ? 'Obligatorio' : null,
+    firmanteNif:       needsFirmante && !f.firmanteNif.trim()       ? 'Obligatorio' : null,
+    firmanteNombre:    needsFirmante && !f.firmanteNombre.trim()    ? 'Obligatorio' : null,
+    firmanteApellido1: needsFirmante && !f.firmanteApellido1.trim() ? 'Obligatorio' : null,
+    // Opcionales: solo si el firmante/representante tiene teléfono o email distinto al del cliente.
+    firmanteTelefono: f.firmanteTelefono.trim() && !/^[0-9]{9,15}$/.test(f.firmanteTelefono.replace(/\s/g, ''))
+      ? 'Solo dígitos, 9–15 números' : null,
+    firmanteEmail: f.firmanteEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.firmanteEmail)
+      ? 'Email inválido' : null,
   };
 }
