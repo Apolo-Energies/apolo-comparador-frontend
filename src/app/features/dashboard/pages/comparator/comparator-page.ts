@@ -18,7 +18,7 @@ import { BrandLoaderComponent } from '../../../../shared/components/brand-loader
 import { FEE_LOCKED_PRODUCTS } from '../../../../shared/constants/flat-commission-products';
 import { environment } from '../../../../../environments/environment';
 import { ComparisonController } from './comparator-comparison.controller';
-import { buildProductsByTariff } from './comparator.helpers';
+import { buildProductsByTariff, shortIsoDate } from './comparator.helpers';
 
 @Component({
   selector: 'app-comparator',
@@ -94,6 +94,18 @@ export class Comparator {
   readonly selectedUserId = this.comparison.selectedUserId;
   readonly comisionBase   = this.comparison.comisionBase;
   readonly sipsAnnualKwh  = this.comparison.sipsAnnualKwh;
+  readonly invoiceOmie    = this.comparison.invoiceOmie;
+
+  /** OMIE con el que se precarga el modal: el del período de la factura; si no hay, el de hoy. */
+  readonly modalOmiePrice = computed(() => this.invoiceOmie()?.avg ?? this.avgOmiePrice());
+  readonly omieHint = computed(() => {
+    const o = this.invoiceOmie();
+    if (o) {
+      const rango = `${shortIsoDate(o.from)} al ${shortIsoDate(o.to)}`;
+      return `Media del ${rango}, período de la factura${o.partial ? ' (faltan días en el histórico)' : ''}.`;
+    }
+    return this.ocrResult() ? 'Sin OMIE del período de la factura: se usa la media de hoy.' : null;
+  });
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
