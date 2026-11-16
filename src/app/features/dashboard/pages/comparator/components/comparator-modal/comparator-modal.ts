@@ -41,6 +41,8 @@ export class ComparatorModalComponent {
   readonly comisionBase       = input(0);
   readonly referrerDefaultFee = input(0.3);
   readonly avgOmiePrice       = input<number | null>(null);
+  /** Texto bajo "Precio medio OMIE": de qué período sale el valor precargado. */
+  readonly omieHint           = input<string | null>(null);
   readonly maxFeeEnergia      = input(30);
   readonly maxFeePotencia     = input(5);
   readonly result             = input<ComparadorResult | null>(null);

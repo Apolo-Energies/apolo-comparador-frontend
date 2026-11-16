@@ -4,6 +4,15 @@ import { SipsService, sumAnnualKwh } from '../../../../core/services/sips.servic
 import { ComparadorFormValue, ComparadorResult, OcrResult } from '../../../../core/models/comparator.model';
 import { ComparadorCompareEvent, ComparadorDownloadEvent } from './comparator-events.model';
 import { ComparadorUser } from './comparator-ui.model';
+import { invoiceOmieRange } from './comparator.helpers';
+
+/** OMIE medio del período de la factura (€/MWh) y si al histórico le faltan días de ese rango. */
+export interface InvoiceOmie {
+  avg:     number;
+  from:    string;
+  to:      string;
+  partial: boolean;
+}
 
 /**
  * Dependencias externas que el controller necesita leer del componente
@@ -39,6 +48,11 @@ export class ComparisonController {
    * hasta ±50%. Fallback a extrapolación (kwh × 365/dias) si el CUPS no está en SIPS.
    */
   readonly sipsAnnualKwh  = signal(0);
+  /**
+   * OMIE del período de la factura: precarga "Precio medio OMIE" del modal. null = no hay
+   * fechas en el OCR o no hay precios de ese rango; entonces se usa la media de hoy.
+   */
+  readonly invoiceOmie    = signal<InvoiceOmie | null>(null);
   /** Último form emitido por el modal — permite recomputar si SIPS llega después. */
   private readonly lastForm = signal<ComparadorFormValue | null>(null);
 
@@ -53,6 +67,7 @@ export class ComparisonController {
     this.result.set(null);
     this.ocrResult.set(null);
     this.sipsAnnualKwh.set(0);
+    this.invoiceOmie.set(null);
     this.lastForm.set(null);
 
     const selectedId = this.deps.isMaster() ? (event.userId || '') : '';
@@ -62,12 +77,30 @@ export class ComparisonController {
     this.comparatorService.upload(event.file, String(userId)).subscribe({
       next: (res) => {
         this.fileId.set(res.fileId);
-        this.ocrResult.set(res.ocrData);
-        this.loading.set(false);
-        this.modalOpen.set(true);
-        this.loadSipsAnnualKwh(res.ocrData.cliente?.cups);
+        // El modal precarga el OMIE al recibir el OCR: se pide antes de abrirlo.
+        this.loadInvoiceOmie(res.ocrData, () => {
+          this.ocrResult.set(res.ocrData);
+          this.loading.set(false);
+          this.modalOpen.set(true);
+          this.loadSipsAnnualKwh(res.ocrData.cliente?.cups);
+        });
       },
       error: () => this.loading.set(false),
+    });
+  }
+
+  /** Media OMIE del período de la factura; si falla o no hay datos, se sigue con la de hoy. */
+  private loadInvoiceOmie(ocr: OcrResult, done: () => void): void {
+    const range = invoiceOmieRange(ocr);
+    if (!range) { done(); return; }
+    this.comparatorService.getOmieAverage(range.from, range.to).subscribe({
+      next: r => {
+        if (r?.avgEurMwh != null) {
+          this.invoiceOmie.set({ avg: r.avgEurMwh, from: range.from, to: range.to, partial: r.source === 'partial' });
+        }
+        done();
+      },
+      error: () => done(),
     });
   }
 
