@@ -29,3 +29,14 @@ export interface MarketSeries {
   unit: string;
   points: MarketSeriesPoint[];
 }
+
+/** GET /omie-market/average: media OMIE de un rango de días. source: closed | partial | empty. */
+export interface OmieAverage {
+  from:         string;
+  to:           string;
+  zone:         string;
+  avgEurMwh:    number | null;
+  daysExpected: number;
+  daysUsed:     number;
+  source:       'closed' | 'partial' | 'empty';
+}

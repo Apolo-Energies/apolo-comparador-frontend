@@ -37,6 +37,9 @@
                   [value]="precioMedio() === 0 ? '' : precioMedio().toString()"
                   (valueChange)="onPrecioMedioChange($event)"
                 />
+              @if (omieHint()) {
+                <p class="-mt-1 text-[11px] text-muted-foreground">{{ omieHint() }}</p>
+              }
             }
           </div>
         }

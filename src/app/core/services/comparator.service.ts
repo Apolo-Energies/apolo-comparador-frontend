@@ -4,6 +4,7 @@ import { Observable, switchMap, tap } from 'rxjs';
 import { ComparadorFormValue, ComparadorResult, OcrResult } from '../models/comparator.model';
 import { environment } from '../../../environments/environment';
 import { Tariff } from '../models/provider.model';
+import { OmieAverage } from '../models/market-data.model';
 import {
   ReportPayload, SaveComparisonRequest, SaveComparisonResponse,
 } from '../models/comparison-history.model';
@@ -44,6 +45,14 @@ export class ComparatorService {
         this.avgOmiePrice.set(res.priceMedioOmie?.avgEurMwh ?? null);
       })
     ).subscribe();
+  }
+
+  /**
+   * Media OMIE (€/MWh) de un rango yyyy-MM-dd: el período de la factura que se compara.
+   * Zona ES, la misma que la media de hoy que trae getByUser.
+   */
+  getOmieAverage(from: string, to: string): Observable<OmieAverage> {
+    return this.http.get<OmieAverage>(`${environment.apiUrl}/omie-market/average`, { params: { from, to, zone: 'ES' } });
   }
 
   invalidateTariffs(): void {
