@@ -4,6 +4,24 @@ import { GlobalLoadingService } from '../../../../core/services/global-loading.s
 import { CollaboratorScopeService } from '../../../../core/services/collaborator-scope.service';
 import { ContratoClienteRow, TipoEnergia } from '../../../../core/models/contrato.model';
 
+/** Filtros del embudo de cada columna (query string sin prefijo). Fechas yyyy-MM-dd; incidencia 'true' | 'false'. */
+export type ContratosColumnFilters = {
+  cliente:       string;
+  colaborador:   string;
+  cups:          string;
+  firma:         string;
+  incidencia:    string;
+  inicioDesde:   string;
+  inicioHasta:   string;
+  finDesde:      string;
+  finHasta:      string;
+};
+
+const NO_COLUMN_FILTERS: ContratosColumnFilters = {
+  cliente: '', colaborador: '', cups: '', firma: '', incidencia: '',
+  inicioDesde: '', inicioHasta: '', finDesde: '', finHasta: '',
+};
+
 export interface ContractsListDeps {
   contractService:   ContractService;
   globalLoading:     GlobalLoadingService;
@@ -41,8 +59,12 @@ export class ContractsListController {
   readonly fechaDesde = signal('');
   readonly fechaHasta = signal('');
 
+  /** Embudos de los encabezados. Server-side. */
+  readonly columnFilters = signal<ContratosColumnFilters>(NO_COLUMN_FILTERS);
+
   get hasFilters(): boolean {
-    return !!(this.filterEstado() || this.filterFaltante() || this.fechaDesde() || this.fechaHasta());
+    return !!(this.filterEstado() || this.filterFaltante() || this.fechaDesde() || this.fechaHasta())
+      || Object.values(this.columnFilters()).some(v => !!v);
   }
 
   readonly totalPages = computed(() =>
@@ -84,7 +106,14 @@ export class ContractsListController {
     this.load();
   }
 
+  setColumnFilter(patch: Partial<ContratosColumnFilters>): void {
+    this.columnFilters.update(f => ({ ...f, ...patch }));
+    this.currentPage.set(1);
+    this.load();
+  }
+
   clearFilters(): void {
+    this.columnFilters.set(NO_COLUMN_FILTERS);
     this.filterEstado.set('');
     this.filterFaltante.set('');
     this.fechaDesde.set('');
@@ -132,6 +161,7 @@ export class ContractsListController {
       tipo:         this.filterTipo() || undefined,
       desde:        this.fechaDesde() || undefined,
       hasta:        this.fechaHasta() || undefined,
+      columnas:     this.columnFilters(),
       targetUserId: this.deps.collaboratorScope.selected()?.id,
     };
   }

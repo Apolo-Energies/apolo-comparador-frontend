@@ -30,7 +30,10 @@ import {
   applyContratosColumnTemplates, estadoCls, estadoEntries, estadoLabel, fmtDate, singleEstado,
 } from './contracts-utils';
 import { getUserRoles } from '../../../../core/helpers/auth.utils';
-import { ContractsListController } from './contracts-list.controller';
+import { ContractsListController, ContratosColumnFilters } from './contracts-list.controller';
+import {
+  ColumnFilterComponent, ColumnFilterOption, ColumnFilterRange,
+} from '../../../../shared/components/column-filter/column-filter.component';
 
 @Component({
   selector: 'app-contracts-page',
@@ -40,6 +43,7 @@ import { ContractsListController } from './contracts-list.controller';
     TableSkeletonComponent,
     ContractDetailDrawerComponent,
     TramitacionPanelComponent,
+    ColumnFilterComponent,
   ],
   templateUrl: './contracts-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,16 +51,23 @@ import { ContractsListController } from './contracts-list.controller';
 })
 export class ContractsPageComponent implements AfterViewInit {
   @ViewChild('tipoTpl')           private tipoTpl!:           TemplateRef<{ $implicit: ContratoClienteRow }>;
-  @ViewChild('nombreTpl')         private nombreTpl!:         TemplateRef<{ $implicit: ContratoClienteRow }>;
   @ViewChild('clienteTpl')        private clienteTpl!:        TemplateRef<{ $implicit: ContratoClienteRow }>;
   @ViewChild('cupsTpl')           private cupsTpl!:           TemplateRef<{ $implicit: ContratoClienteRow }>;
   @ViewChild('fechaInicioTpl')    private fechaInicioTpl!:    TemplateRef<{ $implicit: ContratoClienteRow }>;
   @ViewChild('fechaFinTpl')       private fechaFinTpl!:       TemplateRef<{ $implicit: ContratoClienteRow }>;
-  @ViewChild('fechaCreacionTpl')  private fechaCreacionTpl!:  TemplateRef<{ $implicit: ContratoClienteRow }>;
   @ViewChild('estadoTpl')         private estadoTpl!:         TemplateRef<{ $implicit: ContratoClienteRow }>;
   @ViewChild('firmaTpl')          private firmaTpl!:          TemplateRef<{ $implicit: ContratoClienteRow }>;
   @ViewChild('incidenciaTpl')     private incidenciaTpl!:     TemplateRef<{ $implicit: ContratoClienteRow }>;
   @ViewChild('colaboradorTpl')    private colaboradorTpl!:    TemplateRef<{ $implicit: ContratoClienteRow }>;
+
+  @ViewChild('clienteHeaderTpl')     private clienteHeaderTpl!:     TemplateRef<void>;
+  @ViewChild('colaboradorHeaderTpl') private colaboradorHeaderTpl!: TemplateRef<void>;
+  @ViewChild('cupsHeaderTpl')        private cupsHeaderTpl!:        TemplateRef<void>;
+  @ViewChild('inicioHeaderTpl')      private inicioHeaderTpl!:      TemplateRef<void>;
+  @ViewChild('finHeaderTpl')         private finHeaderTpl!:         TemplateRef<void>;
+  @ViewChild('estadoHeaderTpl')      private estadoHeaderTpl!:      TemplateRef<void>;
+  @ViewChild('firmaHeaderTpl')       private firmaHeaderTpl!:       TemplateRef<void>;
+  @ViewChild('incidenciaHeaderTpl')  private incidenciaHeaderTpl!:  TemplateRef<void>;
 
   private readonly contractService   = inject(ContractService);
   private readonly globalLoading     = inject(GlobalLoadingService);
@@ -103,6 +114,7 @@ export class ContractsPageComponent implements AfterViewInit {
   readonly totalPages     = this.list.totalPages;
   readonly totalCount     = this.list.totalCount;
   readonly total          = this.list.total;
+  readonly colFilters     = this.list.columnFilters;
 
   get hasFilters(): boolean { return this.list.hasFilters; }
   /** Búsqueda, Luz/Gas o cualquier filtro aplicado: muestra "Limpiar filtros". */
@@ -119,6 +131,31 @@ export class ContractsPageComponent implements AfterViewInit {
     { value: 'luz', label: 'Luz' },
     { value: 'gas', label: 'Gas' },
   ];
+  setColFilter(patch: Partial<ContratosColumnFilters>): void { this.list.setColumnFilter(patch); }
+  setColRange(desde: 'inicioDesde' | 'finDesde', hasta: 'inicioHasta' | 'finHasta', r: ColumnFilterRange): void {
+    this.list.setColumnFilter({ [desde]: r.from, [hasta]: r.to });
+  }
+
+  // Todos los estados de contrato (EstadoContrato del backend), en el orden del ciclo de vida.
+  readonly estadoOptions: ColumnFilterOption[] = [
+    'previo', 'para_estudio', 'para_tramitar', 'para_firma', 'incidencia', 'confirmado', 'valido',
+    'activo', 'renovado', 'baja', 'finalizado', 'anulado', 'desestimado', 'ko', 'rechazado',
+  ].map(v => ({ value: v, label: estadoLabel(v) }));
+
+  readonly firmaOptions: ColumnFilterOption[] = [
+    { value: 'firmado',   label: 'Firmado' },
+    { value: 'pendiente', label: 'Pendiente de firma' },
+    { value: 'expirado',  label: 'Firma expirada' },
+    { value: 'cancelado', label: 'Firma cancelada' },
+    { value: 'sin',       label: 'Sin firma' },
+    { value: 'no_aplica', label: 'No aplica (gas)' },
+  ];
+
+  readonly incidenciaOptions: ColumnFilterOption[] = [
+    { value: 'true',  label: 'Con incidencia' },
+    { value: 'false', label: 'Sin incidencia' },
+  ];
+
   clearFilters():                 void { this.list.clearFilters(); }
   onSearch():                     void { this.list.onSearch(); }
   onClear():                      void { this.list.clearAll(); }
@@ -130,13 +167,11 @@ export class ContractsPageComponent implements AfterViewInit {
   // Al pulsar una fila se abre el detalle (onTableClick).
   readonly columns = signal<TableColumn<ContratoClienteRow>[]>([
     { key: 'TipoEnergia',     label: 'Tipo',              align: 'center' },
-    { key: '__nombre',        label: 'Nombre' },
     { key: 'NombreCliente',   label: 'Cliente' },
     { key: 'NombreDelegacion', label: 'Colaborador' },
     { key: 'CUPS',            label: 'CUPS' },
     { key: 'FechaInicio',     label: 'Fecha de inicio' },
     { key: 'FechaFin',        label: 'Fecha de fin' },
-    { key: 'FechaCreacion',   label: 'Fecha de creación' },
     { key: 'EstadoResumen',   label: 'Estado',            align: 'center' },
     { key: 'EstadoFirma',     label: 'Estado de firma',   align: 'center' },
     { key: 'TieneIncidencia', label: 'Incidencia',        align: 'center' },
@@ -176,17 +211,26 @@ export class ContractsPageComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     this.columns.update(cols => applyContratosColumnTemplates(cols, {
       TipoEnergia:     this.tipoTpl,
-      __nombre:        this.nombreTpl,
       NombreCliente:   this.clienteTpl,
       NombreDelegacion: this.colaboradorTpl,
       CUPS:            this.cupsTpl,
       FechaInicio:     this.fechaInicioTpl,
       FechaFin:        this.fechaFinTpl,
-      FechaCreacion:   this.fechaCreacionTpl,
       EstadoResumen:   this.estadoTpl,
       EstadoFirma:     this.firmaTpl,
       TieneIncidencia: this.incidenciaTpl,
     }));
+    const headers: Record<string, TemplateRef<void>> = {
+      NombreCliente:    this.clienteHeaderTpl,
+      NombreDelegacion: this.colaboradorHeaderTpl,
+      CUPS:             this.cupsHeaderTpl,
+      FechaInicio:      this.inicioHeaderTpl,
+      FechaFin:         this.finHeaderTpl,
+      EstadoResumen:    this.estadoHeaderTpl,
+      EstadoFirma:      this.firmaHeaderTpl,
+      TieneIncidencia:  this.incidenciaHeaderTpl,
+    };
+    this.columns.update(cols => cols.map(c => headers[c.key as string] ? { ...c, headerIconTemplate: headers[c.key as string] } : c));
     this.cdr.markForCheck();
   }
 
