@@ -382,12 +382,12 @@
               <p class="text-xs text-gray-400 mt-0.5">Revisa el contenido y confirma para importarlo al editor.</p>
             </div>
             <div class="flex items-center gap-3">
-              <button (click)="onCancelPreview()"
+              <button type="button" (click)="onCancelPreview()"
                 class="px-4 py-1.5 text-sm text-gray-300 border border-gray-600 rounded-md
                        hover:bg-gray-700 transition-colors cursor-pointer">
                 Cancelar
               </button>
-              <button (click)="onConfirmImport()" [disabled]="confirming()"
+              <button type="button" (click)="onConfirmImport()" [disabled]="confirming()"
                 class="inline-flex items-center gap-2 px-5 py-1.5 text-sm bg-primary-button text-[#17181A]
                        rounded-md font-semibold hover:opacity-90 transition-opacity cursor-pointer
                        disabled:opacity-60 disabled:cursor-not-allowed">

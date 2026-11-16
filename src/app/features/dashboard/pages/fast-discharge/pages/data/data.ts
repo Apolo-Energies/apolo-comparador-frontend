@@ -2,13 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Router } from '@angular/router';
 import { ButtonComponent } from '@apolo-energies/ui';
 import { FastDischargeStore } from '../../store/fast-discharge.store';
+import { Person, PersonType } from '../../models/person.model';
 import { ContractService } from '../../../../../../core/services/contract.service';
 import { IbanVerificationService } from '../../../../../../core/services/iban-verification.service';
 import { EeMunicipio } from '../../../../../../core/models/energy-expert.model';
 import { formatIbanES } from '../../utils/format.utils';
 import { DataLocationController } from './data-location.controller';
 import { IbanVerificationController } from './data-iban.controller';
-import { INPUT_CLS, NUMBER_CLS, PHONE_COUNTRIES, SELECT_CLS, computeDataErrors, splitPhone } from './data.helpers';
+import { INPUT_CLS, NUMBER_CLS, PHONE_COUNTRIES, SELECT_CLS, computeDataErrors, detectBicFromIban, splitPhone } from './data.helpers';
 
 @Component({
   selector: 'app-fd-data',
@@ -23,6 +24,10 @@ export class DataPage {
   private readonly ibanVerificationService = inject(IbanVerificationService);
 
   readonly submitted      = signal(false);
+  readonly tipoPersona     = signal<PersonType>('Individual');
+  readonly isCompany       = computed(() => this.tipoPersona() === 'Company');
+  readonly cif             = signal('');
+  readonly companyName     = signal('');
   readonly nif             = signal('');
   readonly nombre          = signal('');
   readonly apellido1       = signal('');
@@ -36,10 +41,13 @@ export class DataPage {
   readonly bic             = signal('');
   readonly nombreTitular   = signal('');
   readonly otroFirmante      = signal(false);
+  readonly showFirmante      = computed(() => this.isCompany() || this.otroFirmante());
   readonly firmanteNif       = signal('');
   readonly firmanteNombre    = signal('');
   readonly firmanteApellido1 = signal('');
   readonly firmanteApellido2 = signal('');
+  readonly firmanteTelefono  = signal('');
+  readonly firmanteEmail     = signal('');
 
   // Province/municipio cascading lookups (state + service calls live in the controller; R1).
   private readonly location = new DataLocationController({ contractService: this.contractService });
@@ -67,6 +75,11 @@ export class DataPage {
   constructor() {
     const person = this.store.person();
     if (person) {
+      this.tipoPersona.set(person.type);
+      if (person.type === 'Company') {
+        this.cif.set(person.cif);
+        this.companyName.set(person.companyName);
+      }
       this.nif.set(person.dni);
       this.nombre.set(person.name);
       this.apellido1.set(person.apellido1 ?? '');
@@ -84,6 +97,8 @@ export class DataPage {
       this.firmanteNombre.set(person.firmanteNombre ?? '');
       this.firmanteApellido1.set(person.firmanteApellido1 ?? '');
       this.firmanteApellido2.set(person.firmanteApellido2 ?? '');
+      this.firmanteTelefono.set(person.firmanteTelefono ?? '');
+      this.firmanteEmail.set(person.firmanteEmail ?? '');
       this.location.init({
         cp: person.cp ?? '',
         idProvincia: person.idProvincia,
@@ -95,6 +110,9 @@ export class DataPage {
   readonly errors = computed<Record<string, string | null>>(() =>
     computeDataErrors({
       submitted:   this.submitted(),
+      isCompany:   this.isCompany(),
+      cif:         this.cif(),
+      companyName: this.companyName(),
       nif:         this.nif(),
       nombre:      this.nombre(),
       apellido1:   this.apellido1(),
@@ -112,11 +130,17 @@ export class DataPage {
       firmanteNombre: this.firmanteNombre(),
       firmanteApellido1: this.firmanteApellido1(),
       firmanteApellido2: this.firmanteApellido2(),
+      firmanteTelefono: this.firmanteTelefono(),
+      firmanteEmail: this.firmanteEmail(),
     })
   );
 
   toggleOtroFirmante(): void {
     this.otroFirmante.update(v => !v);
+  }
+
+  setTipoPersona(type: PersonType): void {
+    this.tipoPersona.set(type);
   }
 
   onPhoneInput(e: Event): void {
@@ -157,6 +181,9 @@ export class DataPage {
     (event.target as HTMLInputElement).value = formatted;
     this.iban.set(formatted);
     this.ibanVerification.reset();
+
+    const detectedBic = detectBicFromIban(formatted);
+    if (detectedBic) this.bic.set(detectedBic);
   }
 
   onBicInput(event: Event): void {
@@ -184,13 +211,17 @@ export class DataPage {
     this.submitted.set(true);
     if (!this.isValid()) return;
 
-    this.store.setPerson({
-      type:        'Individual',
-      dni:         this.nif().trim(),
-      name:        this.nombre().trim(),
-      apellido1:   this.apellido1().trim(),
-      apellido2:   this.apellido2().trim(),
-      surnames:    [this.apellido1(), this.apellido2()].filter(s => s.trim()).join(' '),
+    const isCompany = this.isCompany();
+    const razonSocial = this.companyName().trim();
+
+    const base = {
+      // Para persona jurídica el CIF viaja en "dni" (mismo campo que espera el backend) y
+      // la razón social se envía directamente como "nombre" del cliente.
+      dni:         isCompany ? this.cif().trim() : this.nif().trim(),
+      name:        isCompany ? razonSocial : this.nombre().trim(),
+      apellido1:   isCompany ? '' : this.apellido1().trim(),
+      apellido2:   isCompany ? '' : this.apellido2().trim(),
+      surnames:    isCompany ? '' : [this.apellido1(), this.apellido2()].filter(s => s.trim()).join(' '),
       address_1:   this.direccion().trim(),
       address_2:   '',
       cp:          this.cp().trim(),
@@ -202,12 +233,21 @@ export class DataPage {
       bank_account:this.iban().replace(/\s/g, ''),
       bic:         this.bic().trim(),
       nombreTitular: this.nombreTitular().trim(),
-      otroFirmante: this.otroFirmante(),
-      firmanteNif: this.otroFirmante() ? this.firmanteNif().trim() : '',
-      firmanteNombre: this.otroFirmante() ? this.firmanteNombre().trim() : '',
-      firmanteApellido1: this.otroFirmante() ? this.firmanteApellido1().trim() : '',
-      firmanteApellido2: this.otroFirmante() ? this.firmanteApellido2().trim() : '',
-    });
+      // En persona jurídica los "datos del representante legal" van siempre, equivalen al "otro firmante".
+      otroFirmante: isCompany ? true : this.otroFirmante(),
+      firmanteNif: this.showFirmante() ? this.firmanteNif().trim() : '',
+      firmanteNombre: this.showFirmante() ? this.firmanteNombre().trim() : '',
+      firmanteApellido1: this.showFirmante() ? this.firmanteApellido1().trim() : '',
+      firmanteApellido2: this.showFirmante() ? this.firmanteApellido2().trim() : '',
+      firmanteTelefono: this.showFirmante() ? this.firmanteTelefono().trim() : '',
+      firmanteEmail: this.showFirmante() ? this.firmanteEmail().trim() : '',
+    };
+
+    const person: Person = isCompany
+      ? { ...base, type: 'Company', cif: this.cif().trim(), companyName: razonSocial }
+      : { ...base, type: 'Individual' };
+
+    this.store.setPerson(person);
 
     this.router.navigate(['/dashboard/fast-discharge/supply-point']);
   }

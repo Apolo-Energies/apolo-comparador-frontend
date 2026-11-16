@@ -12,7 +12,7 @@ import { ContractTemplateService } from '../../../../core/services/contract-temp
 import { ContractTemplate } from '../../../../core/models/contract-template.model';
 import { ContractTemplateFormComponent } from './contract-template-form/contract-template-form';
 import { ContractTemplateHistoryComponent } from './contract-template-history/contract-template-history';
-import { buildPrintDocumentHtml, typeLabel as resolveTypeLabel } from './contract-templates-page.helpers';
+import { typeLabel as resolveTypeLabel } from './contract-templates-page.helpers';
 
 @Component({
   selector: 'app-contract-templates-page',
@@ -96,11 +96,13 @@ export class ContractTemplatesPageComponent implements AfterViewInit {
     this.formOpen.set(true);
   }
 
+  // Abre el PDF real generado por el backend (mismo endpoint que usa el editor
+  // de widgets de firma) en vez del HTML de impresión armado a mano.
   onViewPdf(template: ContractTemplate): void {
-    const win = window.open('', '_blank');
-    if (!win) return;
-    win.document.write(buildPrintDocumentHtml(template));
-    win.document.close();
+    this.templateService.getPreview(template.id).subscribe({
+      next: blob => window.open(URL.createObjectURL(blob), '_blank'),
+      error: () => this.alertService.show('No se pudo cargar el PDF de la plantilla', 'error'),
+    });
   }
 
   onFormSaved(): void {
