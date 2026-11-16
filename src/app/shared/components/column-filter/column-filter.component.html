@@ -1,0 +1,111 @@
+<div class="flex items-center gap-1.5 normal-case tracking-normal font-normal">
+  <button type="button"
+          class="inline-flex items-center justify-center h-5 w-5 -m-0.5 rounded transition-colors cursor-pointer shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          [class]="active() || open() ? 'text-primary-button' : 'text-muted-foreground hover:text-primary-button'"
+          [attr.aria-label]="'Filtrar por ' + label()"
+          [attr.aria-expanded]="open()"
+          aria-haspopup="dialog"
+          (click)="toggle($event)">
+    <lib-apolo-icons [icon]="icon" class="flex items-center" />
+  </button>
+
+  @if (active()) {
+    <span class="inline-flex items-center gap-1 pl-1.5 pr-1 py-0.5 rounded-full bg-primary-button/10 text-primary-button text-[10px] font-medium max-w-32">
+      <span class="truncate" [title]="chip()">{{ chip() }}</span>
+      <button type="button" class="shrink-0 opacity-70 hover:opacity-100 cursor-pointer"
+              [attr.aria-label]="'Quitar filtro ' + label()" (click)="clear($event)">
+        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </span>
+  }
+</div>
+
+@if (open()) {
+  <div role="dialog" [attr.aria-label]="'Filtro ' + label()"
+       class="fixed z-50 bg-card border border-border rounded-lg shadow-xl p-3 flex flex-col gap-3 text-left normal-case tracking-normal font-normal cursor-default"
+       [style.top.px]="pos().top" [style.left.px]="pos().left" [style.width.px]="pos().width"
+       (click)="$event.stopPropagation()"
+       (keydown.escape)="close()">
+    <p class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">{{ label() }}</p>
+
+    @switch (kind()) {
+      @case ('text') {
+        <input data-autofocus type="search"
+               class="w-full text-xs bg-input border border-border rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground/60"
+               [placeholder]="placeholder()"
+               [value]="draft()"
+               (input)="draft.set($any($event.target).value)"
+               (keydown.enter)="applyText()" />
+        <div class="flex items-center justify-between gap-2">
+          @if (active()) {
+            <button type="button" class="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer" (click)="clear()">Quitar filtro</button>
+          } @else { <span></span> }
+          <button type="button"
+                  class="text-xs px-3 py-1.5 bg-primary-button text-white rounded-md hover:opacity-90 transition-opacity font-medium cursor-pointer"
+                  (click)="applyText()">Aplicar</button>
+        </div>
+      }
+
+      @case ('options') {
+        <div class="flex flex-col -mx-1 max-h-72 overflow-y-auto" role="listbox" [attr.aria-label]="label()">
+          @for (o of options(); track o.value; let first = $first) {
+            <button type="button" role="option" [attr.aria-selected]="o.value === value()"
+                    [attr.data-autofocus]="first ? '' : null"
+                    class="flex items-center justify-between gap-2 px-2 py-1.5 rounded-md text-xs text-left transition-colors cursor-pointer focus:outline-none focus-visible:bg-accent"
+                    [class]="o.value === value() ? 'bg-primary-button/10 text-primary-button font-medium' : 'text-foreground hover:bg-accent'"
+                    (click)="pickOption(o.value)">
+              {{ o.label }}
+              @if (o.value === value()) {
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              }
+            </button>
+          }
+        </div>
+        @if (active()) {
+          <button type="button" class="self-start text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer" (click)="clear()">Quitar filtro</button>
+        }
+      }
+
+      @case ('date-range') {
+        <div class="flex flex-wrap gap-1.5">
+          @for (p of presets; track p.label) {
+            <button type="button"
+                    class="px-2 py-1 rounded-full border text-[11px] transition-colors cursor-pointer"
+                    [class]="isPreset(p) ? 'border-primary-button/60 bg-primary-button/10 text-primary-button' : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/30'"
+                    (click)="applyRange(p.range())">{{ p.label }}</button>
+          }
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="flex flex-col gap-1 text-[11px] text-muted-foreground">
+            Desde
+            <input data-autofocus type="date"
+                   class="w-full text-xs bg-input border border-border rounded-md px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+                   [value]="draftFrom()" [max]="draftTo() || null"
+                   (input)="draftFrom.set($any($event.target).value)"
+                   (keydown.enter)="applyRange()" />
+          </label>
+          <label class="flex flex-col gap-1 text-[11px] text-muted-foreground">
+            Hasta
+            <input type="date"
+                   class="w-full text-xs bg-input border border-border rounded-md px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+                   [value]="draftTo()" [min]="draftFrom() || null"
+                   (input)="draftTo.set($any($event.target).value)"
+                   (keydown.enter)="applyRange()" />
+          </label>
+        </div>
+        @if (invalidRange()) {
+          <p class="text-[11px] text-red-400 -mt-1">La fecha «Desde» es posterior a «Hasta».</p>
+        }
+        <div class="flex items-center justify-between gap-2">
+          @if (active()) {
+            <button type="button" class="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer" (click)="clear()">Quitar filtro</button>
+          } @else { <span></span> }
+          <button type="button"
+                  class="text-xs px-3 py-1.5 bg-primary-button text-white rounded-md hover:opacity-90 transition-opacity font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  [disabled]="invalidRange()"
+                  (click)="applyRange()">Aplicar</button>
+        </div>
+      }
+    }
+  </div>
+}

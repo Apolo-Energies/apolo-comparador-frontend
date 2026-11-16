@@ -148,6 +148,8 @@ export class ContractService {
     /** Último movimiento, yyyy-MM-dd (inclusive). */
     desde?:        string;
     hasta?:        string;
+    /** Embudos de las columnas (cliente, cups, inicioDesde…); los vacíos no se envían. */
+    columnas?:     Record<string, string>;
     /** Colaborador seleccionado en el selector global "ver como" (Master, Apolo). */
     targetUserId?: string;
   }): Observable<ContratosPageResponse> {
@@ -161,6 +163,9 @@ export class ContractService {
     if (params.tipo)     httpParams = httpParams.set('tipo',     params.tipo);
     if (params.desde)    httpParams = httpParams.set('desde',    params.desde);
     if (params.hasta)    httpParams = httpParams.set('hasta',    params.hasta);
+    for (const [k, v] of Object.entries(params.columnas ?? {})) {
+      if (v) httpParams = httpParams.set(k, v);
+    }
     if (params.targetUserId) httpParams = httpParams.set('targetUserId', params.targetUserId);
 
     return this.http.get<ContratosPageResponse>(

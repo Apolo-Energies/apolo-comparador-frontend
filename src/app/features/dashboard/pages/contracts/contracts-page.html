@@ -15,15 +15,10 @@
   }
 </ng-template>
 
-<ng-template #nombreTpl let-row>
-  @let cliente = row.RazonSocialCliente || row.NombreCliente;
-  <p class="font-medium text-foreground">{{ row.Producto ? (cliente || '—') + ' - ' + row.Producto : (cliente || '—') }}</p>
-</ng-template>
-
 <ng-template #clienteTpl let-row>
   <p class="text-sm text-foreground">{{ row.RazonSocialCliente || row.NombreCliente || '—' }}</p>
-  @if (row.NIF) {
-    <p class="text-xs text-muted-foreground">{{ row.NIF }}</p>
+  @if (row.NIF || row.Producto) {
+    <p class="text-xs text-muted-foreground">{{ row.NIF }}{{ row.NIF && row.Producto ? ' · ' : '' }}{{ row.Producto }}</p>
   }
 </ng-template>
 
@@ -37,10 +32,6 @@
 
 <ng-template #fechaFinTpl let-row>
   <span class="text-sm text-muted-foreground whitespace-nowrap">{{ fmtDate(row.FechaFin) }}</span>
-</ng-template>
-
-<ng-template #fechaCreacionTpl let-row>
-  <span class="text-sm text-muted-foreground whitespace-nowrap">{{ fmtDate(row.FechaCreacion) }}</span>
 </ng-template>
 
 <ng-template #firmaTpl let-row>
@@ -105,6 +96,42 @@
 
 <ng-template #colaboradorTpl let-row>
   <span class="text-sm text-foreground">{{ row.NombreDelegacion || '—' }}</span>
+</ng-template>
+
+<!-- Embudos de los encabezados -->
+<ng-template #clienteHeaderTpl>
+  <app-column-filter label="Cliente" placeholder="Nombre, razón social o NIF…"
+                     [value]="colFilters().cliente" (valueChange)="setColFilter({ cliente: $event })" />
+</ng-template>
+<ng-template #colaboradorHeaderTpl>
+  <app-column-filter label="Colaborador" placeholder="Nombre del colaborador…"
+                     [value]="colFilters().colaborador" (valueChange)="setColFilter({ colaborador: $event })" />
+</ng-template>
+<ng-template #cupsHeaderTpl>
+  <app-column-filter label="CUPS" placeholder="ES0021… (o parte)"
+                     [value]="colFilters().cups" (valueChange)="setColFilter({ cups: $event })" />
+</ng-template>
+<ng-template #inicioHeaderTpl>
+  <app-column-filter label="Fecha de inicio" kind="date-range"
+                     [range]="{ from: colFilters().inicioDesde, to: colFilters().inicioHasta }"
+                     (rangeChange)="setColRange('inicioDesde', 'inicioHasta', $event)" />
+</ng-template>
+<ng-template #finHeaderTpl>
+  <app-column-filter label="Fecha de fin" kind="date-range"
+                     [range]="{ from: colFilters().finDesde, to: colFilters().finHasta }"
+                     (rangeChange)="setColRange('finDesde', 'finHasta', $event)" />
+</ng-template>
+<ng-template #estadoHeaderTpl>
+  <app-column-filter label="Estado" kind="options" [options]="estadoOptions"
+                     [value]="filterEstado()" (valueChange)="onEstadoChange($event)" />
+</ng-template>
+<ng-template #firmaHeaderTpl>
+  <app-column-filter label="Estado de firma" kind="options" [options]="firmaOptions"
+                     [value]="colFilters().firma" (valueChange)="setColFilter({ firma: $event })" />
+</ng-template>
+<ng-template #incidenciaHeaderTpl>
+  <app-column-filter label="Incidencia" kind="options" [options]="incidenciaOptions"
+                     [value]="colFilters().incidencia" (valueChange)="setColFilter({ incidencia: $event })" />
 </ng-template>
 
 <div class="border border-border rounded-xl overflow-hidden bg-card">
@@ -181,21 +208,6 @@
     <!-- Filtros siempre visibles. El borde se resalta cuando el filtro está aplicado. -->
     <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-border/50">
       <label class="flex items-center h-8 rounded-md border bg-background text-xs transition-colors focus-within:ring-2 focus-within:ring-primary/40"
-             [class.border-primary]="!!filterEstado()" [class.border-border]="!filterEstado()">
-        <span class="pl-2.5 pr-1.5 text-muted-foreground whitespace-nowrap">Fase alta</span>
-        <select [value]="filterEstado()"
-                (change)="onEstadoChange($any($event.target).value)"
-                class="h-full bg-transparent pr-2 text-foreground focus:outline-none cursor-pointer">
-          <option value="">Todas</option>
-          <option value="previo">Previo</option>
-          <option value="para_estudio">Para estudio</option>
-          <option value="para_tramitar">Para tramitar</option>
-          <option value="para_firma">Para firma</option>
-          <option value="incidencia">Incidencia</option>
-        </select>
-      </label>
-
-      <label class="flex items-center h-8 rounded-md border bg-background text-xs transition-colors focus-within:ring-2 focus-within:ring-primary/40"
              [class.border-primary]="!!filterFaltante()" [class.border-border]="!filterFaltante()">
         <span class="pl-2.5 pr-1.5 text-muted-foreground whitespace-nowrap">Campo faltante</span>
         <select [value]="filterFaltante()"
@@ -261,15 +273,9 @@
   <!-- Table -->
   <div class="relative contracts-table" (click)="onTableClick($event)">
     @if (loading()) {
-      <app-table-skeleton [cols]="11" [rows]="10" />
-    } @else if (visibleData().length === 0) {
-      <div class="flex flex-col items-center justify-center py-16 text-muted-foreground">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-3 opacity-40"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <p class="text-sm">
-          Sin resultados
-        </p>
-      </div>
+      <app-table-skeleton [cols]="9" [rows]="10" />
     } @else {
+      <!-- Sin filas se sigue pintando el encabezado: los embudos quedan a mano para corregir el filtro. -->
       <lib-data-table
         [data]="visibleData()"
         [columns]="columns()"
@@ -283,6 +289,21 @@
         [roundedBottomLeft]="false"
         [roundedBottomRight]="false"
       />
+      @if (visibleData().length === 0) {
+        <div class="flex flex-col items-center justify-center py-14 px-6 text-center text-muted-foreground">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-3 opacity-40" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          @if (hasAnyFilter) {
+            <p class="text-sm font-medium text-foreground">Ningún contrato cumple estos filtros</p>
+            <p class="text-xs mt-1">Ajustá los filtros de las columnas o quitalos todos.</p>
+            <button type="button" (click)="onClear()"
+                    class="mt-4 inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-border text-xs font-medium text-foreground hover:bg-accent transition-colors">
+              Limpiar filtros
+            </button>
+          } @else {
+            <p class="text-sm">Sin contratos todavía</p>
+          }
+        </div>
+      }
     }
   </div>
 
