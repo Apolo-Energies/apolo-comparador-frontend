@@ -1,3 +1,4 @@
+import { ThemeService } from '../../../../../../core/services/theme.service';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
@@ -25,6 +26,8 @@ export class MarketLineChartComponent implements AfterViewInit {
   readonly subtitle = input<string>('');
   readonly legend = input<string>('Serie');
   readonly color = input<string>('#10b981');
+  /** Color de la línea en el tema negro (≥ 3:1 sobre #17181A). */
+  readonly colorDark = input<string | null>(null);
   readonly series = input<MarketSeries | null>(null);
   readonly loading = input<boolean>(false);
 
@@ -32,17 +35,20 @@ export class MarketLineChartComponent implements AfterViewInit {
 
   @ViewChild('chartCanvas') private canvasRef?: ElementRef<HTMLCanvasElement>;
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly theme = inject(ThemeService);
 
   private chart: Chart | null = null;
   private chartLib: typeof import('chart.js') | null = null;
 
   readonly points = computed<MarketSeriesPoint[]>(() => this.series()?.points ?? []);
   readonly hasPoints = computed(() => this.points().length > 0);
+  readonly lineColor = computed(() => this.theme.portalDark() ? (this.colorDark() ?? this.color()) : this.color());
 
   constructor() {
     effect(() => {
       this.points();
       this.color();
+      this.theme.portalDark();
       queueMicrotask(() => this.render());
     });
   }
@@ -64,7 +70,10 @@ export class MarketLineChartComponent implements AfterViewInit {
 
     const labels = points.map(p => this.formatDate(p.date));
     const data = points.map(p => p.value);
-    const color = this.color();
+    const dark = this.theme.portalDark();
+    const color = dark ? (this.colorDark() ?? this.color()) : this.color();
+    const axis = dark ? '#a1a1aa' : '#5f6368';
+    const grid = dark ? 'rgba(255, 255, 255, 0.08)' : '#e6e8eb';
 
     const config: ChartConfiguration<'line'> = {
       type: 'line',
@@ -75,8 +84,8 @@ export class MarketLineChartComponent implements AfterViewInit {
             label: this.legend(),
             data,
             borderColor: color,
-            backgroundColor: this.transparent(color, 0.1),
-            borderWidth: 2,
+            backgroundColor: this.transparent(color, 0.14),
+            borderWidth: 2.25,
             tension: 0.35,
             fill: true,
             pointRadius: 0,
@@ -110,14 +119,15 @@ export class MarketLineChartComponent implements AfterViewInit {
             ticks: {
               maxTicksLimit: 7,
               autoSkip: true,
-              color: 'rgba(100, 116, 139, 0.7)',
+              color: axis,
               font: { size: 10 },
             },
           },
           y: {
-            grid: { color: 'rgba(148, 163, 184, 0.15)' },
+            grid: { color: grid },
+            border: { display: false },
             ticks: {
-              color: 'rgba(100, 116, 139, 0.7)',
+              color: axis,
               font: { size: 10 },
               maxTicksLimit: 5,
             },

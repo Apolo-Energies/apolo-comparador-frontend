@@ -101,7 +101,7 @@ export class TramitacionPanelComponent {
   uploadCls(item: TramitacionItem): string {
     const base = this.isTramitadoDeNuevo(item)
       ? 'border border-border text-foreground hover:bg-accent'
-      : 'bg-primary-button text-white hover:bg-primary-button/90';
+      : 'bg-primary text-white hover:bg-primary/90';
     return this.uploadingId() === item.idServicio ? `${base} opacity-60 pointer-events-none` : base;
   }
 

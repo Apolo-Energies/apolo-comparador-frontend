@@ -112,7 +112,7 @@
             <p class="text-xs text-muted-foreground">{{ formatFileSize(f) }}</p>
           </div>
           <button type="button"
-            class="shrink-0 p-1 rounded text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all"
+            class="shrink-0 p-1 rounded text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-danger transition-all"
             (click)="$event.stopPropagation(); removePending(f)">
             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -156,7 +156,7 @@
         </div>
         @if (showGlobalFixedNoAdjustmentNotice()) {
           <div class="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3">
-            <p class="text-xs text-amber-300">{{ fixedNoAdjustmentMessage }}</p>
+            <p class="text-xs text-warning">{{ fixedNoAdjustmentMessage }}</p>
           </div>
         }
         <!-- Fila 2: Fee E | Fee P lado a lado -->
@@ -200,7 +200,7 @@
             <span class="text-muted-foreground">
               Ahorro total:
               <span class="font-semibold" [class.text-green-500]="totalAhorro() > 0"
-                [class.text-red-500]="totalAhorro() <= 0">
+                [class.text-danger]="totalAhorro() <= 0">
                 {{ truncate(totalAhorro()) }}€/año
               </span>
             </span>
@@ -230,7 +230,7 @@
             </div>
 
             @if (item.status === 'error') {
-            <p class="text-xs text-red-500">{{ item.error }}</p>
+            <p class="text-xs text-danger">{{ item.error }}</p>
             <button type="button" class="text-xs text-primary hover:opacity-70 transition-opacity text-left"
               (click)="$event.stopPropagation(); retryItem(item)">↺ Reintentar</button>
             } @else if (item.result) {
@@ -243,7 +243,7 @@
               item.form.producto }}</p>
             <div class="py-1.5 text-center">
               <p class="text-xl font-bold leading-none" [class.text-green-500]="item.result.ahorroXAnio > 0"
-                [class.text-red-500]="item.result.ahorroXAnio <= 0">
+                [class.text-danger]="item.result.ahorroXAnio <= 0">
                 {{ item.result.ahorroXAnio > 0 ? '+' : '' }}{{ truncate(item.result.ahorroXAnio) }}€
               </p>
               <p class="text-xs text-muted-foreground mt-0.5">ahorro/año</p>
@@ -317,7 +317,7 @@
 
             @if (isFixedNoAdjustmentProduct(item.form.producto)) {
               <div class="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3">
-                <p class="text-xs text-amber-300">{{ fixedNoAdjustmentMessage }}</p>
+                <p class="text-xs text-warning">{{ fixedNoAdjustmentMessage }}</p>
               </div>
             }
 
@@ -353,18 +353,18 @@
               <div class="p-4 rounded-lg bg-card border border-border">
                 <p class="text-sm font-medium text-foreground mb-1">Comisión comercial</p>
                 <p class="text-2xl font-bold text-foreground">{{ truncate(item.result!.comision) }}€</p>
-                <p class="text-sm text-green-400">+ 10% extra</p>
+                <p class="text-sm text-success">+ 10% extra</p>
               </div>
               }
               <div class="p-4 rounded-lg bg-card border border-border">
                 <p class="text-sm font-medium text-foreground mb-1">Ahorro cliente</p>
                 <p class="text-xl font-bold text-foreground">{{ truncate(item.result!.ahorroEstudio) }}€ al mes</p>
-                <p class="text-xl font-bold" [class.text-green-400]="item.result!.ahorroXAnio > 0"
-                  [class.text-red-400]="item.result!.ahorroXAnio <= 0">
+                <p class="text-xl font-bold" [class.text-success]="item.result!.ahorroXAnio > 0"
+                  [class.text-danger]="item.result!.ahorroXAnio <= 0">
                   {{ truncate(item.result!.ahorroXAnio) }}€ al año
                 </p>
-                <p class="text-sm" [class.text-green-400]="item.result!.ahorro_porcent > 0"
-                  [class.text-red-400]="item.result!.ahorro_porcent <= 0">
+                <p class="text-sm" [class.text-success]="item.result!.ahorro_porcent > 0"
+                  [class.text-danger]="item.result!.ahorro_porcent <= 0">
                   {{ item.result!.ahorro_porcent > 0 ? '+' : '' }}{{ item.result!.ahorro_porcent }}% de ahorro
                 </p>
               </div>
@@ -389,14 +389,14 @@
                   <div class="space-y-3">
                     @for (p of PERIODOS; track p) {
                     <p><span class="opacity-70">Energía P{{ p }}:</span>
-                      <span class="text-blue-300 ml-1">{{ getPrecioEnergia(item.result!.periodos, p) }}</span>
+                      <span class="text-primary ml-1">{{ getPrecioEnergia(item.result!.periodos, p) }}</span>
                     </p>
                     }
                   </div>
                   <div class="space-y-3">
                     @for (p of PERIODOS; track p) {
                     <p><span class="opacity-70">Potencia P{{ p }}:</span>
-                      <span class="text-blue-300 ml-1">{{ getPrecioPotencia(item.result!.periodos, p) }}</span>
+                      <span class="text-primary ml-1">{{ getPrecioPotencia(item.result!.periodos, p) }}</span>
                     </p>
                     }
                   </div>

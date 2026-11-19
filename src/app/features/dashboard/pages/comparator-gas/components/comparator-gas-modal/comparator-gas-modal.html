@@ -99,8 +99,8 @@
 
                   <!-- Precio final para el cliente (BOE + margen) del período -->
                   <div class="p-2 rounded-md bg-emerald-500/5 border border-emerald-500/30">
-                    <p class="text-[10px] uppercase tracking-wide text-emerald-400">Precio final</p>
-                    <p class="text-sm font-mono font-semibold text-emerald-300">
+                    <p class="text-[10px] uppercase tracking-wide text-success">Precio final</p>
+                    <p class="text-sm font-mono font-semibold text-success">
                       {{ formatEur(r.precioFijoOferta * r.dias) }}
                     </p>
                     <p class="text-[10px] text-muted-foreground">{{ r.dias }} días</p>
@@ -148,7 +148,7 @@
     @if (awaitingManualConsumption()) {
       <div class="rounded-lg border border-amber-500/40 bg-amber-500/5 p-5 space-y-4">
         <div class="space-y-1">
-          <p class="text-sm font-semibold text-amber-300">Consumo anual no detectado</p>
+          <p class="text-sm font-semibold text-warning">Consumo anual no detectado</p>
           <p class="text-xs text-muted-foreground">
             Esta factura no tiene consumo real en el periodo (lectura actual = lectura anterior) y SIPS no devolvió datos para este CUPS.
             Introduce el consumo anual estimado del cliente para calcular la comparativa.
@@ -201,25 +201,25 @@
           <div class="flex items-start gap-3">
             <!-- Icono según tono -->
             @if (g.tone === 'good') {
-              <svg class="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-5 w-5 text-success shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
             } @else if (g.tone === 'warn') {
-              <svg class="h-5 w-5 text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-5 w-5 text-warning shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
               </svg>
             } @else {
-              <svg class="h-5 w-5 text-red-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-5 w-5 text-danger shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
             }
             <div class="flex-1">
               <p class="text-sm font-semibold"
-                 [class.text-emerald-300]="g.tone === 'good'"
-                 [class.text-amber-300]="g.tone === 'warn'"
-                 [class.text-red-300]="g.tone === 'bad'">
+                 [class.text-success]="g.tone === 'good'"
+                 [class.text-warning]="g.tone === 'warn'"
+                 [class.text-danger]="g.tone === 'bad'">
                 {{ g.title }}
               </p>
               <p class="text-xs text-muted-foreground mt-1">{{ g.detail }}</p>
@@ -240,8 +240,8 @@
           <div class="p-4 rounded-lg bg-card border border-border">
             <p class="text-sm font-medium text-foreground mb-1">Ahorro cliente</p>
             <p class="text-xl font-bold text-foreground">{{ truncate(r.ahorroEstudio) }}€ al Mes</p>
-            <p class="text-xl font-bold text-green-400">{{ truncate(r.ahorroXAnio) }}€ al año</p>
-            <p class="text-sm text-green-400">+{{ r.ahorro_porcent }}% de ahorro</p>
+            <p class="text-xl font-bold text-success">{{ truncate(r.ahorroXAnio) }}€ al año</p>
+            <p class="text-sm text-success">+{{ r.ahorro_porcent }}% de ahorro</p>
           </div>
 
           <!-- Ganancia Apolo (Comisión) -->
@@ -249,7 +249,7 @@
             <p class="text-sm font-medium text-foreground mb-1">Ganancia Apolo</p>
             <p class="text-sm text-muted-foreground">Comisión</p>
             <p class="text-xl font-bold"
-               [class.text-green-400]="r.gananciaApoloAnual > 0"
+               [class.text-success]="r.gananciaApoloAnual > 0"
                [class.text-muted-foreground]="r.gananciaApoloAnual === 0">
               {{ formatEur(r.gananciaApoloAnual) }}
             </p>
@@ -285,16 +285,16 @@
             <div class="space-y-3">
               <p>
                 <span class="opacity-70">Energía:</span>
-                <span class="text-blue-300 ml-1">{{ formatPrice(r.precioEnergiaOferta) }} €/kWh</span>
+                <span class="text-primary ml-1">{{ formatPrice(r.precioEnergiaOferta) }} €/kWh</span>
               </p>
               <p>
                 <span class="opacity-70">Consumo facturado:</span>
-                <span class="text-blue-300 ml-1">{{ formatPrice(r.kwhTotal, 2) }} kWh</span>
+                <span class="text-primary ml-1">{{ formatPrice(r.kwhTotal, 2) }} kWh</span>
               </p>
               @if (pricingInfo(); as p) {
                 <p>
                   <span class="opacity-70">Tarifa aplicada:</span>
-                  <span class="text-blue-300 ml-1">
+                  <span class="text-primary ml-1">
                     {{ p.bracketCode }}
                     <span class="text-xs text-muted-foreground">
                       ({{ p.bracketMinKwh | number:'1.0-0' }}–{{ p.bracketMaxKwh !== null ? (p.bracketMaxKwh | number:'1.0-0') : '∞' }} kWh/año)
@@ -308,11 +308,11 @@
             <div class="space-y-3">
               <p>
                 <span class="opacity-70">Término fijo:</span>
-                <span class="text-blue-300 ml-1">{{ formatPrice(r.precioFijoOferta) }} €/día</span>
+                <span class="text-primary ml-1">{{ formatPrice(r.precioFijoOferta) }} €/día</span>
               </p>
               <p>
                 <span class="opacity-70">Días facturados:</span>
-                <span class="text-blue-300 ml-1">{{ r.dias }}</span>
+                <span class="text-primary ml-1">{{ r.dias }}</span>
               </p>
               <p class="text-xs text-muted-foreground">
                 Desglose: <span class="text-foreground">{{ formatPrice(r.precioFijoBoeDia) }}</span> (BOE)

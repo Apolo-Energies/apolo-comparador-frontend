@@ -22,7 +22,7 @@ const ROTATE_THRESHOLD = 8;
 })
 export class BarChartComponent {
   readonly bars  = input.required<ChartBar[]>();
-  readonly color = input<string>('#a78bfa');
+  readonly color = input<string>('#2a78d6');
 
   readonly maxRaw = computed(() => {
     const vals = this.bars().map(b => b.value);

@@ -1,4 +1,4 @@
-<div class="min-h-full bg-body text-zinc-100 -mx-6 -my-6 px-6 py-6 lg:-mx-8 lg:-my-8 lg:px-8 lg:py-8 space-y-6">
+<div class="space-y-5">
 
   <!-- Cell templates (table mode) -->
   <ng-template #statusCellTpl let-row>
@@ -7,9 +7,9 @@
 
   <ng-template #clientCellTpl let-row>
     <div class="flex flex-col">
-      <span class="font-medium text-zinc-100">{{ row.client?.name || '-' }}</span>
+      <span class="font-medium text-foreground">{{ row.client?.name || '-' }}</span>
       @if (row.client?.nif) {
-        <span class="text-xs text-zinc-500">{{ row.client.nif }}</span>
+        <span class="text-xs text-muted-foreground">{{ row.client.nif }}</span>
       }
     </div>
   </ng-template>
@@ -17,19 +17,19 @@
   <ng-template #creatorCellTpl let-row>
     @if (row.createdBy) {
       <div class="flex flex-col">
-        <span class="text-zinc-200">{{ row.createdBy.fullName }}</span>
-        <span class="inline-flex items-center gap-1 text-xs text-zinc-500">
+        <span class="text-foreground">{{ row.createdBy.fullName }}</span>
+        <span class="inline-flex items-center gap-1 text-xs text-muted-foreground">
           <lib-apolo-icons [icon]="emailIcon" class="flex items-center shrink-0" />
           {{ row.createdBy.email }}
         </span>
       </div>
     } @else {
-      <span class="text-zinc-500">-</span>
+      <span class="text-muted-foreground">-</span>
     }
   </ng-template>
 
   <ng-template #updatedCellTpl let-row>
-    <span class="inline-flex items-center gap-1.5 text-zinc-400">
+    <span class="inline-flex items-center gap-1.5 text-muted-foreground">
       <lib-apolo-icons [icon]="dateIcon" class="flex items-center shrink-0" />
       <span>{{ formatDate(row.updatedAt) }}</span>
     </span>
@@ -48,32 +48,30 @@
   <!-- ============ HEADER ============ -->
   <header class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
     <div>
-      <h1 class="text-2xl lg:text-3xl font-bold tracking-tight text-zinc-50">{{ pageTitle() }}</h1>
-      <p class="text-sm text-zinc-400 mt-1">{{ subtitleText() }}</p>
+      <h1 class="text-[22px] font-semibold leading-tight tracking-[-0.01em] text-foreground">{{ pageTitle() }}</h1>
+      <p class="text-sm text-muted-foreground mt-1">{{ subtitleText() }}</p>
     </div>
 
     <!-- Segmented control -->
-    <div class="inline-flex rounded-xl border border-border bg-card p-1 self-start lg:self-auto shadow-inner shadow-black/20">
+    <div class="inline-flex gap-0.5 rounded-lg border border-border bg-card p-[3px] self-start lg:self-auto" role="group" aria-label="Vista">
       <button
         type="button"
-        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-normal
-               transition-all duration-300"
+        class="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors duration-150"
         [class]="viewMode() === 'board'
-          ? 'bg-primary-button text-primary-button-foreground shadow-md shadow-blue-500/20'
-          : 'text-zinc-300 hover:bg-accent'"
-        (click)="setViewMode('board')"
+          ? 'bg-primary text-white font-medium'
+          : 'text-muted-foreground hover:bg-accent hover:text-foreground'"
+        (click)="setViewMode('board')" [attr.aria-pressed]="viewMode() === 'board'"
       >
         <lib-apolo-icons [icon]="tableroIcon" class="flex items-center" />
         Tablero
       </button>
       <button
         type="button"
-        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-normal
-               transition-all duration-300"
+        class="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors duration-150"
         [class]="viewMode() === 'table'
-          ? 'bg-primary-button text-primary-button-foreground shadow-md shadow-blue-500/20'
-          : 'text-zinc-300 hover:bg-accent'"
-        (click)="setViewMode('table')"
+          ? 'bg-primary text-white font-medium'
+          : 'text-muted-foreground hover:bg-accent hover:text-foreground'"
+        (click)="setViewMode('table')" [attr.aria-pressed]="viewMode() === 'table'"
       >
         <lib-apolo-icons [icon]="tablaIcon" class="flex items-center" />
         Tabla
@@ -82,42 +80,33 @@
   </header>
 
   <!-- ============ KPI CARDS ============ -->
-  <section class="flex gap-3 overflow-x-auto pb-2 items-stretch">
+  <section class="grid gap-2.5 [grid-template-columns:repeat(auto-fit,minmax(130px,1fr))]">
 
     @for (card of kpiCards(); track card.label) {
-      <div class="group relative overflow-hidden rounded-2xl border border-border
-                  bg-card hover:bg-card/80 shadow-lg shadow-black/10
-                  transition-all duration-300 ease-out hover:-translate-y-0.5 p-4 flex-1 min-w-36">
-        <div class="relative flex flex-col gap-2">
-          <div class="flex items-center gap-2 min-w-0">
-            <span class="w-2 h-2 rounded-full shrink-0" [class]="card.dot"></span>
-            <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold truncate">{{ card.label }}</p>
-          </div>
-          <p class="text-2xl font-bold leading-none" [class]="card.icon">{{ card.count | esNumber:0 }}</p>
-          <p class="text-xs text-zinc-500 tabular-nums">{{ card.volumeMwh | esNumber }} MWh</p>
+      <div class="rounded-lg border border-border bg-card px-3.5 py-3 min-w-0">
+        <div class="flex items-center gap-1.5 min-w-0">
+          <span class="size-[7px] rounded-full shrink-0" [class]="card.dot"></span>
+          <p class="text-[11px] uppercase tracking-[0.06em] text-muted-foreground truncate">{{ card.label }}</p>
         </div>
+        <p class="mt-0.5 text-[26px] font-semibold leading-tight tracking-[-0.02em] tabular-nums" [class]="card.icon">{{ card.count | esNumber:0 }}</p>
+        <p class="text-xs text-muted-foreground tabular-nums">{{ card.volumeMwh | esNumber }} MWh</p>
       </div>
     }
 
     <!-- Conversión -->
-    <div class="group relative overflow-hidden rounded-2xl border border-border
-                bg-card hover:bg-card/80 shadow-lg shadow-black/10
-                transition-all duration-300 ease-out hover:-translate-y-0.5 p-4 flex-1 min-w-36">
-      <div class="relative flex flex-col gap-2">
-        <div class="flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full shrink-0 bg-amber-400"></span>
-          <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">Conversión</p>
-        </div>
-        <p class="text-2xl font-bold leading-none text-amber-400">{{ conversion() | esNumber }}%</p>
-        <p class="text-xs text-zinc-500">Ganadas / Total</p>
+    <div class="rounded-lg border border-border bg-card px-3.5 py-3 min-w-0">
+      <div class="flex items-center gap-1.5">
+        <span class="size-[7px] rounded-full shrink-0 bg-amber-400"></span>
+        <p class="text-[11px] uppercase tracking-[0.06em] text-muted-foreground">Conversión</p>
       </div>
+      <p class="mt-0.5 text-[26px] font-semibold leading-tight tracking-[-0.02em] tabular-nums text-warning">{{ conversion() | esNumber }} %</p>
+      <p class="text-xs text-muted-foreground">Ganadas / Total</p>
     </div>
 
   </section>
 
   <!-- ============ FILTER BAR ============ -->
-  <section class="rounded-2xl border border-border bg-card backdrop-blur-sm p-3 shadow-lg shadow-black/10
-                  transition-colors duration-300 hover:bg-card/80">
+  <section class="rounded-lg border border-border bg-card p-3">
     <div class="flex flex-wrap items-center gap-2">
       <div class="flex-1 min-w-60" (keydown)="onFilterKeydown($event)">
         <ui-input
@@ -174,11 +163,11 @@
       (cardOpen)="openDetail($event)"
     />
 
-    <p class="text-xs text-zinc-500 italic">
-      Arrastra una tarjeta a otra columna para cambiar su estado.
+    <p class="text-xs text-muted-foreground">
+      Arrastre una tarjeta a otra columna o haga clic en ella para cambiar su estado. Al marcarla como perdida es obligatorio indicar la razón.
     </p>
   } @else {
-    <div class="border border-border rounded-2xl overflow-hidden shadow-lg shadow-black/10 bg-card">
+    <div class="border border-border rounded-lg overflow-hidden bg-card">
       <div class="relative min-h-50">
 
         @if (loadingTable()) {
@@ -200,8 +189,8 @@
         }
 
         @if (!loadingTable() && tableData().length === 0) {
-          <div class="text-center py-12 px-6 text-sm text-zinc-500 border-t border-border">
-            No hay oportunidades que coincidan con los filtros.
+          <div class="text-center py-12 px-6 text-sm text-muted-foreground border-t border-border">
+            Ninguna oportunidad cumple estos filtros. Pruebe a quitar alguno.
           </div>
         }
 

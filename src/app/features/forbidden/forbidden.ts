@@ -11,6 +11,6 @@ export class ForbiddenComponent {
   private router = inject(Router);
 
   goBack() {
-    this.router.navigate(['/dashboard/comparator']);
+    this.router.navigate(['/dashboard/inicio']);
   }
 }

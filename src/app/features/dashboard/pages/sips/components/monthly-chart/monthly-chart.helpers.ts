@@ -30,13 +30,14 @@ export const PAD_B = 40;
 export const TICK_CNT = 5;
 export const DRAW_H = CHART_H - PAD_T - PAD_B;
 
+/** Colores por periodo: paleta de gráficos por tema (variables CSS en styles.css), en orden fijo. */
 export const COLORS: Record<string, string> = {
-  P1: '#7C67F2',
-  P2: '#8FDBFF',
-  P3: '#FFB86B',
-  P4: '#F691A6',
-  P5: '#C4C4C4',
-  P6: '#999DF8',
+  P1: 'var(--series-1)',
+  P2: 'var(--series-2)',
+  P3: 'var(--series-3)',
+  P4: 'var(--series-4)',
+  P5: 'var(--series-5)',
+  P6: 'var(--series-6)',
 };
 
 export const MAX_BAR_W = 30;

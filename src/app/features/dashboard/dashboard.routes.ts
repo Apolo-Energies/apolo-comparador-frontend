@@ -27,9 +27,31 @@ export const DASHBOARD_ROUTES: Routes = [
     component: Layout,
     canActivate: [authGuard],
     children: [
-      { path: '', redirectTo: 'comparator', pathMatch: 'full' },
+      { path: '', redirectTo: 'inicio', pathMatch: 'full' },
+
+      // Inicio con tarjetas de herramientas. Sin rol extra: las
+      // tarjetas ya se filtran con las mismas reglas que el menú.
+      {
+        path: 'inicio',
+        loadComponent: () => import('./pages/home/home-page').then(m => m.HomePage),
+      },
+      // Resumen de la cartera: mismo acceso que Contratos.
+      {
+        path: 'resumen',
+        canActivate: [permissionGuard, featureGuard],
+        data: { roles: ['Master', 'Colaborador', 'Colaborador - Referenciador'], feature: 'contracts' },
+        loadComponent: () => import('./pages/summary/summary-page').then(m => m.SummaryPage),
+      },
 
       // All roles. `brandModule`: lo valida featureGuard contra los módulos de la marca blanca.
+      // Paso previo: elegir luz o gas antes del comparador / SIPS (como Alta rápida).
+      {
+        path: 'comparador',
+        canActivate: [featureGuard],
+        data: { brandModule: 'comparator' },
+        loadComponent: () =>
+          import('./pages/comparator-choose/comparator-choose-page').then(m => m.ComparatorChoosePage),
+      },
       { path: 'comparator',          component: Comparator, canActivate: [featureGuard], data: { brandModule: 'comparator' } },
       {
         path: 'comparator/gas',

@@ -1,3 +1,4 @@
+import { ComparatorHubNavComponent } from '../../../../shared/components/comparator-hub-nav/comparator-hub-nav';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertService, ButtonComponent, ComboboxComponent } from '@apolo-energies/ui';
@@ -23,7 +24,7 @@ const MULTI_EXCEL_EMAIL_THRESHOLD = 30;
 @Component({
   selector: 'app-sips-page',
   standalone: true,
-  imports: [
+  imports: [ComparatorHubNavComponent, 
     ButtonComponent,
     ComboboxComponent,
     SipsInfoCardComponent,
@@ -107,6 +108,9 @@ export class SipsPageComponent {
 
   onCupsInput(el: HTMLTextAreaElement): void {
     this.cups.set(el.value);
+    // field-sizing: content (CSS, .cups-field) ajusta el alto solo; este cálculo es el
+    // respaldo para navegadores sin soporte.
+    if (typeof CSS !== 'undefined' && CSS.supports('field-sizing', 'content')) return;
     // Auto-grow: shrink first to let scrollHeight recalc, then size to content.
     el.style.height = 'auto';
     const overflowing = el.scrollHeight > 240;

@@ -8,6 +8,10 @@ export interface LoaderTheme {
   glowColor: string;
   backdrop: string;
   iconPath: string;
+  /** Filtro CSS para logos blancos sin versión oscura (se oscurecen sobre el velo claro). */
+  logoFilter?: string;
+  /** Variante para el tema negro del portal: escudo/logo claro y velo oscuro. */
+  dark?: { logoSrc: string; backdrop: string; logoFilter?: string | null };
 }
 
 export const LOADER_ICONS = {
@@ -18,13 +22,14 @@ export const LOADER_ICONS = {
 
 export const BRAND_THEMES: Record<LoaderBrand, LoaderTheme> = {
   apolo: {
-    logoSrc: '/apolo/isotipo_blanco.svg',
+    logoSrc: '/apolo/Isotipo_Oscuro.svg',
     wordmark: 'Apolo Energies',
     ringColor: '#12aff0',
     accentColor: '#7dd3fc',
-    glowColor: 'rgba(56, 189, 248, 0.55)',
-    backdrop: 'rgba(7, 11, 20, 0.82)',
+    glowColor: 'rgba(18, 175, 240, 0.28)',
+    backdrop: 'rgba(255, 255, 255, 0.88)',
     iconPath: LOADER_ICONS.zap,
+    dark: { logoSrc: '/apolo/isotipo_blanco.svg', backdrop: 'rgba(23, 24, 26, 0.88)' },
   },
   renova: {
     logoSrc: '/renova/logo.webp',
@@ -32,16 +37,18 @@ export const BRAND_THEMES: Record<LoaderBrand, LoaderTheme> = {
     ringColor: '#1fbf75',
     accentColor: '#86efac',
     glowColor: 'rgba(52, 211, 153, 0.55)',
-    backdrop: 'rgba(7, 11, 20, 0.82)',
+    backdrop: 'rgba(255, 255, 255, 0.88)',
     iconPath: LOADER_ICONS.zap,
   },
   coexpal: {
     logoSrc: '/coexpal/logo-1.webp',
+    logoFilter: 'brightness(0)',
+    dark: { logoSrc: '/coexpal/logo-1.webp', backdrop: 'rgba(23, 24, 26, 0.88)', logoFilter: null },
     wordmark: 'Coexpal',
     ringColor: '#e84e1b',
     accentColor: '#fdba74',
     glowColor: 'rgba(251, 146, 60, 0.55)',
-    backdrop: 'rgba(7, 11, 20, 0.82)',
+    backdrop: 'rgba(255, 255, 255, 0.88)',
     iconPath: LOADER_ICONS.zap,
   },
 };

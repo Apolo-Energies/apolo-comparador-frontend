@@ -23,6 +23,8 @@ import { environment } from '../../../../environments/environment';
 export class EnergyRouteToggleComponent {
   readonly luzUrl = input.required<string>();
   readonly gasUrl = input.required<string>();
+  /** Sin margen propio (cuando va dentro de una cabecera). */
+  readonly bare = input(false);
 
   private readonly router = inject(Router);
   private readonly auth   = inject(AuthService);

@@ -10,7 +10,7 @@
             [class.border-red-500]="showError('dni')"
           />
           @if (showError('dni')) {
-            <span class="text-red-500 text-xs">{{ getError('dni') }}</span>
+            <span class="text-danger text-xs">{{ getError('dni') }}</span>
           }
         </div>
 
@@ -24,7 +24,7 @@
             [class.border-red-500]="showError('email')"
           />
           @if (showError('email')) {
-            <span class="text-red-500 text-xs">{{ getError('email') }}</span>
+            <span class="text-danger text-xs">{{ getError('email') }}</span>
           }
         </div>
       </div>
@@ -39,7 +39,7 @@
             [class.border-red-500]="showError('name')"
           />
           @if (showError('name')) {
-            <span class="text-red-500 text-xs">{{ getError('name') }}</span>
+            <span class="text-danger text-xs">{{ getError('name') }}</span>
           }
         </div>
 
@@ -52,7 +52,7 @@
             [class.border-red-500]="showError('surnames')"
           />
           @if (showError('surnames')) {
-            <span class="text-red-500 text-xs">{{ getError('surnames') }}</span>
+            <span class="text-danger text-xs">{{ getError('surnames') }}</span>
           }
         </div>
       </div>
@@ -66,7 +66,7 @@
           [class.border-red-500]="showError('address_1')"
         />
         @if (showError('address_1')) {
-          <span class="text-red-500 text-xs">{{ getError('address_1') }}</span>
+          <span class="text-danger text-xs">{{ getError('address_1') }}</span>
         }
       </div>
 
@@ -79,7 +79,7 @@
           [class.border-red-500]="showError('address_2')"
         />
         @if (showError('address_2')) {
-          <span class="text-red-500 text-xs">{{ getError('address_2') }}</span>
+          <span class="text-danger text-xs">{{ getError('address_2') }}</span>
         }
       </div>
 
@@ -93,7 +93,7 @@
             [class.border-red-500]="showError('phone')"
           />
           @if (showError('phone')) {
-            <span class="text-red-500 text-xs">{{ getError('phone') }}</span>
+            <span class="text-danger text-xs">{{ getError('phone') }}</span>
           }
         </div>
 
@@ -107,7 +107,7 @@
             [class.border-red-500]="showError('bank_account')"
           />
           @if (showError('bank_account')) {
-            <span class="text-red-500 text-xs">{{ getError('bank_account') }}</span>
+            <span class="text-danger text-xs">{{ getError('bank_account') }}</span>
           }
         </div>
       </div>

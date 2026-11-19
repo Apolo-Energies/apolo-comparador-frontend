@@ -3,7 +3,7 @@
   position: sticky;
   left: 0;
   z-index: 2;
-  box-shadow: 4px 0 8px -4px rgba(0, 0, 0, 0.4);
+  box-shadow: 4px 0 8px -4px rgba(0, 0, 0, 0.08);
 }
 :host ::ng-deep lib-data-table th:first-child {
   background: var(--color-card);
@@ -12,7 +12,7 @@
   background: var(--color-card);
 }
 :host ::ng-deep lib-data-table tr:hover td:first-child {
-  background: var(--color-body);
+  background: var(--color-muted);
 }
 :host ::ng-deep .contracts-table tbody tr {
   cursor: pointer;

@@ -136,17 +136,13 @@ export function buildSidebarSections(params: BuildSidebarSectionsParams): Sideba
             ]),
           ],
         }] : []),
+        // Comparador y Consultas SIPS están unidos en una sola pantalla con pestañas
+        // (Comparar factura / Consulta SIPS) y selector Luz/Gas — ver ComparatorHubNavComponent.
         ...(brandAllows('comparator') ? [{
           title: 'Comparador',
           icon: { type: 'apolo' as const, icon: ArrowDownBoxIcon, size: 20 },
+          url: environment.features.userDetail ? '/dashboard/comparador' : '/dashboard/comparator',
           access: ['comparator:view'],
-          children: [
-            { title: 'Luz', url: '/dashboard/comparator', access: ['comparator:view'] },
-            // Comparador de Gas es exclusivo de Apolo — Coexpal/Renovae solo usan Luz.
-            ...(isApolo ? [
-              { title: 'Gas', url: '/dashboard/comparator/gas', access: ['comparator:view'] },
-            ] : []),
-          ],
         }] : []),
         ...(environment.features.myClients && brandAllows('myClients') ? [{
           title: 'Mis clientes',
@@ -154,17 +150,12 @@ export function buildSidebarSections(params: BuildSidebarSectionsParams): Sideba
           url: '/dashboard/my-clients',
           access: ['clients:view'],
         }] : []),
-        ...(brandAllows('sips') ? [{
+        // Solo para marcas con SIPS pero sin Comparador: si no, SIPS es una pestaña del Comparador.
+        ...(brandAllows('sips') && !brandAllows('comparator') ? [{
           title: 'Consultas SIPS',
           icon: { type: 'apolo' as const, icon: CompassIcon, size: 20 },
+          url: '/dashboard/sips',
           access: ['sips:view'],
-          children: [
-            { title: 'Luz', url: '/dashboard/sips', access: ['sips:view'] },
-            // Consultas SIPS de Gas es exclusivo de Apolo — Coexpal/Renovae solo usan Luz.
-            ...(isApolo ? [
-              { title: 'Gas', url: '/dashboard/sips/gas', access: ['sips:view'] },
-            ] : []),
-          ],
         }] : []),
       ],
     },

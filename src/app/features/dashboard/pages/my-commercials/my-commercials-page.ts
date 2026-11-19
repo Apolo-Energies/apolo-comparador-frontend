@@ -1,3 +1,4 @@
+import { AccountHubNavComponent } from '../../../../shared/components/account-hub-nav/account-hub-nav';
 import {
   AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef,
   Component, inject, signal, TemplateRef, ViewChild, PLATFORM_ID,
@@ -15,7 +16,7 @@ import { TableSkeletonComponent } from '../../../../shared/components/table-skel
 @Component({
   selector: 'app-my-commercials',
   standalone: true,
-  imports: [
+  imports: [AccountHubNavComponent, 
     DataTableComponent, ButtonComponent, AlertComponent,
     UserActionsMenuComponent, TableSkeletonComponent,
     AddCommercialModalComponent,

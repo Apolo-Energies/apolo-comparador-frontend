@@ -1,3 +1,4 @@
+import { AnalyticsHubNavComponent } from '../../../../shared/components/analytics-hub-nav/analytics-hub-nav';
 import {
   AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef,
   Component, computed, effect, inject, signal, TemplateRef, ViewChild, PLATFORM_ID,
@@ -10,14 +11,13 @@ import { HistoryService, HistoryItem } from '../../../../core/services/history.s
 import { GlobalLoadingService } from '../../../../core/services/global-loading.service';
 import { CollaboratorScopeService } from '../../../../core/services/collaborator-scope.service';
 import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
-import { EnergyRouteToggleComponent } from '../../../../shared/components/energy-route-toggle/energy-route-toggle.component';
 import { environment } from '../../../../../environments/environment';
 import { EsNumberPipe } from '../../../../shared/pipes/es-number.pipe';
 
 @Component({
   selector: 'app-history-page',
   standalone: true,
-  imports: [DataTableComponent, PaginatorComponent, InputFieldComponent, ButtonComponent, ApoloIcons, TableSkeletonComponent, EnergyRouteToggleComponent],
+  imports: [AnalyticsHubNavComponent, DataTableComponent, PaginatorComponent, InputFieldComponent, ButtonComponent, ApoloIcons, TableSkeletonComponent],
   templateUrl: './history-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

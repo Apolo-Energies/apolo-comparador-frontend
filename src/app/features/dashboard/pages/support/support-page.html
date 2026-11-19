@@ -1,19 +1,18 @@
 @if (isApolo) {
 
+  <!-- Soporte en pestañas: Vídeos de soporte · Abrir ticket · Chatbot -->
+  <app-page-header title="Soporte" subtitle="Vídeos, tickets y asistente." />
+  <app-tabs [tabs]="sectionTabs" [(value)]="section" ariaLabel="Secciones de soporte" />
+
+  <!-- Pestaña: Vídeos de soporte (guías, temas, preguntas frecuentes y tarifas) -->
+  <div role="tabpanel" aria-label="Vídeos de soporte" [hidden]="section() !== 'videos'">
   <div class="mb-6 bg-card rounded-lg border border-border p-6">
 
-    <!-- Header -->
-    <div class="mb-6">
-      <div class="flex items-center gap-2 mb-1">
-        <p class="text-xl font-bold text-foreground">Soporte</p>
-        <lib-apolo-icons [icon]="infoIcon" class="flex items-center text-muted-foreground" />
-      </div>
-      @if (activeTab() === 'home') {
-        <p class="text-sm text-muted-foreground">
-          Recursos y guías para sacarle el máximo partido a la plataforma.
-        </p>
-      }
-    </div>
+    @if (activeTab() === 'home') {
+      <p class="mb-6 text-sm text-muted-foreground">
+        Recursos y guías para sacarle el máximo partido a la plataforma.
+      </p>
+    }
 
     <!-- Switch fijo (Estado B): Inicio · CRM · Tarifas Luz · Tarifas Gas · Comparador -->
     @if (activeTab() !== 'home') {
@@ -178,7 +177,7 @@
                 />
               </div>
             } @else if (previewError(); as err) {
-              <div class="absolute inset-0 flex items-center justify-center text-sm text-red-400 z-10">
+              <div class="absolute inset-0 flex items-center justify-center text-sm text-danger z-10">
                 {{ err }}
               </div>
             } @else if (pdfUrl(); as url) {
@@ -322,20 +321,40 @@
 
   </div>
 
-  <!-- Asistente Apolo (placeholder visual, sin chat funcional todavía) -->
-  <div class="fixed bottom-6 right-6 flex items-center gap-2 z-40">
-    <span class="px-3 py-1.5 rounded-full bg-primary-button text-white text-sm font-medium shadow-lg">
-      Asistente Apolo
-    </span>
-    <button
-      type="button"
-      title="Próximamente"
-      class="w-12 h-12 rounded-full bg-primary-button text-white shadow-lg flex items-center justify-center cursor-default"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-      </svg>
-    </button>
+  </div>
+
+  <!-- Pestaña: Abrir ticket — se envía por email al buzón de soporte -->
+  <div role="tabpanel" aria-label="Abrir ticket" [hidden]="section() !== 'ticket'">
+    <app-support-ticket-form />
+  </div>
+
+  <!-- Pestaña: Chatbot — el asistente aún no está disponible: se dice tal cual -->
+  <div role="tabpanel" aria-label="Chatbot" [hidden]="section() !== 'chatbot'">
+    <section class="mx-auto w-full max-w-[720px] rounded-xl border border-border bg-card p-6 sm:p-8">
+      <div class="flex flex-col items-start gap-4">
+        <span class="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </span>
+        <div>
+          <h2 class="text-lg font-semibold text-foreground">Asistente Apolo</h2>
+          <p class="mt-1 text-sm text-muted-foreground">
+            Estamos preparando un asistente que responderá al momento sus dudas sobre el portal, tarifas y comisiones.
+            Mientras tanto, consulte los vídeos de soporte o abra un ticket y le responderemos por email.
+          </p>
+        </div>
+        <span class="rounded-full border border-border px-2.5 py-0.5 text-xs font-medium text-muted-foreground">Próximamente</span>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" (click)="section.set('ticket')"
+                  class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors duration-150 hover:bg-primary/90">
+            Abrir ticket
+          </button>
+          <button type="button" (click)="section.set('videos')"
+                  class="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors duration-150 hover:bg-accent">
+            Ver vídeos de soporte
+          </button>
+        </div>
+      </div>
+    </section>
   </div>
 
 } @else {

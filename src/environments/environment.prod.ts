@@ -4,6 +4,9 @@ export const environment = {
   apiUrl: 'https://api.apoloenergies.es/coexpal/api/coexpal/v1',
   hubUrl: 'https://api.apoloenergies.es/coexpal/hubs/opportunities',
   logoUrl: '/coexpal/logo-1.webp',
+  // Portal claro: logo para fondo blanco; si no hay, se oscurece el blanco con CSS.
+  logoOnLightUrl: null as string | null,
+  invertLogoOnLight: true,
   faviconUrl: '/coexpal/favicon.ico',
   appTitle: 'COEXPAL',
   contractsUrl: null as string | null,

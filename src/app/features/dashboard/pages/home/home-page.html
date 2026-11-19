@@ -1,0 +1,38 @@
+<section class="mx-auto flex min-h-[calc(100vh-10rem)] w-full max-w-[1000px] flex-col justify-center py-6">
+  <header class="mb-8 flex flex-col items-center text-center">
+    @if (logoSrc(); as logo) {
+      <img [src]="logo" alt="" class="tenant-logo mb-8 h-[64px] w-auto max-w-[420px] object-contain" />
+    } @else {
+      <div class="mb-8 h-[64px]" aria-hidden="true"></div>
+    }
+    <h1 class="text-[30px] font-semibold leading-tight text-foreground">Bienvenido al portal de colaboradores</h1>
+    <p class="mt-2 text-[15px] text-muted-foreground">Elija una herramienta.</p>
+  </header>
+
+  @if (tiles().length === 0) {
+    <p class="rounded-[10px] border border-dashed border-border px-6 py-10 text-center text-sm text-muted-foreground">
+      Su usuario todavía no tiene herramientas asignadas. Contacte con su gestor de Apolo.
+    </p>
+  } @else {
+    <ul class="grid grid-cols-2 gap-4 md:grid-cols-4" role="list">
+      @for (t of tiles(); track t.key) {
+        <li>
+          <a [routerLink]="t.url"
+             class="home-tile flex h-full min-h-[190px] flex-col items-center justify-center gap-2.5 rounded-xl border border-border px-4 py-6 text-center transition-[border-color,box-shadow] duration-150"
+             [style.--tc]="t.color" [style.--tb]="t.tint">
+            <span class="relative mb-1 flex size-12 items-center justify-center rounded-xl" [style.background]="t.tint">
+              <svg viewBox="0 0 24 24" class="size-[26px]" fill="none" [attr.stroke]="t.color" stroke-width="1.5"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" [innerHTML]="t.icon"></svg>
+              @if (t.badge) {
+                <span class="absolute -right-2.5 -top-2 min-w-5 rounded-full px-1.5 text-center text-[11px] font-semibold leading-5 tabular-nums text-white [.portal-dark_&]:text-[#17181A]"
+                      [style.background]="t.color" [attr.aria-label]="t.badge + ' oportunidades pendientes'">{{ t.badge }}</span>
+              }
+            </span>
+            <span class="text-[17px] font-medium text-foreground">{{ t.label }}</span>
+            <span class="text-[13px] text-muted-foreground">{{ t.description }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</section>

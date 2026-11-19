@@ -38,7 +38,8 @@ const PAD_T = 20;
 const PAD_B = 40;
 const TICK_CNT = 5;
 const DRAW_H = CHART_H - PAD_T - PAD_B;
-const BAR_COLOR = '#7C67F2';
+/** Color de barra: primer color de la paleta por tema (variables CSS). */
+const BAR_COLOR = 'var(--series-1)';
 
 function niceMax(v: number): number {
   if (!v) return 10;

@@ -11,7 +11,7 @@ export const SELECT_CLS = [
 // and gives all three the same hover treatment (gray → white) so the gear matches the others.
 export const ACTION_BTN_CLS = [
   'p-2 rounded-md cursor-pointer transition-colors',
-  'text-muted-foreground hover:text-white hover:bg-muted',
+  'text-muted-foreground hover:text-foreground hover:bg-muted',
 ].join(' ');
 
 /** Pure geometry for the floating settings panel — kept out of the component for R1/testability. */

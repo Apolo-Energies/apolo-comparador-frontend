@@ -36,13 +36,13 @@
                 <label class="text-sm font-medium text-muted-foreground">CIF *</label>
                 <input [class]="inputCls" placeholder="B12345678"
                        [value]="cif()" (input)="cif.set($any($event.target).value)" />
-                @if (errors()['cif']) { <span class="text-red-500 text-xs">{{ errors()['cif'] }}</span> }
+                @if (errors()['cif']) { <span class="text-danger text-xs">{{ errors()['cif'] }}</span> }
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-sm font-medium text-muted-foreground">Razón social *</label>
                 <input [class]="inputCls" placeholder="Empresa S.L."
                        [value]="companyName()" (input)="companyName.set($any($event.target).value)" />
-                @if (errors()['companyName']) { <span class="text-red-500 text-xs">{{ errors()['companyName'] }}</span> }
+                @if (errors()['companyName']) { <span class="text-danger text-xs">{{ errors()['companyName'] }}</span> }
               </div>
             </div>
 
@@ -51,7 +51,7 @@
               <label class="text-sm font-medium text-muted-foreground">Email *</label>
               <input [class]="inputCls" type="email" placeholder="cliente@ejemplo.es"
                      [value]="email()" (input)="email.set($any($event.target).value)" />
-              @if (errors()['email']) { <span class="text-red-500 text-xs">{{ errors()['email'] }}</span> }
+              @if (errors()['email']) { <span class="text-danger text-xs">{{ errors()['email'] }}</span> }
             </div>
           } @else {
             <!-- NIF + Email -->
@@ -60,13 +60,13 @@
                 <label class="text-sm font-medium text-muted-foreground">NIF / DNI *</label>
                 <input [class]="inputCls" placeholder="12345678A"
                        [value]="nif()" (input)="nif.set($any($event.target).value)" />
-                @if (errors()['nif']) { <span class="text-red-500 text-xs">{{ errors()['nif'] }}</span> }
+                @if (errors()['nif']) { <span class="text-danger text-xs">{{ errors()['nif'] }}</span> }
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-sm font-medium text-muted-foreground">Email *</label>
                 <input [class]="inputCls" type="email" placeholder="cliente@ejemplo.es"
                        [value]="email()" (input)="email.set($any($event.target).value)" />
-                @if (errors()['email']) { <span class="text-red-500 text-xs">{{ errors()['email'] }}</span> }
+                @if (errors()['email']) { <span class="text-danger text-xs">{{ errors()['email'] }}</span> }
               </div>
             </div>
           }
@@ -85,7 +85,7 @@
                      [attr.maxlength]="phoneMaxLength()"
                      [value]="phoneNumber()" (input)="onPhoneInput($event)" />
             </div>
-            @if (errors()['phone']) { <span class="text-red-500 text-xs">{{ errors()['phone'] }}</span> }
+            @if (errors()['phone']) { <span class="text-danger text-xs">{{ errors()['phone'] }}</span> }
           </div>
 
           @if (!isCompany()) {
@@ -95,13 +95,13 @@
                 <label class="text-sm font-medium text-muted-foreground">Nombre *</label>
                 <input [class]="inputCls" placeholder="Francisco"
                        [value]="nombre()" (input)="nombre.set($any($event.target).value)" />
-                @if (errors()['nombre']) { <span class="text-red-500 text-xs">{{ errors()['nombre'] }}</span> }
+                @if (errors()['nombre']) { <span class="text-danger text-xs">{{ errors()['nombre'] }}</span> }
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-sm font-medium text-muted-foreground">Primer apellido *</label>
                 <input [class]="inputCls" placeholder="García"
                        [value]="apellido1()" (input)="apellido1.set($any($event.target).value)" />
-                @if (errors()['apellido1']) { <span class="text-red-500 text-xs">{{ errors()['apellido1'] }}</span> }
+                @if (errors()['apellido1']) { <span class="text-danger text-xs">{{ errors()['apellido1'] }}</span> }
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-sm font-medium text-muted-foreground">Segundo apellido</label>
@@ -134,13 +134,13 @@
                 <label class="text-sm font-medium text-muted-foreground">{{ isCompany() ? 'NIF *' : 'NIF Firmante *' }}</label>
                 <input [class]="inputCls" placeholder="12345678A"
                        [value]="firmanteNif()" (input)="firmanteNif.set($any($event.target).value)" />
-                @if (errors()['firmanteNif']) { <span class="text-red-500 text-xs">{{ errors()['firmanteNif'] }}</span> }
+                @if (errors()['firmanteNif']) { <span class="text-danger text-xs">{{ errors()['firmanteNif'] }}</span> }
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-sm font-medium text-muted-foreground">{{ isCompany() ? 'Nombre *' : 'Nombre Firmante *' }}</label>
                 <input [class]="inputCls" placeholder="Francisco"
                        [value]="firmanteNombre()" (input)="firmanteNombre.set($any($event.target).value)" />
-                @if (errors()['firmanteNombre']) { <span class="text-red-500 text-xs">{{ errors()['firmanteNombre'] }}</span> }
+                @if (errors()['firmanteNombre']) { <span class="text-danger text-xs">{{ errors()['firmanteNombre'] }}</span> }
               </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
@@ -148,7 +148,7 @@
                 <label class="text-sm font-medium text-muted-foreground">{{ isCompany() ? 'Primer apellido *' : 'Apellido 1 Firmante *' }}</label>
                 <input [class]="inputCls" placeholder="García"
                        [value]="firmanteApellido1()" (input)="firmanteApellido1.set($any($event.target).value)" />
-                @if (errors()['firmanteApellido1']) { <span class="text-red-500 text-xs">{{ errors()['firmanteApellido1'] }}</span> }
+                @if (errors()['firmanteApellido1']) { <span class="text-danger text-xs">{{ errors()['firmanteApellido1'] }}</span> }
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-sm font-medium text-muted-foreground">{{ isCompany() ? 'Segundo apellido' : 'Apellido 2 Firmante' }}</label>
@@ -161,13 +161,13 @@
                 <label class="text-sm font-medium text-muted-foreground">{{ isCompany() ? 'Teléfono' : 'Teléfono Firmante' }}</label>
                 <input type="tel" [class]="inputCls" placeholder="Si es diferente al del cliente"
                        [value]="firmanteTelefono()" (input)="firmanteTelefono.set($any($event.target).value)" />
-                @if (errors()['firmanteTelefono']) { <span class="text-red-500 text-xs">{{ errors()['firmanteTelefono'] }}</span> }
+                @if (errors()['firmanteTelefono']) { <span class="text-danger text-xs">{{ errors()['firmanteTelefono'] }}</span> }
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-sm font-medium text-muted-foreground">{{ isCompany() ? 'Email' : 'Email Firmante' }}</label>
                 <input type="email" [class]="inputCls" placeholder="Si es diferente al del cliente"
                        [value]="firmanteEmail()" (input)="firmanteEmail.set($any($event.target).value)" />
-                @if (errors()['firmanteEmail']) { <span class="text-red-500 text-xs">{{ errors()['firmanteEmail'] }}</span> }
+                @if (errors()['firmanteEmail']) { <span class="text-danger text-xs">{{ errors()['firmanteEmail'] }}</span> }
               </div>
             </div>
           }
@@ -179,7 +179,7 @@
             <label class="text-sm font-medium text-muted-foreground">Nombre completo del titular de la cuenta *</label>
             <input [class]="inputCls" placeholder="Como figura en la cuenta bancaria"
                    [value]="nombreTitular()" (input)="onNombreTitularInput($any($event.target).value)" />
-            @if (errors()['nombreTitular']) { <span class="text-red-500 text-xs">{{ errors()['nombreTitular'] }}</span> }
+            @if (errors()['nombreTitular']) { <span class="text-danger text-xs">{{ errors()['nombreTitular'] }}</span> }
           </div>
 
           <!-- IBAN + BIC -->
@@ -188,13 +188,13 @@
               <label class="text-sm font-medium text-muted-foreground">IBAN *</label>
               <input [class]="inputCls" placeholder="ES83 0182 6517 7302 0197 5760"
                      [value]="iban()" (input)="onIbanInput($event)" />
-              @if (errors()['iban']) { <span class="text-red-500 text-xs">{{ errors()['iban'] }}</span> }
+              @if (errors()['iban']) { <span class="text-danger text-xs">{{ errors()['iban'] }}</span> }
             </div>
             <div class="flex flex-col gap-1">
               <label class="text-sm font-medium text-muted-foreground">BIC / SWIFT *</label>
               <input [class]="inputCls" placeholder="CAIXESBBXXX" maxlength="11"
                      [value]="bic()" (input)="onBicInput($event)" />
-              @if (errors()['bic']) { <span class="text-red-500 text-xs">{{ errors()['bic'] }}</span> }
+              @if (errors()['bic']) { <span class="text-danger text-xs">{{ errors()['bic'] }}</span> }
             </div>
           </div>
 
@@ -212,9 +212,9 @@
               } @else if (v.result === 'CP') {
                 <span class="text-amber-500 text-xs">El banco sugiere el nombre "{{ v.suggestedName }}" — confirmá que es el titular.</span>
               } @else if (v.result === 'KO') {
-                <span class="text-red-500 text-xs">El titular del IBAN no coincide con el nombre ingresado.</span>
+                <span class="text-danger text-xs">El titular del IBAN no coincide con el nombre ingresado.</span>
               } @else if (v.result === 'ERROR') {
-                <span class="text-red-500 text-xs">No se pudo verificar el IBAN{{ v.errorCode ? ' (' + v.errorCode + ')' : '' }}.</span>
+                <span class="text-danger text-xs">No se pudo verificar el IBAN{{ v.errorCode ? ' (' + v.errorCode + ')' : '' }}.</span>
               }
             }
           </div>
@@ -224,7 +224,7 @@
             <label class="text-sm font-medium text-muted-foreground">Dirección *</label>
             <input [class]="inputCls" placeholder="Calle Mayor 1, piso 2"
                    [value]="direccion()" (input)="direccion.set($any($event.target).value)" />
-            @if (errors()['direccion']) { <span class="text-red-500 text-xs">{{ errors()['direccion'] }}</span> }
+            @if (errors()['direccion']) { <span class="text-danger text-xs">{{ errors()['direccion'] }}</span> }
           </div>
 
           <!-- CP + Provincia -->
@@ -233,7 +233,7 @@
               <label class="text-sm font-medium text-muted-foreground">Código postal *</label>
               <input [class]="inputCls" placeholder="46023" maxlength="5"
                      [value]="cp()" (input)="onCpChange($any($event.target).value)" />
-              @if (errors()['cp']) { <span class="text-red-500 text-xs">{{ errors()['cp'] }}</span> }
+              @if (errors()['cp']) { <span class="text-danger text-xs">{{ errors()['cp'] }}</span> }
             </div>
             <div class="flex flex-col gap-1">
               <label class="text-sm font-medium text-muted-foreground">Provincia *</label>
@@ -251,7 +251,7 @@
                   }
                 </select>
               }
-              @if (errors()['provincia']) { <span class="text-red-500 text-xs">{{ errors()['provincia'] }}</span> }
+              @if (errors()['provincia']) { <span class="text-danger text-xs">{{ errors()['provincia'] }}</span> }
             </div>
           </div>
 
@@ -327,7 +327,7 @@
                 }
               </div>
             }
-            @if (errors()['municipio']) { <span class="text-red-500 text-xs">{{ errors()['municipio'] }}</span> }
+            @if (errors()['municipio']) { <span class="text-danger text-xs">{{ errors()['municipio'] }}</span> }
           </div>
 
           <div class="border-t border-border pt-4 flex justify-center">

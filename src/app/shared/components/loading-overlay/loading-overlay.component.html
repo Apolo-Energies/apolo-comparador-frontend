@@ -1,6 +1,8 @@
 @if (loading()) {
-  <div class="fixed inset-0 z-50 bg-black/50 flex flex-col items-center justify-center gap-4">
-    <div class="h-16 w-16 rounded-full border-4 border-white/20 border-t-primary animate-spin"></div>
-    <p class="text-white text-sm font-medium tracking-wide">Cargando...</p>
+  <div class="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-body/85 backdrop-blur-sm" role="status" aria-live="polite">
+    <app-brand-loader [inline]="true" [size]="96"
+      [showWordmark]="false" [showTitle]="false" [showDescription]="false"
+      [showBar]="false" [showPercent]="false" [showMicrocopy]="false" [showBackdrop]="false" />
+    <p class="text-sm font-medium tracking-wide text-foreground">Cargando...</p>
   </div>
 }

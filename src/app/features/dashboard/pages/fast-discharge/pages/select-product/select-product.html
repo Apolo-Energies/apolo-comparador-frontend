@@ -36,7 +36,7 @@
         }
       </div>
       @if (submitted() && tramites().length === 0) {
-        <span class="text-red-500 text-xs -mt-2 block">Selecciona al menos un tipo de trámite</span>
+        <span class="text-danger text-xs -mt-2 block">Selecciona al menos un tipo de trámite</span>
       }
 
       @if (isSelected('AUTOCONSUMO')) {

@@ -332,8 +332,45 @@ export class ContractDetailDrawerComponent {
     if (opening) {
       this.expandedIncidencias.set(null);
       this.loadFacturas(s);
+      this.revealSection(`facturas-${s.Id}`);
     }
   }
+
+  /**
+   * Lleva la vista hasta la sección recién abierta (facturas / incidencias): se abre
+   * debajo del pliegue y, sin desplazamiento, el usuario no nota que ha pasado algo.
+   * Espera fotograma a fotograma a que Angular pinte la sección (@if), busca el
+   * contenedor con scroll del drawer (PrimeNG lo monta fuera de este componente) y
+   * desplaza restando la cabecera fija para que no la tape.
+   */
+  private revealSection(id: string, attempt = 0): void {
+    if (typeof window === 'undefined') return;
+    requestAnimationFrame(() => {
+      const el = document.getElementById(id);
+      if (!el) {
+        if (attempt < 30) this.revealSection(id, attempt + 1);
+        return;
+      }
+      const scroller = this.findScrollParent(el);
+      if (!scroller) { el.scrollIntoView({ block: 'start' }); return; }
+      const header = scroller.querySelector<HTMLElement>('header.sticky');
+      const offset = (header?.offsetHeight ?? 0) + 12;
+      const top = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - offset;
+      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      scroller.scrollTo({ top: Math.max(0, top), behavior: reduce ? 'auto' : 'smooth' });
+    });
+  }
+
+  private findScrollParent(el: HTMLElement): HTMLElement | null {
+    let node = el.parentElement;
+    while (node && node !== document.body) {
+      const oy = getComputedStyle(node).overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && node.scrollHeight > node.clientHeight) return node;
+      node = node.parentElement;
+    }
+    return null;
+  }
+
 
   private loadFacturas(s: ServicioListItem): void {
     const cache = this.facturasCache();
@@ -344,6 +381,8 @@ export class ContractDetailDrawerComponent {
         const items = this.normalizeFacturas(raw);
         this.facturasCache.set({ ...this.facturasCache(), [s.Id]: items });
         this.cdr.markForCheck();
+        // Con la lista ya pintada hay recorrido para llevarla a la vista.
+        if (this.expandedFacturas() === s.Id) this.revealSection(`facturas-${s.Id}`);
       },
       error: () => {
         this.facturasCache.set({ ...this.facturasCache(), [s.Id]: 'error' });
@@ -387,6 +426,7 @@ export class ContractDetailDrawerComponent {
       this.expandedFacturas.set(null);
       const s = this.services().find(x => x.Id === idContrato);
       this.loadIncidencias(idContrato, s?.CUPS ?? '');
+      this.revealSection(`incidencias-${idContrato}`);
     }
   }
 
@@ -402,6 +442,7 @@ export class ContractDetailDrawerComponent {
       next: items => {
         this.incidenciasCache.set({ ...this.incidenciasCache(), [idContrato]: items });
         this.cdr.markForCheck();
+        if (this.expandedIncidencias() === idContrato) this.revealSection(`incidencias-${idContrato}`);
       },
       error: () => {
         this.incidenciasCache.set({ ...this.incidenciasCache(), [idContrato]: 'error' });
