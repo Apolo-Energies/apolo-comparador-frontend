@@ -14,9 +14,14 @@ export const ANALYTICS_ROUTES: Routes = [
   { path: 'statistics',     component: StatisticsPageComponent,   canActivate: [permissionGuard, featureGuard], data: { roles: ['Master', 'Colaborador', 'Colaborador - Referenciador'], brandModule: 'statistics' } },
   { path: 'statistics/gas', component: ComingSoonComponent,       canActivate: [permissionGuard], data: { roles: ['Master'], title: 'Estadísticas de gas', luzUrl: '/dashboard/analytics/statistics' } },
   {
+    // Elección luz / gas antes del tablero (el Colaborador va directo a luz).
     path: 'opportunities',
-    redirectTo: 'opportunities/luz',
     pathMatch: 'full',
+    canActivate: [permissionGuard, featureGuard],
+    data: { roles: ['Master', 'Colaborador', 'Colaborador - Referenciador'], brandModule: 'opportunities' },
+    loadComponent: () =>
+      import('./pages/opportunities-choose/opportunities-choose-page')
+        .then(m => m.OpportunitiesChoosePage),
   },
   {
     path: 'opportunities/luz',

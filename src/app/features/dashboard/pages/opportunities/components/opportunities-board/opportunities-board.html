@@ -5,7 +5,7 @@
   @for (col of columns(); track trackByStatus($index, col)) {
     @let palette = paletteFor(col.statuses[0]);
 
-    <section class="flex flex-col rounded-[10px] border border-border bg-muted overflow-hidden shrink-0 w-[250px]">
+    <section class="flex min-w-[210px] flex-1 basis-0 flex-col rounded-[10px] border border-border bg-muted overflow-hidden">
 
       <!-- Column header -->
       <header class="flex items-center justify-between px-3 py-2.5 border-b border-border">

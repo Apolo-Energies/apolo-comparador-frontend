@@ -47,7 +47,7 @@ export class SummaryPage {
   readonly scope = inject(CollaboratorScopeService);
 
   readonly contractsUrl = CONTRACTS_URL;
-  readonly opportunitiesUrl = '/dashboard/analytics/opportunities/luz';
+  readonly opportunitiesUrl = '/dashboard/analytics/opportunities';
 
   readonly cards       = signal<Block<ContratosCards>>({ state: 'loading', data: null });
   readonly enTramite   = signal<Block<number>>({ state: 'loading', data: null });
