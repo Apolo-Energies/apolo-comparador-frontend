@@ -1,4 +1,5 @@
 <ui-alert />
+<app-account-hub-nav [section]="section()" [userId]="profileId()" />
 <div class="mx-auto w-full space-y-6">
 
   <!-- ─── All docs ready alert (top, no button) ───────────────── -->
@@ -7,10 +8,10 @@
                 dark:border-green-900/40 dark:bg-green-900/20">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-        class="shrink-0 text-green-600 dark:text-green-400 mt-0.5">
+        class="shrink-0 text-green-600 dark:text-success mt-0.5">
         <polyline points="20 6 9 17 4 12"/>
       </svg>
-      <p class="text-sm font-medium text-green-700 dark:text-green-300">
+      <p class="text-sm font-medium text-green-700 dark:text-success">
         Todos los documentos están listos. Puedes previsualizar tu contrato y solicitar la firma.
       </p>
     </div>
@@ -22,11 +23,11 @@
                 dark:border-amber-900/40 dark:bg-amber-900/20">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-        class="shrink-0 text-amber-600 dark:text-amber-400 mt-0.5">
+        class="shrink-0 text-amber-600 dark:text-warning mt-0.5">
         <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
         <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
       </svg>
-      <p class="text-sm font-medium text-amber-700 dark:text-amber-300">
+      <p class="text-sm font-medium text-amber-700 dark:text-warning">
         Tienes {{ missingDocCount() }} documento{{ missingDocCount() === 1 ? '' : 's' }}
         pendiente{{ missingDocCount() === 1 ? '' : 's' }} por subir.
         Revisa los documentos marcados como rechazados o pendientes.
@@ -34,8 +35,8 @@
     </div>
   }
 
-  <!-- ─── Data cards grid ──────────────────────────────────────── -->
-  <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+  <!-- ─── Data cards grid (pestaña Datos) ──────────────────────── -->
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-2" [hidden]="section() !== 'datos'">
 
     <!-- Personal data card -->
     <div class="bg-card border border-border rounded-lg space-y-4 p-6">
@@ -89,11 +90,11 @@
                       dark:border-blue-900/40 dark:bg-blue-900/20">
             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
               fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-              class="shrink-0 mt-0.5 text-blue-600 dark:text-blue-400">
+              class="shrink-0 mt-0.5 text-blue-600 dark:text-primary">
               <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
               <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
-            <p class="text-xs text-blue-700 dark:text-blue-300">
+            <p class="text-xs text-blue-700 dark:text-primary">
               {{ isMaster() ? 'Contrato pendiente de firma por el cliente.' : 'Tu solicitud está siendo procesada por el equipo de Apolo.' }}
             </p>
           </div>
@@ -104,11 +105,11 @@
                       dark:border-amber-900/40 dark:bg-amber-900/20">
             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
               fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-              class="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400">
+              class="shrink-0 mt-0.5 text-amber-600 dark:text-warning">
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
               <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
             </svg>
-            <p class="text-xs text-amber-700 dark:text-amber-300">
+            <p class="text-xs text-amber-700 dark:text-warning">
               El contrato vence en {{ daysUntilExpiration() }} día{{ daysUntilExpiration() === 1 ? '' : 's' }}.
             </p>
           </div>
@@ -157,8 +158,8 @@
 
   </div>
 
-  <!-- Documents card -->
-  <div class="bg-card border border-border rounded-lg p-6">
+  <!-- Documents card (pestaña Documentación) -->
+  <div class="bg-card border border-border rounded-lg p-6" [hidden]="section() !== 'documentacion'">
     <app-documents-section
       [user]="user()"
       [isMaster]="isMaster()"
@@ -175,12 +176,12 @@
                   dark:border-blue-900/40 dark:bg-blue-900/20">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
           fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-          class="shrink-0 text-blue-600 dark:text-blue-400 mt-0.5">
+          class="shrink-0 text-blue-600 dark:text-primary mt-0.5">
           <circle cx="12" cy="12" r="10"/>
           <line x1="12" y1="8" x2="12" y2="12"/>
           <line x1="12" y1="16" x2="12.01" y2="16"/>
         </svg>
-        <p class="text-sm font-medium text-blue-700 dark:text-blue-300">
+        <p class="text-sm font-medium text-blue-700 dark:text-primary">
           Tu solicitud está siendo procesada por el equipo de Apolo. Te notificaremos cuando haya novedades.
         </p>
       </div>
@@ -192,11 +193,11 @@
                   dark:border-blue-900/40 dark:bg-blue-900/20">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
           fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-          class="shrink-0 text-blue-600 dark:text-blue-400 mt-0.5">
+          class="shrink-0 text-blue-600 dark:text-primary mt-0.5">
           <circle cx="12" cy="12" r="10"/>
           <polyline points="12 6 12 12 16 14"/>
         </svg>
-        <p class="text-sm font-medium text-blue-700 dark:text-blue-300">
+        <p class="text-sm font-medium text-blue-700 dark:text-primary">
           Tu contrato ha sido firmado y está pendiente de verificación por el equipo de Apolo.
         </p>
       </div>
@@ -208,11 +209,11 @@
                   dark:border-green-900/40 dark:bg-green-900/20">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
           fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-          class="shrink-0 text-green-600 dark:text-green-400 mt-0.5">
+          class="shrink-0 text-green-600 dark:text-success mt-0.5">
           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
           <polyline points="22 4 12 14.01 9 11.01"/>
         </svg>
-        <p class="text-sm font-medium text-green-700 dark:text-green-300">
+        <p class="text-sm font-medium text-green-700 dark:text-success">
           ¡Tu contrato ha sido firmado y verificado con éxito! Todo está en orden.
         </p>
       </div>
@@ -225,12 +226,12 @@
         <div class="flex items-start gap-3">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-            class="shrink-0 text-red-600 dark:text-red-400 mt-0.5">
+            class="shrink-0 text-red-600 dark:text-danger mt-0.5">
             <circle cx="12" cy="12" r="10"/>
             <line x1="15" y1="9" x2="9" y2="15"/>
             <line x1="9" y1="9" x2="15" y2="15"/>
           </svg>
-          <p class="text-sm font-medium text-red-700 dark:text-red-300">
+          <p class="text-sm font-medium text-red-700 dark:text-danger">
             Tu solicitud de firma fue rechazada. Puedes volver a solicitarla una vez revisados los documentos.
           </p>
         </div>
@@ -255,11 +256,11 @@
       <div class="flex items-start gap-3">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
           fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-          class="shrink-0 text-blue-600 dark:text-blue-400 mt-0.5">
+          class="shrink-0 text-blue-600 dark:text-primary mt-0.5">
           <circle cx="12" cy="12" r="10"/>
           <polyline points="12 6 12 12 16 14"/>
         </svg>
-        <p class="text-sm font-medium text-blue-700 dark:text-blue-300">
+        <p class="text-sm font-medium text-blue-700 dark:text-primary">
           El contrato ha sido firmado y está pendiente de verificación.
         </p>
       </div>

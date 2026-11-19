@@ -4,6 +4,9 @@ export const environment = {
   apiUrl: 'https://api.apoloenergies.es/apolo/api/apolo/v1',
   hubUrl: 'https://api.apoloenergies.es/apolo/hubs/opportunities',
   logoUrl: '/apolo/apolologo.webp',
+  // Portal claro: logo para fondo blanco; si no hay, se oscurece el blanco con CSS.
+  logoOnLightUrl: '/apolo/apolologo-dark.webp' as string | null,
+  invertLogoOnLight: false,
   faviconUrl: '/apolo/favicon.ico',
   appTitle: 'APOLO ENERGIES',
   contractsUrl: null as string | null,

@@ -59,7 +59,7 @@
               <span class="text-muted-foreground">Introduce el CP</span>
             }
           </div>
-          @if (provinceError()) { <span class="text-red-500 text-xs">{{ provinceError() }}</span> }
+          @if (provinceError()) { <span class="text-danger text-xs">{{ provinceError() }}</span> }
         </div>
       </div>
 
@@ -71,7 +71,7 @@
         <label class="text-sm font-medium text-muted-foreground">IBAN</label>
         <input [class]="inputCls" placeholder="ES83 0182 6517 7302 0197 5760" maxlength="29"
                [value]="draft().bankAccountNumber" (input)="onIbanInput($event)" />
-        @if (ibanError()) { <span class="text-red-500 text-xs">{{ ibanError() }}</span> }
+        @if (ibanError()) { <span class="text-danger text-xs">{{ ibanError() }}</span> }
       </div>
 
       <div class="border-t border-border pt-4 flex items-center justify-between">

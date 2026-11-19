@@ -1,3 +1,6 @@
+import { map } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { AccountHubNavComponent, AccountSection } from '../../../../../shared/components/account-hub-nav/account-hub-nav';
 import {
   ChangeDetectionStrategy, Component, computed, inject, OnInit, signal, PLATFORM_ID,
 } from '@angular/core';
@@ -25,7 +28,7 @@ import { ContractActionsController } from './contract-actions.controller';
 @Component({
   selector: 'app-user-detail',
   standalone: true,
-  imports: [
+  imports: [AccountHubNavComponent, 
     FormsModule,
     AlertComponent,
     ButtonComponent,
@@ -56,6 +59,13 @@ export class UserDetailPageComponent implements OnInit {
   readonly customerModalMode = signal<'create' | 'edit'>('create');
 
   private userId = '';
+
+  /** Pestaña Datos / Documentación (?seccion=documentacion). */
+  readonly section = toSignal(
+    this.route.queryParamMap.pipe(map(q => (q.get('seccion') === 'documentacion' ? 'documentacion' : 'datos') as AccountSection)),
+    { initialValue: 'datos' as AccountSection },
+  );
+  readonly profileId = signal<string | null>(null);
 
   // ── controllers: preview del contrato y acciones sobre el contrato ─────────
   private readonly preview = new ContractPreviewController(
@@ -145,6 +155,7 @@ export class UserDetailPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.userId = this.route.snapshot.paramMap.get('id') ?? '';
+    this.profileId.set(this.userId);
     if (isPlatformBrowser(this.platformId)) {
       this.load();
     }

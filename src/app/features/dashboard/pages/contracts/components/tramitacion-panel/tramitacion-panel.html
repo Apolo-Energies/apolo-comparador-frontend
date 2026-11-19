@@ -40,7 +40,7 @@
           <tr class="border-t border-border align-top">
             <td class="px-4 py-3 font-mono text-xs text-muted-foreground">
               @if (item.idContratoQuixotic) {
-                <span class="badge bg-sky-500/10 text-sky-400 font-sans">Gas</span>
+                <span class="badge bg-sky-500/10 text-primary font-sans">Gas</span>
               } @else {
                 #{{ item.idServicio ?? '—' }}
               }
@@ -61,7 +61,7 @@
                   </span>
                 }
                 @if (isTramitadoDeNuevo(item)) {
-                  <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-500/10 text-blue-400">
+                  <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-500/10 text-primary">
                     Tramitado de nuevo
                   </span>
                 }
@@ -90,7 +90,7 @@
                   <p class="text-foreground">{{ reg.motivo }}</p>
                 }
                 @if (reg.documentacionNecesaria) {
-                  <p class="text-xs mt-1" [class.text-amber-300]="!isTramitadoDeNuevo(item)"
+                  <p class="text-xs mt-1" [class.text-warning]="!isTramitadoDeNuevo(item)"
                      [class.text-muted-foreground]="isTramitadoDeNuevo(item)">
                     Falta: {{ reg.documentacionNecesaria }}
                   </p>
@@ -147,7 +147,7 @@
                 @if (isMaster() && reg) {
                   <div class="grid grid-cols-2 gap-1.5">
                     <button type="button"
-                            class="inline-flex items-center justify-center gap-1 h-7 rounded-md border border-emerald-500/40 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-50 transition-colors"
+                            class="inline-flex items-center justify-center gap-1 h-7 rounded-md border border-emerald-500/40 text-[11px] font-semibold text-success hover:bg-emerald-500/10 disabled:opacity-50 transition-colors"
                             [disabled]="closingId() === reg.id"
                             title="Cerrar como resuelta"
                             (click)="pedirCierre(item, 'resuelta')">
@@ -155,7 +155,7 @@
                       Resuelta
                     </button>
                     <button type="button"
-                            class="inline-flex items-center justify-center gap-1 h-7 rounded-md border border-red-500/40 text-[11px] font-semibold text-red-300 hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+                            class="inline-flex items-center justify-center gap-1 h-7 rounded-md border border-red-500/40 text-[11px] font-semibold text-danger hover:bg-red-500/10 disabled:opacity-50 transition-colors"
                             [disabled]="closingId() === reg.id"
                             title="Cerrar como KO"
                             (click)="pedirCierre(item, 'ko')">
@@ -193,27 +193,27 @@
   [header]="confirmTarget()?.resultado === 'ko' ? 'Cerrar como KO' : 'Cerrar como resuelta'">
   @if (confirmTarget(); as t) {
     <div class="space-y-3">
-      <p class="text-sm text-zinc-300">
+      <p class="text-sm text-foreground/80">
         @if (t.resultado === 'ko') {
-          ¿Confirmas que este contrato queda como <span class="font-semibold text-red-300">KO</span>?
+          ¿Confirmas que este contrato queda como <span class="font-semibold text-danger">KO</span>?
         } @else {
-          ¿Confirmas que lo que faltaba está <span class="font-semibold text-emerald-300">resuelto</span>?
+          ¿Confirmas que lo que faltaba está <span class="font-semibold text-success">resuelto</span>?
         }
       </p>
-      <div class="rounded-md border border-zinc-800 bg-zinc-950/50 px-3 py-2 text-xs space-y-0.5">
-        <p class="font-medium text-zinc-200">{{ t.item.clienteNombre || '—' }}</p>
-        <p class="font-mono text-zinc-500">#{{ t.item.idServicio ?? '—' }} · {{ t.item.cups || '—' }}</p>
+      <div class="rounded-md border border-border bg-muted px-3 py-2 text-xs space-y-0.5">
+        <p class="font-medium text-foreground">{{ t.item.clienteNombre || '—' }}</p>
+        <p class="font-mono text-muted-foreground">#{{ t.item.idServicio ?? '—' }} · {{ t.item.cups || '—' }}</p>
         @if (t.item.registro?.documentacionNecesaria || t.item.registro?.motivo) {
-          <p class="text-zinc-400 pt-1">{{ t.item.registro?.documentacionNecesaria || t.item.registro?.motivo }}</p>
+          <p class="text-muted-foreground pt-1">{{ t.item.registro?.documentacionNecesaria || t.item.registro?.motivo }}</p>
         }
       </div>
-      <p class="text-xs text-zinc-500">
+      <p class="text-xs text-muted-foreground">
         Dejará de figurar como pendiente para el colaborador.
         El estado del contrato en Energy Expert no cambia.
       </p>
-      <div class="flex justify-end gap-2 pt-2 border-t border-zinc-800">
+      <div class="flex justify-end gap-2 pt-2 border-t border-border">
         <button type="button"
-                class="px-3 py-1.5 text-sm rounded-md border border-zinc-700 text-zinc-300 hover:bg-zinc-800/60 disabled:opacity-50"
+                class="px-3 py-1.5 text-sm rounded-md border border-border text-foreground/80 hover:bg-accent disabled:opacity-50"
                 [disabled]="!!closingId()"
                 (click)="cancelarCierre()">Cancelar</button>
         <button type="button"

@@ -1,21 +1,15 @@
 @if (visible()) {
-  <div class="mb-4 inline-flex gap-1 bg-card border border-border rounded-lg p-1">
-    <a
-      [routerLink]="luzUrl()"
-      class="px-4 py-2 text-sm font-medium rounded-md transition-all"
-      [class.bg-accent]="!isGas()"
-      [class.text-foreground]="!isGas()"
-      [class.text-muted-foreground]="isGas()"
-    >
+  <div [class.mb-4]="!bare()" class="inline-flex gap-0.5 rounded-lg border border-border bg-card p-[3px]" role="group" aria-label="Tipo de suministro">
+    <a [routerLink]="luzUrl()" [attr.aria-current]="!isGas() ? 'true' : null"
+       class="inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-sm font-medium transition-colors duration-150"
+       [class]="!isGas() ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-accent hover:text-foreground'">
+      <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
       Luz
     </a>
-    <a
-      [routerLink]="gasUrl()"
-      class="px-4 py-2 text-sm font-medium rounded-md transition-all"
-      [class.bg-accent]="isGas()"
-      [class.text-foreground]="isGas()"
-      [class.text-muted-foreground]="!isGas()"
-    >
+    <a [routerLink]="gasUrl()" [attr.aria-current]="isGas() ? 'true' : null"
+       class="inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-sm font-medium transition-colors duration-150"
+       [class]="isGas() ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-accent hover:text-foreground'">
+      <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-3 2-4 2-7 1.5 1 2 2.5 2 4 1-2 1-5 1-8Z"/></svg>
       Gas
     </a>
   </div>

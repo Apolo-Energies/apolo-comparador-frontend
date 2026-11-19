@@ -98,7 +98,7 @@ export const appConfig: ApplicationConfig = {
     provideAuth({
       signInPath: `${environment.apiUrl}/auth/login`,
       loginRedirect: '/',
-      homeRedirect: '/dashboard/comparator',
+      homeRedirect: '/dashboard/inicio',
       tokenStorage: environment.auth.tokenStorage,
       tokenCookieName: environment.auth.accessTokenKey,
     }),

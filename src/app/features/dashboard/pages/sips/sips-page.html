@@ -1,9 +1,11 @@
+<app-comparator-hub-nav tab="sips" energy="luz" />
+
 <!-- Search card (solo cuando no hay datos) / Info card + charts (cuando hay datos) -->
 <div class="relative">
 
   @if (!mappedPs()) {
     <div class="mb-6 bg-card rounded-lg border border-border p-6">
-      <p class="text-lg font-semibold mb-2">Consultas SIPS</p>
+      <p class="text-sm font-medium text-foreground mb-3">Buscar por CUPS</p>
       <div class="flex flex-col md:flex-row md:items-start gap-4">
 
         <div class="w-full max-w-xl">
@@ -14,7 +16,7 @@
             [value]="cups()"
             (input)="onCupsInput($any($event.target))"
             placeholder="Ingresa los CUPS separados por comas"
-            class="w-full resize-none overflow-hidden rounded-md border border-input bg-background px-3 py-2 text-sm leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-input"
+            class="cups-field w-full resize-none overflow-hidden rounded-md border border-input bg-background px-3 py-2 text-sm leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-input"
             style="min-height: 38px; max-height: 240px;"
           ></textarea>
 
@@ -30,7 +32,7 @@
           }
 
           @if (error()) {
-            <p class="text-xs text-red-500 mt-1">{{ error() }}</p>
+            <p class="text-xs text-danger mt-1">{{ error() }}</p>
           }
 
           @if (isMaster() && isOverEmailThreshold()) {

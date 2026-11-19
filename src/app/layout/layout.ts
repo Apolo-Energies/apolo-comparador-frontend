@@ -1,14 +1,14 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, PLATFORM_ID, signal } from '@angular/core';
+import { afterEveryRender, afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, ElementRef, HostListener, inject, PLATFORM_ID, signal, untracked, viewChild } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { RouterOutlet, Router } from '@angular/router';
+import { RouterOutlet, Router, RouterLink, NavigationEnd } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
+import { filter, map } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { ApoloSidebar, SidebarSection } from '@apolo-energies/sidebar';
+import { ApoloSidebar } from '@apolo-energies/sidebar';
 import { ApoloHeader, HeaderWelcomeContent, HeaderActionLink, UserMenuItem } from '@apolo-energies/header';
 import { AuthService } from '@apolo-energies/auth';
 import { chevronDownIcon, chevronRightIcon, CircleIcon, CompassIcon, InfoIcon, LogoutIcon, StarIcon, UiIconSource, UserIcon } from '@apolo-energies/icons';
-import { getUserRoles } from '../core/helpers/auth.utils';
 import { environment } from '../../environments/environment';
 import { RefreshTokenService } from '../core/services/refresh-token.service';
 import { OpportunityCountsStore } from '../core/services/opportunity-counts.store';
@@ -16,7 +16,9 @@ import { GlobalLoadingService } from '../core/services/global-loading.service';
 import { BrandModulesService } from '../core/services/brand-modules.service';
 import { BrandLoaderComponent } from '../shared/components/brand-loader/brand-loader.component';
 import { CollaboratorScopeSelectorComponent } from '../shared/components/collaborator-scope-selector/collaborator-scope-selector';
-import { buildSidebarSections, hasAccess } from './layout.helpers';
+import { NavSectionsService } from './nav-sections.service';
+import { buildCrumbs } from './breadcrumbs';
+import { ThemeService } from '../core/services/theme.service';
 import { OpportunitiesBadgeController } from './opportunities-badge.controller';
 import { BrandThemeController } from './brand-theme.controller';
 import { OnboardingTourService } from '../shared/components/onboarding-tour/onboarding-tour.service';
@@ -28,7 +30,7 @@ const TRANSPARENT_LOGO_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0i
 
 @Component({
   selector: 'app-layout',
-  imports: [RouterOutlet, ApoloSidebar, ApoloHeader, BrandLoaderComponent, CollaboratorScopeSelectorComponent],
+  imports: [RouterOutlet, RouterLink, ApoloSidebar, ApoloHeader, BrandLoaderComponent, CollaboratorScopeSelectorComponent],
   templateUrl: './layout.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -43,8 +45,13 @@ export class Layout {
   private destroyRef = inject(DestroyRef);
   private tour = inject(OnboardingTourService);
   readonly globalLoading = inject(GlobalLoadingService);
+  private nav = inject(NavSectionsService);
+  readonly theme = inject(ThemeService);
 
   readonly isApolo = environment.features.userDetail;
+
+  /** Escudo de los loaders del layout según el tema: negro sobre blanco, blanco sobre negro. */
+  readonly loaderLogoUrl = computed(() => this.theme.isDark() ? '/apolo/isotipo_blanco.svg' : '/apolo/Isotipo_Oscuro.svg');
 
   readonly currentUrl = toSignal(
     this.router.events.pipe(map(() => this.router.url)),
@@ -53,6 +60,23 @@ export class Layout {
 
   readonly mobileOpen    = signal(false);
   readonly loggingOut    = signal(false);
+
+  // ── Menú lateral fuera de pantalla ──────────
+  // En escritorio el sidebar del paquete se desplaza fuera de la vista y se abre
+  // desde el borde izquierdo (hover) o con el botón "Menú". En móvil se sigue
+  // usando el drawer propio del paquete (isMobileOpen).
+  readonly menuOpen = signal(false);
+  private openedByHover = false;
+  private readonly menuButton = viewChild<ElementRef<HTMLButtonElement>>('menuButton');
+  private readonly menuPanel  = viewChild<ElementRef<HTMLElement>>('menuPanel');
+  private readonly themeSwitch = viewChild<ElementRef<HTMLButtonElement>>('themeSwitch');
+  private readonly themeFallback = viewChild<ElementRef<HTMLElement>>('themeFallback');
+  readonly isDesktop = signal(true);
+  readonly canHover  = signal(true);
+  /** Migas de pan: se recalculan con la URL. */
+  readonly crumbs = computed(() =>
+    buildCrumbs(this.currentUrl(), this.refreshTokenService.getUserIdFromToken()?.toString() ?? null,
+      environment.features.userDetail && this.brandModules.brandAllows('comparator')));
 
   // Pending opportunities por tipo (Luz/Gas) + marcador DOM del badge en el
   // sidebar. Estado y llamadas al servicio viven en el controller (R1); no se
@@ -78,7 +102,43 @@ export class Layout {
   });
 
   constructor() {
+    this.router.events
+      .pipe(filter(e => e instanceof NavigationEnd), takeUntilDestroyed())
+      .subscribe(() => { this.closeMenu(false); this.mobileOpen.set(false); });
+
     if (!isPlatformBrowser(this.platformId)) return;
+
+    // Tema del portal: clase en <body> para que modales, drawers y overlays
+    // (fuera del layout) también la hereden. Se retiran al salir, así el login sigue como estaba.
+    effect(() => {
+      const dark = this.theme.isDark();
+      document.body.classList.toggle('portal-dark', dark);
+      document.body.classList.toggle('portal-light', !dark);
+    });
+    this.theme.portalActive.set(true);
+    this.destroyRef.onDestroy(() => {
+      document.body.classList.remove('portal-light', 'portal-dark', 'logo-invert');
+      // Clases puestas por index.html antes de arrancar: fuera del portal no aplican.
+      document.documentElement.classList.remove('portal-boot-light', 'portal-boot-dark');
+      this.theme.portalActive.set(false);
+    });
+    effect(() => {
+      const tenantLogo = !this.brandTheme.logoUrl();
+      document.body.classList.toggle('logo-invert', tenantLogo && environment.invertLogoOnLight && !this.theme.isDark());
+    });
+
+    const desktopMq = window.matchMedia('(min-width: 768px)');
+    const hoverMq   = window.matchMedia('(hover: hover) and (pointer: fine)');
+    this.isDesktop.set(desktopMq.matches);
+    this.canHover.set(hoverMq.matches);
+    const onDesktop = (e: MediaQueryListEvent) => this.isDesktop.set(e.matches);
+    const onHover   = (e: MediaQueryListEvent) => this.canHover.set(e.matches);
+    desktopMq.addEventListener('change', onDesktop);
+    hoverMq.addEventListener('change', onHover);
+    this.destroyRef.onDestroy(() => {
+      desktopMq.removeEventListener('change', onDesktop);
+      hoverMq.removeEventListener('change', onHover);
+    });
     this.brandTheme.load();
     if (environment.features.opportunities) {
       this.oppBadge.refresh();
@@ -91,8 +151,71 @@ export class Layout {
       this.setCssCount('--opp-count-gas', gas);
       this.setCssCount('--opp-count',     luz + gas);
     });
+    // Tour guiado: sus pasos señalan ítems del menú, así que lo abre mientras dura.
+    // Solo depende de tour.active(): el resto va en untracked para no cerrar
+    // el menú cada vez que el usuario lo abre.
+    let wasActive = false;
+    effect(() => {
+      const active = this.tour.active();
+      untracked(() => {
+        if (active) { this.openedByHover = false; this.menuOpen.set(true); }
+        else if (wasActive) this.closeMenu(false);
+        wasActive = active;
+      });
+    });
+    // El Inicio muestra el mismo logo (tenant o marca blanca) que resuelve el layout.
+    effect(() => this.nav.logoSrc.set(this.brandTheme.loading() ? null : this.logoSrc()));
     afterNextRender(() => this.tourController.maybeAutoStart());
+    // En cada render (no solo el primero): si la cabecera se vuelve a pintar (recarga en
+    // caliente, cambio de marca…) el selector de tema vuelve a su sitio en vez de desaparecer.
+    afterEveryRender({ write: () => this.moveThemeSwitch() });
   }
+
+  /** La cabecera es de un paquete sin hueco para contenido propio: el selector de tema se
+   *  inserta al principio de su grupo derecho (antes de "Alta Rápida" y del menú de usuario).
+   *  Angular sigue gestionando el botón (bindings y click) aunque cambie de padre. */
+  private moveThemeSwitch(): void {
+    const sw = this.themeSwitch()?.nativeElement;
+    // Si una versión nueva del paquete cambia su estructura, el selector queda en la barra
+    // de "Menú" en vez de desaparecer.
+    const group = document.querySelector('lib-apolo-header header > div > div.shrink-0') ?? this.themeFallback()?.nativeElement;
+    if (!sw || !group) return;
+    if (sw.parentElement !== group) group.insertBefore(sw, group.firstChild);
+    sw.classList.add('is-placed');
+  }
+
+  /** Botón "Menú": en escritorio abre el panel; en móvil, el drawer del paquete. */
+  toggleMenu(): void {
+    if (!this.isDesktop()) { this.mobileOpen.update(v => !v); return; }
+    if (this.menuOpen()) { this.closeMenu(); return; }
+    this.openedByHover = false;
+    this.menuOpen.set(true);
+    // Lleva el foco al primer enlace del menú cuando ya es visible.
+    setTimeout(() => this.menuPanel()?.nativeElement.querySelector<HTMLElement>('a[href], button')?.focus(), 0);
+  }
+
+  openFromEdge(): void {
+    if (this.menuOpen() || !this.canHover()) return;
+    this.openedByHover = true;
+    this.menuOpen.set(true);
+  }
+
+  onMenuLeave(): void {
+    if (this.openedByHover) this.closeMenu(false);
+  }
+
+  closeMenu(restoreFocus = true): void {
+    if (!this.menuOpen() || this.tour.active()) return;
+    const byKeyboard = !this.openedByHover;
+    this.menuOpen.set(false);
+    this.openedByHover = false;
+    if (restoreFocus && byKeyboard) this.menuButton()?.nativeElement.focus();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void { if (!this.tour.active()) this.closeMenu(); }
+
+  readonly tourActive = computed(() => this.tour.active());
 
   onMenuItemSelected(item: UserMenuItem): void {
     this.tourController.onMenuItemSelected(item);
@@ -108,7 +231,8 @@ export class Layout {
   // logo de Apolo para colaboradores de marca blanca.
   readonly logoSrc = computed(() => {
     if (this.brandTheme.loading()) return TRANSPARENT_LOGO_PLACEHOLDER;
-    return this.brandTheme.logoUrl() ?? environment.logoUrl;
+    const tenantLogo = this.theme.isDark() ? environment.logoUrl : (environment.logoOnLightUrl ?? environment.logoUrl);
+    return this.brandTheme.logoUrl() ?? tenantLogo;
   });
 
   readonly userMenuIcon = {
@@ -136,14 +260,7 @@ export class Layout {
     size: 16,
   };
 
-  readonly sections = computed<SidebarSection[]>(() => buildSidebarSections({
-    roles: getUserRoles(this.auth.currentUser()),
-    isApolo: this.isApolo,
-    userId: this.refreshTokenService.getUserIdFromToken(),
-    isSubUser: !!this.refreshTokenService.getParentUserIdFromToken(),
-    // Lee el signal de módulos de la marca: el menú se recalcula cuando termina de cargar.
-    brandAllows: code => this.brandModules.brandAllows(code),
-  }));
+  readonly sections = this.nav.sections;
 
   readonly welcome: HeaderWelcomeContent = {
     title: 'Bienvenido al portal de colaboradores de Apolo Energies.',
@@ -183,6 +300,7 @@ export class Layout {
       });
     }
 
+
     items.push({
       id: TOUR_MENU_ITEM_ID,
       label: 'Ver tour guiado',
@@ -208,8 +326,7 @@ export class Layout {
     size: 22,
   };
 
-  readonly accessFn = (access?: string[]): boolean =>
-    hasAccess(access, getUserRoles(this.auth.currentUser()));
+  readonly accessFn = this.nav.accessFn;
 
   onLogout() {
     this.loggingOut.set(true);

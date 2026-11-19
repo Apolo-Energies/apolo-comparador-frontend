@@ -1,3 +1,4 @@
+import { ComparatorHubNavComponent } from '../../../../shared/components/comparator-hub-nav/comparator-hub-nav';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
@@ -15,7 +16,7 @@ import { Period } from '../../../../shared/constants/period';
 @Component({
   selector: 'app-sips-gas-page',
   standalone: true,
-  imports: [ButtonComponent, SipsGasInfoCardComponent, SipsDonutChartComponent, SipsMonthlyChartComponent, DecimalPipe, DatePipe],
+  imports: [ComparatorHubNavComponent, ButtonComponent, SipsGasInfoCardComponent, SipsDonutChartComponent, SipsMonthlyChartComponent, DecimalPipe, DatePipe],
   templateUrl: './sips-gas-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -99,6 +100,9 @@ export class SipsGasPageComponent {
 
   onCupsInput(el: HTMLTextAreaElement): void {
     this.cups.set(el.value);
+    // field-sizing: content (CSS, .cups-field) ajusta el alto solo; este cálculo es el
+    // respaldo para navegadores sin soporte.
+    if (typeof CSS !== 'undefined' && CSS.supports('field-sizing', 'content')) return;
     el.style.height = 'auto';
     el.style.height = `${Math.min(el.scrollHeight, 240)}px`;
   }

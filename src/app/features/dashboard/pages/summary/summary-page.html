@@ -1,0 +1,139 @@
+<app-page-header title="Resumen" [subtitle]="scope.selected() ? 'Contratos de ' + scope.selected()!.name + '. El resto de bloques muestra toda la cartera.' : 'Su cartera de un vistazo.'" />
+
+<!-- Contratos por estado -->
+<div class="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(170px,1fr))]">
+  <app-stat-card label="Activos"       [value]="fmt(cards().data?.activos)"      hint="Contratos activos"      [link]="contractsUrl" [queryParams]="{ estado: 'activo' }" [state]="cards().state" (retry)="loadCards()" />
+  <app-stat-card label="Para firma"    [value]="fmt(cards().data?.paraFirma)"    hint="Pendientes de firma"    [link]="contractsUrl" [queryParams]="{ estado: 'para_firma' }" [state]="cards().state" (retry)="loadCards()" />
+  <app-stat-card label="Para tramitar" [value]="fmt(cards().data?.paraTramitar)" hint="Pendientes de tramitar" [link]="contractsUrl" [queryParams]="{ estado: 'para_tramitar' }" [state]="cards().state" (retry)="loadCards()" />
+  <app-stat-card label="Bajas"         [value]="fmt(cards().data?.bajas)"        hint="Contratos de baja"      [link]="contractsUrl" [queryParams]="{ estado: 'baja' }" [state]="cards().state" (retry)="loadCards()" />
+  @if (cards().state !== 'ok' || cards().data?.estudios != null) {
+    <app-stat-card label="En estudio"  [value]="fmt(cards().data?.estudios)"     hint="Contratos en estudio"   [link]="contractsUrl" [queryParams]="{ estado: 'para_estudio' }" [state]="cards().state" (retry)="loadCards()" />
+  }
+</div>
+
+<!-- Gráficos -->
+<div class="mt-7 grid gap-3 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+  @if (altasBajas().state !== 'hidden') {
+    <section class="min-w-0 rounded-lg border border-border bg-card p-5" aria-labelledby="sum-actividad">
+      <div class="mb-1 flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
+        <app-section-title id="sum-actividad">Actividad por mes</app-section-title>
+        @if (altasBajas().state === 'ok' && bars().items.length) {
+          <dl class="flex gap-5 text-right">
+            <div><dt class="text-xs text-muted-foreground">Altas · 12 meses</dt><dd class="text-lg font-semibold tabular-nums text-foreground">{{ fmt(totals().altas) }}</dd></div>
+            <div><dt class="text-xs text-muted-foreground">Bajas · 12 meses</dt><dd class="text-lg font-semibold tabular-nums text-foreground">{{ fmt(totals().bajas) }}</dd></div>
+            @if (hasRenov()) {
+              <div><dt class="text-xs text-muted-foreground">Renovaciones</dt><dd class="text-lg font-semibold tabular-nums text-foreground">{{ fmt(totals().renovaciones) }}</dd></div>
+            }
+          </dl>
+        }
+      </div>
+      @switch (altasBajas().state) {
+        @case ('loading') { <div class="h-[230px] animate-pulse rounded bg-muted"></div> }
+        @case ('error') {
+          <p class="text-sm text-danger">No se pudo cargar.
+            <button type="button" class="ml-1 font-medium text-primary hover:underline" (click)="loadAltasBajas()">Reintentar</button></p>
+        }
+        @default {
+          @if (bars().items.length) {
+            <div class="relative" (mouseleave)="hover.set(null)">
+              <svg [attr.viewBox]="'0 0 ' + bars().W + ' ' + (bars().H + 24)" class="w-full overflow-visible" role="img"
+                   aria-label="Altas, bajas y renovaciones por mes en los últimos 12 meses">
+                @for (t of bars().ticks; track t.y) {
+                  <line [attr.x1]="bars().left" [attr.x2]="bars().W" [attr.y1]="t.y" [attr.y2]="t.y"
+                        [attr.stroke]="t.label === 0 ? 'var(--color-border)' : 'var(--chart-grid)'" />
+                  <text x="0" [attr.y]="t.y + 4" class="text-[11px] tabular-nums" fill="var(--chart-axis)">{{ t.label }}</text>
+                }
+                @for (b of bars().items; track b.label; let i = $index) {
+                  @if (hover() === i) {
+                    <rect [attr.x]="b.x + 2" y="0" [attr.width]="bars().slot - 4" [attr.height]="bars().H" rx="4" fill="var(--color-foreground)" fill-opacity="0.05" />
+                  }
+                  @for (r of b.rects; track r.key) {
+                    <rect [attr.x]="r.x" [attr.y]="r.y" [attr.width]="r.w" [attr.height]="r.h" rx="2" [attr.fill]="r.color" />
+                  }
+                  <text [attr.x]="b.cx" [attr.y]="bars().H + 17" text-anchor="middle" class="text-[11px]"
+                        [attr.fill]="hover() === i ? 'var(--color-foreground)' : 'var(--chart-axis)'">{{ b.label }}</text>
+                  <!-- zona de interacción más grande que la barra -->
+                  <rect [attr.x]="b.x" y="0" [attr.width]="bars().slot" [attr.height]="bars().H + 24" fill="transparent"
+                        (mouseenter)="hover.set(i)"><title>{{ b.tip }}</title></rect>
+                }
+              </svg>
+              @if (hover() !== null) {
+                @let b = bars().items[hover()!];
+                <div class="pointer-events-none absolute top-0 z-10 min-w-[150px] -translate-x-1/2 rounded-md border px-3 py-2 text-xs shadow-sm"
+                     [style.left.%]="(b.cx / bars().W) * 100"
+                     style="background: var(--chart-tooltip-bg); border-color: var(--chart-tooltip-border); color: var(--chart-tooltip-fg)">
+                  <p class="mb-1 font-semibold">{{ b.label }}</p>
+                  @for (r of b.rects; track r.key) {
+                    <p class="flex items-center justify-between gap-4">
+                      <span class="inline-flex items-center gap-1.5"><i class="size-2 rounded-sm" [style.background]="r.color"></i>{{ r.label }}</span>
+                      <span class="font-medium tabular-nums">{{ fmt(r.value) }}</span>
+                    </p>
+                  }
+                </div>
+              }
+            </div>
+            <div class="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
+              @for (s of bars().series; track s.key) {
+                <span class="inline-flex items-center gap-1.5"><i class="size-2.5 rounded-sm" [style.background]="s.color"></i>{{ s.label }}</span>
+              }
+            </div>
+          } @else {
+            <p class="py-12 text-center text-sm text-muted-foreground">Todavía no hay altas ni bajas registradas.</p>
+          }
+        }
+      }
+    </section>
+  }
+
+  @if (porTipo().state !== 'hidden') {
+    <section class="min-w-0 rounded-lg border border-border bg-card p-5" aria-labelledby="sum-tipo">
+      <app-section-title id="sum-tipo">Contratos por tipo</app-section-title>
+      @switch (porTipo().state) {
+        @case ('loading') { <div class="h-[230px] animate-pulse rounded bg-muted"></div> }
+        @case ('error') {
+          <p class="text-sm text-danger">No se pudo cargar.
+            <button type="button" class="ml-1 font-medium text-primary hover:underline" (click)="loadPorTipo()">Reintentar</button></p>
+        }
+        @default {
+          @if (donut().total) {
+            <div class="flex flex-wrap items-center gap-x-8 gap-y-4">
+              <svg viewBox="0 0 200 200" class="w-[190px] shrink-0" role="img" aria-label="Contratos por tipo">
+                @for (a of donut().arcs; track $index) {
+                  <path [attr.d]="a.d" [attr.fill]="a.color"><title>{{ a.label }}: {{ fmt(a.value) }} ({{ a.pct }} %)</title></path>
+                }
+                <text x="100" y="99" text-anchor="middle" class="fill-foreground text-[26px] font-semibold tabular-nums">{{ fmt(donut().total) }}</text>
+                <text x="100" y="119" text-anchor="middle" class="fill-muted-foreground text-[12px]">contratos</text>
+              </svg>
+              <ul class="flex min-w-[160px] flex-1 flex-col gap-2.5 text-sm">
+                @for (a of donut().arcs; track $index) {
+                  <li class="flex items-center gap-2.5">
+                    <i class="size-2.5 shrink-0 rounded-sm" [style.background]="a.color"></i>
+                    <span class="min-w-0 flex-1 truncate text-foreground">{{ a.label }}</span>
+                    <span class="tabular-nums text-muted-foreground">{{ fmt(a.value) }}</span>
+                    <span class="w-11 text-right font-medium tabular-nums text-foreground">{{ a.pct }} %</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          } @else {
+            <p class="py-12 text-center text-sm text-muted-foreground">Todavía no hay contratos.</p>
+          }
+        }
+      }
+    </section>
+  }
+</div>
+
+<!-- Dinero y seguimiento -->
+<div class="mt-7 grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
+  <app-stat-card label="Liquidaciones" [value]="eur(liquidaciones().data?.importeTotal)"
+                 [hint]="liquidaciones().data ? fmt(liquidaciones().data?.numeroTotal) + ' liquidaciones · ' + eur(liquidaciones().data?.importeEmitidas) + ' emitido' : null"
+                 [state]="liquidaciones().state" (retry)="loadLiquidaciones()" />
+  <app-stat-card label="Impagos" [value]="fmt(impagadas().data?.numImpagadas)"
+                 [hint]="impagadas().data ? 'Facturas sin cobrar · ' + eur(impagadas().data?.importeImpagado) : null"
+                 [state]="impagadas().state" (retry)="loadImpagadas()" />
+  <app-stat-card label="En tramitación" [value]="fmt(enTramite().data)" hint="Contratos con gestión abierta" [link]="contractsUrl" [queryParams]="{ tramitacion: '1' }" [state]="enTramite().state" (retry)="loadTramite()" />
+  @if (showOportunidades) {
+    <app-stat-card label="Oportunidades pendientes" [value]="fmt(pendientes())" [hint]="oportunidadesHint()" [link]="opportunitiesUrl" [state]="pendientesState()" (retry)="retryPendientes()" />
+  }
+</div>

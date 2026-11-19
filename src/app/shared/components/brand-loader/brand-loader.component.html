@@ -23,7 +23,7 @@
               cx="50"
               cy="50"
               [attr.r]="radius"
-              stroke="rgba(255, 255, 255, 0.07)"
+              [attr.stroke]="dark() ? 'rgba(255, 255, 255, 0.08)' : 'rgba(17, 17, 17, 0.08)'"
               stroke-width="2"
               fill="none"
             />
@@ -43,6 +43,7 @@
 
           <img
             [src]="customLogoUrl() ?? theme().logoSrc"
+            [style.filter]="customLogoUrl() ? null : (theme().logoFilter ?? null)"
             [alt]="theme().wordmark"
             class="relative object-contain select-none pointer-events-none"
             [style.width.px]="size() * 0.55"
@@ -53,14 +54,14 @@
       }
 
       @if (showWordmark()) {
-        <h1 class="text-white text-2xl font-semibold tracking-tight">
+        <h1 [class]="dark() ? 'text-[#fafafa]' : 'text-[#111111]'" class="text-2xl font-semibold tracking-tight">
           {{ theme().wordmark }}
         </h1>
       }
 
       @if (showTitle()) {
         <h2
-          class="text-white/90 text-base font-medium"
+          [class]="dark() ? 'text-[#fafafa]' : 'text-[#111111]'" class="text-base font-medium"
           [class.mt-2]="showWordmark()"
         >
           {{ title() }}
@@ -69,7 +70,7 @@
 
       @if (showDescription() && description()) {
         <p
-          class="text-white/55 text-sm leading-relaxed max-w-sm"
+          [class]="dark() ? 'text-[#a1a1aa]' : 'text-[#6b6b6b]'" class="text-sm leading-relaxed max-w-sm"
           [class.mt-3]="showTitle() || showWordmark()"
         >
           {{ description() }}
@@ -81,7 +82,7 @@
           class="w-full max-w-xs"
           [class.mt-8]="showLogo() || showWordmark() || showTitle() || showDescription()"
         >
-          <div class="relative h-0.75 w-full rounded-full bg-white/10 overflow-visible">
+          <div class="relative h-0.75 w-full rounded-full overflow-visible" [class]="dark() ? 'bg-white/10' : 'bg-black/10'">
             <div
               class="absolute inset-y-0 left-0 rounded-full bl-bar-fill"
               [style.width.%]="displayProgress()"
@@ -102,6 +103,7 @@
             >
               <img
                 [src]="customLogoUrl() ?? theme().logoSrc"
+            [style.filter]="customLogoUrl() ? null : (theme().logoFilter ?? null)"
                 [alt]=""
                 class="bl-bar-icon-img"
                 draggable="false"
@@ -122,7 +124,7 @@
 
       @if (showMicrocopy() && microcopy()) {
         <div
-          class="flex items-center gap-2 text-white/40 text-xs"
+          class="flex items-center gap-2 text-xs" [class]="dark() ? 'text-[#a1a1aa]' : 'text-[#6b6b6b]'"
           [class.mt-6]="showLogo() || showWordmark() || showTitle() || showDescription() || showBar()"
         >
           @if (showMicrocopyIcon()) {

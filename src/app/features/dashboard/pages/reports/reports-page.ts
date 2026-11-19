@@ -1,3 +1,4 @@
+import { AnalyticsHubNavComponent } from '../../../../shared/components/analytics-hub-nav/analytics-hub-nav';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -8,7 +9,6 @@ import {
 } from '@angular/core';
 import { catchError, of } from 'rxjs';
 import { BrandLoaderComponent } from '../../../../shared/components/brand-loader/brand-loader.component';
-import { EnergyRouteToggleComponent } from '../../../../shared/components/energy-route-toggle/energy-route-toggle.component';
 import { DashboardStatsService } from '../../../../core/services/dashboard-stats.service';
 import { SummaryApiResult, DailySummaryApiItem, HistoryItem } from '../../../../core/models/dashboard-api.model';
 import { OpportunitySummary, OpportunityStatus } from '../../../../core/models/opportunity.model';
@@ -24,7 +24,7 @@ const CRITICAL_DAYS = 7;
 @Component({
   selector: 'app-reports-page',
   standalone: true,
-  imports: [BrandLoaderComponent, ReportsAnalyticsTabComponent, ReportsOpportunitiesTabComponent, ReportsAlertsTabComponent, EnergyRouteToggleComponent],
+  imports: [AnalyticsHubNavComponent, BrandLoaderComponent, ReportsAnalyticsTabComponent, ReportsOpportunitiesTabComponent, ReportsAlertsTabComponent],
   templateUrl: './reports-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -91,6 +91,19 @@ export class ReportsPageComponent {
   }
 
   setTab(tab: ReportTab): void { this.activeTab.set(tab); }
+
+  /** Flechas, Inicio y Fin entre pestañas; la selección sigue al foco. */
+  onTabKey(e: KeyboardEvent): void {
+    const ids = this.tabs.map(t => t.id);
+    const i = ids.indexOf(this.activeTab());
+    const next = e.key === 'ArrowRight' ? (i + 1) % ids.length
+      : e.key === 'ArrowLeft' ? (i - 1 + ids.length) % ids.length
+      : e.key === 'Home' ? 0 : e.key === 'End' ? ids.length - 1 : -1;
+    if (next < 0) return;
+    e.preventDefault();
+    this.setTab(ids[next]);
+    queueMicrotask(() => document.getElementById(`report-tab-${ids[next]}`)?.focus());
+  }
 
   onColabPeriodChange(period: ColabPeriod): void {
     if (this.colabPeriod() === period) return;

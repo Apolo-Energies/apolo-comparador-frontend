@@ -42,28 +42,28 @@
               <label class="text-sm font-medium text-muted-foreground">Nombre *</label>
               <input formControlName="firstName" placeholder="Juan"
                 [class]="inputCls" [class.border-red-500]="err('firstName')" />
-              @if (err('firstName')) { <p class="text-xs text-red-500">{{ errMsg('firstName') }}</p> }
+              @if (err('firstName')) { <p class="text-xs text-danger">{{ errMsg('firstName') }}</p> }
             </div>
 
             <div class="space-y-1">
               <label class="text-sm font-medium text-muted-foreground">Primer apellido *</label>
               <input formControlName="lastName1" placeholder="García"
                 [class]="inputCls" [class.border-red-500]="err('lastName1')" />
-              @if (err('lastName1')) { <p class="text-xs text-red-500">{{ errMsg('lastName1') }}</p> }
+              @if (err('lastName1')) { <p class="text-xs text-danger">{{ errMsg('lastName1') }}</p> }
             </div>
 
             <div class="space-y-1">
               <label class="text-sm font-medium text-muted-foreground">Segundo apellido *</label>
               <input formControlName="lastName2" placeholder="López"
                 [class]="inputCls" [class.border-red-500]="err('lastName2')" />
-              @if (err('lastName2')) { <p class="text-xs text-red-500">{{ errMsg('lastName2') }}</p> }
+              @if (err('lastName2')) { <p class="text-xs text-danger">{{ errMsg('lastName2') }}</p> }
             </div>
 
             <div class="space-y-1">
               <label class="text-sm font-medium text-muted-foreground">DNI / NIE *</label>
               <input formControlName="dni" placeholder="12345678A"
                 [class]="inputCls" [class.border-red-500]="err('dni')" />
-              @if (err('dni')) { <p class="text-xs text-red-500">{{ errMsg('dni') }}</p> }
+              @if (err('dni')) { <p class="text-xs text-danger">{{ errMsg('dni') }}</p> }
             </div>
           } @else {
             <!-- Company -->
@@ -71,14 +71,14 @@
               <label class="text-sm font-medium text-muted-foreground">Razón social *</label>
               <input formControlName="companyName" placeholder="Empresa S.L."
                 [class]="inputCls" [class.border-red-500]="err('companyName')" />
-              @if (err('companyName')) { <p class="text-xs text-red-500">{{ errMsg('companyName') }}</p> }
+              @if (err('companyName')) { <p class="text-xs text-danger">{{ errMsg('companyName') }}</p> }
             </div>
 
             <div class="md:col-span-2 space-y-1">
               <label class="text-sm font-medium text-muted-foreground">CIF *</label>
               <input formControlName="cif" placeholder="B56263304"
                 [class]="inputCls" [class.border-red-500]="err('cif')" />
-              @if (err('cif')) { <p class="text-xs text-red-500">{{ errMsg('cif') }}</p> }
+              @if (err('cif')) { <p class="text-xs text-danger">{{ errMsg('cif') }}</p> }
             </div>
 
             <div class="md:col-span-2 space-y-2">
@@ -88,19 +88,19 @@
                   <p class="text-xs text-muted-foreground">Nombre *</p>
                   <input formControlName="firstName" placeholder="Juan"
                     [class]="inputCls" [class.border-red-500]="err('firstName')" />
-                  @if (err('firstName')) { <p class="text-xs text-red-500">{{ errMsg('firstName') }}</p> }
+                  @if (err('firstName')) { <p class="text-xs text-danger">{{ errMsg('firstName') }}</p> }
                 </div>
                 <div class="space-y-1">
                   <p class="text-xs text-muted-foreground">Primer apellido *</p>
                   <input formControlName="lastName1" placeholder="García"
                     [class]="inputCls" [class.border-red-500]="err('lastName1')" />
-                  @if (err('lastName1')) { <p class="text-xs text-red-500">{{ errMsg('lastName1') }}</p> }
+                  @if (err('lastName1')) { <p class="text-xs text-danger">{{ errMsg('lastName1') }}</p> }
                 </div>
                 <div class="space-y-1">
                   <p class="text-xs text-muted-foreground">Segundo apellido *</p>
                   <input formControlName="lastName2" placeholder="López"
                     [class]="inputCls" [class.border-red-500]="err('lastName2')" />
-                  @if (err('lastName2')) { <p class="text-xs text-red-500">{{ errMsg('lastName2') }}</p> }
+                  @if (err('lastName2')) { <p class="text-xs text-danger">{{ errMsg('lastName2') }}</p> }
                 </div>
                 <div class="space-y-1">
                   <p class="text-xs text-muted-foreground">DNI</p>
@@ -113,10 +113,10 @@
 
           <!-- Common fields -->
           <div class="space-y-1">
-            <label class="text-sm font-medium text-muted-foreground">Correo <span class="text-red-500">*</span></label>
+            <label class="text-sm font-medium text-muted-foreground">Correo <span class="text-danger">*</span></label>
             <input formControlName="email" type="email" placeholder="usuario@email.com"
               [class]="inputCls" [class.border-red-500]="err('email')" />
-            @if (err('email')) { <p class="text-xs text-red-500">{{ errMsg('email') }}</p> }
+            @if (err('email')) { <p class="text-xs text-danger">{{ errMsg('email') }}</p> }
           </div>
 
           <div class="space-y-1">
@@ -131,7 +131,7 @@
               <input formControlName="phoneNumber" type="tel" placeholder="612 345 678"
                 [class]="numberCls" [class.border-red-500]="err('phoneNumber')" />
             </div>
-            @if (err('phoneNumber')) { <p class="text-xs text-red-500">{{ errMsg('phoneNumber') }}</p> }
+            @if (err('phoneNumber')) { <p class="text-xs text-danger">{{ errMsg('phoneNumber') }}</p> }
           </div>
 
           <!-- Dirección legal -->
@@ -149,25 +149,25 @@
                   <input formControlName="legalStreet" placeholder="Mayor"
                     [class]="numberCls" [class.border-red-500]="err('legalStreet')" />
                 </div>
-                @if (err('legalStreet')) { <p class="text-xs text-red-500">{{ errMsg('legalStreet') }}</p> }
+                @if (err('legalStreet')) { <p class="text-xs text-danger">{{ errMsg('legalStreet') }}</p> }
               </div>
               <div class="space-y-1">
                 <p class="text-xs text-muted-foreground">Número</p>
                 <input formControlName="legalNumber" placeholder="42"
                   [class]="inputCls" [class.border-red-500]="err('legalNumber')" />
-                @if (err('legalNumber')) { <p class="text-xs text-red-500">{{ errMsg('legalNumber') }}</p> }
+                @if (err('legalNumber')) { <p class="text-xs text-danger">{{ errMsg('legalNumber') }}</p> }
               </div>
               <div class="space-y-1">
                 <p class="text-xs text-muted-foreground">Ciudad</p>
                 <input formControlName="cityLegal" placeholder="Madrid"
                   [class]="inputCls" [class.border-red-500]="err('cityLegal')" />
-                @if (err('cityLegal')) { <p class="text-xs text-red-500">{{ errMsg('cityLegal') }}</p> }
+                @if (err('cityLegal')) { <p class="text-xs text-danger">{{ errMsg('cityLegal') }}</p> }
               </div>
               <div class="space-y-1">
                 <p class="text-xs text-muted-foreground">Código postal</p>
                 <input formControlName="postalCodeLegal" placeholder="28001"
                   [class]="inputCls" [class.border-red-500]="err('postalCodeLegal')" />
-                @if (err('postalCodeLegal')) { <p class="text-xs text-red-500">{{ errMsg('postalCodeLegal') }}</p> }
+                @if (err('postalCodeLegal')) { <p class="text-xs text-danger">{{ errMsg('postalCodeLegal') }}</p> }
               </div>
             </div>
           </div>
@@ -187,25 +187,25 @@
                   <input formControlName="notificationStreet" placeholder="Mayor"
                     [class]="numberCls" [class.border-red-500]="err('notificationStreet')" />
                 </div>
-                @if (err('notificationStreet')) { <p class="text-xs text-red-500">{{ errMsg('notificationStreet') }}</p> }
+                @if (err('notificationStreet')) { <p class="text-xs text-danger">{{ errMsg('notificationStreet') }}</p> }
               </div>
               <div class="space-y-1">
                 <p class="text-xs text-muted-foreground">Número</p>
                 <input formControlName="notificationNumber" placeholder="42"
                   [class]="inputCls" [class.border-red-500]="err('notificationNumber')" />
-                @if (err('notificationNumber')) { <p class="text-xs text-red-500">{{ errMsg('notificationNumber') }}</p> }
+                @if (err('notificationNumber')) { <p class="text-xs text-danger">{{ errMsg('notificationNumber') }}</p> }
               </div>
               <div class="space-y-1">
                 <p class="text-xs text-muted-foreground">Ciudad</p>
                 <input formControlName="cityNotification" placeholder="Madrid"
                   [class]="inputCls" [class.border-red-500]="err('cityNotification')" />
-                @if (err('cityNotification')) { <p class="text-xs text-red-500">{{ errMsg('cityNotification') }}</p> }
+                @if (err('cityNotification')) { <p class="text-xs text-danger">{{ errMsg('cityNotification') }}</p> }
               </div>
               <div class="space-y-1">
                 <p class="text-xs text-muted-foreground">Código postal</p>
                 <input formControlName="postalCodeNotification" placeholder="28001"
                   [class]="inputCls" [class.border-red-500]="err('postalCodeNotification')" />
-                @if (err('postalCodeNotification')) { <p class="text-xs text-red-500">{{ errMsg('postalCodeNotification') }}</p> }
+                @if (err('postalCodeNotification')) { <p class="text-xs text-danger">{{ errMsg('postalCodeNotification') }}</p> }
               </div>
             </div>
           </div>
@@ -215,7 +215,7 @@
             <input formControlName="bankAccount" placeholder="ES83 0182 6517 7302 0197 5760"
               (input)="onIban($event)"
               [class]="inputCls" [class.border-red-500]="err('bankAccount')" />
-            @if (err('bankAccount')) { <p class="text-xs text-red-500">{{ errMsg('bankAccount') }}</p> }
+            @if (err('bankAccount')) { <p class="text-xs text-danger">{{ errMsg('bankAccount') }}</p> }
           </div>
 
         </div>

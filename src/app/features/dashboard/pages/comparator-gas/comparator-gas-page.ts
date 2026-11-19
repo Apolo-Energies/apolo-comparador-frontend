@@ -1,3 +1,4 @@
+import { ComparatorHubNavComponent } from '../../../../shared/components/comparator-hub-nav/comparator-hub-nav';
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AuthService } from '@apolo-energies/auth';
@@ -20,7 +21,7 @@ import { getUserRoles } from '../../../../core/helpers/auth.utils';
 @Component({
   selector: 'app-comparator-gas',
   standalone: true,
-  imports: [
+  imports: [ComparatorHubNavComponent, 
     ComparatorUploadComponent,
     ComparatorGasModalComponent,
     LoadingOverlayComponent,

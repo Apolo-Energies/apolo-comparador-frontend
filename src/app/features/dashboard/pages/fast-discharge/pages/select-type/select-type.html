@@ -1,30 +1,69 @@
-<div class="min-h-full flex items-start justify-center pt-12 sm:pt-20 px-4">
-  <div class="w-full max-w-5xl space-y-8">
+<div class="mx-auto w-full max-w-[960px] py-4 sm:py-6">
 
-    <div class="text-center space-y-2">
-      <h1 class="text-xl sm:text-2xl font-semibold text-foreground">¿Qué quieres dar de alta?</h1>
-      <p class="text-sm sm:text-base text-muted-foreground">Elige el tipo de suministro para empezar el proceso.</p>
-    </div>
+  <header class="mb-6">
+    <h1 class="text-[22px] font-semibold leading-tight tracking-[-0.01em] text-foreground">Alta rápida</h1>
+    <p class="mt-1 text-sm text-muted-foreground">Haga una contratación nueva directamente desde aquí. Elija el tipo de suministro para empezar.</p>
+  </header>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-1 justify-items-center">
-      <button
-        type="button"
-        class="group cursor-pointer w-full max-w-80 sm:max-w-96 rounded-2xl border border-border bg-card hover:border-2 hover:border-ring hover:shadow-xl transition-all px-6 py-10 sm:py-18 flex flex-col items-center gap-6"
-        (click)="selectLuz()"
-      >
-        <img [src]="illustration" alt="" class="h-72 sm:h-96 w-auto max-w-full" />
-        <span class="text-xl sm:text-2xl font-bold text-foreground group-hover:text-ring transition-colors">Luz</span>
-      </button>
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+    @for (o of options; track o.key) {
+      <section class="alta-option flex flex-col rounded-xl border border-border bg-card"
+               [class.alta-luz]="o.key === 'luz'" [class.alta-gas]="o.key === 'gas'"
+               [attr.aria-labelledby]="'alta-' + o.key">
+        <!-- Cabecera tintada con el color del suministro -->
+        <div class="alta-head flex items-center gap-4 rounded-t-xl px-5 py-5">
+          <span class="alta-icon flex size-14 shrink-0 items-center justify-center rounded-2xl bg-card shadow-[0_1px_2px_rgba(16,24,40,0.08)]">
+            <svg class="size-7" viewBox="0 0 24 24" fill="none" stroke="var(--tc)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              @if (o.key === 'luz') { <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/> }
+              @else { <path d="M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-3 2-4 2-7 1.5 1 2 2.5 2 4 1-2 1-5 1-8Z"/> }
+            </svg>
+          </span>
+          <div class="min-w-0 flex-1">
+            <h2 [id]="'alta-' + o.key" class="text-xl font-semibold leading-tight text-foreground">Alta de {{ o.title.toLowerCase() }}</h2>
+            <p class="mt-0.5 text-sm text-foreground/75 tabular-nums">{{ o.steps.length }} pasos · {{ o.summary }}</p>
+          </div>
+        </div>
 
-      <button
-        type="button"
-        class="group cursor-pointer w-full max-w-80 sm:max-w-96 rounded-2xl border border-border bg-card hover:border-2 hover:border-ring hover:shadow-xl transition-all px-6 py-10 sm:py-18 flex flex-col items-center gap-6"
-        (click)="selectGas()"
-      >
-        <img [src]="illustration" alt="" class="h-72 sm:h-96 w-auto max-w-full" />
-        <span class="text-xl sm:text-2xl font-bold text-foreground group-hover:text-ring transition-colors">Gas</span>
-      </button>
-    </div>
+        <!-- Recorrido del asistente -->
+        <ol class="relative mx-5 mt-5 mb-4 space-y-2.5" [attr.aria-label]="'Pasos del alta de ' + o.title.toLowerCase()">
+          <span class="absolute left-[11px] top-3 bottom-3 w-px bg-border" aria-hidden="true"></span>
+          @for (s of o.steps; track s; let i = $index) {
+            <li class="relative flex items-center gap-3 text-sm text-foreground">
+              <span class="relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full border border-border bg-card text-[11px] font-semibold tabular-nums"
+                    style="color:var(--tc)">{{ i + 1 }}</span>
+              {{ s }}
+            </li>
+          }
+        </ol>
 
+        <div class="mx-5 rounded-lg bg-muted px-4 py-3">
+          <p class="text-xs font-medium uppercase tracking-[0.06em] text-muted-foreground">Tenga a mano</p>
+          <ul class="mt-2 space-y-1">
+            @for (p of o.prepare; track p) {
+              <li class="flex items-start gap-2 text-sm text-foreground/85">
+                <svg class="mt-0.5 size-4 shrink-0 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                {{ p }}
+              </li>
+            }
+          </ul>
+        </div>
+
+        <div class="mt-auto p-5 pt-4">
+          <button type="button" (click)="start(o.key)"
+                  class="group inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-primary/90">
+            {{ o.cta }}
+            <svg class="size-4 transition-transform duration-150 group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+      </section>
+    }
   </div>
+
+  @if (hasContracts()) {
+  <p class="mt-5 text-sm text-muted-foreground">
+    Las altas enviadas aparecen en
+    <a routerLink="/dashboard/contratos/contratos" class="font-medium text-primary underline-offset-4 hover:underline">Contratos</a>,
+    donde puede seguir su estado.
+  </p>
+  }
 </div>

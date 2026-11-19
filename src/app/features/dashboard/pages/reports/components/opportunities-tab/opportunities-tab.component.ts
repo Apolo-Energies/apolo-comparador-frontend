@@ -14,10 +14,12 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import type { Chart } from 'chart.js';
+import { ThemeService } from '../../../../../../core/services/theme.service';
+import { chartTheme } from '../../../../../../shared/utils/chart-theme';
 import { OpportunitySummary, OpportunityStatus } from '../../../../../../core/models/opportunity.model';
 import { fmtDate, statusClass, statusLabel } from '../../report-utils';
 
-const DONUT_COLORS = ['#7C67F2','#8FDBFF','#FFB86B','#F691A6','#C4C4C4','#999DF8'];
+// Colores del donut: paleta categórica por tema (shared/utils/chart-theme.ts).
 
 @Component({
   selector: 'app-reports-opportunities-tab',
@@ -67,6 +69,8 @@ export class ReportsOpportunitiesTabComponent implements AfterViewInit, OnDestro
   }
 
   private donutChart?: Chart;
+  private readonly theme = inject(ThemeService);
+  private lastDark: boolean | null = null;
   private chartLib?:   typeof import('chart.js');
 
   readonly fmtDate     = fmtDate;
@@ -76,6 +80,8 @@ export class ReportsOpportunitiesTabComponent implements AfterViewInit, OnDestro
   constructor() {
     effect(() => {
       this.opps();
+      const dark = this.theme.portalDark();
+      if (dark !== this.lastDark) { this.donutChart?.destroy(); this.donutChart = undefined; this.lastDark = dark; }
       if (this.chartLib && this._donutRef) this.renderDonut();
     });
   }
@@ -97,6 +103,7 @@ export class ReportsOpportunitiesTabComponent implements AfterViewInit, OnDestro
     const labels = Object.keys(counts);
     const values = Object.values(counts);
 
+    const t = chartTheme(this.theme.portalDark());
     if (this.donutChart) {
       this.donutChart.data.labels = labels;
       this.donutChart.data.datasets[0].data = values;
@@ -106,10 +113,10 @@ export class ReportsOpportunitiesTabComponent implements AfterViewInit, OnDestro
 
     this.donutChart = new this.chartLib.Chart(this._donutRef.nativeElement, {
       type: 'doughnut',
-      data: { labels, datasets: [{ data: values, backgroundColor: DONUT_COLORS, borderWidth: 2, borderColor: 'rgba(23,24,26,1)' }] },
+      data: { labels, datasets: [{ data: values, backgroundColor: t.series, borderWidth: 2, borderColor: t.surface }] },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom', labels: { color: 'rgba(161,161,170,0.8)', font: { size: 11 }, padding: 12 } } },
+        plugins: { legend: { position: 'bottom', labels: { color: t.axis, font: { size: 11 }, padding: 12 } } },
       },
     });
   }

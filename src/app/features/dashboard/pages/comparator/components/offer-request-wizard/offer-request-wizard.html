@@ -51,7 +51,7 @@
             (valueChange)="clientNif.set($event)"
           />
           @if (isTouched('clientNif') && clientErrors().clientNif) {
-            <span class="text-red-500 text-xs mt-1 block">Introduce un NIF/CIF válido</span>
+            <span class="text-danger text-xs mt-1 block">Introduce un NIF/CIF válido</span>
           }
         </div>
 
@@ -63,7 +63,7 @@
             (valueChange)="clientName.set($event)"
           />
           @if (isTouched('clientName') && clientErrors().clientName) {
-            <span class="text-red-500 text-xs mt-1 block">Este campo es obligatorio</span>
+            <span class="text-danger text-xs mt-1 block">Este campo es obligatorio</span>
           }
         </div>
 
@@ -76,7 +76,7 @@
             (valueChange)="email.set($event)"
           />
           @if (isTouched('email') && clientErrors().email) {
-            <span class="text-red-500 text-xs mt-1 block">Email inválido</span>
+            <span class="text-danger text-xs mt-1 block">Email inválido</span>
           }
         </div>
 
@@ -101,7 +101,7 @@
             />
           </div>
           @if (isTouched('phoneNumber') && clientErrors().phoneNumber) {
-            <span class="text-red-500 text-xs mt-1 block">Solo dígitos, entre 9 y 15 números</span>
+            <span class="text-danger text-xs mt-1 block">Solo dígitos, entre 9 y 15 números</span>
           }
         </div>
 
@@ -128,7 +128,7 @@
             (valueChange)="cups.set($event)"
           />
           @if (isTouched('cups') && supplyErrors().cups) {
-            <span class="text-red-500 text-xs mt-1 block">CUPS no válido</span>
+            <span class="text-danger text-xs mt-1 block">CUPS no válido</span>
           }
         </div>
 
@@ -141,7 +141,7 @@
               (valueChange)="supplyAddress.set($event)"
             />
             @if (isTouched('supplyAddress') && supplyErrors().supplyAddress) {
-              <span class="text-red-500 text-xs mt-1 block">Este campo es obligatorio</span>
+              <span class="text-danger text-xs mt-1 block">Este campo es obligatorio</span>
             }
           </div>
           <div class="w-36">
@@ -163,7 +163,7 @@
               (valueChange)="province.set($event)"
             />
             @if (isTouched('province') && supplyErrors().province) {
-              <span class="text-red-500 text-xs mt-1 block">Obligatorio</span>
+              <span class="text-danger text-xs mt-1 block">Obligatorio</span>
             }
           </div>
           <div>
@@ -174,7 +174,7 @@
               (valueChange)="city.set($event)"
             />
             @if (isTouched('city') && supplyErrors().city) {
-              <span class="text-red-500 text-xs mt-1 block">Obligatorio</span>
+              <span class="text-danger text-xs mt-1 block">Obligatorio</span>
             }
           </div>
           <div>
@@ -185,7 +185,7 @@
               (valueChange)="postalCode.set($event)"
             />
             @if (isTouched('postalCode') && supplyErrors().postalCode) {
-              <span class="text-red-500 text-xs mt-1 block">5 dígitos</span>
+              <span class="text-danger text-xs mt-1 block">5 dígitos</span>
             }
           </div>
         </div>
@@ -261,7 +261,7 @@
                     </label>
                     <button
                       type="button"
-                      class="text-xs text-red-500 hover:text-red-400"
+                      class="text-xs text-danger hover:text-danger"
                       (click)="removeDocument(slot.key)"
                     >
                       Quitar
@@ -283,7 +283,7 @@
                   />
                 </label>
                 @if (!documentsOptional() && isTouched(slot.key) && documentErrors()[slot.key]) {
-                  <span class="text-red-500 text-xs">Este documento es obligatorio</span>
+                  <span class="text-danger text-xs">Este documento es obligatorio</span>
                 }
               }
             </div>

@@ -16,12 +16,12 @@ import { isPlatformBrowser } from '@angular/common';
 import type { Chart } from 'chart.js';
 import { SummaryApiResult, DailySummaryApiItem, HistoryItem } from '../../../../../../core/models/dashboard-api.model';
 import { fmtNum, fmtGwh, initials } from '../../report-utils';
+import { ThemeService } from '../../../../../../core/services/theme.service';
+import { chartTheme, textOn } from '../../../../../../shared/utils/chart-theme';
 
-const BAR_COLOR  = '#B79DF5';
-const BAR_RGB    = '183,157,245';
-const BAR_ACTIVE = '#1AD598';
-
-const COLAB_COLORS = ['#8b5cf6', '#7dd3fc', '#fbbf24', '#f472b6', '#a3a3a3', '#818cf8'];
+/** Opacidades del degradado de las barras (el color sale del tema, chart-theme.ts). */
+const BAR_ALPHA_TOP = 'e6';    // 90 %
+const BAR_ALPHA_BOTTOM = '73'; // 45 %
 
 export type ColabPeriod = 'all' | 'month' | 'week';
 type ColabWithScore = HistoryItem & { score: number };
@@ -68,7 +68,11 @@ export class ReportsAnalyticsTabComponent implements AfterViewInit, OnDestroy {
       .slice(0, 6);
   });
 
-  readonly colabColors  = COLAB_COLORS;
+  private readonly theme = inject(ThemeService);
+  private readonly palette = computed(() => chartTheme(this.theme.portalDark()));
+  /** Avatares de colaboradores: color de serie en orden fijo y letra con contraste. */
+  readonly colabColors = computed(() => this.palette().series.slice(0, 6));
+  readonly colabText   = computed(() => this.colabColors().map(textOn));
   readonly colabPeriods = COLAB_PERIODS;
 
   private _barRef?: ElementRef<HTMLCanvasElement>;
@@ -84,6 +88,7 @@ export class ReportsAnalyticsTabComponent implements AfterViewInit, OnDestroy {
   private barChart?:      Chart;
   private chartLib?:      typeof import('chart.js');
   private activeBarIndex = -1;
+  private lastDark: boolean | null = null;
 
   readonly fmtNum   = fmtNum;
   readonly fmtGwh   = fmtGwh;
@@ -92,6 +97,9 @@ export class ReportsAnalyticsTabComponent implements AfterViewInit, OnDestroy {
   constructor() {
     effect(() => {
       this.daily();
+      // Al cambiar de tema se rehace el gráfico: chart.js no lee variables CSS.
+      const dark = this.theme.portalDark();
+      if (dark !== this.lastDark) { this.barChart?.destroy(); this.barChart = undefined; this.lastDark = dark; }
       if (this.chartLib && this._barRef) this.renderBar();
     });
   }
@@ -115,13 +123,14 @@ export class ReportsAnalyticsTabComponent implements AfterViewInit, OnDestroy {
     });
     const values = data.map(d => d.totalCups);
 
+    const t = this.palette();
     const bgColor = (ctx: any): string | CanvasGradient => {
-      if (ctx.dataIndex === this.activeBarIndex) return BAR_ACTIVE;
+      if (ctx.dataIndex === this.activeBarIndex) return t.barActive;
       const { ctx: c, chartArea } = ctx.chart;
-      if (!chartArea) return BAR_COLOR;
+      if (!chartArea) return t.bar;
       const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-      g.addColorStop(0, `rgba(${BAR_RGB},0.9)`);
-      g.addColorStop(1, `rgba(${BAR_RGB},0.45)`);
+      g.addColorStop(0, t.bar + BAR_ALPHA_TOP);
+      g.addColorStop(1, t.bar + BAR_ALPHA_BOTTOM);
       return g;
     };
 
@@ -141,7 +150,7 @@ export class ReportsAnalyticsTabComponent implements AfterViewInit, OnDestroy {
           label: 'CUPS',
           data: values,
           backgroundColor: bgColor as any,
-          hoverBackgroundColor: BAR_ACTIVE,
+          hoverBackgroundColor: t.barActive,
           borderWidth: 0,
           borderRadius: 6,
           borderSkipped: false,
@@ -153,8 +162,8 @@ export class ReportsAnalyticsTabComponent implements AfterViewInit, OnDestroy {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          x: { grid: { display: false }, ticks: { color: 'rgba(161,161,170,0.7)', font: { size: 10 }, maxTicksLimit: 10 } },
-          y: { beginAtZero: true, grid: { color: 'rgba(63,63,70,0.5)' }, ticks: { color: 'rgba(161,161,170,0.7)', font: { size: 10 } } },
+          x: { grid: { display: false }, ticks: { color: t.axis, font: { size: 10 }, maxTicksLimit: 10 } },
+          y: { beginAtZero: true, border: { display: false }, grid: { color: t.grid }, ticks: { color: t.axis, font: { size: 10 } } },
         },
         onClick: (_evt: any, elements: any[]) => {
           if (!elements.length) return;

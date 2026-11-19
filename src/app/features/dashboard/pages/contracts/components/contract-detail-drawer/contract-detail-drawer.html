@@ -11,28 +11,28 @@
   @if (client(); as c) {
     <!-- ===================== HEADER ===================== -->
     <header
-      class="sticky top-0 z-10 px-6 py-5 bg-zinc-900/95 backdrop-blur border-b border-zinc-800"
+      class="sticky top-0 z-10 px-6 py-5 bg-card/95 backdrop-blur border-b border-border"
     >
       <div class="flex items-start gap-3">
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 mb-1.5 flex-wrap">
-            <span class="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">
+            <span class="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
               Cliente
             </span>
-            <span class="text-zinc-700">·</span>
-            <span class="text-[11px] text-zinc-400">
+            <span class="text-muted-foreground/70">·</span>
+            <span class="text-[11px] text-muted-foreground">
               {{ c.NumServicios }} {{ c.NumServicios === 1 ? 'servicio' : 'servicios' }}
             </span>
           </div>
-          <h2 class="text-xl font-bold text-zinc-100 truncate">
+          <h2 class="text-xl font-bold text-foreground truncate">
             {{ c.RazonSocialCliente || c.NombreCliente || 'Sin cliente' }}
           </h2>
-          <p class="text-xs text-zinc-500 mt-0.5">{{ c.NIF || '—' }}</p>
+          <p class="text-xs text-muted-foreground mt-0.5">{{ c.NIF || '—' }}</p>
         </div>
 
         <button
           type="button"
-          class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors duration-200"
+          class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors duration-200"
           (click)="closeDrawer()"
           aria-label="Cerrar"
         >
@@ -43,35 +43,35 @@
 
     <!-- ===================== CLIENT SUMMARY ===================== -->
     <section class="px-6 pt-5">
-      <div class="rounded-xl border border-zinc-800/80 bg-zinc-950/50 p-4">
+      <div class="rounded-xl border border-border bg-card p-4">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
-            <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">
+            <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
               Servicios
             </p>
-            <p class="text-sm text-zinc-200 font-mono">{{ c.NumServicios }}</p>
+            <p class="text-sm text-foreground font-mono">{{ c.NumServicios }}</p>
           </div>
           <div>
-            <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">
+            <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
               Consumo total
             </p>
-            <p class="text-sm text-zinc-200 font-mono">{{ fmtKwh(c.ConsumoTotal) }}</p>
+            <p class="text-sm text-foreground font-mono">{{ fmtKwh(c.ConsumoTotal) }}</p>
           </div>
           <div>
-            <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">
+            <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
               Próx. venc.
             </p>
-            <p class="text-sm text-zinc-200">{{ fmtDate(c.ProximoVencimiento) }}</p>
+            <p class="text-sm text-foreground">{{ fmtDate(c.ProximoVencimiento) }}</p>
           </div>
           <div>
-            <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">
+            <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
               Último mov.
             </p>
-            <p class="text-sm text-zinc-200">{{ fmtDate(c.UltimoMovimiento) }}</p>
+            <p class="text-sm text-foreground">{{ fmtDate(c.UltimoMovimiento) }}</p>
           </div>
 
-          <div class="col-span-2 md:col-span-4 pt-3 border-t border-zinc-800/60">
-            <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-2">
+          <div class="col-span-2 md:col-span-4 pt-3 border-t border-border">
+            <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2">
               Estado global
             </p>
             <div class="flex flex-wrap items-center gap-2">
@@ -85,9 +85,9 @@
           </div>
 
           @if (c.NombreComercialCliente) {
-            <div class="col-span-2 md:col-span-4 flex items-center gap-2 text-xs text-zinc-400">
-              <lib-apolo-icons [icon]="iconUser" class="flex items-center text-zinc-500" />
-              <span>Comercial: <span class="text-zinc-200">{{ c.NombreComercialCliente }}</span></span>
+            <div class="col-span-2 md:col-span-4 flex items-center gap-2 text-xs text-muted-foreground">
+              <lib-apolo-icons [icon]="iconUser" class="flex items-center text-muted-foreground" />
+              <span>Comercial: <span class="text-foreground">{{ c.NombreComercialCliente }}</span></span>
             </div>
           }
         </div>
@@ -98,13 +98,13 @@
     <section class="px-6 pt-6 pb-2">
       <div class="flex items-center justify-between">
         <h3
-          class="text-sm font-semibold text-zinc-200 tracking-wide inline-flex items-center gap-2"
+          class="text-sm font-semibold text-foreground tracking-wide inline-flex items-center gap-2"
         >
-          <lib-apolo-icons [icon]="iconNote" class="flex items-center text-zinc-500" />
+          <lib-apolo-icons [icon]="iconNote" class="flex items-center text-muted-foreground" />
           {{ c.Origen === 'quixotic' ? 'Contrato de gas' : 'Servicios' }}
         </h3>
         @if (c.Origen !== 'quixotic') {
-          <span class="text-[11px] text-zinc-500">
+          <span class="text-[11px] text-muted-foreground">
             {{ services().length }}
             {{ services().length === 1 ? 'servicio' : 'servicios' }}
           </span>
@@ -115,45 +115,45 @@
     <section class="px-6 pb-8">
       @if (c.Origen === 'quixotic') {
         <!-- Gas (Quixotic): sin servicios de EE, anexos, firma ni incidencias; los datos vienen en la propia fila. -->
-        <div class="rounded-xl border border-zinc-800/80 bg-zinc-950/50 p-4">
+        <div class="rounded-xl border border-border bg-card p-4">
           <div class="flex items-center gap-2 mb-4">
-            <span class="badge bg-sky-500/10 text-sky-400">Gas</span>
-            <span class="text-[11px] text-zinc-500">Gestionado en Quixotic</span>
+            <span class="badge bg-sky-500/10 text-primary">Gas</span>
+            <span class="text-[11px] text-muted-foreground">Gestionado en Quixotic</span>
           </div>
           <dl class="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div class="col-span-2 md:col-span-3">
-              <dt class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">CUPS</dt>
-              <dd class="text-sm text-zinc-200 font-mono break-all">{{ c.CUPS[0] || '—' }}</dd>
+              <dt class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">CUPS</dt>
+              <dd class="text-sm text-foreground font-mono break-all">{{ c.CUPS[0] || '—' }}</dd>
             </div>
             <div>
-              <dt class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Tarifa</dt>
-              <dd class="text-sm text-zinc-200">{{ c.Tarifa || '—' }}</dd>
+              <dt class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">Tarifa</dt>
+              <dd class="text-sm text-foreground">{{ c.Tarifa || '—' }}</dd>
             </div>
             <div>
-              <dt class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Producto</dt>
-              <dd class="text-sm text-zinc-200">{{ c.Producto || '—' }}</dd>
+              <dt class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">Producto</dt>
+              <dd class="text-sm text-foreground">{{ c.Producto || '—' }}</dd>
             </div>
             <div>
-              <dt class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Consumo anual</dt>
-              <dd class="text-sm text-zinc-200 font-mono">{{ fmtKwh(c.ConsumoTotal) }}</dd>
+              <dt class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">Consumo anual</dt>
+              <dd class="text-sm text-foreground font-mono">{{ fmtKwh(c.ConsumoTotal) }}</dd>
             </div>
             <div>
-              <dt class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Inicio</dt>
-              <dd class="text-sm text-zinc-200">{{ fmtDate(c.FechaInicio) }}</dd>
+              <dt class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">Inicio</dt>
+              <dd class="text-sm text-foreground">{{ fmtDate(c.FechaInicio) }}</dd>
             </div>
             <div>
-              <dt class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Fin</dt>
-              <dd class="text-sm text-zinc-200">{{ fmtDate(c.FechaFin) }}</dd>
+              <dt class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">Fin</dt>
+              <dd class="text-sm text-foreground">{{ fmtDate(c.FechaFin) }}</dd>
             </div>
             <div>
-              <dt class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Colaborador</dt>
-              <dd class="text-sm text-zinc-200">{{ c.NombreDelegacion || '—' }}</dd>
+              <dt class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">Colaborador</dt>
+              <dd class="text-sm text-foreground">{{ c.NombreDelegacion || '—' }}</dd>
             </div>
           </dl>
-          <div class="mt-5 pt-4 border-t border-zinc-800/60 flex justify-end">
+          <div class="mt-5 pt-4 border-t border-border flex justify-end">
             <button
               type="button"
-              class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-800 text-zinc-100 hover:bg-zinc-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-wait"
+              class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-accent text-foreground hover:bg-accent transition-colors duration-200 disabled:opacity-50 disabled:cursor-wait"
               [disabled]="downloadingGas() || !c.IdContratoQuixotic"
               (click)="downloadContratoGas(c)"
             >
@@ -178,76 +178,76 @@
         </div>
       } @else if (services().length === 0) {
         <div
-          class="rounded-xl border-2 border-dashed border-zinc-800 bg-zinc-900/30 px-6 py-10 text-center"
+          class="rounded-xl border-2 border-dashed border-border px-6 py-10 text-center"
         >
-          <p class="text-sm font-medium text-zinc-300">Sin servicios asociados</p>
-          <p class="text-xs text-zinc-500 mt-1">
+          <p class="text-sm font-medium text-foreground/80">Sin servicios asociados</p>
+          <p class="text-xs text-muted-foreground mt-1">
             No se encontraron servicios para este cliente.
           </p>
         </div>
       } @else {
         <ol class="flex flex-col gap-4">
           @for (s of services(); track trackByServicioId($index, s)) {
-            <li class="rounded-xl border border-zinc-700/50 bg-zinc-800/40 transition-colors duration-200"
-                [class.border-zinc-600]="isServicioOpen(s.Id)">
+            <li class="rounded-xl border border-border bg-card transition-colors duration-200"
+                [class.border-ring/40]="isServicioOpen(s.Id)">
               @let precios = periodos(s);
               @let open = isServicioOpen(s.Id);
 
               <!-- Cabecera plegable: resumen del contrato -->
               <button type="button"
-                      class="w-full text-left px-4 py-3 flex items-start gap-3 rounded-xl hover:bg-zinc-800/40 transition-colors duration-200"
+                      class="w-full text-left px-4 py-3 flex items-start gap-3 rounded-xl hover:bg-accent transition-colors duration-200"
                       [attr.aria-expanded]="open"
                       (click)="toggleServicio(s.Id)">
                 <div class="flex-1 min-w-0">
                   <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div>
-                      <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Fecha estado</p>
-                      <p class="text-xs text-zinc-200">{{ fmtDate(s.FechaEstado) }}</p>
+                      <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">Fecha estado</p>
+                      <p class="text-xs text-foreground">{{ fmtDate(s.FechaEstado) }}</p>
                     </div>
                     <div>
-                      <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Estado</p>
+                      <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">Estado</p>
                       <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset"
                             [class]="estadoCls(s.Estado)">
                         {{ estadoLabel(s.Estado) }}
                       </span>
                     </div>
                     <div>
-                      <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Renovación</p>
+                      <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">Renovación</p>
                       @if (s.Renovacion) {
-                        <span class="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-blue-500/10 text-blue-400">Sí</span>
+                        <span class="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-blue-500/10 text-primary">Sí</span>
                       } @else {
-                        <p class="text-xs text-zinc-400">No</p>
+                        <p class="text-xs text-muted-foreground">No</p>
                       }
                     </div>
                     <div class="min-w-0">
-                      <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Tarifa</p>
-                      <p class="text-xs text-zinc-100 font-medium truncate" [title]="s.NombreOfertaCTF || ''">
+                      <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">Tarifa</p>
+                      <p class="text-xs text-foreground font-medium truncate" [title]="s.NombreOfertaCTF || ''">
                         {{ s.NombreOfertaCTF || '—' }}
                       </p>
                     </div>
                   </div>
-                  <p class="mt-2 inline-flex items-center gap-1.5 text-[11px] text-zinc-500 min-w-0 max-w-full">
+                  <p class="mt-2 inline-flex items-center gap-1.5 text-[11px] text-muted-foreground min-w-0 max-w-full">
                     <lib-apolo-icons [icon]="iconBolt" class="flex items-center shrink-0" />
-                    <span class="font-mono text-zinc-400 truncate">{{ s.CUPS || '—' }}</span>
+                    <span class="font-mono text-muted-foreground truncate">{{ s.CUPS || '—' }}</span>
                   </p>
                 </div>
-                <span class="mt-0.5 text-zinc-500 text-sm leading-none transition-transform duration-200 select-none"
+                <span class="mt-0.5 text-muted-foreground text-sm leading-none transition-transform duration-200 select-none"
                       [class.rotate-180]="open" aria-hidden="true">▾</span>
               </button>
 
               @if (open) {
-                <div class="px-4 pb-4 pt-3 space-y-3 border-t border-zinc-800/60">
+                <div class="px-4 pb-4 pt-3 space-y-3 border-t border-border">
                   <!-- Tarifa y consumo por periodo -->
-                  <div class="rounded-lg bg-zinc-900/50 border border-zinc-800/60 p-3">
+                  <div class="rounded-lg bg-card border border-border p-3">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                      <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
+                      <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
                         Tarifa y consumo
                       </p>
                       <div class="inline-flex flex-wrap items-center gap-1.5">
-                        <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-violet-500/10 text-violet-300">
+                        <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-violet-500/10 text-violet-700">
                           {{ s.Tarifa || '—' }}
                         </span>
-                        <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-zinc-700/50 text-zinc-300">
+                        <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-accent text-foreground/80">
                           {{ tipoPrecioLabel(s.TipoPrecioOfertaCTF) }}
                         </span>
                       </div>
@@ -255,27 +255,27 @@
                     @if (precios.length > 0) {
                       <div class="overflow-x-auto">
                         <table class="w-full text-[11px]">
-                          <thead class="text-zinc-500">
+                          <thead class="text-muted-foreground">
                             <tr>
                               <th class="text-left font-medium py-1.5 pr-2">Periodo</th>
                               <th class="text-right font-medium py-1.5 px-2">
                                 {{ esIndexado(s) ? 'Fee s/ índice' : 'Energía' }}
-                                <span class="block text-[10px] text-zinc-600 font-normal">c€/kWh</span>
+                                <span class="block text-[10px] text-muted-foreground/70 font-normal">c€/kWh</span>
                               </th>
                               <th class="text-right font-medium py-1.5 px-2">
                                 Potencia
-                                <span class="block text-[10px] text-zinc-600 font-normal">c€/kW·día</span>
+                                <span class="block text-[10px] text-muted-foreground/70 font-normal">c€/kW·día</span>
                               </th>
                               <th class="text-right font-medium py-1.5 pl-2">
                                 Consumo
-                                <span class="block text-[10px] text-zinc-600 font-normal">anual</span>
+                                <span class="block text-[10px] text-muted-foreground/70 font-normal">anual</span>
                               </th>
                             </tr>
                           </thead>
-                          <tbody class="text-zinc-300">
+                          <tbody class="text-foreground/80">
                             @for (r of precios; track r.p) {
-                              <tr class="border-t border-zinc-800/40">
-                                <td class="py-1.5 pr-2 font-semibold text-zinc-400">{{ r.p }}</td>
+                              <tr class="border-t border-border">
+                                <td class="py-1.5 pr-2 font-semibold text-muted-foreground">{{ r.p }}</td>
                                 <td class="py-1.5 px-2 text-right font-mono">{{ fmtPrecio(r.energia) }}</td>
                                 <td class="py-1.5 px-2 text-right font-mono">{{ fmtPrecio(r.potencia) }}</td>
                                 <td class="py-1.5 pl-2 text-right font-mono">{{ r.consumo ? fmtKwh(r.consumo) : '—' }}</td>
@@ -283,9 +283,9 @@
                             }
                           </tbody>
                           <tfoot>
-                            <tr class="border-t border-zinc-700/60">
-                              <td class="pt-2 pr-2 font-semibold text-zinc-300" colspan="3">Consumo total</td>
-                              <td class="pt-2 pl-2 text-right font-mono font-semibold text-zinc-100">
+                            <tr class="border-t border-border">
+                              <td class="pt-2 pr-2 font-semibold text-foreground/80" colspan="3">Consumo total</td>
+                              <td class="pt-2 pl-2 text-right font-mono font-semibold text-foreground">
                                 {{ fmtKwh(consumoServicio(s)) }}
                               </td>
                             </tr>
@@ -293,46 +293,46 @@
                         </table>
                       </div>
                     } @else {
-                      <p class="text-[11px] text-zinc-500">Sin precios informados en Energy Expert.</p>
+                      <p class="text-[11px] text-muted-foreground">Sin precios informados en Energy Expert.</p>
                     }
                   </div>
 
                   <!-- Facturación + comercial -->
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div class="rounded-lg bg-zinc-900/50 border border-zinc-800/60 p-3">
-                      <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-2 inline-flex items-center gap-1.5">
+                    <div class="rounded-lg bg-card border border-border p-3">
+                      <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2 inline-flex items-center gap-1.5">
                         <lib-apolo-icons [icon]="iconNote" class="flex items-center" />
                         Facturación
                       </p>
                       <dl class="space-y-1.5 text-[12px]">
                         <div>
-                          <dt class="text-zinc-500 text-[11px]">Email</dt>
-                          <dd class="text-zinc-200 truncate" [title]="s.EmailFacturacion || ''">{{ s.EmailFacturacion || '—' }}</dd>
+                          <dt class="text-muted-foreground text-[11px]">Email</dt>
+                          <dd class="text-foreground truncate" [title]="s.EmailFacturacion || ''">{{ s.EmailFacturacion || '—' }}</dd>
                         </div>
                         <div>
-                          <dt class="text-zinc-500 text-[11px]">Cuenta domiciliación</dt>
-                          <dd class="text-zinc-200 font-mono truncate">{{ s.CodigoCuentaDomiciliacion || '—' }}</dd>
+                          <dt class="text-muted-foreground text-[11px]">Cuenta domiciliación</dt>
+                          <dd class="text-foreground font-mono truncate">{{ s.CodigoCuentaDomiciliacion || '—' }}</dd>
                         </div>
                         <div>
-                          <dt class="text-zinc-500 text-[11px]">Dirección fiscal</dt>
-                          <dd class="text-zinc-200">{{ direccionFiscal(s) }}</dd>
+                          <dt class="text-muted-foreground text-[11px]">Dirección fiscal</dt>
+                          <dd class="text-foreground">{{ direccionFiscal(s) }}</dd>
                         </div>
                       </dl>
                     </div>
 
-                    <div class="rounded-lg bg-zinc-900/50 border border-zinc-800/60 p-3">
-                      <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-2 inline-flex items-center gap-1.5">
+                    <div class="rounded-lg bg-card border border-border p-3">
+                      <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2 inline-flex items-center gap-1.5">
                         <lib-apolo-icons [icon]="iconUser" class="flex items-center" />
                         Comercial
                       </p>
                       <dl class="space-y-1.5 text-[12px]">
                         <div>
-                          <dt class="text-zinc-500 text-[11px]">Comercial</dt>
-                          <dd class="text-zinc-200 truncate">{{ s.NombreComercial || '—' }}</dd>
+                          <dt class="text-muted-foreground text-[11px]">Comercial</dt>
+                          <dd class="text-foreground truncate">{{ s.NombreComercial || '—' }}</dd>
                         </div>
                         <div>
-                          <dt class="text-zinc-500 text-[11px]">Delegación</dt>
-                          <dd class="text-zinc-200 truncate">{{ s.NombreDelegacion || '—' }}</dd>
+                          <dt class="text-muted-foreground text-[11px]">Delegación</dt>
+                          <dd class="text-foreground truncate">{{ s.NombreDelegacion || '—' }}</dd>
                         </div>
                       </dl>
                     </div>
@@ -340,30 +340,30 @@
 
                   <!-- Comisiones + documentación -->
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div class="rounded-lg bg-zinc-900/50 border border-zinc-800/60 p-3">
-                      <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-2 inline-flex items-center gap-1.5">
+                    <div class="rounded-lg bg-card border border-border p-3">
+                      <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2 inline-flex items-center gap-1.5">
                         <lib-apolo-icons [icon]="iconBolt" class="flex items-center" />
                         Comisiones
                       </p>
                       <dl class="space-y-1.5 text-[12px]">
                         <div class="flex justify-between gap-2">
-                          <dt class="text-zinc-400">Consumo anual</dt>
-                          <dd class="text-zinc-200 font-mono">{{ fmtKwh(consumoServicio(s)) }}</dd>
+                          <dt class="text-muted-foreground">Consumo anual</dt>
+                          <dd class="text-foreground font-mono">{{ fmtKwh(consumoServicio(s)) }}</dd>
                         </div>
                         <div class="flex justify-between gap-2">
-                          <dt class="text-zinc-400">Comisión (margen sin IVA)</dt>
-                          <dd class="text-emerald-300 font-mono font-semibold">{{ fmtEuros(s.ImporteBaseComisiones) }}</dd>
+                          <dt class="text-muted-foreground">Comisión (margen sin IVA)</dt>
+                          <dd class="text-success font-mono font-semibold">{{ fmtEuros(s.ImporteBaseComisiones) }}</dd>
                         </div>
                       </dl>
                     </div>
 
-                    <div class="rounded-lg bg-zinc-900/50 border border-zinc-800/60 p-3">
-                      <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-2 inline-flex items-center gap-1.5">
+                    <div class="rounded-lg bg-card border border-border p-3">
+                      <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2 inline-flex items-center gap-1.5">
                         <lib-apolo-icons [icon]="iconNote" class="flex items-center" />
                         Documentación
                       </p>
                       <div class="flex items-center justify-between gap-2 text-[12px]">
-                        <span class="text-zinc-300">Contrato de servicio firmado</span>
+                        <span class="text-foreground/80">Contrato de servicio firmado</span>
                         @if (s.IdContratoFirmado) {
                           <button type="button"
                                   class="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold text-primary-button bg-primary-button/10 hover:bg-primary-button/20 disabled:opacity-50"
@@ -372,36 +372,36 @@
                             {{ downloadingFirmado() === s.Id ? 'Descargando…' : 'Descargar' }}
                           </button>
                         } @else {
-                          <span class="shrink-0 text-[11px] text-zinc-500">No disponible</span>
+                          <span class="shrink-0 text-[11px] text-muted-foreground">No disponible</span>
                         }
                       </div>
                     </div>
                   </div>
 
                   <!-- Suministro -->
-                  <div class="rounded-lg bg-zinc-900/50 border border-zinc-800/60 p-3">
-                    <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-2 inline-flex items-center gap-1.5">
+                  <div class="rounded-lg bg-card border border-border p-3">
+                    <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2 inline-flex items-center gap-1.5">
                       <lib-apolo-icons [icon]="iconHome" class="flex items-center" />
                       Suministro
                     </p>
                     <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-[12px]">
                       <div class="min-w-0">
-                        <dt class="text-zinc-500 text-[11px]">Localización</dt>
-                        <dd class="text-zinc-200 truncate" [title]="s.DireccionSuministro || ''">{{ localizacion(s) }}</dd>
+                        <dt class="text-muted-foreground text-[11px]">Localización</dt>
+                        <dd class="text-foreground truncate" [title]="s.DireccionSuministro || ''">{{ localizacion(s) }}</dd>
                       </div>
                       <div>
-                        <dt class="text-zinc-500 text-[11px]">Vigencia</dt>
-                        <dd class="text-zinc-200">{{ fmtDate(s.FechaInicio) }} – {{ fmtDate(s.FechaFin) }}</dd>
+                        <dt class="text-muted-foreground text-[11px]">Vigencia</dt>
+                        <dd class="text-foreground">{{ fmtDate(s.FechaInicio) }} – {{ fmtDate(s.FechaFin) }}</dd>
                       </div>
                     </dl>
                   </div>
                 </div>
 
                 <!-- Acciones -->
-                <div class="px-4 py-2 border-t border-zinc-800/60 flex flex-wrap items-center justify-end gap-1">
+                <div class="px-4 py-2 border-t border-border flex flex-wrap items-center justify-end gap-1">
                   @if (isEditableEstado(s.Estado)) {
                     <button type="button"
-                            class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20"
+                            class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold text-warning bg-amber-500/10 hover:bg-amber-500/20"
                             (click)="toggleEdit(s)"
                             title="Editar datos antes de firma">
                       ✎ Editar
@@ -409,7 +409,7 @@
                   }
                   @if (canRenovar(s)) {
                     <button type="button"
-                            class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold text-blue-300 bg-blue-500/10 hover:bg-blue-500/20"
+                            class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold text-primary bg-blue-500/10 hover:bg-blue-500/20"
                             (click)="renovar(s)"
                             title="Renovar en el comparador con datos precargados">
                       Renovar
@@ -418,8 +418,10 @@
                   <button type="button"
                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors"
                           [class]="expandedFacturas() === s.Id
-                            ? 'text-zinc-50 bg-zinc-600 border-zinc-400'
-                            : 'text-zinc-200 bg-zinc-800 border-zinc-600 hover:bg-zinc-700 hover:border-zinc-400'"
+                            ? 'text-white bg-primary border-primary'
+                            : 'text-foreground bg-card border-ring/40 hover:bg-accent hover:border-ring'"
+                          [attr.aria-expanded]="expandedFacturas() === s.Id"
+                          [attr.aria-controls]="'facturas-' + s.Id"
                           (click)="toggleFacturas(s)">
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>
                     Facturas
@@ -427,8 +429,10 @@
                   <button type="button"
                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors"
                           [class]="expandedIncidencias() === s.Id
-                            ? 'text-white bg-red-500/80 border-red-400'
-                            : 'text-red-300 bg-red-500/10 border-red-500/50 hover:bg-red-500/20 hover:border-red-400'"
+                            ? 'text-white bg-danger border-danger'
+                            : 'text-danger bg-danger/5 border-danger/40 hover:bg-danger/10 hover:border-danger'"
+                          [attr.aria-expanded]="expandedIncidencias() === s.Id"
+                          [attr.aria-controls]="'incidencias-' + s.Id"
                           (click)="toggleIncidencias(s.Id)">
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
                     Incidencias
@@ -437,9 +441,9 @@
 
               <!-- Sección expandida: EDICIÓN ANTES DE FIRMA -->
               @if (editingServicioId() === s.Id) {
-                <div class="px-4 py-3 border-t border-zinc-800/60 bg-amber-500/5">
+                <div class="px-4 py-3 border-t border-border bg-amber-500/5">
                   <div class="flex items-center justify-between mb-3">
-                    <p class="text-[11px] font-semibold text-amber-300 uppercase tracking-wider">
+                    <p class="text-[11px] font-semibold text-warning uppercase tracking-wider">
                       Editar datos antes de firma
                     </p>
                     <span class="text-[10px] text-muted-foreground">
@@ -448,21 +452,21 @@
                   </div>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label class="flex flex-col gap-1">
-                      <span class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
+                      <span class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
                         Email de facturación
                       </span>
                       <input type="email"
-                             class="bg-zinc-950 border border-zinc-700 rounded-md px-2 py-1.5 text-xs text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                             class="bg-card border border-border rounded-md px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/40"
                              placeholder="cliente@correo.com"
                              [ngModel]="editEmailFacturacion()"
                              (ngModelChange)="editEmailFacturacion.set($event)" />
                     </label>
                     <label class="flex flex-col gap-1">
-                      <span class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
+                      <span class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
                         IBAN (cuenta domiciliación)
                       </span>
                       <input type="text"
-                             class="bg-zinc-950 border border-zinc-700 rounded-md px-2 py-1.5 text-xs text-zinc-100 font-mono focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                             class="bg-card border border-border rounded-md px-2 py-1.5 text-xs text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-amber-500/40"
                              placeholder="ES91 2100 0418 4502 0005 1332"
                              [ngModel]="editIban()"
                              (ngModelChange)="editIban.set($event)" />
@@ -474,7 +478,7 @@
                   </p>
                   <div class="flex items-center justify-end gap-2 mt-3">
                     <button type="button"
-                            class="text-[11px] text-zinc-400 hover:text-zinc-200"
+                            class="text-[11px] text-muted-foreground hover:text-foreground"
                             (click)="cancelEdit()"
                             [disabled]="submittingEdit()">
                       Cancelar
@@ -491,17 +495,17 @@
 
               <!-- Sección expandida: FACTURAS -->
               @if (expandedFacturas() === s.Id) {
-                <div class="px-4 py-3 border-t border-zinc-800/60 bg-zinc-900/40">
+                <div [id]="'facturas-' + s.Id" class="scroll-mt-36 px-4 py-3 border-t border-border bg-card">
                   @let facturas = facturasCache()[s.Id];
                   @if (facturas === 'loading') {
-                    <p class="text-xs text-zinc-500">Cargando facturas…</p>
+                    <p class="text-xs text-muted-foreground">Cargando facturas…</p>
                   } @else if (facturas === 'error') {
-                    <p class="text-xs text-red-400">No se pudieron cargar las facturas.</p>
+                    <p class="text-xs text-danger">No se pudieron cargar las facturas.</p>
                   } @else if (!facturas || facturas.length === 0) {
-                    <p class="text-xs text-zinc-500">Sin facturas para este contrato.</p>
+                    <p class="text-xs text-muted-foreground">Sin facturas para este contrato.</p>
                   } @else {
                     <table class="w-full text-[11px]">
-                      <thead class="text-zinc-500">
+                      <thead class="text-muted-foreground">
                         <tr>
                           <th class="text-left font-medium py-1">Nº</th>
                           <th class="text-left font-medium py-1">Emisión</th>
@@ -511,9 +515,9 @@
                           <th class="text-right font-medium py-1">PDF</th>
                         </tr>
                       </thead>
-                      <tbody class="text-zinc-300">
+                      <tbody class="text-foreground/80">
                         @for (f of facturas; track f.id) {
-                          <tr class="border-t border-zinc-800/40">
+                          <tr class="border-t border-border">
                             <td class="py-1 font-mono">{{ f.numero || '—' }}</td>
                             <td class="py-1">{{ fmtDate(f.fechaEmision) }}</td>
                             <td class="py-1">{{ fmtDate(f.fechaInicio) }} – {{ fmtDate(f.fechaFin) }}</td>
@@ -542,15 +546,15 @@
 
               <!-- Sección expandida: INCIDENCIAS -->
               @if (expandedIncidencias() === s.Id) {
-                <div class="px-4 py-3 border-t border-zinc-800/60 bg-zinc-900/40">
+                <div [id]="'incidencias-' + s.Id" class="scroll-mt-36 px-4 py-3 border-t border-border bg-card">
                   @let incs = incidenciasCache()[s.Id];
                   <div class="flex items-center justify-between mb-2">
-                    <p class="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider">
+                    <p class="text-[11px] font-semibold text-foreground/80 uppercase tracking-wider">
                       Incidencias
                     </p>
                     @if (incidenceFormFor() !== s.Id) {
                       <button type="button"
-                              class="text-[11px] font-semibold px-2.5 py-1 rounded-md border border-red-500/50 text-red-300 bg-red-500/10 hover:bg-red-500/20"
+                              class="text-[11px] font-semibold px-2.5 py-1 rounded-md border border-red-500/50 text-danger bg-red-500/10 hover:bg-red-500/20"
                               (click)="openIncidenceForm(s.Id)">
                         + Reportar incidencia
                       </button>
@@ -558,17 +562,17 @@
                   </div>
 
                   @if (incidenceFormFor() === s.Id) {
-                    <div class="rounded-xl border border-zinc-700 bg-zinc-900 p-4 mb-3 space-y-4">
+                    <div class="rounded-xl border border-border bg-card p-4 mb-3 space-y-4">
                       <div>
-                        <p class="text-sm font-semibold text-zinc-100">Nueva incidencia</p>
-                        <p class="text-xs text-zinc-400 mt-0.5">
+                        <p class="text-sm font-semibold text-foreground">Nueva incidencia</p>
+                        <p class="text-xs text-muted-foreground mt-0.5">
                           Cuéntanos qué necesitas sobre el suministro {{ s.CUPS }}. El equipo de operaciones lo revisará y te avisará de cualquier cambio.
                         </p>
                       </div>
 
                       <label class="flex flex-col gap-1.5">
-                        <span class="text-xs font-medium text-zinc-300">¿Qué tipo de incidencia es?</span>
-                        <select class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary-button/40"
+                        <span class="text-xs font-medium text-foreground/80">¿Qué tipo de incidencia es?</span>
+                        <select class="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary-button/40"
                                 [ngModel]="newIncidenceType()"
                                 (ngModelChange)="newIncidenceType.set($event)">
                           <optgroup label="Cambios en el contrato">
@@ -592,11 +596,11 @@
                       </label>
 
                       <label class="flex flex-col gap-1.5">
-                        <span class="text-xs font-medium text-zinc-300">
+                        <span class="text-xs font-medium text-foreground/80">
                           {{ isFaltaType() ? 'Motivo' : 'Descripción' }}
                         </span>
                         <textarea rows="4"
-                                  class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary-button/40"
+                                  class="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-button/40"
                                   [placeholder]="incidenceHint()"
                                   [ngModel]="newIncidenceDescription()"
                                   (ngModelChange)="newIncidenceDescription.set($event)"></textarea>
@@ -604,11 +608,11 @@
 
                       @if (isFaltaType()) {
                         <label class="flex flex-col gap-1.5">
-                          <span class="text-xs font-medium text-zinc-300">
-                            Documento que falta <span class="text-zinc-500 font-normal">(opcional)</span>
+                          <span class="text-xs font-medium text-foreground/80">
+                            Documento que falta <span class="text-muted-foreground font-normal">(opcional)</span>
                           </span>
                           <input type="text"
-                                 class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary-button/40"
+                                 class="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-button/40"
                                  placeholder="Ej.: copia del DNI del titular"
                                  [ngModel]="faltaDocumentacion()" (ngModelChange)="faltaDocumentacion.set($event)" />
                         </label>
@@ -616,11 +620,11 @@
 
                       <div class="flex items-center justify-end gap-2 pt-1">
                         <button type="button"
-                                class="text-xs font-medium px-3 py-2 rounded-lg text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800"
+                                class="text-xs font-medium px-3 py-2 rounded-lg text-foreground/80 hover:text-foreground hover:bg-accent"
                                 (click)="cancelIncidenceForm()"
                                 [disabled]="submittingIncidence()">Cancelar</button>
                         <button type="button"
-                                class="text-xs font-semibold px-4 py-2 rounded-lg bg-primary-button text-white hover:bg-primary-button/90 disabled:opacity-50"
+                                class="text-xs font-semibold px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-50"
                                 (click)="submitIncidence(s.Id)"
                                 [disabled]="submittingIncidence()">
                           {{ submittingIncidence() ? 'Enviando…' : (isFaltaType() ? 'Registrar trámite' : 'Crear incidencia') }}
@@ -630,37 +634,37 @@
                   }
 
                   @if (incs === 'loading') {
-                    <p class="text-xs text-zinc-500">Cargando…</p>
+                    <p class="text-xs text-muted-foreground">Cargando…</p>
                   } @else if (incs === 'error') {
-                    <p class="text-xs text-red-400">No se pudieron cargar las incidencias.</p>
+                    <p class="text-xs text-danger">No se pudieron cargar las incidencias.</p>
                   } @else if (!incs || incs.length === 0) {
-                    <p class="text-xs text-zinc-500">Este suministro no tiene incidencias abiertas.</p>
+                    <p class="text-xs text-muted-foreground">Este suministro no tiene incidencias abiertas.</p>
                   } @else {
                     <ul class="space-y-2">
                       @for (inc of incs; track inc.id) {
-                        <li class="rounded-md border border-zinc-800 bg-zinc-950/50 p-2">
+                        <li class="rounded-md border border-border bg-card p-2">
                           <div class="flex items-start justify-between gap-2">
                             <div class="min-w-0">
                               <div class="flex items-center gap-2 flex-wrap">
-                                <span class="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                                <span class="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                                   {{ incidenceTypeLabels[inc.type] || inc.type }}
                                 </span>
                                 <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold"
-                                      [class.bg-yellow-500]="inc.status === 'Abierta'"
-                                      [class.text-yellow-100]="inc.status === 'Abierta'"
-                                      [class.bg-blue-500]="inc.status === 'EnTramite'"
-                                      [class.text-blue-100]="inc.status === 'EnTramite'"
-                                      [class.bg-green-600]="inc.status === 'Resuelta'"
-                                      [class.text-green-100]="inc.status === 'Resuelta'">
+                                      [class.bg-warning/10]="inc.status === 'Abierta'"
+                                      [class.text-warning]="inc.status === 'Abierta'"
+                                      [class.bg-primary/10]="inc.status === 'EnTramite'"
+                                      [class.text-primary]="inc.status === 'EnTramite'"
+                                      [class.bg-success/10]="inc.status === 'Resuelta'"
+                                      [class.text-success]="inc.status === 'Resuelta'">
                                   {{ incidenceStatusLabels[inc.status] }}
                                 </span>
                               </div>
-                              <p class="text-xs text-zinc-200 mt-1 whitespace-pre-wrap">{{ inc.description }}</p>
-                              <p class="text-[10px] text-zinc-500 mt-1">
+                              <p class="text-xs text-foreground mt-1 whitespace-pre-wrap">{{ inc.description }}</p>
+                              <p class="text-[10px] text-muted-foreground mt-1">
                                 {{ inc.createdByName || inc.createdByUserId }} · {{ fmtDate(inc.createdAt) }}
                               </p>
                               @if (inc.resolutionNote) {
-                                <p class="text-[11px] text-green-300 mt-1 border-l-2 border-green-500 pl-2">
+                                <p class="text-[11px] text-success mt-1 border-l-2 border-green-500 pl-2">
                                   Resolución: {{ inc.resolutionNote }}
                                 </p>
                               }
@@ -697,24 +701,24 @@
   [style]="{ width: '32rem' }"
   header="Cerrar incidencia">
   <div class="space-y-3">
-    <p class="text-xs text-zinc-400">
-      Estás cerrando <span class="font-medium text-zinc-200">{{ closeIncidenceTarget()?.title }}</span>.
+    <p class="text-xs text-muted-foreground">
+      Estás cerrando <span class="font-medium text-foreground">{{ closeIncidenceTarget()?.title }}</span>.
       Añade una nota de resolución si quieres dejar constancia del motivo o la acción tomada.
     </p>
-    <label class="block text-xs text-zinc-500">Nota de resolución (opcional)</label>
+    <label class="block text-xs text-muted-foreground">Nota de resolución (opcional)</label>
     <textarea
       rows="3"
       [ngModel]="closeIncidenceNote()"
       (ngModelChange)="closeIncidenceNote.set($event)"
-      class="w-full px-3 py-2 border border-zinc-700 rounded-md text-sm bg-zinc-900 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary-button/40 resize-none"
+      class="w-full px-3 py-2 border border-border rounded-md text-sm bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary-button/40 resize-none"
       placeholder="Ej.: Reclamación resuelta con la comercializadora."></textarea>
-    <div class="flex justify-end gap-2 pt-2 border-t border-zinc-800">
+    <div class="flex justify-end gap-2 pt-2 border-t border-border">
       <button type="button"
-              class="px-3 py-1.5 text-sm rounded-md border border-zinc-700 text-zinc-300 hover:bg-zinc-800/60 disabled:opacity-50"
+              class="px-3 py-1.5 text-sm rounded-md border border-border text-foreground/80 hover:bg-accent disabled:opacity-50"
               [disabled]="submittingCloseIncidence()"
               (click)="cancelCloseIncidence()">Cancelar</button>
       <button type="button"
-              class="px-3 py-1.5 text-sm rounded-md bg-primary-button text-white hover:bg-primary-button/90 disabled:opacity-50"
+              class="px-3 py-1.5 text-sm rounded-md bg-primary text-white hover:bg-primary/90 disabled:opacity-50"
               [disabled]="submittingCloseIncidence()"
               (click)="confirmCloseIncidence()">
         {{ submittingCloseIncidence() ? 'Cerrando…' : 'Cerrar incidencia' }}

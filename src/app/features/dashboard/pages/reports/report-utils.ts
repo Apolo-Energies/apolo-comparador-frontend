@@ -24,10 +24,10 @@ export function statusLabel(s: OpportunityStatus): string {
 
 export function statusClass(s: OpportunityStatus): string {
   switch (s) {
-    case OpportunityStatus.Pending:     return 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20';
-    case OpportunityStatus.Negotiation: return 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
-    case OpportunityStatus.Won:         return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
-    case OpportunityStatus.Lost:        return 'bg-red-500/10 text-red-400 border border-red-500/20';
-    default:                            return 'bg-zinc-500/10 text-zinc-400';
+    case OpportunityStatus.Pending:     return 'bg-yellow-500/10 text-warning border border-yellow-500/20';
+    case OpportunityStatus.Negotiation: return 'bg-blue-500/10 text-primary border border-blue-500/20';
+    case OpportunityStatus.Won:         return 'bg-emerald-500/10 text-success border border-emerald-500/20';
+    case OpportunityStatus.Lost:        return 'bg-red-500/10 text-danger border border-red-500/20';
+    default:                            return 'bg-zinc-500/10 text-muted-foreground';
   }
 }

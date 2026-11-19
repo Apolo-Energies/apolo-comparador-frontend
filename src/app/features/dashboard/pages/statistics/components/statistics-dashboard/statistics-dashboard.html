@@ -97,12 +97,12 @@
 
       <div class="bg-card border border-border rounded-lg p-6 w-full">
         <h3 class="text-sm font-semibold text-sky-400/90 mb-6">{{ chartTitles.DAILY }}</h3>
-        <app-bar-chart [bars]="dailyBars()" [color]="chartColor" />
+        <app-bar-chart [bars]="dailyBars()" [color]="chartColor()" />
       </div>
 
       <div class="bg-card border border-border rounded-lg p-6 w-full">
         <h3 class="text-sm font-semibold text-sky-400/90 mb-6">{{ chartTitles.MONTHLY }}</h3>
-        <app-bar-chart [bars]="monthlyBars()" [color]="chartColor" />
+        <app-bar-chart [bars]="monthlyBars()" [color]="chartColor()" />
       </div>
 
     </div>
