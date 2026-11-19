@@ -99,7 +99,7 @@ export class HomePage {
       tile('resumen',       'Resumen',       'Su cartera de un vistazo',     contratos ? '/dashboard/resumen' : undefined),
       tile('contratos',     'Contratos',     'Tabla y detalle',              contratos?.url),
       tile('comparador',    'Comparador',    'Comparador y SIPS',            byTitle('Comparador')?.url ?? byTitle('Consultas SIPS')?.url),
-      tile('oportunidades', 'Oportunidades', 'Seguimiento y pérdidas',       byTitle('Oportunidades')?.url, this.pending()),
+      tile('oportunidades', 'Oportunidades', 'Seguimiento y pérdidas',       byTitle('Oportunidades') ? '/dashboard/analytics/opportunities' : undefined, this.pending()),
       tile('alta',          'Alta rápida',   'Nueva contratación directa',
            this.brandModules.isEnabled('quickAction') ? '/dashboard/fast-discharge/select-type' : undefined),
       tile('soporte',       'Soporte',       'Vídeos, tickets y chatbot',    byTitle('Soporte')?.url),
