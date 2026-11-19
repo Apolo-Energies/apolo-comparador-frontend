@@ -1,3 +1,4 @@
+import { AccountHubNavComponent } from '../../../../shared/components/account-hub-nav/account-hub-nav';
 import {
   AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef,
   Component, computed, inject, signal, TemplateRef, ViewChild, PLATFORM_ID,
@@ -22,7 +23,7 @@ interface SubUserRow extends SubUser {
 @Component({
   selector: 'app-sub-user-commissions',
   standalone: true,
-  imports: [DataTableComponent, AlertComponent, FormsModule, ApoloIcons, TableSkeletonComponent],
+  imports: [AccountHubNavComponent, DataTableComponent, AlertComponent, FormsModule, ApoloIcons, TableSkeletonComponent],
   templateUrl: './sub-user-commissions-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

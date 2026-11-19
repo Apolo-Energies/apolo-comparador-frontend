@@ -76,10 +76,10 @@
           @for (stage of [
             { key: 'pending',     label: 'Pendiente',      color: 'bg-yellow-500/20 border border-yellow-500/30',  n: counts.pending     },
             { key: 'negotiation', label: 'En Negociación', color: 'bg-blue-500/20 border border-blue-500/30',      n: counts.negotiation },
-            { key: 'won',         label: 'Ganada',         color: 'bg-[#1AD598]/20 border border-[#1AD598]/30',    n: counts.won         },
-            { key: 'lost',        label: 'Perdida',        color: 'bg-[#ef4444]/20 border border-[#ef4444]/30',    n: counts.lost        }
+            { key: 'won',         label: 'Ganada',         color: 'bg-success/20 border border-success/40',    n: counts.won         },
+            { key: 'lost',        label: 'Perdida',        color: 'bg-danger/20 border border-danger/40',    n: counts.lost        }
           ]; track stage.key) {
-            <div class="rounded-md px-4 py-3 text-white flex items-center justify-between" [class]="stage.color">
+            <div class="rounded-md px-4 py-3 text-foreground flex items-center justify-between" [class]="stage.color">
               <div>
                 <p class="font-semibold text-sm">{{ stage.label }}</p>
                 <p class="text-xs opacity-75">{{ ((stage.n / total) * 100).toFixed(0) }}% del total</p>
@@ -136,7 +136,7 @@
                 <td class="px-5 py-3 font-medium text-foreground">{{ opp.client.name || '—' }}</td>
                 <td class="px-5 py-3 font-mono text-xs text-muted-foreground">{{ opp.cups }}</td>
                 <td class="px-5 py-3">
-                  <span class="px-2 py-0.5 rounded text-xs font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                  <span class="px-2 py-0.5 rounded text-xs font-semibold bg-violet-500/10 text-violet-700 border border-violet-500/20">
                     {{ opp.tariff || '—' }}
                   </span>
                 </td>

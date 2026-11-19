@@ -4,6 +4,9 @@ export const environment = {
   apiUrl: 'https://apiestudios.renovaenergy.es/api/renovae/v1',
   hubUrl: 'https://apiestudios.renovaenergy.es/hubs/opportunities',
   logoUrl: '/renova/logo.webp',
+  // Portal claro: logo para fondo blanco; si no hay, se oscurece el blanco con CSS.
+  logoOnLightUrl: null as string | null,
+  invertLogoOnLight: false,
   faviconUrl: '/renova/favicon.ico',
   appTitle: 'RENOVAE',
   contractsUrl: null as string | null,  // pendiente URL del cliente

@@ -1,5 +1,5 @@
 <div
-  class="w-full rounded-lg border border-border bg-card px-8 py-8 flex flex-col gap-6 transition-all"
+  class="w-full rounded-xl border border-border bg-card px-6 py-6 sm:px-8 sm:py-7 flex flex-col gap-5 transition-all"
   [class.h-full]="!!file()"
 >
 
@@ -18,7 +18,7 @@
         (valueChange)="onUserChange($event)"
       />
       @if (file() && !internalUser() && !selectedUserId()) {
-        <p class="text-xs text-amber-400 -mt-2">
+        <p class="text-xs text-warning -mt-2">
           Selecciona un usuario para continuar con la comparación.
         </p>
       }
@@ -40,7 +40,7 @@
   </div>
 
   <!-- Botón comparar -->
-  <div class="border-t border-gray-200 mt-6 pt-4 flex justify-center">
+  <div class="border-t border-border pt-5 flex justify-center">
     <ui-button
       label="Comparar"
       variant="default"

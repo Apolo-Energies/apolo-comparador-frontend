@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { ButtonComponent } from '@apolo-energies/ui';
 import { DownloadIcon, UiIconSource } from '@apolo-energies/icons';
 
@@ -9,7 +9,8 @@ import { KpiCardComponent } from '../kpi-card/kpi-card';
 import { BarChartComponent } from '../bar-chart/bar-chart';
 import { DateRangePickerComponent } from '../date-range-picker/date-range-picker';
 
-const CHART_COLOR = '#a78bfa';
+import { ThemeService } from '../../../../../../core/services/theme.service';
+import { chartTheme } from '../../../../../../shared/utils/chart-theme';
 
 const CHART_TITLES = {
   DAILY:   'Presupuestos Por Día',
@@ -37,7 +38,9 @@ export class StatisticsDashboardComponent {
   readonly downloadIcon: UiIconSource = { type: 'apolo', icon: DownloadIcon, size: 16 };
 
   /** Exposed to the template for chart configuration. */
-  readonly chartColor  = CHART_COLOR;
+  private readonly theme = inject(ThemeService);
+  /** Color de las barras: el de la paleta del tema (chart-theme.ts). */
+  readonly chartColor  = computed(() => chartTheme(this.theme.portalDark()).bar);
   readonly chartTitles = CHART_TITLES;
 
   readonly status      = signal<DashboardStatus>(DASHBOARD_STATUS.LOADING);

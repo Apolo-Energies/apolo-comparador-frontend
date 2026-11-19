@@ -32,15 +32,15 @@
     <div class="flex items-start gap-2">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-        class="shrink-0 text-green-600 dark:text-green-400 mt-0.5">
+        class="shrink-0 text-green-600 dark:text-success mt-0.5">
         <polyline points="20 6 9 17 4 12"/>
       </svg>
-      <p class="text-sm font-medium text-green-700 dark:text-green-300">
+      <p class="text-sm font-medium text-green-700 dark:text-success">
         ¡Felicidades! Has subido todos los documentos requeridos.
       </p>
     </div>
     <button type="button"
-      class="shrink-0 text-green-600 hover:text-green-800 dark:text-green-400"
+      class="shrink-0 text-green-600 hover:text-green-800 dark:text-success"
       (click)="dismissCompletion()">
       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -111,7 +111,7 @@
                   </svg>
                 </button>
                 <button type="button"
-                  class="p-1.5 rounded-md hover:bg-red-50 text-red-500 hover:text-red-600 transition-colors"
+                  class="p-1.5 rounded-md hover:bg-red-50 text-danger hover:text-red-600 transition-colors"
                   title="Rechazar"
                   (click)="onRejectClick(doc.id)">
                   <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
@@ -150,7 +150,7 @@
               <!-- Delete button: master only -->
               @if (isMaster()) {
                 <button type="button"
-                  class="p-1 text-muted-foreground hover:text-red-500 transition-colors"
+                  class="p-1 text-muted-foreground hover:text-danger transition-colors"
                   title="Eliminar"
                   (click)="onDelete(doc.id)">
                   <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
@@ -167,7 +167,7 @@
               <!-- Mismo badge para requerido u opcional: lo que importa acá es dejar
                    explícito que el archivo no se subió, no si es obligatorio o no. -->
               <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                           bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                           bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-warning">
                 No subido
               </span>
 
@@ -188,7 +188,7 @@
 
         <!-- Rejection reason (visible to all) -->
         @if (slot.doc?.reviewComment; as reason) {
-          <div class="ml-12 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700 dark:bg-red-900/20 dark:border-red-900/40 dark:text-red-400">
+          <div class="ml-12 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700 dark:bg-red-900/20 dark:border-red-900/40 dark:text-danger">
             <span class="font-medium">Motivo del rechazo: </span>{{ reason }}
           </div>
         }
@@ -293,7 +293,7 @@
 
       @if (doc.reviewComment) {
         <div class="mx-6 mt-4 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700
-                    dark:bg-red-900/20 dark:border-red-900/40 dark:text-red-400">
+                    dark:bg-red-900/20 dark:border-red-900/40 dark:text-danger">
           <span class="font-medium">Motivo del rechazo: </span>{{ doc.reviewComment }}
         </div>
       }

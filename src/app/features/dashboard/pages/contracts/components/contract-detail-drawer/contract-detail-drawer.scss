@@ -1,9 +1,9 @@
 :host ::ng-deep {
   .contract-drawer.p-drawer {
-    background: rgb(24 24 27);
-    border-left: 1px solid rgb(39 39 42);
-    box-shadow: -20px 0 50px -12px rgba(0, 0, 0, 0.5);
-    color: rgb(244 244 245);
+    background: var(--color-card);
+    border-left: 1px solid var(--color-border);
+    box-shadow: -20px 0 50px -12px rgba(0, 0, 0, 0.18);
+    color: var(--color-foreground);
   }
 
   .contract-drawer .p-drawer-header {
@@ -17,7 +17,7 @@
   }
 
   .p-drawer-mask {
-    background: rgba(0, 0, 0, 0.55);
+    background: rgba(17, 17, 17, 0.18);
     backdrop-filter: blur(2px);
   }
 }

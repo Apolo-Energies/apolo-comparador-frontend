@@ -1,3 +1,4 @@
+import { AnalyticsHubNavComponent } from '../../../../shared/components/analytics-hub-nav/analytics-hub-nav';
 import { AfterViewInit, ChangeDetectionStrategy, Component, effect, inject, signal, PLATFORM_ID, TemplateRef, ViewChild } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { DataTableComponent, PaginatorComponent } from '@apolo-energies/table';
@@ -9,7 +10,6 @@ import { environment } from '../../../../../environments/environment';
 import { GlobalLoadingService } from '../../../../core/services/global-loading.service';
 import { CollaboratorScopeService } from '../../../../core/services/collaborator-scope.service';
 import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
-import { EnergyRouteToggleComponent } from '../../../../shared/components/energy-route-toggle/energy-route-toggle.component';
 import { StatisticsDashboardComponent } from './components/statistics-dashboard/statistics-dashboard';
 import { UserDetailDialogComponent } from './components/user-detail-dialog/user-detail-dialog';
 import { DateRange } from './models/dashboard-ui.model';
@@ -19,7 +19,7 @@ import { StatisticsFiltersController, SortField } from './statistics-filters.con
 @Component({
   selector: 'app-statistics-page',
   standalone: true,
-  imports: [DataTableComponent, PaginatorComponent, InputFieldComponent, ButtonComponent, StatisticsDashboardComponent, UserDetailDialogComponent, TableSkeletonComponent, EnergyRouteToggleComponent],
+  imports: [AnalyticsHubNavComponent, DataTableComponent, PaginatorComponent, InputFieldComponent, ButtonComponent, StatisticsDashboardComponent, UserDetailDialogComponent, TableSkeletonComponent],
   templateUrl: './statistics-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

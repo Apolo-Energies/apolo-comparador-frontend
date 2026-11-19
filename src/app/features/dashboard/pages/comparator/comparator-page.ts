@@ -1,3 +1,4 @@
+import { ComparatorHubNavComponent } from '../../../../shared/components/comparator-hub-nav/comparator-hub-nav';
 import { ChangeDetectionStrategy, Component, computed, inject, signal, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -23,7 +24,7 @@ import { buildProductsByTariff, shortIsoDate } from './comparator.helpers';
 @Component({
   selector: 'app-comparator',
   standalone: true,
-  imports: [ComparatorUploadComponent, ComparatorModalComponent, BrandLoaderComponent, LoadingOverlayComponent, RouterLink],
+  imports: [ComparatorHubNavComponent, ComparatorUploadComponent, ComparatorModalComponent, BrandLoaderComponent, LoadingOverlayComponent, RouterLink],
   templateUrl: './comparator-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

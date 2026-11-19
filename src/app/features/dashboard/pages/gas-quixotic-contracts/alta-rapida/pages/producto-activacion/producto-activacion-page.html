@@ -21,7 +21,7 @@
               <option [value]="p.id" [selected]="draft().productId === p.id">{{ p.name }}</option>
             }
           </select>
-          @if (productsError()) { <span class="text-red-500 text-xs">No se pudo cargar el listado de productos</span> }
+          @if (productsError()) { <span class="text-danger text-xs">No se pudo cargar el listado de productos</span> }
         }
       </div>
 
@@ -62,7 +62,7 @@
         <textarea [class]="textareaCls" rows="4" placeholder='Opcional, array de objetos, ej. [{"code": "X", "name": "Y", "value": "Z"}]'
                   [value]="draft().contractParamsJson"
                   (input)="updateField('contractParamsJson', $any($event.target).value)"></textarea>
-        @if (contractParamsError()) { <span class="text-red-500 text-xs">{{ contractParamsError() }}</span> }
+        @if (contractParamsError()) { <span class="text-danger text-xs">{{ contractParamsError() }}</span> }
       </div>
 
       <div class="border-t border-border pt-4 flex items-center justify-between">

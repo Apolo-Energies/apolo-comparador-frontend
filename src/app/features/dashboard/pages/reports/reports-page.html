@@ -1,45 +1,42 @@
-<div class="min-h-full bg-body -mx-6 -my-6 px-6 py-6 lg:-mx-8 lg:-my-8 lg:px-8 lg:py-8">
+<div>
 
-  <app-energy-route-toggle luzUrl="/dashboard/analytics/reports" gasUrl="/dashboard/analytics/reports/gas" />
-
-  <!-- Header -->
-  <div class="flex items-center justify-between mb-6">
-    <div>
-      <h1 class="text-xl mb-0 pb-0 font-bold text-foreground">Reportes</h1>
-      <p class="text-sm text-muted-foreground mt-0.5">Analítica y oportunidades en tiempo real</p>
-    </div>
+  <app-analytics-hub-nav section="reports">
+    <div actions class="flex items-center">
     @if (loading()) {
-      <app-brand-loader
-        [inline]="true"
-        [size]="32"
-        [showTitle]="false"
-        [showDescription]="false"
-        [showBar]="false"
-        [showPercent]="false"
-        [showMicrocopy]="false"
-        [showWordmark]="false"
-        [showBackdrop]="false" />
-    } @else {
-      <button
-        class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-card border border-border text-muted-foreground text-xs font-semibold hover:bg-body hover:text-foreground transition-colors cursor-pointer"
-        (click)="load()">
-        ↺ Actualizar
-      </button>
-    }
-  </div>
+        <app-brand-loader
+          [inline]="true"
+          [size]="32"
+          [showTitle]="false"
+          [showDescription]="false"
+          [showBar]="false"
+          [showPercent]="false"
+          [showMicrocopy]="false"
+          [showWordmark]="false"
+          [showBackdrop]="false" />
+      } @else {
+        <button
+          class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-card border border-border text-muted-foreground text-xs font-semibold hover:bg-body hover:text-foreground transition-colors cursor-pointer"
+          (click)="load()">
+          <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 4v5h-5"/></svg>
+        Actualizar
+        </button>
+      }
+    </div>
+  </app-analytics-hub-nav>
 
-  <!-- Tabs -->
-  <div class="flex gap-1 bg-card border border-border rounded-lg p-1 mb-6 w-fit">
+  <!-- Pestañas internas (cambian contenido en la misma página): patrón ARIA tabs.
+       La selección sigue al foco con flechas (selectTabByKey). -->
+  <div class="mb-6 inline-flex gap-0.5 rounded-lg border border-border bg-card p-[3px]" role="tablist" aria-label="Tipo de reporte">
     @for (tab of tabs; track tab.id) {
-      <button
-        class="relative px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer"
-        [class.bg-accent]="activeTab() === tab.id"
-        [class.text-foreground]="activeTab() === tab.id"
-        [class.text-muted-foreground]="activeTab() !== tab.id"
-        (click)="setTab(tab.id)">
+      <button type="button" role="tab" [id]="'report-tab-' + tab.id"
+        [attr.aria-selected]="activeTab() === tab.id" [tabindex]="activeTab() === tab.id ? 0 : -1"
+        class="report-tab relative rounded-md px-4 py-1.5 text-sm font-medium transition-colors duration-150 cursor-pointer"
+        [class]="activeTab() === tab.id ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-accent hover:text-foreground'"
+        (click)="setTab(tab.id)" (keydown)="onTabKey($event)">
         {{ tab.label }}
         @if (tab.id === 'alertas' && alertBadge() > 0) {
-          <span class="absolute -top-1 -right-1 bg-[#B79DF5] text-[#17181A] text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+          <span class="absolute -top-1.5 -right-1.5 bg-danger text-white text-[10px] font-bold rounded-full min-w-4 h-4 px-1 flex items-center justify-center leading-none tabular-nums"
+                [attr.aria-label]="alertBadge() + ' alertas'">
             {{ alertBadge() > 9 ? '9+' : alertBadge() }}
           </span>
         }
@@ -48,6 +45,7 @@
   </div>
 
   <!-- Tab content -->
+  <div role="tabpanel" [attr.aria-labelledby]="'report-tab-' + activeTab()">
   @if (activeTab() === 'analitica') {
     <app-reports-analytics-tab
       [loading]="loading()"
@@ -76,5 +74,6 @@
       [alertBadge]="alertBadge()"
       [stagnant]="stagnant()" />
   }
+  </div>
 
 </div>

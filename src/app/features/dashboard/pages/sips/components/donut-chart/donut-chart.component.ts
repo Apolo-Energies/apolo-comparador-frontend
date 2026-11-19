@@ -9,6 +9,7 @@ export interface TrendData { percent: number; trend: 'up' | 'down' | 'equal'; }
 interface Slice {
   d: string;
   fill: string;
+  ink: string;
   label: string;
   percent: number;
   value: number;
@@ -17,7 +18,9 @@ interface Slice {
   ly: number;
 }
 
-const COLORS = ['#7C67F2', '#8FDBFF', '#FFB86B', '#F691A6', '#C4C4C4', '#999DF8'];
+/** Paleta de gráficos por tema (variables CSS), en orden fijo; INKS = letra legible sobre cada color. */
+const COLORS = [1, 2, 3, 4, 5, 6].map(n => `var(--series-${n})`);
+const INKS = [1, 2, 3, 4, 5, 6].map(n => `var(--series-${n}-ink)`);
 const GAP = 0.00511269632;
 
 function polar(cx: number, cy: number, r: number, a: number): [number, number] {
@@ -105,6 +108,7 @@ export class SipsDonutChartComponent implements AfterViewInit, OnDestroy {
       return {
         d: arcPath(cx, cy, ir, or_, a0, a1),
         fill: COLORS[i % COLORS.length],
+        ink: INKS[i % INKS.length],
         label: item.label,
         percent: Math.round((item.value / total) * 100),
         value: item.value,
@@ -117,17 +121,17 @@ export class SipsDonutChartComponent implements AfterViewInit, OnDestroy {
   readonly trendBg = computed(() => {
     const t = this.trend();
     if (!t) return '';
-    return t.trend === 'up' ? 'rgba(34,197,94,0.15)'
-      : t.trend === 'down' ? 'rgba(239,68,68,0.15)'
-        : 'rgba(156,163,175,0.15)';
+    return t.trend === 'up' ? 'color-mix(in srgb, var(--color-success) 15%, transparent)'
+      : t.trend === 'down' ? 'color-mix(in srgb, var(--color-danger) 15%, transparent)'
+        : 'color-mix(in srgb, var(--color-muted-foreground) 15%, transparent)';
   });
 
   readonly trendColor = computed(() => {
     const t = this.trend();
     if (!t) return '';
-    return t.trend === 'up' ? '#22c55e'
-      : t.trend === 'down' ? '#ef4444'
-        : '#9ca3af';
+    return t.trend === 'up' ? 'var(--color-success)'
+      : t.trend === 'down' ? 'var(--color-danger)'
+        : 'var(--color-muted-foreground)';
   });
 
   readonly trendLabel = computed(() => {

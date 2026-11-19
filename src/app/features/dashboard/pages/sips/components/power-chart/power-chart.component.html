@@ -19,14 +19,14 @@
             [attr.y1]="tick.y"
             [attr.x2]="w() - PAD_R"
             [attr.y2]="tick.y"
-            stroke="#323438"
+            style="stroke: var(--chart-grid)"
             stroke-width="1"
           />
 
           <text
             [attr.x]="PAD_L - 8"
             [attr.y]="tick.y"
-            fill="#94a3b8"
+            style="fill: var(--chart-axis)"
             [attr.font-size]="Y_LABEL_FONT_SIZE"
             text-anchor="end"
             dominant-baseline="middle"
@@ -40,7 +40,7 @@
           @if (bar.h > 0) {
             <path
               [attr.d]="barPath(bar)"
-              [attr.fill]="hoveredBar() === i ? '#9b88f5' : BAR_COLOR"
+              [style.fill]="BAR_COLOR" [style.filter]="hoveredBar() === i ? 'brightness(1.15)' : null"
               (mouseenter)="tooltipSet(bar, i)"
               (mouseleave)="tooltipClear()"
               style="cursor: default"
@@ -50,7 +50,7 @@
           <text
             [attr.x]="bar.x + bar.w / 2"
             [attr.y]="CHART_H - PAD_B + 18"
-            fill="#94a3b8"
+            style="fill: var(--chart-axis)"
             [attr.font-size]="X_LABEL_FONT_SIZE"
             text-anchor="middle"
           >
@@ -67,15 +67,14 @@
               width="80"
               height="26"
               rx="6"
-              fill="#1e293b"
-              stroke="#334155"
+              style="fill: var(--chart-tooltip-bg); stroke: var(--chart-tooltip-border)"
               stroke-width="1"
             />
 
             <text
               [attr.x]="clampX(tooltip()!.x - 40) + 40"
               [attr.y]="tooltip()!.y - 11"
-              fill="#fff"
+              style="fill: var(--chart-tooltip-fg)"
               [attr.font-size]="TOOLTIP_FONT_SIZE"
               text-anchor="middle"
             >

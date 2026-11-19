@@ -39,9 +39,9 @@
                       <p class="text-sm text-muted-foreground">{{ fmtDate(ct.fechaFin) }}</p>
                       @if (dias !== null) {
                         <p class="text-xs font-semibold mt-0.5"
-                           [class.text-[#ef4444]]="dias <= 30"
-                           [class.text-yellow-400]="dias > 30 && dias <= 90"
-                           [class.text-[#1AD598]]="dias > 90">
+                           [class.text-danger]="dias <= 30"
+                           [class.text-warning]="dias > 30 && dias <= 90"
+                           [class.text-success]="dias > 90">
                           {{ dias > 0 ? dias + ' días' : 'Vencido' }}
                         </p>
                       }

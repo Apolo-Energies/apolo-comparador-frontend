@@ -41,7 +41,7 @@
               <text
                 [attr.x]="PAD_L - 8"
                 [attr.y]="tick.y"
-                fill="#94a3b8"
+                style="fill: var(--chart-axis)"
                 [attr.font-size]="16"
                 text-anchor="end"
                 dominant-baseline="middle"
@@ -61,7 +61,7 @@
                     @if (last) {
                       <path
                         [attr.d]="roundedTop(bar.x, seg.y, bar.w, seg.h)"
-                        [attr.fill]="seg.color"
+                        [style.fill]="seg.color"
                       />
                     } @else {
                       <rect
@@ -69,7 +69,7 @@
                         [attr.y]="seg.y"
                         [attr.width]="bar.w"
                         [attr.height]="seg.h"
-                        [attr.fill]="seg.color"
+                        [style.fill]="seg.color"
                       />
                     }
                   }
@@ -79,7 +79,7 @@
               <text
                 [attr.x]="bar.x + bar.w / 2"
                 [attr.y]="CHART_H - PAD_B + 18"
-                fill="#94a3b8"
+                style="fill: var(--chart-axis)"
                 [attr.font-size]="16"
                 text-anchor="middle"
               >
@@ -95,14 +95,13 @@
                   width="100"
                   height="26"
                   rx="6"
-                  fill="#1e293b"
-                  stroke="#334155"
+                  style="fill: var(--chart-tooltip-bg); stroke: var(--chart-tooltip-border)"
                   stroke-width="1"
                 />
                 <text
                   [attr.x]="clampX(tooltip()!.x - 50) + 50"
                   [attr.y]="tooltip()!.y - 11"
-                  fill="#fff"
+                  style="fill: var(--chart-tooltip-fg)"
                   font-size="11"
                   text-anchor="middle"
                 >

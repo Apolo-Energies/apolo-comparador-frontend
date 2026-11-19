@@ -11,6 +11,7 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { environment } from '../../../../environments/environment';
 import { BRAND_THEMES, DEFAULT_BRAND, LoaderBrand, LoaderTheme } from './brand-loader.config';
+import { ThemeService } from '../../../core/services/theme.service';
 
 const RING_RADIUS = 46;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
@@ -57,9 +58,15 @@ export class BrandLoaderComponent {
   private readonly simulated = signal(0);
   private intervalId: ReturnType<typeof setInterval> | null = null;
 
+  private readonly colorTheme = inject(ThemeService);
+  /** Tema negro del portal (fuera del portal, el loader sigue claro). */
+  readonly dark = computed(() => this.colorTheme.portalDark());
+
   readonly theme = computed<LoaderTheme>(() => {
     const active = this.brand() ?? (environment.clientName as LoaderBrand) ?? DEFAULT_BRAND;
-    return BRAND_THEMES[active] ?? BRAND_THEMES[DEFAULT_BRAND];
+    const base = BRAND_THEMES[active] ?? BRAND_THEMES[DEFAULT_BRAND];
+    if (!this.dark() || !base.dark) return base;
+    return { ...base, logoSrc: base.dark.logoSrc, backdrop: base.dark.backdrop, logoFilter: base.dark.logoFilter ?? undefined };
   });
 
   readonly displayProgress = computed(() => {

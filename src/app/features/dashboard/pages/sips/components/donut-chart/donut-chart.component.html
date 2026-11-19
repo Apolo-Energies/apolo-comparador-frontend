@@ -48,16 +48,16 @@
       <svg #svgEl width="100%" height="100%" style="display:block">
         @if (pieW() > 0 && pieH() > 0) {
         @for (s of slices(); track s.label) {
-        <path [attr.d]="s.d" [attr.fill]="s.fill" stroke="none">
+        <path [attr.d]="s.d" [style.fill]="s.fill" stroke="none">
           <title>{{ s.label }}: {{ s.percent }}%</title>
         </path>
         @if (s.percent >= 5) {
-        <text [attr.x]="s.lx" [attr.y]="s.ly" fill="#fff" text-anchor="middle" dominant-baseline="central"
+        <text [attr.x]="s.lx" [attr.y]="s.ly" [style.fill]="s.ink" text-anchor="middle" dominant-baseline="central"
           font-size="12" font-weight="500">{{ s.percent }}%</text>
         }
         }
         @if (!slices().length) {
-        <circle [attr.cx]="pieW() / 2" [attr.cy]="pieH() / 2" [attr.r]="outerR()" fill="none" stroke="#323438"
+        <circle [attr.cx]="pieW() / 2" [attr.cy]="pieH() / 2" [attr.r]="outerR()" fill="none" style="stroke: var(--chart-grid)"
           [attr.stroke-width]="outerR() - innerR()" />
         }
         }

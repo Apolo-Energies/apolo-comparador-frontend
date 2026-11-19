@@ -1,4 +1,5 @@
 <ui-alert />
+<app-account-hub-nav section="comisiones" />
 
 <!-- Commission input cell -->
 <ng-template #commTpl let-row>
@@ -25,7 +26,7 @@
     </button>
     @if (row.commissionPercentage !== null) {
       <button
-        class="inline-flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors disabled:opacity-40"
+        class="inline-flex items-center gap-1 text-xs text-danger hover:text-red-700 transition-colors disabled:opacity-40"
         [disabled]="row.saving"
         (click)="onDelete(row)"
       >

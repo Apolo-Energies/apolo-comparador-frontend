@@ -8,7 +8,7 @@
       <!-- Éxito -->
       <div class="flex flex-col items-center gap-3 text-center py-4">
         <div class="rounded-full bg-green-100 dark:bg-green-900/40 p-4">
-          <svg class="h-10 w-10 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <svg class="h-10 w-10 text-green-600 dark:text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
           </svg>
         </div>
@@ -43,10 +43,10 @@
 
       @if (res.warnings.length) {
         <div class="rounded-lg border border-amber-300/50 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 space-y-1.5">
-          <p class="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">Avisos</p>
+          <p class="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-warning">Avisos</p>
           <ul class="list-disc list-inside space-y-1">
             @for (w of res.warnings; track w) {
-              <li class="text-xs text-amber-800 dark:text-amber-300">{{ w }}</li>
+              <li class="text-xs text-amber-800 dark:text-warning">{{ w }}</li>
             }
           </ul>
         </div>
@@ -66,13 +66,13 @@
 
       @if (errorInfo(); as err) {
         <div class="rounded-lg border border-red-300/50 bg-red-50 dark:bg-red-900/20 px-4 py-3 space-y-2">
-          <p class="text-sm font-semibold text-red-700 dark:text-red-400">{{ err.error }}</p>
+          <p class="text-sm font-semibold text-red-700 dark:text-danger">{{ err.error }}</p>
           @if (err.step) {
-            <p class="text-xs text-red-600 dark:text-red-300">Paso: {{ err.step }}</p>
+            <p class="text-xs text-red-600 dark:text-danger">Paso: {{ err.step }}</p>
           }
           @if (partialJson(); as pj) {
             <details class="text-xs">
-              <summary class="cursor-pointer text-red-600 dark:text-red-300">Ver datos parciales creados</summary>
+              <summary class="cursor-pointer text-red-600 dark:text-danger">Ver datos parciales creados</summary>
               <pre class="mt-2 whitespace-pre-wrap font-mono text-[11px] text-foreground bg-card border border-border rounded-md p-2">{{ pj }}</pre>
             </details>
           }

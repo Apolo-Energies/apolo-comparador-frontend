@@ -8,6 +8,11 @@
   <title>RComparatorFrontend</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Tema blanco / negro del portal. Debe ir antes de pintar: aplica la
+       preferencia guardada y, solo en /dashboard, marca el tema para que el primer pintado no
+       salga en el tema contrario. El login no se toca. Ver ThemeService. -->
+  <meta name="color-scheme" content="light dark">
+  <script>try{var s=localStorage.getItem('color-scheme');if(s==='light'||s==='dark')document.querySelector('meta[name="color-scheme"]').content=s;if(location.pathname.indexOf('/dashboard')===0){var d=s?s==='dark':matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.add(d?'portal-boot-dark':'portal-boot-light')}}catch(e){}</script>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 <body class="dark">

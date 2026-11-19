@@ -44,32 +44,32 @@ type EstadoCategory = 'activos' | 'pendientes' | 'renovados' | 'bajas';
 
 const ESTADO_MAP: Record<string, { label: string; cls: string; category: EstadoCategory }> = {
   // Códigos cortos (compat con Energy Expert)
-  F: { label: 'Firmado',   cls: 'bg-[#1AD5981A] text-[#1AD598]',    category: 'activos' },
-  A: { label: 'Alta',      cls: 'bg-blue-500/10 text-blue-400',     category: 'activos' },
-  P: { label: 'Pendiente', cls: 'bg-yellow-500/10 text-yellow-400', category: 'pendientes' },
-  B: { label: 'Baja',      cls: 'bg-[#ef444440] text-[#ef4444]',    category: 'bajas' },
-  R: { label: 'Renovado',  cls: 'bg-violet-500/10 text-violet-400', category: 'renovados' },
-  C: { label: 'Cancelado', cls: 'bg-[#ef444440] text-[#ef4444]',    category: 'bajas' },
+  F: { label: 'Firmado',   cls: 'bg-success/10 text-success',    category: 'activos' },
+  A: { label: 'Alta',      cls: 'bg-primary/10 text-primary',     category: 'activos' },
+  P: { label: 'Pendiente', cls: 'bg-warning/10 text-warning', category: 'pendientes' },
+  B: { label: 'Baja',      cls: 'bg-danger/10 text-danger',    category: 'bajas' },
+  R: { label: 'Renovado',  cls: 'bg-violet-500/10 text-violet-700', category: 'renovados' },
+  C: { label: 'Cancelado', cls: 'bg-danger/10 text-danger',    category: 'bajas' },
   // Nombres completos
-  ACTIVO:        { label: 'Activo',        cls: 'bg-[#1AD5981A] text-[#1AD598]',      category: 'activos' },
-  VALIDO:        { label: 'Válido',        cls: 'bg-emerald-500/10 text-emerald-400', category: 'activos' },
-  CONFIRMADO:    { label: 'Confirmado',    cls: 'bg-emerald-500/10 text-emerald-400', category: 'activos' },
-  PREVIO:        { label: 'Previo',        cls: 'bg-yellow-500/10 text-yellow-400',   category: 'pendientes' },
-  PARA_ESTUDIO:  { label: 'Para estudio',  cls: 'bg-yellow-500/10 text-yellow-400',   category: 'pendientes' },
-  PARA_TRAMITAR: { label: 'Para tramitar', cls: 'bg-yellow-500/10 text-yellow-400',   category: 'pendientes' },
-  PARA_FIRMA:    { label: 'Para firma',    cls: 'bg-amber-500/10 text-amber-400',     category: 'pendientes' },
-  INCIDENCIA:    { label: 'Incidencia',    cls: 'bg-orange-500/10 text-orange-400',   category: 'pendientes' },
-  RENOVADO:      { label: 'Renovado',      cls: 'bg-violet-500/10 text-violet-400',   category: 'renovados' },
-  BAJA:          { label: 'Baja',          cls: 'bg-red-500/10 text-red-400',         category: 'bajas' },
-  FINALIZADO:    { label: 'Finalizado',    cls: 'bg-slate-500/10 text-slate-400',     category: 'bajas' },
-  ANULADO:       { label: 'Anulado',       cls: 'bg-red-500/10 text-red-400',         category: 'bajas' },
-  DESESTIMADO:   { label: 'Desestimado',   cls: 'bg-red-500/10 text-red-400',         category: 'bajas' },
-  KO:            { label: 'KO',            cls: 'bg-red-600/10 text-red-500',         category: 'bajas' },
-  RECHAZADO:     { label: 'Rechazado',     cls: 'bg-red-600/10 text-red-500',         category: 'bajas' },
+  ACTIVO:        { label: 'Activo',        cls: 'bg-success/10 text-success',      category: 'activos' },
+  VALIDO:        { label: 'Válido',        cls: 'bg-success/10 text-success', category: 'activos' },
+  CONFIRMADO:    { label: 'Confirmado',    cls: 'bg-success/10 text-success', category: 'activos' },
+  PREVIO:        { label: 'Previo',        cls: 'bg-warning/10 text-warning',   category: 'pendientes' },
+  PARA_ESTUDIO:  { label: 'Para estudio',  cls: 'bg-warning/10 text-warning',   category: 'pendientes' },
+  PARA_TRAMITAR: { label: 'Para tramitar', cls: 'bg-warning/10 text-warning',   category: 'pendientes' },
+  PARA_FIRMA:    { label: 'Para firma',    cls: 'bg-warning/10 text-warning',     category: 'pendientes' },
+  INCIDENCIA:    { label: 'Incidencia',    cls: 'bg-orange-500/10 text-orange-700',   category: 'pendientes' },
+  RENOVADO:      { label: 'Renovado',      cls: 'bg-violet-500/10 text-violet-700',   category: 'renovados' },
+  BAJA:          { label: 'Baja',          cls: 'bg-danger/10 text-danger',         category: 'bajas' },
+  FINALIZADO:    { label: 'Finalizado',    cls: 'bg-muted text-muted-foreground',     category: 'bajas' },
+  ANULADO:       { label: 'Anulado',       cls: 'bg-danger/10 text-danger',         category: 'bajas' },
+  DESESTIMADO:   { label: 'Desestimado',   cls: 'bg-danger/10 text-danger',         category: 'bajas' },
+  KO:            { label: 'KO',            cls: 'bg-danger/10 text-danger',         category: 'bajas' },
+  RECHAZADO:     { label: 'Rechazado',     cls: 'bg-danger/10 text-danger',         category: 'bajas' },
 };
 
 export function estadoCls(code: string): string {
-  return ESTADO_MAP[code?.toUpperCase()]?.cls ?? 'bg-accent/40 text-muted-foreground';
+  return ESTADO_MAP[code?.toUpperCase()]?.cls ?? 'bg-muted text-muted-foreground';
 }
 
 export function estadoLabel(code: string): string {

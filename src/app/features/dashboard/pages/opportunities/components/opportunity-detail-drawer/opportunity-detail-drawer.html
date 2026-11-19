@@ -26,7 +26,7 @@
 
   @if (summary(); as s) {
     <header
-      class="sticky top-0 z-10 px-6 py-5 bg-zinc-900/95 backdrop-blur border-b border-zinc-800"
+      class="sticky top-0 z-10 px-6 py-5 bg-card/95 backdrop-blur border-b border-border"
     >
       <div class="flex items-start gap-3">
         <div class="flex-1 min-w-0">
@@ -37,11 +37,11 @@
             >
               {{ statusLabel() }}
             </span>
-            <span class="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">
+            <span class="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
               Oportunidad
             </span>
           </div>
-          <h2 class="text-xl font-bold text-zinc-100 truncate">
+          <h2 class="text-xl font-bold text-foreground truncate">
             {{ s.client.name || 'Sin cliente' }}
           </h2>
         </div>
@@ -50,7 +50,7 @@
           @if (availableTransitions().length > 0) {
             <button
               type="button"
-              class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold bg-blue-500/10 text-blue-300 ring-1 ring-inset ring-blue-500/30 hover:bg-blue-500/20 transition-colors duration-200"
+              class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold bg-blue-500/10 text-primary ring-1 ring-inset ring-blue-500/30 hover:bg-blue-500/20 transition-colors duration-200"
               (click)="toggleStatusMenu()"
               [disabled]="savingStatus()"
             >
@@ -60,17 +60,17 @@
 
             @if (statusMenuOpen()) {
               <div
-                class="absolute top-full right-0 mt-2 w-48 rounded-xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-black/40 z-20 overflow-hidden"
+                class="absolute top-full right-0 mt-2 w-48 rounded-xl border border-border bg-popover shadow-lg shadow-black/10 z-20 overflow-hidden"
               >
                 <div
-                  class="px-3 py-2 text-[11px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800"
+                  class="px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border"
                 >
                   Mover a…
                 </div>
                 @for (t of availableTransitions(); track t.target) {
                   <button
                     type="button"
-                    class="block w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 transition-colors duration-150"
+                    class="block w-full text-left px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors duration-150"
                     (click)="applyStatus(t.target)"
                   >
                     {{ t.label }}
@@ -82,7 +82,7 @@
 
           <button
             type="button"
-            class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors duration-200"
+            class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors duration-200"
             (click)="closeDrawer()"
             aria-label="Cerrar"
           >
@@ -94,42 +94,42 @@
 
     <!-- =================== CLIENT DATA BLOCK =================== -->
     <section class="px-6 pt-5">
-      <div class="rounded-xl border border-zinc-800/80 bg-zinc-950/50 p-4">
+      <div class="rounded-xl border border-border bg-card p-4">
         <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div>
-            <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">
+            <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
               CUPS
             </p>
-            <p class="font-mono text-[12px] text-zinc-200 break-all">{{ s.cups }}</p>
+            <p class="font-mono text-[12px] text-foreground break-all">{{ s.cups }}</p>
           </div>
           <div>
-            <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">
+            <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
               NIF / CIF
             </p>
-            <p class="text-sm text-zinc-200">{{ s.client.nif || '—' }}</p>
+            <p class="text-sm text-foreground">{{ s.client.nif || '—' }}</p>
           </div>
           <div>
-            <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">
+            <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
               Tarifa
             </p>
-            <p class="text-sm text-blue-400 font-medium">{{ s.tariff || '—' }}</p>
+            <p class="text-sm text-primary font-medium">{{ s.tariff || '—' }}</p>
           </div>
           <div class="col-span-2 md:col-span-3">
-            <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">
+            <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
               Dirección
             </p>
-            <p class="text-sm text-zinc-300">{{ addressText() }}</p>
+            <p class="text-sm text-foreground/80">{{ addressText() }}</p>
           </div>
           @if (s.createdBy) {
             <div
-              class="col-span-2 md:col-span-3 pt-3 border-t border-zinc-800/60 flex items-center gap-2 text-xs text-zinc-400"
+              class="col-span-2 md:col-span-3 pt-3 border-t border-border flex items-center gap-2 text-xs text-muted-foreground"
             >
-              <lib-apolo-icons [icon]="iconUser" class="flex items-center text-zinc-500" />
+              <lib-apolo-icons [icon]="iconUser" class="flex items-center text-muted-foreground" />
               <span
-                >Abierta por <span class="text-zinc-200">{{ s.createdBy.fullName }}</span></span
+                >Abierta por <span class="text-foreground">{{ s.createdBy.fullName }}</span></span
               >
-              <span class="text-zinc-600">·</span>
-              <lib-apolo-icons [icon]="iconDate" class="flex items-center text-zinc-500" />
+              <span class="text-muted-foreground/70">·</span>
+              <lib-apolo-icons [icon]="iconDate" class="flex items-center text-muted-foreground" />
               <span>{{ formatDate(s.createdAt) }}</span>
             </div>
           }
@@ -140,12 +140,12 @@
     <section class="px-6 pt-6 pb-2">
       <div class="flex items-center justify-between">
         <h3
-          class="text-sm font-semibold text-zinc-200 tracking-wide inline-flex items-center gap-2"
+          class="text-sm font-semibold text-foreground tracking-wide inline-flex items-center gap-2"
         >
-          <lib-apolo-icons [icon]="iconNote" class="flex items-center text-zinc-500" />
+          <lib-apolo-icons [icon]="iconNote" class="flex items-center text-muted-foreground" />
           Historial de comparaciones
         </h3>
-        <span class="text-[11px] text-zinc-500">
+        <span class="text-[11px] text-muted-foreground">
           {{ comparisons().length }}
           {{ comparisons().length === 1 ? 'comparación' : 'comparaciones' }}
         </span>
@@ -155,10 +155,10 @@
     <section class="px-6 pb-8">
       @if (comparisons().length === 0) {
         <div
-          class="rounded-xl border-2 border-dashed border-zinc-800 bg-zinc-900/30 px-6 py-10 text-center"
+          class="rounded-xl border-2 border-dashed border-border px-6 py-10 text-center"
         >
-          <p class="text-sm font-medium text-zinc-300">Sin comparaciones todavía</p>
-          <p class="text-xs text-zinc-500 mt-1">
+          <p class="text-sm font-medium text-foreground/80">Sin comparaciones todavía</p>
+          <p class="text-xs text-muted-foreground mt-1">
             Las comparaciones guardadas desde el comparador aparecerán aquí.
           </p>
         </div>
@@ -166,26 +166,26 @@
         <ol class="flex flex-col gap-4">
           @for (row of comparisons(); track trackById($index, row)) {
             <li
-              class="group relative rounded-xl border border-zinc-700/50 bg-zinc-800/40 hover:bg-zinc-800/60 hover:border-zinc-600/60 transition-all duration-300"
+              class="group relative rounded-xl border border-border bg-card hover:bg-muted hover:border-ring/40 transition-colors duration-150"
             >
               <div
-                class="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-zinc-800/60"
+                class="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-border"
               >
-                <div class="inline-flex items-center gap-3 text-xs text-zinc-400 min-w-0">
+                <div class="inline-flex items-center gap-3 text-xs text-muted-foreground min-w-0">
                   <span class="inline-flex items-center gap-1.5">
-                    <lib-apolo-icons [icon]="iconDate" class="flex items-center text-zinc-500" />
-                    <span class="text-zinc-300">{{ formatDate(row.createdAt) }}</span>
+                    <lib-apolo-icons [icon]="iconDate" class="flex items-center text-muted-foreground" />
+                    <span class="text-foreground/80">{{ formatDate(row.createdAt) }}</span>
                   </span>
-                  <span class="text-zinc-700">·</span>
+                  <span class="text-muted-foreground/70">·</span>
                   <span class="inline-flex items-center gap-1.5 truncate">
-                    <lib-apolo-icons [icon]="iconUser" class="flex items-center text-zinc-500" />
+                    <lib-apolo-icons [icon]="iconUser" class="flex items-center text-muted-foreground" />
                     <span class="truncate">{{ row.userFullName ?? '—' }}</span>
                   </span>
                 </div>
 
                 <button
                   type="button"
-                  class="shrink-0 inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 ring-1 ring-inset ring-zinc-700 transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                  class="shrink-0 inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-semibold bg-accent hover:bg-accent text-foreground ring-1 ring-inset ring-border transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
                   [disabled]="!row.hasPdfSnapshot || downloadingId() === row.id"
                   [title]="
                     row.hasPdfSnapshot
@@ -202,47 +202,47 @@
               <!-- Card body: 2 metric blocks -->
               <div class="grid grid-cols-2 gap-3 px-4 py-3">
                 <!-- Block 1: Costes -->
-                <div class="rounded-lg bg-zinc-900/50 border border-zinc-800/60 p-3">
-                  <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-2">
+                <div class="rounded-lg bg-card border border-border p-3">
+                  <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2">
                     Costes
                   </p>
                   <dl class="space-y-1 text-[12px]">
                     <div class="flex justify-between gap-2">
-                      <dt class="text-zinc-400">OMIE</dt>
-                      <dd class="text-zinc-200 font-mono">
+                      <dt class="text-muted-foreground">OMIE</dt>
+                      <dd class="text-foreground font-mono">
                         {{ formatNumber(row.omieAveragePrice, 2) }} €/MWh
                       </dd>
                     </div>
                     <div class="flex justify-between gap-2">
-                      <dt class="text-zinc-400">Fee energía</dt>
-                      <dd class="text-zinc-200 font-mono">{{ formatNumber(row.energyFee, 2) }}</dd>
+                      <dt class="text-muted-foreground">Fee energía</dt>
+                      <dd class="text-foreground font-mono">{{ formatNumber(row.energyFee, 2) }}</dd>
                     </div>
                     <div class="flex justify-between gap-2">
-                      <dt class="text-zinc-400">Fee potencia</dt>
-                      <dd class="text-zinc-200 font-mono">{{ formatNumber(row.powerFee, 2) }}</dd>
+                      <dt class="text-muted-foreground">Fee potencia</dt>
+                      <dd class="text-foreground font-mono">{{ formatNumber(row.powerFee, 2) }}</dd>
                     </div>
                   </dl>
                 </div>
 
                 <!-- Block 2: Comercial -->
-                <div class="rounded-lg bg-zinc-900/50 border border-zinc-800/60 p-3">
-                  <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-2">
+                <div class="rounded-lg bg-card border border-border p-3">
+                  <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2">
                     Comercial
                   </p>
                   <dl class="space-y-1 text-[12px]">
                     <div class="flex justify-between gap-2">
-                      <dt class="text-zinc-400">Producto</dt>
-                      <dd class="text-zinc-200 truncate max-w-32">{{ row.product ?? '—' }}</dd>
+                      <dt class="text-muted-foreground">Producto</dt>
+                      <dd class="text-foreground truncate max-w-32">{{ row.product ?? '—' }}</dd>
                     </div>
                     <div class="flex justify-between gap-2">
-                      <dt class="text-zinc-400">% Comisión</dt>
-                      <dd class="text-zinc-200 font-mono">
+                      <dt class="text-muted-foreground">% Comisión</dt>
+                      <dd class="text-foreground font-mono">
                         {{ formatNumber(row.energyCommission, 2) }}
                       </dd>
                     </div>
                     <div class="flex justify-between gap-2">
-                      <dt class="text-zinc-400">Comisión €</dt>
-                      <dd class="text-zinc-200 font-mono">
+                      <dt class="text-muted-foreground">Comisión €</dt>
+                      <dd class="text-foreground font-mono">
                         {{ formatCurrency(row.commissionAmount) }}
                       </dd>
                     </div>
@@ -260,7 +260,7 @@
                   >
                     Ahorro mes
                   </p>
-                  <p class="text-sm font-mono font-bold text-emerald-400">
+                  <p class="text-sm font-mono font-bold text-success">
                     {{ formatCurrency(row.monthlySavings) }}
                   </p>
                 </div>
@@ -270,7 +270,7 @@
                   >
                     Ahorro año
                   </p>
-                  <p class="text-sm font-mono font-bold text-emerald-400">
+                  <p class="text-sm font-mono font-bold text-success">
                     {{ formatCurrency(row.annualSavings) }}
                   </p>
                 </div>
@@ -280,7 +280,7 @@
                   >
                     Ahorro
                   </p>
-                  <p class="text-sm font-mono font-bold text-emerald-400">
+                  <p class="text-sm font-mono font-bold text-success">
                     {{ formatPercent(row.savingsPercent) }}
                   </p>
                 </div>

@@ -1,0 +1,106 @@
+<section class="mx-auto w-full max-w-[720px] rounded-xl border border-border bg-card p-5 sm:p-8" aria-labelledby="ticket-title">
+  <h2 id="ticket-title" class="text-lg font-semibold text-foreground">Abrir ticket</h2>
+  <p class="mt-1 text-sm text-muted-foreground">
+    ¿No encuentra lo que busca? Escríbanos y el equipo de soporte de Apolo le responderá por email.
+  </p>
+
+  <form class="mt-6 flex flex-col gap-5" aria-labelledby="ticket-title" novalidate (submit)="submit($event)">
+
+    <!-- Asunto -->
+    <div class="flex flex-col gap-1.5">
+      <label for="ticket-subject" class="text-sm font-medium text-foreground">Asunto <span class="text-danger" aria-hidden="true">*</span></label>
+      <input #subjectEl id="ticket-subject" name="subject" type="text" required
+             [attr.minlength]="limits.subjectMin" [attr.maxlength]="limits.subjectMax"
+             [value]="subject()" (input)="onInput('subject', $any($event.target).value)" (blur)="onBlur('subject')"
+             [attr.aria-invalid]="errors().subject ? 'true' : null"
+             [attr.aria-describedby]="errors().subject ? 'ticket-subject-error' : null"
+             enterkeyhint="next"
+             class="h-11 w-full rounded-lg border border-border bg-card px-3 text-base text-foreground placeholder:text-muted-foreground sm:text-sm"
+             [class.border-danger]="!!errors().subject" />
+      @if (errors().subject) {
+        <p id="ticket-subject-error" class="flex items-center gap-1.5 text-xs text-danger">
+          <svg class="size-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          {{ errors().subject }}
+        </p>
+      }
+    </div>
+
+    <!-- Categoría: 4 opciones → botones de opción visibles -->
+    <fieldset class="flex flex-col gap-1.5" [attr.aria-describedby]="errors().category ? 'ticket-category-error' : null">
+      <legend class="mb-1.5 text-sm font-medium text-foreground">Categoría <span class="text-danger" aria-hidden="true">*</span></legend>
+      <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        @for (c of categories; track c.value; let first = $first) {
+          <label class="ticket-option flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm transition-colors duration-150"
+                 [class]="category() === c.value ? 'border-primary bg-primary/8 text-foreground' : 'border-border text-foreground hover:bg-accent'">
+            @if (first) {
+              <input #categoryEl type="radio" name="category" required [value]="c.value" [checked]="category() === c.value"
+                     (change)="onInput('category', c.value)" (blur)="onBlur('category')" class="size-4 accent-[var(--color-primary)]" />
+            } @else {
+              <input type="radio" name="category" [value]="c.value" [checked]="category() === c.value"
+                     (change)="onInput('category', c.value)" (blur)="onBlur('category')" class="size-4 accent-[var(--color-primary)]" />
+            }
+            {{ c.label }}
+          </label>
+        }
+      </div>
+      @if (errors().category) {
+        <p id="ticket-category-error" class="flex items-center gap-1.5 text-xs text-danger">
+          <svg class="size-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          {{ errors().category }}
+        </p>
+      }
+    </fieldset>
+
+    <!-- Descripción -->
+    <div class="flex flex-col gap-1.5">
+      <label for="ticket-description" class="text-sm font-medium text-foreground">Descripción <span class="text-danger" aria-hidden="true">*</span></label>
+      <textarea #descriptionEl id="ticket-description" name="description" rows="5" required
+                [attr.minlength]="limits.descriptionMin" [attr.maxlength]="limits.descriptionMax"
+                [value]="description()" (input)="onInput('description', $any($event.target).value)" (blur)="onBlur('description')"
+                [attr.aria-invalid]="errors().description ? 'true' : null"
+                aria-describedby="ticket-description-help ticket-description-error"
+                class="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-base leading-relaxed text-foreground placeholder:text-muted-foreground sm:text-sm"
+                [class.border-danger]="!!errors().description"
+                placeholder="Qué ocurre, desde cuándo y, si aplica, el cliente o CUPS afectado."></textarea>
+      <div class="flex items-start justify-between gap-3">
+        @if (errors().description) {
+          <p id="ticket-description-error" class="flex items-center gap-1.5 text-xs text-danger">
+            <svg class="size-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+            {{ errors().description }}
+          </p>
+        } @else {
+          <p id="ticket-description-help" class="text-xs text-muted-foreground">Cuanto más detalle, antes podremos ayudarle.</p>
+        }
+        <span class="shrink-0 text-xs text-muted-foreground tabular-nums">{{ description().length }}/{{ limits.descriptionMax }}</span>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <button type="submit" [disabled]="sending()"
+              class="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-primary/90 disabled:cursor-wait disabled:opacity-70">
+        @if (sending()) {
+          <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.3" stroke-width="3"/><path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+          Enviando…
+        } @else {
+          Enviar ticket
+        }
+      </button>
+    </div>
+
+    <!-- Resultado anunciado a lectores de pantalla -->
+    <div role="status" aria-live="polite" class="empty:hidden">
+      @if (sentReference(); as ref) {
+        <div class="flex items-start gap-2.5 rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm text-foreground">
+          <svg class="mt-0.5 size-4 shrink-0 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+          <p><strong>Ticket enviado.</strong> Referencia <span class="font-mono tabular-nums">{{ ref }}</span>. Le responderemos por email.</p>
+        </div>
+      }
+      @if (serverError(); as msg) {
+        <div class="flex items-start gap-2.5 rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-foreground">
+          <svg class="mt-0.5 size-4 shrink-0 text-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          <p>{{ msg }}</p>
+        </div>
+      }
+    </div>
+  </form>
+</section>

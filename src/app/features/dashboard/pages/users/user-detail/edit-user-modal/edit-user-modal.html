@@ -14,7 +14,7 @@
           <input formControlName="fullName" placeholder="Juan García"
             [class]="inputCls" [class.border-red-500]="err('fullName')" />
           @if (err('fullName')) {
-            <p class="text-xs text-red-500">{{ errMsg('fullName') }}</p>
+            <p class="text-xs text-danger">{{ errMsg('fullName') }}</p>
           }
         </div>
 
@@ -23,7 +23,7 @@
           <input formControlName="email" type="email" placeholder="correo@ejemplo.com"
             [class]="inputCls" [class.border-red-500]="err('email')" />
           @if (err('email')) {
-            <p class="text-xs text-red-500">{{ errMsg('email') }}</p>
+            <p class="text-xs text-danger">{{ errMsg('email') }}</p>
           }
         </div>
 

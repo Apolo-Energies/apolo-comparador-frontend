@@ -1,3 +1,4 @@
+import { PageHeaderComponent } from '../../../../shared/ui/page-header/page-header';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
@@ -13,6 +14,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DataTableComponent, PaginatorComponent, TableColumn } from '@apolo-energies/table';
 import { AuthService } from '@apolo-energies/auth';
@@ -38,7 +40,7 @@ import {
 @Component({
   selector: 'app-contracts-page',
   standalone: true,
-  imports: [
+  imports: [PageHeaderComponent, 
     DataTableComponent, PaginatorComponent,
     TableSkeletonComponent,
     ContractDetailDrawerComponent,
@@ -183,12 +185,22 @@ export class ContractsPageComponent implements AfterViewInit {
   readonly singleEstado   = singleEstado;
   readonly estadoEntries  = estadoEntries;
 
+  private readonly route = inject(ActivatedRoute);
+
   constructor() {
+    // Enlaces desde el Resumen: ?estado=activo precarga el filtro de estado y
+    // ?tramitacion=1 abre el panel "En tramitación". No cambia la llamada HTTP (ya admite estado).
+    const qp = this.route.snapshot.queryParamMap;
+    const estado = qp.get('estado');
+    if (estado && this.estadoOptions.some(o => o.value === estado)) this.list.filterEstado.set(estado);
+    const abrirTramitacion = qp.get('tramitacion') === '1';
+
     if (isPlatformBrowser(this.platformId)) {
       this.delegationId.set(this.refreshToken.getDelegationIdFromToken());
       if (this.hasDelegation()) {
         this.load();
         this.loadTramitacion();
+        if (abrirTramitacion && !this.showTramitacion()) this.toggleTramitacion();
       }
       // Cuando Mensatek avisa de una firma, el backend lo emite por SignalR y la página actual se
       // recarga en segundo plano: el "Firmado" aparece sin recargar. Solo si hay filas pendientes de firma.

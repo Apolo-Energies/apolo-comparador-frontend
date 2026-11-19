@@ -1,12 +1,12 @@
 <!-- Cell templates -->
 <ng-template #tipoTpl let-row>
   @if (row.TipoEnergia === 'gas') {
-    <span class="badge bg-sky-500/10 text-sky-400">
+    <span class="badge bg-sky-500/10 text-sky-700">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-3 2-4 2-7 1.5 1 2 2.5 2 4 1-2 1-5 1-8Z"/></svg>
       Gas
     </span>
   } @else if (row.TipoEnergia === 'luz') {
-    <span class="badge bg-yellow-500/10 text-yellow-400">
+    <span class="badge bg-amber-500/10 text-amber-700">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
       Luz
     </span>
@@ -27,11 +27,11 @@
 </ng-template>
 
 <ng-template #fechaInicioTpl let-row>
-  <span class="text-sm text-muted-foreground whitespace-nowrap">{{ fmtDate(row.FechaInicio) }}</span>
+  <span class="text-sm text-foreground tabular-nums whitespace-nowrap">{{ fmtDate(row.FechaInicio) }}</span>
 </ng-template>
 
 <ng-template #fechaFinTpl let-row>
-  <span class="text-sm text-muted-foreground whitespace-nowrap">{{ fmtDate(row.FechaFin) }}</span>
+  <span class="text-sm text-foreground tabular-nums whitespace-nowrap">{{ fmtDate(row.FechaFin) }}</span>
 </ng-template>
 
 <ng-template #firmaTpl let-row>
@@ -40,22 +40,22 @@
   } @else {
     @switch (row.EstadoFirma) {
       @case ('firmado') {
-        <span class="badge bg-[#1AD5981A] text-[#1AD598]">
+        <span class="badge bg-success/10 text-success">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
           Firmado
         </span>
       }
       @case ('pendiente') {
-        <span class="badge bg-amber-500/10 text-amber-400">
+        <span class="badge bg-warning/10 text-warning">
           <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
           Pendiente de firma
         </span>
       }
       @case ('expirado') {
-        <span class="badge bg-zinc-500/10 text-zinc-400">Firma expirada</span>
+        <span class="badge bg-muted text-muted-foreground">Firma expirada</span>
       }
       @case ('cancelado') {
-        <span class="badge bg-red-500/10 text-red-400">Firma cancelada</span>
+        <span class="badge bg-danger/10 text-danger">Firma cancelada</span>
       }
       @default {
         <span class="text-xs text-muted-foreground">—</span>
@@ -66,7 +66,7 @@
 
 <ng-template #incidenciaTpl let-row>
   @if (row.TieneIncidencia) {
-    <span class="badge bg-orange-500/10 text-orange-400">
+    <span class="badge bg-orange-500/10 text-orange-700">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       Sí
     </span>
@@ -134,6 +134,8 @@
                      [value]="colFilters().incidencia" (valueChange)="setColFilter({ incidencia: $event })" />
 </ng-template>
 
+<app-page-header title="Contratos" subtitle="Haga clic en un contrato para ver su detalle, el contrato firmado y las facturas." />
+
 <div class="border border-border rounded-xl overflow-hidden bg-card">
 
   @if (!hasDelegation()) {
@@ -142,8 +144,8 @@
         <path d="M12 2 3 6v6c0 5 3.8 8.4 9 10 5.2-1.6 9-5 9-10V6l-9-4Z"/>
         <line x1="12" y1="10" x2="12" y2="14"/><line x1="12" y1="17" x2="12.01" y2="17"/>
       </svg>
-      <p class="text-sm font-medium text-foreground">No tenés una delegación asignada</p>
-      <p class="text-xs mt-1 max-w-sm">Contactá a un administrador para que te asigne una delegación y puedas ver tus contratos.</p>
+      <p class="text-sm font-medium text-foreground">No tiene una delegación asignada</p>
+      <p class="text-xs mt-1 max-w-sm">Contacte con un administrador para que le asigne una delegación y pueda ver sus contratos.</p>
     </div>
   } @else {
 
@@ -151,13 +153,13 @@
   <div class="bg-card px-5 py-4 space-y-3">
     <div class="flex flex-col lg:flex-row lg:items-center gap-3">
       <div class="flex flex-wrap items-center gap-2">
-        <div class="inline-flex items-center rounded-md border border-border bg-background p-0.5" role="group" aria-label="Tipo de suministro">
+        <div class="inline-flex items-center gap-0.5 rounded-lg border border-border bg-background p-[3px]" role="group" aria-label="Tipo de suministro">
           @for (t of tipoOptions; track t.value) {
             <button type="button"
                     (click)="onTipoChange(t.value)"
-                    class="px-3 py-1 text-xs font-medium rounded transition-colors"
-                    [class.bg-accent]="filterTipo() === t.value" [class.text-foreground]="filterTipo() === t.value"
-                    [class.text-muted-foreground]="filterTipo() !== t.value"
+                    class="px-3 py-1 text-xs font-medium rounded-md transition-colors duration-150"
+                    [class.bg-primary]="filterTipo() === t.value" [class.text-white]="filterTipo() === t.value"
+                    [class.text-muted-foreground]="filterTipo() !== t.value" [class.hover:bg-accent]="filterTipo() !== t.value"
                     [attr.aria-pressed]="filterTipo() === t.value">
               {{ t.label }}
             </button>
@@ -167,7 +169,7 @@
         <button type="button"
                 (click)="toggleTramitacion()"
                 class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-md border transition-colors"
-                [class.bg-amber-500/10]="showTramitacion()" [class.text-amber-300]="showTramitacion()"
+                [class.bg-amber-500/10]="showTramitacion()" [class.text-amber-700]="showTramitacion()"
                 [class.border-amber-500/40]="showTramitacion()"
                 [class.text-muted-foreground]="!showTramitacion()" [class.border-border]="!showTramitacion()"
                 [class.hover:text-foreground]="!showTramitacion()"
@@ -175,7 +177,7 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           En tramitación
           @if (tramitacionItems().length > 0) {
-            <span class="inline-flex items-center px-1.5 rounded text-[10px] font-mono bg-amber-500/15 text-amber-300">
+            <span class="inline-flex items-center px-1.5 rounded text-[10px] font-semibold tabular-nums bg-amber-500/15 text-amber-700">
               {{ tramitacionItems().length }}
             </span>
           }
@@ -197,7 +199,7 @@
           </label>
 
           <button type="button" (click)="onSearch()"
-                  class="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold rounded-md bg-primary-button text-white hover:opacity-90 transition-opacity">
+                  class="inline-flex items-center gap-1.5 h-8 px-3.5 text-xs font-semibold rounded-md bg-primary text-white hover:bg-primary/90 transition-colors">
             Buscar
           </button>
         </div>
@@ -294,13 +296,14 @@
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-3 opacity-40" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           @if (hasAnyFilter) {
             <p class="text-sm font-medium text-foreground">Ningún contrato cumple estos filtros</p>
-            <p class="text-xs mt-1">Ajustá los filtros de las columnas o quitalos todos.</p>
+            <p class="text-xs mt-1">Ajuste los filtros de las columnas o quítelos todos.</p>
             <button type="button" (click)="onClear()"
                     class="mt-4 inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-border text-xs font-medium text-foreground hover:bg-accent transition-colors">
               Limpiar filtros
             </button>
           } @else {
-            <p class="text-sm">Sin contratos todavía</p>
+            <p class="text-sm font-medium text-foreground">Todavía no hay contratos</p>
+            <p class="text-xs mt-1">Cuando un cliente firme, su contrato aparecerá aquí.</p>
           }
         </div>
       }

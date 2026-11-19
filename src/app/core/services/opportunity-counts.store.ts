@@ -8,6 +8,8 @@ export class OpportunityCountsStore {
   private oppService = inject(OpportunityService);
 
   readonly badges = signal<OpportunitySidebarBadges | null>(null);
+  /** La última carga falló (para mostrar "Reintentar" en vez de cargar sin fin). */
+  readonly failed = signal(false);
   private fetching = false;
 
   update(badges: OpportunitySidebarBadges): void {
@@ -17,9 +19,10 @@ export class OpportunityCountsStore {
   ensureLoaded(): void {
     if (this.badges() !== null || this.fetching) return;
     this.fetching = true;
+    this.failed.set(false);
     this.oppService.summary().subscribe({
       next: badges => { this.badges.set(badges); this.fetching = false; },
-      error: () => { this.fetching = false; },
+      error: () => { this.fetching = false; this.failed.set(true); },
     });
   }
 }

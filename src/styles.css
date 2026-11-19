@@ -10,6 +10,15 @@
 
 @layer theme, base, components, utilities;
 
+/* dark: — dentro del portal sigue al tema elegido (.portal-dark sí,
+   .portal-light nunca); fuera del portal (login, páginas públicas) sigue al sistema, como antes. */
+@custom-variant dark {
+  &:where(.portal-dark, .portal-dark *) { @slot; }
+  @media (prefers-color-scheme: dark) {
+    &:not(:where(.portal-light, .portal-light *, .portal-dark, .portal-dark *)) { @slot; }
+  }
+}
+
 @theme {
   --font-sans: 'Space Grotesk', system-ui, sans-serif;
 
@@ -48,6 +57,11 @@
   /* — Muted (textos secundarios y backgrounds suaves) — */
   --color-muted:             #27272a;  /* zinc-800 */
   --color-muted-foreground:  #a1a1aa;  /* zinc-400 */
+
+  /* — Estados — */
+  --color-success:           #1AD598;
+  --color-warning:           #f59e0b;
+  --color-danger:            #ef4444;
 }
 
 @layer base {
@@ -198,6 +212,25 @@ lib-apolo-sidebar > div > aside,
 lib-apolo-sidebar aside {
   background-color: #17181A;
 }
+
+/* Menú lateral fuera de pantalla en escritorio.
+   En móvil el contenedor no se transforma: un transform crearía un bloque contenedor
+   para el drawer `fixed` del paquete y lo descolocaría. */
+@media (min-width: 768px) {
+  .app-menu {
+    transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms ease-out;
+  }
+  .app-menu[data-open="false"] { transform: translateX(-100%); }
+  .app-menu[data-open="true"]  { box-shadow: 12px 0 40px -12px rgba(0, 0, 0, 0.7); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-menu { transition: none; }
+}
+/* El sidebar del paquete usa h-full: su host debe ocupar el alto del contenedor fijo. */
+.app-menu lib-apolo-sidebar { display: block; height: 100%; }
+.app-menu lib-apolo-sidebar > .md\:block { height: 100%; }
+/* Durante el tour, el menú sube sobre el fondo del overlay de CDK (z-index 1000). */
+.app-menu[data-tour="true"] { z-index: 1001; }
 
 lib-apolo-sidebar lib-sidebar-section {
   flex: 1;
@@ -586,3 +619,1390 @@ html.apolo-public, html.apolo-public body { background-color: #ffffff; }
   outline-offset: 3px;
   border-radius: 8px;
 }
+
+/* Inicio: el borde de la tarjeta toma el color de su herramienta. */
+.home-tile:hover,
+.home-tile:focus-visible { border-color: var(--tc); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); }
+.home-tile:focus-visible { outline: 2px solid var(--tc); outline-offset: 2px; }
+
+/* ═══ Portal claro ══════════════
+   El portal autenticado va en blanco. Layout añade `portal-light`
+   al <body> mientras está montado: así lo heredan también los modales, drawers y
+   overlays que se pintan fuera del layout. El login y las páginas públicas no cambian.
+   ═══════════════════════════════════════════════════════════════════════════ */
+body.portal-light {
+  --color-background:          #ffffff;
+  --color-body:                #ffffff;
+  --color-foreground:          #111111;
+
+  --color-card:                #ffffff;
+  --color-card-foreground:     #111111;
+  --color-popover:             #ffffff;
+  --color-popover-foreground:  #111111;
+
+  --color-primary:             #0872ad;  /* azul de marca oscurecido: 5,2:1 sobre blanco (AA) */
+  --color-primary-foreground:  #ffffff;
+  --color-primary-button:      #12AFF0;
+  --color-primary-button-foreground: #04131B;
+
+  --color-secondary:           #f6f7f9;
+  --color-secondary-foreground:#111111;
+  --color-accent:              #f1f3f5;  /* hover y selección */
+  --color-accent-foreground:   #111111;
+
+  --color-destructive:         #b3261e;
+  --color-destructive-foreground:#ffffff;
+
+  --color-border:              #e8e8e8;
+  --color-input:               #ffffff;
+  --color-ring:                #94a3b8;
+
+  --color-muted:               #f6f7f9;
+  --color-muted-foreground:    #6b6b6b;
+
+  --color-success:             #176f42;
+  --color-warning:             #965800;
+  --color-danger:              #b3261e;
+
+  background-color: #ffffff;
+  color: #111111;
+  color-scheme: light;
+}
+html:has(body.portal-light) { background-color: #ffffff; }
+body.portal-light input[type="date"] { color-scheme: light; }
+body.portal-light input[type="date"]::-webkit-calendar-picker-indicator { filter: none !important; opacity: 0.6; }
+body.portal-light ::selection { background-color: rgba(18, 175, 240, 0.22); }
+
+/* PrimeNG: sus variables se declaran sobre cada componente, hay que repetirlas aquí. */
+body.portal-light,
+body.portal-light .p-component,
+body.portal-light [class*="p-"] {
+  --surface-ground:  #ffffff;
+  --surface-section: #ffffff;
+  --surface-card:    #ffffff;
+  --surface-overlay: #ffffff;
+  --surface-border:  #e8e8e8;
+  --surface-hover:   #f1f3f5;
+  --p-content-background:        #ffffff;
+  --p-content-hover-background:  #f1f3f5;
+  --p-content-border-color:      #e8e8e8;
+  --p-content-color:             #111111;
+  --p-content-hover-color:       #111111;
+  --p-form-field-background:     #ffffff;
+  --p-form-field-disabled-background:#f6f7f9;
+  --p-form-field-filled-background:  #f6f7f9;
+  --p-form-field-border-color:   #e8e8e8;
+  --p-form-field-hover-border-color: #cbd5e1;
+  --p-form-field-focus-border-color: #0872ad;
+  --p-form-field-color:          #111111;
+  --p-form-field-placeholder-color:#6b6b6b;
+  --p-overlay-modal-background:  #ffffff;
+  --p-overlay-modal-border-color:#e8e8e8;
+  --p-overlay-popover-background:#ffffff;
+  --p-overlay-popover-border-color:#e8e8e8;
+  --p-text-color:                #111111;
+  --p-text-muted-color:          #6b6b6b;
+  --p-text-hover-color:          #111111;
+  --p-primary-color:             #0872ad;
+  --p-primary-hover-color:       #06608f;
+  --p-primary-active-color:      #05517a;
+  --p-button-primary-background: #0872ad;
+  --p-button-primary-hover-background:#06608f;
+  --p-button-primary-active-background:#05517a;
+  --p-button-primary-border-color:#0872ad;
+  --p-focus-ring-color:          #0872ad;
+}
+body.portal-light .p-dialog { box-shadow: 0 20px 48px -12px rgba(17, 17, 17, 0.18) !important; }
+body.portal-light .p-dialog-mask { background-color: rgba(17, 17, 17, 0.35) !important; }
+
+/* ngx-editor (plantillas) */
+body.portal-light .NgxEditor__MenuBar { background-color: #f6f7f9 !important; }
+body.portal-light .NgxEditor,
+body.portal-light .NgxEditor__Content hr::after { background-color: #ffffff !important; }
+
+/* Menú lateral del paquete */
+body.portal-light lib-apolo-sidebar > div > aside,
+body.portal-light lib-apolo-sidebar aside { background-color: #ffffff; border-right: 1px solid #e8e8e8; }
+body.portal-light lib-apolo-sidebar .text-\[\#99B2C6\] { color: #6b6b6b; letter-spacing: 0.06em; }
+body.portal-light lib-apolo-sidebar lib-sidebar-item button.bg-accent { background-color: rgba(18, 175, 240, 0.12) !important; color: #0872ad; }
+body.portal-light lib-apolo-sidebar lib-sidebar-item button:hover { background-color: #f6f7f9; }
+body.portal-light .app-menu[data-open="true"] { box-shadow: 6px 0 24px rgba(0, 0, 0, 0.08); }
+body.portal-light lib-data-table tbody tr:hover { background-color: #f6f7f9 !important; }
+
+/* Logo de tenant blanco sin versión oscura (Coexpal): se oscurece. */
+body.portal-light.logo-invert lib-apolo-sidebar img,
+body.portal-light.logo-invert .tenant-logo { filter: brightness(0); opacity: 0.88; }
+
+/* Loaders del layout (sin velo oscuro): pista del anillo visible sobre blanco. */
+body.portal-light .portal-loader svg circle:first-child { stroke: rgba(17, 17, 17, 0.08); }
+
+/* Badge de oportunidades del menú */
+body.portal-light lib-apolo-sidebar a[href$="/analytics/opportunities/luz"] lib-sidebar-item button::after,
+body.portal-light lib-apolo-sidebar a[href$="/analytics/opportunities/gas"] lib-sidebar-item button::after,
+body.portal-light lib-apolo-sidebar lib-sidebar-item button[data-opp-parent="true"]::after { background: #e6f4ec; color: #1a7f4b; }
+
+/* ── Compatibilidad: clases pensadas para fondo oscuro ────────────────────
+   Pantallas aún no migradas usan grises y colores claros fijos (zinc-100…300,
+   *-400) que sobre blanco no se leen. Se reinterpretan aquí; al migrar cada
+   pantalla a tokens, estas reglas dejan de aplicarle. */
+body.portal-light .text-zinc-50,
+body.portal-light .text-zinc-100,
+body.portal-light .text-gray-100,
+body.portal-light .text-gray-200,
+body.portal-light .text-zinc-200 { color: #111111; }
+body.portal-light .text-zinc-300 { color: #3f3f46; }
+body.portal-light .text-zinc-400 { color: #6b6b6b; }
+body.portal-light .text-zinc-500 { color: #71717a; }
+body.portal-light .bg-zinc-950,
+body.portal-light .bg-zinc-900,
+body.portal-light .bg-gray-900,
+body.portal-light .bg-slate-900 { background-color: #f6f7f9; }
+body.portal-light .bg-zinc-800,
+body.portal-light .bg-gray-800,
+body.portal-light .bg-slate-800 { background-color: #f1f3f5; }
+body.portal-light .bg-zinc-700 { background-color: #e8e8e8; }
+body.portal-light .border-zinc-800,
+body.portal-light .border-zinc-700 { border-color: #e8e8e8; }
+body.portal-light .border-zinc-600 { border-color: #d4d4d8; }
+body.portal-light .hover\:bg-zinc-800:hover,
+body.portal-light .hover\:bg-zinc-700:hover { background-color: #f1f3f5; }
+body.portal-light .text-\[\#1AD598\] { color: #1a7f4b; }
+body.portal-light .text-\[\#ef4444\] { color: #b3261e; }
+body.portal-light .bg-\[\#1e1e2e\],
+body.portal-light .bg-\[\#0a0b0d\] { background-color: #f6f7f9; }
+  body.portal-light .text-red-200,
+  body.portal-light .hover\:text-red-200:hover,
+  body.portal-light .group:hover .group-hover\:text-red-200,
+  body.portal-light .text-red-300,
+  body.portal-light .hover\:text-red-300:hover,
+  body.portal-light .group:hover .group-hover\:text-red-300,
+  body.portal-light .text-red-400,
+  body.portal-light .hover\:text-red-400:hover,
+  body.portal-light .group:hover .group-hover\:text-red-400 { color: #b91c1c; }
+  body.portal-light .text-rose-200,
+  body.portal-light .hover\:text-rose-200:hover,
+  body.portal-light .group:hover .group-hover\:text-rose-200,
+  body.portal-light .text-rose-300,
+  body.portal-light .hover\:text-rose-300:hover,
+  body.portal-light .group:hover .group-hover\:text-rose-300,
+  body.portal-light .text-rose-400,
+  body.portal-light .hover\:text-rose-400:hover,
+  body.portal-light .group:hover .group-hover\:text-rose-400 { color: #be123c; }
+  body.portal-light .text-emerald-200,
+  body.portal-light .hover\:text-emerald-200:hover,
+  body.portal-light .group:hover .group-hover\:text-emerald-200,
+  body.portal-light .text-emerald-300,
+  body.portal-light .hover\:text-emerald-300:hover,
+  body.portal-light .group:hover .group-hover\:text-emerald-300,
+  body.portal-light .text-emerald-400,
+  body.portal-light .hover\:text-emerald-400:hover,
+  body.portal-light .group:hover .group-hover\:text-emerald-400 { color: #047857; }
+  body.portal-light .text-green-200,
+  body.portal-light .hover\:text-green-200:hover,
+  body.portal-light .group:hover .group-hover\:text-green-200,
+  body.portal-light .text-green-300,
+  body.portal-light .hover\:text-green-300:hover,
+  body.portal-light .group:hover .group-hover\:text-green-300,
+  body.portal-light .text-green-400,
+  body.portal-light .hover\:text-green-400:hover,
+  body.portal-light .group:hover .group-hover\:text-green-400 { color: #15803d; }
+  body.portal-light .text-amber-200,
+  body.portal-light .hover\:text-amber-200:hover,
+  body.portal-light .group:hover .group-hover\:text-amber-200,
+  body.portal-light .text-amber-300,
+  body.portal-light .hover\:text-amber-300:hover,
+  body.portal-light .group:hover .group-hover\:text-amber-300,
+  body.portal-light .text-amber-400,
+  body.portal-light .hover\:text-amber-400:hover,
+  body.portal-light .group:hover .group-hover\:text-amber-400 { color: #b45309; }
+  body.portal-light .text-yellow-200,
+  body.portal-light .hover\:text-yellow-200:hover,
+  body.portal-light .group:hover .group-hover\:text-yellow-200,
+  body.portal-light .text-yellow-300,
+  body.portal-light .hover\:text-yellow-300:hover,
+  body.portal-light .group:hover .group-hover\:text-yellow-300,
+  body.portal-light .text-yellow-400,
+  body.portal-light .hover\:text-yellow-400:hover,
+  body.portal-light .group:hover .group-hover\:text-yellow-400 { color: #a16207; }
+  body.portal-light .text-blue-200,
+  body.portal-light .hover\:text-blue-200:hover,
+  body.portal-light .group:hover .group-hover\:text-blue-200,
+  body.portal-light .text-blue-300,
+  body.portal-light .hover\:text-blue-300:hover,
+  body.portal-light .group:hover .group-hover\:text-blue-300,
+  body.portal-light .text-blue-400,
+  body.portal-light .hover\:text-blue-400:hover,
+  body.portal-light .group:hover .group-hover\:text-blue-400 { color: #1d4ed8; }
+  body.portal-light .text-sky-200,
+  body.portal-light .hover\:text-sky-200:hover,
+  body.portal-light .group:hover .group-hover\:text-sky-200,
+  body.portal-light .text-sky-300,
+  body.portal-light .hover\:text-sky-300:hover,
+  body.portal-light .group:hover .group-hover\:text-sky-300,
+  body.portal-light .text-sky-400,
+  body.portal-light .hover\:text-sky-400:hover,
+  body.portal-light .group:hover .group-hover\:text-sky-400 { color: #0369a1; }
+  body.portal-light .text-cyan-200,
+  body.portal-light .hover\:text-cyan-200:hover,
+  body.portal-light .group:hover .group-hover\:text-cyan-200,
+  body.portal-light .text-cyan-300,
+  body.portal-light .hover\:text-cyan-300:hover,
+  body.portal-light .group:hover .group-hover\:text-cyan-300,
+  body.portal-light .text-cyan-400,
+  body.portal-light .hover\:text-cyan-400:hover,
+  body.portal-light .group:hover .group-hover\:text-cyan-400 { color: #0e7490; }
+  body.portal-light .text-violet-200,
+  body.portal-light .hover\:text-violet-200:hover,
+  body.portal-light .group:hover .group-hover\:text-violet-200,
+  body.portal-light .text-violet-300,
+  body.portal-light .hover\:text-violet-300:hover,
+  body.portal-light .group:hover .group-hover\:text-violet-300,
+  body.portal-light .text-violet-400,
+  body.portal-light .hover\:text-violet-400:hover,
+  body.portal-light .group:hover .group-hover\:text-violet-400 { color: #6d28d9; }
+  body.portal-light .text-purple-200,
+  body.portal-light .hover\:text-purple-200:hover,
+  body.portal-light .group:hover .group-hover\:text-purple-200,
+  body.portal-light .text-purple-300,
+  body.portal-light .hover\:text-purple-300:hover,
+  body.portal-light .group:hover .group-hover\:text-purple-300,
+  body.portal-light .text-purple-400,
+  body.portal-light .hover\:text-purple-400:hover,
+  body.portal-light .group:hover .group-hover\:text-purple-400 { color: #7e22ce; }
+  body.portal-light .text-orange-200,
+  body.portal-light .hover\:text-orange-200:hover,
+  body.portal-light .group:hover .group-hover\:text-orange-200,
+  body.portal-light .text-orange-300,
+  body.portal-light .hover\:text-orange-300:hover,
+  body.portal-light .group:hover .group-hover\:text-orange-300,
+  body.portal-light .text-orange-400,
+  body.portal-light .hover\:text-orange-400:hover,
+  body.portal-light .group:hover .group-hover\:text-orange-400 { color: #c2410c; }
+  body.portal-light .text-teal-200,
+  body.portal-light .hover\:text-teal-200:hover,
+  body.portal-light .group:hover .group-hover\:text-teal-200,
+  body.portal-light .text-teal-300,
+  body.portal-light .hover\:text-teal-300:hover,
+  body.portal-light .group:hover .group-hover\:text-teal-300,
+  body.portal-light .text-teal-400,
+  body.portal-light .hover\:text-teal-400:hover,
+  body.portal-light .group:hover .group-hover\:text-teal-400 { color: #0f766e; }
+  body.portal-light .text-indigo-200,
+  body.portal-light .hover\:text-indigo-200:hover,
+  body.portal-light .group:hover .group-hover\:text-indigo-200,
+  body.portal-light .text-indigo-300,
+  body.portal-light .hover\:text-indigo-300:hover,
+  body.portal-light .group:hover .group-hover\:text-indigo-300,
+  body.portal-light .text-indigo-400,
+  body.portal-light .hover\:text-indigo-400:hover,
+  body.portal-light .group:hover .group-hover\:text-indigo-400 { color: #4338ca; }
+  body.portal-light .text-pink-200,
+  body.portal-light .hover\:text-pink-200:hover,
+  body.portal-light .group:hover .group-hover\:text-pink-200,
+  body.portal-light .text-pink-300,
+  body.portal-light .hover\:text-pink-300:hover,
+  body.portal-light .group:hover .group-hover\:text-pink-300,
+  body.portal-light .text-pink-400,
+  body.portal-light .hover\:text-pink-400:hover,
+  body.portal-light .group:hover .group-hover\:text-pink-400 { color: #be185d; }
+  body.portal-light .text-lime-200,
+  body.portal-light .hover\:text-lime-200:hover,
+  body.portal-light .group:hover .group-hover\:text-lime-200,
+  body.portal-light .text-lime-300,
+  body.portal-light .hover\:text-lime-300:hover,
+  body.portal-light .group:hover .group-hover\:text-lime-300,
+  body.portal-light .text-lime-400,
+  body.portal-light .hover\:text-lime-400:hover,
+  body.portal-light .group:hover .group-hover\:text-lime-400 { color: #4d7c0f; }
+  body.portal-light .text-fuchsia-200,
+  body.portal-light .hover\:text-fuchsia-200:hover,
+  body.portal-light .group:hover .group-hover\:text-fuchsia-200,
+  body.portal-light .text-fuchsia-300,
+  body.portal-light .hover\:text-fuchsia-300:hover,
+  body.portal-light .group:hover .group-hover\:text-fuchsia-300,
+  body.portal-light .text-fuchsia-400,
+  body.portal-light .hover\:text-fuchsia-400:hover,
+  body.portal-light .group:hover .group-hover\:text-fuchsia-400 { color: #a21caf; }
+
+/* Paginador del paquete: la página activa usa bg-accent + text-white, ilegible en claro. */
+body.portal-light lib-paginator button.bg-accent.text-white {
+  background-color: #12AFF0;
+  border-color: #12AFF0;
+  color: #04131B;
+}
+
+/* Estados de oportunidad en el portal claro. */
+body.portal-light .opp-badge-pending { background-color: #e8f0fe; color: #2563eb; --tw-ring-color: color-mix(in srgb, #2563eb 22%, transparent); }
+body.portal-light .opp-dot-pending { background-color: #2563eb; }
+body.portal-light .opp-icon-pending { color: #2563eb; --tw-ring-color: color-mix(in srgb, #2563eb 22%, transparent); }
+body.portal-light .opp-badge-negotiation { background-color: #fdf3dc; color: #b7791f; --tw-ring-color: color-mix(in srgb, #b7791f 22%, transparent); }
+body.portal-light .opp-dot-negotiation { background-color: #b7791f; }
+body.portal-light .opp-icon-negotiation { color: #b7791f; --tw-ring-color: color-mix(in srgb, #b7791f 22%, transparent); }
+body.portal-light .opp-badge-won { background-color: #e6f4ec; color: #1a7f4b; --tw-ring-color: color-mix(in srgb, #1a7f4b 22%, transparent); }
+body.portal-light .opp-dot-won { background-color: #1a7f4b; }
+body.portal-light .opp-icon-won { color: #1a7f4b; --tw-ring-color: color-mix(in srgb, #1a7f4b 22%, transparent); }
+body.portal-light .opp-badge-lost { background-color: #fde8f0; color: #c2255c; --tw-ring-color: color-mix(in srgb, #c2255c 22%, transparent); }
+body.portal-light .opp-dot-lost { background-color: #c2255c; }
+body.portal-light .opp-icon-lost { color: #c2255c; --tw-ring-color: color-mix(in srgb, #c2255c 22%, transparent); }
+body.portal-light .opp-badge-finalized { background-color: #e3f4f1; color: #0f766e; --tw-ring-color: color-mix(in srgb, #0f766e 22%, transparent); }
+body.portal-light .opp-dot-finalized { background-color: #0f766e; }
+body.portal-light .opp-icon-finalized { color: #0f766e; --tw-ring-color: color-mix(in srgb, #0f766e 22%, transparent); }
+body.portal-light .opp-badge-cancelled { background-color: #eef1f5; color: #64748b; --tw-ring-color: color-mix(in srgb, #64748b 22%, transparent); }
+body.portal-light .opp-dot-cancelled { background-color: #64748b; }
+body.portal-light .opp-icon-cancelled { color: #64748b; --tw-ring-color: color-mix(in srgb, #64748b 22%, transparent); }
+body.portal-light .opp-badge-meeting { background-color: #e2f5f8; color: #0e7490; --tw-ring-color: color-mix(in srgb, #0e7490 22%, transparent); }
+body.portal-light .opp-dot-meeting { background-color: #0e7490; }
+body.portal-light .opp-icon-meeting { color: #0e7490; --tw-ring-color: color-mix(in srgb, #0e7490 22%, transparent); }
+body.portal-light .opp-badge-contract-sent { background-color: #efe9fd; color: #6d28d9; --tw-ring-color: color-mix(in srgb, #6d28d9 22%, transparent); }
+body.portal-light .opp-dot-contract-sent { background-color: #6d28d9; }
+body.portal-light .opp-icon-contract-sent { color: #6d28d9; --tw-ring-color: color-mix(in srgb, #6d28d9 22%, transparent); }
+body.portal-light .opp-badge-contract-signed { background-color: #f4e8fd; color: #7e22ce; --tw-ring-color: color-mix(in srgb, #7e22ce 22%, transparent); }
+body.portal-light .opp-dot-contract-signed { background-color: #7e22ce; }
+body.portal-light .opp-icon-contract-signed { color: #7e22ce; --tw-ring-color: color-mix(in srgb, #7e22ce 22%, transparent); }
+body.portal-light .opp-badge-nurturing { background-color: #fdeee6; color: #c2410c; --tw-ring-color: color-mix(in srgb, #c2410c 22%, transparent); }
+body.portal-light .opp-dot-nurturing { background-color: #c2410c; }
+body.portal-light .opp-icon-nurturing { color: #c2410c; --tw-ring-color: color-mix(in srgb, #c2410c 22%, transparent); }
+
+/* ═══ Contraste del portal claro ═══════════════════
+   Medido sobre todas las plantillas. Texto ≥ 4,5:1;
+   bordes de campos de formulario ≥ 3:1. */
+/* Grises con opacidad: sobre blanco bajaban a 1,8–4,3. */
+body.portal-light .text-muted-foreground\/30,
+body.portal-light .text-muted-foreground\/40,
+body.portal-light .text-muted-foreground\/50,
+body.portal-light .text-muted-foreground\/60,
+body.portal-light .text-muted-foreground\/70,
+body.portal-light .text-muted-foreground\/75,
+body.portal-light .text-muted-foreground\/80,
+body.portal-light .text-muted-foreground\/90 { color: #6b6b6b; }
+body.portal-light .text-primary\/80,
+body.portal-light .text-primary\/70 { color: var(--color-primary); }
+/* El azul de marca #12AFF0 no sirve como texto (2,5:1): se usa el azul oscurecido. */
+body.portal-light .text-primary-button,
+body.portal-light .hover\:text-primary-button:hover { color: var(--color-primary); }
+/* Bordes de campos: #e8e8e8 (1,2:1) no delimita el control. */
+body.portal-light input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+body.portal-light select,
+body.portal-light textarea { border-color: #8b9199; }
+body.portal-light input:focus, body.portal-light select:focus, body.portal-light textarea:focus { border-color: var(--color-primary); }
+/* Tonos 500/600 como texto o fondo de botón con texto blanco → tono 700. */
+body.portal-light .text-red-500,
+body.portal-light .hover\:text-red-500:hover,
+body.portal-light .text-red-600,
+body.portal-light .hover\:text-red-600:hover,
+body.portal-light .text-red-200\/50,
+body.portal-light .text-red-200\/60,
+body.portal-light .text-red-200\/70,
+body.portal-light .text-red-200\/75,
+body.portal-light .text-red-200\/80,
+body.portal-light .text-red-200\/90,
+body.portal-light .text-red-300\/50,
+body.portal-light .text-red-300\/60,
+body.portal-light .text-red-300\/70,
+body.portal-light .text-red-300\/75,
+body.portal-light .text-red-300\/80,
+body.portal-light .text-red-300\/90,
+body.portal-light .text-red-400\/50,
+body.portal-light .text-red-400\/60,
+body.portal-light .text-red-400\/70,
+body.portal-light .text-red-400\/75,
+body.portal-light .text-red-400\/80,
+body.portal-light .text-red-400\/90,
+body.portal-light .text-red-500\/50,
+body.portal-light .text-red-500\/60,
+body.portal-light .text-red-500\/70,
+body.portal-light .text-red-500\/75,
+body.portal-light .text-red-500\/80,
+body.portal-light .text-red-500\/90,
+body.portal-light .text-red-600\/50,
+body.portal-light .text-red-600\/60,
+body.portal-light .text-red-600\/70,
+body.portal-light .text-red-600\/75,
+body.portal-light .text-red-600\/80,
+body.portal-light .text-red-600\/90 { color: #b91c1c; }
+body.portal-light .bg-red-500.text-white,
+body.portal-light .bg-red-600.text-white { background-color: #b91c1c; }
+body.portal-light .text-rose-500,
+body.portal-light .hover\:text-rose-500:hover,
+body.portal-light .text-rose-600,
+body.portal-light .hover\:text-rose-600:hover,
+body.portal-light .text-rose-200\/50,
+body.portal-light .text-rose-200\/60,
+body.portal-light .text-rose-200\/70,
+body.portal-light .text-rose-200\/75,
+body.portal-light .text-rose-200\/80,
+body.portal-light .text-rose-200\/90,
+body.portal-light .text-rose-300\/50,
+body.portal-light .text-rose-300\/60,
+body.portal-light .text-rose-300\/70,
+body.portal-light .text-rose-300\/75,
+body.portal-light .text-rose-300\/80,
+body.portal-light .text-rose-300\/90,
+body.portal-light .text-rose-400\/50,
+body.portal-light .text-rose-400\/60,
+body.portal-light .text-rose-400\/70,
+body.portal-light .text-rose-400\/75,
+body.portal-light .text-rose-400\/80,
+body.portal-light .text-rose-400\/90,
+body.portal-light .text-rose-500\/50,
+body.portal-light .text-rose-500\/60,
+body.portal-light .text-rose-500\/70,
+body.portal-light .text-rose-500\/75,
+body.portal-light .text-rose-500\/80,
+body.portal-light .text-rose-500\/90,
+body.portal-light .text-rose-600\/50,
+body.portal-light .text-rose-600\/60,
+body.portal-light .text-rose-600\/70,
+body.portal-light .text-rose-600\/75,
+body.portal-light .text-rose-600\/80,
+body.portal-light .text-rose-600\/90 { color: #be123c; }
+body.portal-light .bg-rose-500.text-white,
+body.portal-light .bg-rose-600.text-white { background-color: #be123c; }
+body.portal-light .text-emerald-500,
+body.portal-light .hover\:text-emerald-500:hover,
+body.portal-light .text-emerald-600,
+body.portal-light .hover\:text-emerald-600:hover,
+body.portal-light .text-emerald-200\/50,
+body.portal-light .text-emerald-200\/60,
+body.portal-light .text-emerald-200\/70,
+body.portal-light .text-emerald-200\/75,
+body.portal-light .text-emerald-200\/80,
+body.portal-light .text-emerald-200\/90,
+body.portal-light .text-emerald-300\/50,
+body.portal-light .text-emerald-300\/60,
+body.portal-light .text-emerald-300\/70,
+body.portal-light .text-emerald-300\/75,
+body.portal-light .text-emerald-300\/80,
+body.portal-light .text-emerald-300\/90,
+body.portal-light .text-emerald-400\/50,
+body.portal-light .text-emerald-400\/60,
+body.portal-light .text-emerald-400\/70,
+body.portal-light .text-emerald-400\/75,
+body.portal-light .text-emerald-400\/80,
+body.portal-light .text-emerald-400\/90,
+body.portal-light .text-emerald-500\/50,
+body.portal-light .text-emerald-500\/60,
+body.portal-light .text-emerald-500\/70,
+body.portal-light .text-emerald-500\/75,
+body.portal-light .text-emerald-500\/80,
+body.portal-light .text-emerald-500\/90,
+body.portal-light .text-emerald-600\/50,
+body.portal-light .text-emerald-600\/60,
+body.portal-light .text-emerald-600\/70,
+body.portal-light .text-emerald-600\/75,
+body.portal-light .text-emerald-600\/80,
+body.portal-light .text-emerald-600\/90 { color: #047857; }
+body.portal-light .bg-emerald-500.text-white,
+body.portal-light .bg-emerald-600.text-white { background-color: #047857; }
+body.portal-light .text-green-500,
+body.portal-light .hover\:text-green-500:hover,
+body.portal-light .text-green-600,
+body.portal-light .hover\:text-green-600:hover,
+body.portal-light .text-green-200\/50,
+body.portal-light .text-green-200\/60,
+body.portal-light .text-green-200\/70,
+body.portal-light .text-green-200\/75,
+body.portal-light .text-green-200\/80,
+body.portal-light .text-green-200\/90,
+body.portal-light .text-green-300\/50,
+body.portal-light .text-green-300\/60,
+body.portal-light .text-green-300\/70,
+body.portal-light .text-green-300\/75,
+body.portal-light .text-green-300\/80,
+body.portal-light .text-green-300\/90,
+body.portal-light .text-green-400\/50,
+body.portal-light .text-green-400\/60,
+body.portal-light .text-green-400\/70,
+body.portal-light .text-green-400\/75,
+body.portal-light .text-green-400\/80,
+body.portal-light .text-green-400\/90,
+body.portal-light .text-green-500\/50,
+body.portal-light .text-green-500\/60,
+body.portal-light .text-green-500\/70,
+body.portal-light .text-green-500\/75,
+body.portal-light .text-green-500\/80,
+body.portal-light .text-green-500\/90,
+body.portal-light .text-green-600\/50,
+body.portal-light .text-green-600\/60,
+body.portal-light .text-green-600\/70,
+body.portal-light .text-green-600\/75,
+body.portal-light .text-green-600\/80,
+body.portal-light .text-green-600\/90 { color: #15803d; }
+body.portal-light .bg-green-500.text-white,
+body.portal-light .bg-green-600.text-white { background-color: #15803d; }
+body.portal-light .text-amber-500,
+body.portal-light .hover\:text-amber-500:hover,
+body.portal-light .text-amber-600,
+body.portal-light .hover\:text-amber-600:hover,
+body.portal-light .text-amber-200\/50,
+body.portal-light .text-amber-200\/60,
+body.portal-light .text-amber-200\/70,
+body.portal-light .text-amber-200\/75,
+body.portal-light .text-amber-200\/80,
+body.portal-light .text-amber-200\/90,
+body.portal-light .text-amber-300\/50,
+body.portal-light .text-amber-300\/60,
+body.portal-light .text-amber-300\/70,
+body.portal-light .text-amber-300\/75,
+body.portal-light .text-amber-300\/80,
+body.portal-light .text-amber-300\/90,
+body.portal-light .text-amber-400\/50,
+body.portal-light .text-amber-400\/60,
+body.portal-light .text-amber-400\/70,
+body.portal-light .text-amber-400\/75,
+body.portal-light .text-amber-400\/80,
+body.portal-light .text-amber-400\/90,
+body.portal-light .text-amber-500\/50,
+body.portal-light .text-amber-500\/60,
+body.portal-light .text-amber-500\/70,
+body.portal-light .text-amber-500\/75,
+body.portal-light .text-amber-500\/80,
+body.portal-light .text-amber-500\/90,
+body.portal-light .text-amber-600\/50,
+body.portal-light .text-amber-600\/60,
+body.portal-light .text-amber-600\/70,
+body.portal-light .text-amber-600\/75,
+body.portal-light .text-amber-600\/80,
+body.portal-light .text-amber-600\/90 { color: #b45309; }
+body.portal-light .bg-amber-500.text-white,
+body.portal-light .bg-amber-600.text-white { background-color: #b45309; }
+body.portal-light .text-yellow-500,
+body.portal-light .hover\:text-yellow-500:hover,
+body.portal-light .text-yellow-600,
+body.portal-light .hover\:text-yellow-600:hover,
+body.portal-light .text-yellow-200\/50,
+body.portal-light .text-yellow-200\/60,
+body.portal-light .text-yellow-200\/70,
+body.portal-light .text-yellow-200\/75,
+body.portal-light .text-yellow-200\/80,
+body.portal-light .text-yellow-200\/90,
+body.portal-light .text-yellow-300\/50,
+body.portal-light .text-yellow-300\/60,
+body.portal-light .text-yellow-300\/70,
+body.portal-light .text-yellow-300\/75,
+body.portal-light .text-yellow-300\/80,
+body.portal-light .text-yellow-300\/90,
+body.portal-light .text-yellow-400\/50,
+body.portal-light .text-yellow-400\/60,
+body.portal-light .text-yellow-400\/70,
+body.portal-light .text-yellow-400\/75,
+body.portal-light .text-yellow-400\/80,
+body.portal-light .text-yellow-400\/90,
+body.portal-light .text-yellow-500\/50,
+body.portal-light .text-yellow-500\/60,
+body.portal-light .text-yellow-500\/70,
+body.portal-light .text-yellow-500\/75,
+body.portal-light .text-yellow-500\/80,
+body.portal-light .text-yellow-500\/90,
+body.portal-light .text-yellow-600\/50,
+body.portal-light .text-yellow-600\/60,
+body.portal-light .text-yellow-600\/70,
+body.portal-light .text-yellow-600\/75,
+body.portal-light .text-yellow-600\/80,
+body.portal-light .text-yellow-600\/90 { color: #a16207; }
+body.portal-light .bg-yellow-500.text-white,
+body.portal-light .bg-yellow-600.text-white { background-color: #a16207; }
+body.portal-light .text-blue-500,
+body.portal-light .hover\:text-blue-500:hover,
+body.portal-light .text-blue-600,
+body.portal-light .hover\:text-blue-600:hover,
+body.portal-light .text-blue-200\/50,
+body.portal-light .text-blue-200\/60,
+body.portal-light .text-blue-200\/70,
+body.portal-light .text-blue-200\/75,
+body.portal-light .text-blue-200\/80,
+body.portal-light .text-blue-200\/90,
+body.portal-light .text-blue-300\/50,
+body.portal-light .text-blue-300\/60,
+body.portal-light .text-blue-300\/70,
+body.portal-light .text-blue-300\/75,
+body.portal-light .text-blue-300\/80,
+body.portal-light .text-blue-300\/90,
+body.portal-light .text-blue-400\/50,
+body.portal-light .text-blue-400\/60,
+body.portal-light .text-blue-400\/70,
+body.portal-light .text-blue-400\/75,
+body.portal-light .text-blue-400\/80,
+body.portal-light .text-blue-400\/90,
+body.portal-light .text-blue-500\/50,
+body.portal-light .text-blue-500\/60,
+body.portal-light .text-blue-500\/70,
+body.portal-light .text-blue-500\/75,
+body.portal-light .text-blue-500\/80,
+body.portal-light .text-blue-500\/90,
+body.portal-light .text-blue-600\/50,
+body.portal-light .text-blue-600\/60,
+body.portal-light .text-blue-600\/70,
+body.portal-light .text-blue-600\/75,
+body.portal-light .text-blue-600\/80,
+body.portal-light .text-blue-600\/90 { color: #1d4ed8; }
+body.portal-light .bg-blue-500.text-white,
+body.portal-light .bg-blue-600.text-white { background-color: #1d4ed8; }
+body.portal-light .text-sky-500,
+body.portal-light .hover\:text-sky-500:hover,
+body.portal-light .text-sky-600,
+body.portal-light .hover\:text-sky-600:hover,
+body.portal-light .text-sky-200\/50,
+body.portal-light .text-sky-200\/60,
+body.portal-light .text-sky-200\/70,
+body.portal-light .text-sky-200\/75,
+body.portal-light .text-sky-200\/80,
+body.portal-light .text-sky-200\/90,
+body.portal-light .text-sky-300\/50,
+body.portal-light .text-sky-300\/60,
+body.portal-light .text-sky-300\/70,
+body.portal-light .text-sky-300\/75,
+body.portal-light .text-sky-300\/80,
+body.portal-light .text-sky-300\/90,
+body.portal-light .text-sky-400\/50,
+body.portal-light .text-sky-400\/60,
+body.portal-light .text-sky-400\/70,
+body.portal-light .text-sky-400\/75,
+body.portal-light .text-sky-400\/80,
+body.portal-light .text-sky-400\/90,
+body.portal-light .text-sky-500\/50,
+body.portal-light .text-sky-500\/60,
+body.portal-light .text-sky-500\/70,
+body.portal-light .text-sky-500\/75,
+body.portal-light .text-sky-500\/80,
+body.portal-light .text-sky-500\/90,
+body.portal-light .text-sky-600\/50,
+body.portal-light .text-sky-600\/60,
+body.portal-light .text-sky-600\/70,
+body.portal-light .text-sky-600\/75,
+body.portal-light .text-sky-600\/80,
+body.portal-light .text-sky-600\/90 { color: #0369a1; }
+body.portal-light .bg-sky-500.text-white,
+body.portal-light .bg-sky-600.text-white { background-color: #0369a1; }
+body.portal-light .text-cyan-500,
+body.portal-light .hover\:text-cyan-500:hover,
+body.portal-light .text-cyan-600,
+body.portal-light .hover\:text-cyan-600:hover,
+body.portal-light .text-cyan-200\/50,
+body.portal-light .text-cyan-200\/60,
+body.portal-light .text-cyan-200\/70,
+body.portal-light .text-cyan-200\/75,
+body.portal-light .text-cyan-200\/80,
+body.portal-light .text-cyan-200\/90,
+body.portal-light .text-cyan-300\/50,
+body.portal-light .text-cyan-300\/60,
+body.portal-light .text-cyan-300\/70,
+body.portal-light .text-cyan-300\/75,
+body.portal-light .text-cyan-300\/80,
+body.portal-light .text-cyan-300\/90,
+body.portal-light .text-cyan-400\/50,
+body.portal-light .text-cyan-400\/60,
+body.portal-light .text-cyan-400\/70,
+body.portal-light .text-cyan-400\/75,
+body.portal-light .text-cyan-400\/80,
+body.portal-light .text-cyan-400\/90,
+body.portal-light .text-cyan-500\/50,
+body.portal-light .text-cyan-500\/60,
+body.portal-light .text-cyan-500\/70,
+body.portal-light .text-cyan-500\/75,
+body.portal-light .text-cyan-500\/80,
+body.portal-light .text-cyan-500\/90,
+body.portal-light .text-cyan-600\/50,
+body.portal-light .text-cyan-600\/60,
+body.portal-light .text-cyan-600\/70,
+body.portal-light .text-cyan-600\/75,
+body.portal-light .text-cyan-600\/80,
+body.portal-light .text-cyan-600\/90 { color: #0e7490; }
+body.portal-light .bg-cyan-500.text-white,
+body.portal-light .bg-cyan-600.text-white { background-color: #0e7490; }
+body.portal-light .text-violet-500,
+body.portal-light .hover\:text-violet-500:hover,
+body.portal-light .text-violet-600,
+body.portal-light .hover\:text-violet-600:hover,
+body.portal-light .text-violet-200\/50,
+body.portal-light .text-violet-200\/60,
+body.portal-light .text-violet-200\/70,
+body.portal-light .text-violet-200\/75,
+body.portal-light .text-violet-200\/80,
+body.portal-light .text-violet-200\/90,
+body.portal-light .text-violet-300\/50,
+body.portal-light .text-violet-300\/60,
+body.portal-light .text-violet-300\/70,
+body.portal-light .text-violet-300\/75,
+body.portal-light .text-violet-300\/80,
+body.portal-light .text-violet-300\/90,
+body.portal-light .text-violet-400\/50,
+body.portal-light .text-violet-400\/60,
+body.portal-light .text-violet-400\/70,
+body.portal-light .text-violet-400\/75,
+body.portal-light .text-violet-400\/80,
+body.portal-light .text-violet-400\/90,
+body.portal-light .text-violet-500\/50,
+body.portal-light .text-violet-500\/60,
+body.portal-light .text-violet-500\/70,
+body.portal-light .text-violet-500\/75,
+body.portal-light .text-violet-500\/80,
+body.portal-light .text-violet-500\/90,
+body.portal-light .text-violet-600\/50,
+body.portal-light .text-violet-600\/60,
+body.portal-light .text-violet-600\/70,
+body.portal-light .text-violet-600\/75,
+body.portal-light .text-violet-600\/80,
+body.portal-light .text-violet-600\/90 { color: #6d28d9; }
+body.portal-light .bg-violet-500.text-white,
+body.portal-light .bg-violet-600.text-white { background-color: #6d28d9; }
+body.portal-light .text-purple-500,
+body.portal-light .hover\:text-purple-500:hover,
+body.portal-light .text-purple-600,
+body.portal-light .hover\:text-purple-600:hover,
+body.portal-light .text-purple-200\/50,
+body.portal-light .text-purple-200\/60,
+body.portal-light .text-purple-200\/70,
+body.portal-light .text-purple-200\/75,
+body.portal-light .text-purple-200\/80,
+body.portal-light .text-purple-200\/90,
+body.portal-light .text-purple-300\/50,
+body.portal-light .text-purple-300\/60,
+body.portal-light .text-purple-300\/70,
+body.portal-light .text-purple-300\/75,
+body.portal-light .text-purple-300\/80,
+body.portal-light .text-purple-300\/90,
+body.portal-light .text-purple-400\/50,
+body.portal-light .text-purple-400\/60,
+body.portal-light .text-purple-400\/70,
+body.portal-light .text-purple-400\/75,
+body.portal-light .text-purple-400\/80,
+body.portal-light .text-purple-400\/90,
+body.portal-light .text-purple-500\/50,
+body.portal-light .text-purple-500\/60,
+body.portal-light .text-purple-500\/70,
+body.portal-light .text-purple-500\/75,
+body.portal-light .text-purple-500\/80,
+body.portal-light .text-purple-500\/90,
+body.portal-light .text-purple-600\/50,
+body.portal-light .text-purple-600\/60,
+body.portal-light .text-purple-600\/70,
+body.portal-light .text-purple-600\/75,
+body.portal-light .text-purple-600\/80,
+body.portal-light .text-purple-600\/90 { color: #7e22ce; }
+body.portal-light .bg-purple-500.text-white,
+body.portal-light .bg-purple-600.text-white { background-color: #7e22ce; }
+body.portal-light .text-orange-500,
+body.portal-light .hover\:text-orange-500:hover,
+body.portal-light .text-orange-600,
+body.portal-light .hover\:text-orange-600:hover,
+body.portal-light .text-orange-200\/50,
+body.portal-light .text-orange-200\/60,
+body.portal-light .text-orange-200\/70,
+body.portal-light .text-orange-200\/75,
+body.portal-light .text-orange-200\/80,
+body.portal-light .text-orange-200\/90,
+body.portal-light .text-orange-300\/50,
+body.portal-light .text-orange-300\/60,
+body.portal-light .text-orange-300\/70,
+body.portal-light .text-orange-300\/75,
+body.portal-light .text-orange-300\/80,
+body.portal-light .text-orange-300\/90,
+body.portal-light .text-orange-400\/50,
+body.portal-light .text-orange-400\/60,
+body.portal-light .text-orange-400\/70,
+body.portal-light .text-orange-400\/75,
+body.portal-light .text-orange-400\/80,
+body.portal-light .text-orange-400\/90,
+body.portal-light .text-orange-500\/50,
+body.portal-light .text-orange-500\/60,
+body.portal-light .text-orange-500\/70,
+body.portal-light .text-orange-500\/75,
+body.portal-light .text-orange-500\/80,
+body.portal-light .text-orange-500\/90,
+body.portal-light .text-orange-600\/50,
+body.portal-light .text-orange-600\/60,
+body.portal-light .text-orange-600\/70,
+body.portal-light .text-orange-600\/75,
+body.portal-light .text-orange-600\/80,
+body.portal-light .text-orange-600\/90 { color: #c2410c; }
+body.portal-light .bg-orange-500.text-white,
+body.portal-light .bg-orange-600.text-white { background-color: #c2410c; }
+body.portal-light .text-teal-500,
+body.portal-light .hover\:text-teal-500:hover,
+body.portal-light .text-teal-600,
+body.portal-light .hover\:text-teal-600:hover,
+body.portal-light .text-teal-200\/50,
+body.portal-light .text-teal-200\/60,
+body.portal-light .text-teal-200\/70,
+body.portal-light .text-teal-200\/75,
+body.portal-light .text-teal-200\/80,
+body.portal-light .text-teal-200\/90,
+body.portal-light .text-teal-300\/50,
+body.portal-light .text-teal-300\/60,
+body.portal-light .text-teal-300\/70,
+body.portal-light .text-teal-300\/75,
+body.portal-light .text-teal-300\/80,
+body.portal-light .text-teal-300\/90,
+body.portal-light .text-teal-400\/50,
+body.portal-light .text-teal-400\/60,
+body.portal-light .text-teal-400\/70,
+body.portal-light .text-teal-400\/75,
+body.portal-light .text-teal-400\/80,
+body.portal-light .text-teal-400\/90,
+body.portal-light .text-teal-500\/50,
+body.portal-light .text-teal-500\/60,
+body.portal-light .text-teal-500\/70,
+body.portal-light .text-teal-500\/75,
+body.portal-light .text-teal-500\/80,
+body.portal-light .text-teal-500\/90,
+body.portal-light .text-teal-600\/50,
+body.portal-light .text-teal-600\/60,
+body.portal-light .text-teal-600\/70,
+body.portal-light .text-teal-600\/75,
+body.portal-light .text-teal-600\/80,
+body.portal-light .text-teal-600\/90 { color: #0f766e; }
+body.portal-light .bg-teal-500.text-white,
+body.portal-light .bg-teal-600.text-white { background-color: #0f766e; }
+body.portal-light .text-indigo-500,
+body.portal-light .hover\:text-indigo-500:hover,
+body.portal-light .text-indigo-600,
+body.portal-light .hover\:text-indigo-600:hover,
+body.portal-light .text-indigo-200\/50,
+body.portal-light .text-indigo-200\/60,
+body.portal-light .text-indigo-200\/70,
+body.portal-light .text-indigo-200\/75,
+body.portal-light .text-indigo-200\/80,
+body.portal-light .text-indigo-200\/90,
+body.portal-light .text-indigo-300\/50,
+body.portal-light .text-indigo-300\/60,
+body.portal-light .text-indigo-300\/70,
+body.portal-light .text-indigo-300\/75,
+body.portal-light .text-indigo-300\/80,
+body.portal-light .text-indigo-300\/90,
+body.portal-light .text-indigo-400\/50,
+body.portal-light .text-indigo-400\/60,
+body.portal-light .text-indigo-400\/70,
+body.portal-light .text-indigo-400\/75,
+body.portal-light .text-indigo-400\/80,
+body.portal-light .text-indigo-400\/90,
+body.portal-light .text-indigo-500\/50,
+body.portal-light .text-indigo-500\/60,
+body.portal-light .text-indigo-500\/70,
+body.portal-light .text-indigo-500\/75,
+body.portal-light .text-indigo-500\/80,
+body.portal-light .text-indigo-500\/90,
+body.portal-light .text-indigo-600\/50,
+body.portal-light .text-indigo-600\/60,
+body.portal-light .text-indigo-600\/70,
+body.portal-light .text-indigo-600\/75,
+body.portal-light .text-indigo-600\/80,
+body.portal-light .text-indigo-600\/90 { color: #4338ca; }
+body.portal-light .bg-indigo-500.text-white,
+body.portal-light .bg-indigo-600.text-white { background-color: #4338ca; }
+body.portal-light .text-pink-500,
+body.portal-light .hover\:text-pink-500:hover,
+body.portal-light .text-pink-600,
+body.portal-light .hover\:text-pink-600:hover,
+body.portal-light .text-pink-200\/50,
+body.portal-light .text-pink-200\/60,
+body.portal-light .text-pink-200\/70,
+body.portal-light .text-pink-200\/75,
+body.portal-light .text-pink-200\/80,
+body.portal-light .text-pink-200\/90,
+body.portal-light .text-pink-300\/50,
+body.portal-light .text-pink-300\/60,
+body.portal-light .text-pink-300\/70,
+body.portal-light .text-pink-300\/75,
+body.portal-light .text-pink-300\/80,
+body.portal-light .text-pink-300\/90,
+body.portal-light .text-pink-400\/50,
+body.portal-light .text-pink-400\/60,
+body.portal-light .text-pink-400\/70,
+body.portal-light .text-pink-400\/75,
+body.portal-light .text-pink-400\/80,
+body.portal-light .text-pink-400\/90,
+body.portal-light .text-pink-500\/50,
+body.portal-light .text-pink-500\/60,
+body.portal-light .text-pink-500\/70,
+body.portal-light .text-pink-500\/75,
+body.portal-light .text-pink-500\/80,
+body.portal-light .text-pink-500\/90,
+body.portal-light .text-pink-600\/50,
+body.portal-light .text-pink-600\/60,
+body.portal-light .text-pink-600\/70,
+body.portal-light .text-pink-600\/75,
+body.portal-light .text-pink-600\/80,
+body.portal-light .text-pink-600\/90 { color: #be185d; }
+body.portal-light .bg-pink-500.text-white,
+body.portal-light .bg-pink-600.text-white { background-color: #be185d; }
+body.portal-light .text-lime-500,
+body.portal-light .hover\:text-lime-500:hover,
+body.portal-light .text-lime-600,
+body.portal-light .hover\:text-lime-600:hover,
+body.portal-light .text-lime-200\/50,
+body.portal-light .text-lime-200\/60,
+body.portal-light .text-lime-200\/70,
+body.portal-light .text-lime-200\/75,
+body.portal-light .text-lime-200\/80,
+body.portal-light .text-lime-200\/90,
+body.portal-light .text-lime-300\/50,
+body.portal-light .text-lime-300\/60,
+body.portal-light .text-lime-300\/70,
+body.portal-light .text-lime-300\/75,
+body.portal-light .text-lime-300\/80,
+body.portal-light .text-lime-300\/90,
+body.portal-light .text-lime-400\/50,
+body.portal-light .text-lime-400\/60,
+body.portal-light .text-lime-400\/70,
+body.portal-light .text-lime-400\/75,
+body.portal-light .text-lime-400\/80,
+body.portal-light .text-lime-400\/90,
+body.portal-light .text-lime-500\/50,
+body.portal-light .text-lime-500\/60,
+body.portal-light .text-lime-500\/70,
+body.portal-light .text-lime-500\/75,
+body.portal-light .text-lime-500\/80,
+body.portal-light .text-lime-500\/90,
+body.portal-light .text-lime-600\/50,
+body.portal-light .text-lime-600\/60,
+body.portal-light .text-lime-600\/70,
+body.portal-light .text-lime-600\/75,
+body.portal-light .text-lime-600\/80,
+body.portal-light .text-lime-600\/90 { color: #4d7c0f; }
+body.portal-light .bg-lime-500.text-white,
+body.portal-light .bg-lime-600.text-white { background-color: #4d7c0f; }
+body.portal-light .text-fuchsia-500,
+body.portal-light .hover\:text-fuchsia-500:hover,
+body.portal-light .text-fuchsia-600,
+body.portal-light .hover\:text-fuchsia-600:hover,
+body.portal-light .text-fuchsia-200\/50,
+body.portal-light .text-fuchsia-200\/60,
+body.portal-light .text-fuchsia-200\/70,
+body.portal-light .text-fuchsia-200\/75,
+body.portal-light .text-fuchsia-200\/80,
+body.portal-light .text-fuchsia-200\/90,
+body.portal-light .text-fuchsia-300\/50,
+body.portal-light .text-fuchsia-300\/60,
+body.portal-light .text-fuchsia-300\/70,
+body.portal-light .text-fuchsia-300\/75,
+body.portal-light .text-fuchsia-300\/80,
+body.portal-light .text-fuchsia-300\/90,
+body.portal-light .text-fuchsia-400\/50,
+body.portal-light .text-fuchsia-400\/60,
+body.portal-light .text-fuchsia-400\/70,
+body.portal-light .text-fuchsia-400\/75,
+body.portal-light .text-fuchsia-400\/80,
+body.portal-light .text-fuchsia-400\/90,
+body.portal-light .text-fuchsia-500\/50,
+body.portal-light .text-fuchsia-500\/60,
+body.portal-light .text-fuchsia-500\/70,
+body.portal-light .text-fuchsia-500\/75,
+body.portal-light .text-fuchsia-500\/80,
+body.portal-light .text-fuchsia-500\/90,
+body.portal-light .text-fuchsia-600\/50,
+body.portal-light .text-fuchsia-600\/60,
+body.portal-light .text-fuchsia-600\/70,
+body.portal-light .text-fuchsia-600\/75,
+body.portal-light .text-fuchsia-600\/80,
+body.portal-light .text-fuchsia-600\/90 { color: #a21caf; }
+body.portal-light .bg-fuchsia-500.text-white,
+body.portal-light .bg-fuchsia-600.text-white { background-color: #a21caf; }
+
+/* ═══ Tarjetas del portal claro ═══════════
+   Toda superficie de tarjeta (bg-card + borde + esquinas redondeadas) lleva un
+   borde algo más definido y una sombra muy suave para separarse del fondo blanco.
+   Quedan fuera los controles (botones, campos), que no deben flotar, y los modales
+   y desplegables que ya traen su propia sombra (shadow-lg/xl/2xl). */
+body.portal-light .bg-card.border[class*="rounded"]:not(button):not(input):not(select):not(textarea):not(label):not([class*="shadow-lg"]):not([class*="shadow-xl"]):not([class*="shadow-2xl"]) {
+  border-color: #dcdfe4;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.06);
+}
+body.portal-light a.bg-card.border[class*="rounded"]:hover,
+body.portal-light article.bg-card.border[class*="rounded"]:hover { border-color: #c4c9d0; }
+
+/* Campo de CUPS de SIPS: crece con el texto usando CSS (field-sizing). Ancho fijo para que
+   no salte en horizontal al sustituir el placeholder; tope de alto con scroll a partir de ahí.
+   Sin soporte, onCupsInput() hace el mismo ajuste por JavaScript. */
+@supports (field-sizing: content) {
+  .cups-field {
+    field-sizing: content;
+    width: 100%;
+    height: auto;
+    min-block-size: 38px;
+    max-block-size: 240px;
+    overflow-y: auto !important;
+  }
+}
+
+/* Alta rápida · selección de tipo: el borde toma el color del suministro (claro / negro). */
+.alta-luz { --tc: #b45309; --tb: #fdf0d2; --tb2: #fff9ec; }
+.alta-gas { --tc: #0369a1; --tb: #dcedfa; --tb2: #f2f8fd; }
+body.portal-dark .alta-luz { --tc: #fbbf24; --tb: rgba(251, 191, 36, 0.14); --tb2: rgba(251, 191, 36, 0.06); }
+body.portal-dark .alta-gas { --tc: #38bdf8; --tb: rgba(56, 189, 248, 0.14); --tb2: rgba(56, 189, 248, 0.06); }
+/* Los selectores llevan body.* para ganar a la regla global de tarjetas del portal claro
+   (más específica), que anulaba el hover en blanco. */
+.alta-option { transition: border-color 200ms ease-out, box-shadow 200ms ease-out, transform 200ms cubic-bezier(0.16, 1, 0.3, 1); }
+.alta-head { background: linear-gradient(135deg, var(--tb) 0%, var(--tb2, var(--tb)) 100%); border-bottom: 1px solid color-mix(in srgb, var(--tc) 18%, transparent); }
+.alta-icon { border: 1px solid color-mix(in srgb, var(--tc) 22%, transparent); }
+body.portal-light .alta-option.bg-card:hover,
+body.portal-dark  .alta-option.bg-card:hover,
+body .alta-option:focus-within {
+  border-color: var(--tc);
+  box-shadow: 0 14px 32px -16px color-mix(in srgb, var(--tc) 55%, transparent), 0 2px 6px rgba(16, 24, 40, 0.06);
+  transform: translateY(-2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .alta-option, .alta-option:hover { transition: none; transform: none !important; }
+}
+
+/* ═══ Controles de los paquetes en el portal claro ═══════════════ */
+
+/* ui-button por defecto (#12AFF0): desactivado se veía lavado (opacity 50 %).
+   Pasa a un gris neutro que se lee como "no disponible". */
+body.portal-light button.bg-\[\#12AFF0\]:disabled {
+  opacity: 1;
+  background-color: #eef0f2;
+  color: #7a8088;
+  box-shadow: inset 0 0 0 1px #e1e4e8;
+}
+
+/* ui-dropzone: zona para soltar archivos reconocible (borde discontinuo, fondo apenas gris). */
+body.portal-light ui-dropzone .bg-body.border.rounded-lg.cursor-pointer {
+  background-color: #fafbfc;
+  border: 1.5px dashed #c4c9d0;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+body.portal-light ui-dropzone .bg-body.border.rounded-lg.cursor-pointer:hover {
+  border-color: var(--color-primary);
+  background-color: rgba(8, 114, 173, 0.04);
+}
+
+/* Texto blanco de los paquetes sobre fondos que en claro son claros:
+   - ui-combobox: opción resaltada (hover:bg-accent hover:text-white) → se perdía.
+   - header: icono del menú (text-white) sobre la cabecera blanca. */
+body.portal-light .hover\:bg-accent.hover\:text-white:hover { color: var(--color-foreground); }
+body.portal-light lib-apolo-header .text-white { color: var(--color-foreground); }
+
+/* ═══ Tema negro del portal ═══════════════
+   El negro es la paleta original (@theme base: #25272A fondo, #17181A tablas, modales y
+   tarjetas). Aquí solo van los ajustes para que lo construido para el blanco cumpla AA en
+   negro. Medido sobre #25272A y #17181A. */
+html:has(body.portal-light),
+html.portal-boot-light:not(:has(body.portal-dark)) { color-scheme: light; background-color: #ffffff; }
+html:has(body.portal-dark),
+html.portal-boot-dark:not(:has(body.portal-light)) { color-scheme: dark; background-color: #25272A; }
+
+body.portal-dark {
+  /* Acento: azul de marca (6,0:1 sobre #25272A) con letra oscura (7,5:1). #3b82f6 daba 4,1 y 3,7 con blanco. */
+  --color-primary:            #12AFF0;
+  --color-primary-foreground: #04131B;
+  --color-ring:               #12AFF0;
+  --color-success:            #1AD598;
+  --color-warning:            #f59e0b;
+  --color-danger:             #f87171;  /* #ef4444 daba 4,0:1 */
+  --color-destructive:        #dc2626;
+  color-scheme: dark;
+}
+body.portal-dark ::selection { background-color: rgba(18, 175, 240, 0.32); }
+
+/* Botones de acento con letra blanca → letra oscura sobre el azul de marca. */
+body.portal-dark .bg-primary.text-white,
+body.portal-dark .bg-primary .text-white { color: #04131B; }
+body.portal-dark .bg-primary-button.text-white { color: #04131B; }
+
+/* Tonos 700–900 escritos para fondo blanco → tono 400 (≥ 5:1 sobre los dos fondos oscuros). */
+body.portal-dark .text-red-700,
+body.portal-dark .hover\:text-red-700:hover,
+body.portal-dark .text-red-800,
+body.portal-dark .text-red-900 { color: #f87171; }
+body.portal-dark .text-rose-700,
+body.portal-dark .hover\:text-rose-700:hover,
+body.portal-dark .text-rose-800,
+body.portal-dark .text-rose-900 { color: #fb7185; }
+body.portal-dark .text-emerald-700,
+body.portal-dark .hover\:text-emerald-700:hover,
+body.portal-dark .text-emerald-800,
+body.portal-dark .text-emerald-900 { color: #34d399; }
+body.portal-dark .text-green-700,
+body.portal-dark .hover\:text-green-700:hover,
+body.portal-dark .text-green-800,
+body.portal-dark .text-green-900 { color: #4ade80; }
+body.portal-dark .text-amber-700,
+body.portal-dark .hover\:text-amber-700:hover,
+body.portal-dark .text-amber-800,
+body.portal-dark .text-amber-900 { color: #fbbf24; }
+body.portal-dark .text-yellow-700,
+body.portal-dark .hover\:text-yellow-700:hover,
+body.portal-dark .text-yellow-800,
+body.portal-dark .text-yellow-900 { color: #facc15; }
+body.portal-dark .text-blue-700,
+body.portal-dark .hover\:text-blue-700:hover,
+body.portal-dark .text-blue-800,
+body.portal-dark .text-blue-900 { color: #60a5fa; }
+body.portal-dark .text-sky-700,
+body.portal-dark .hover\:text-sky-700:hover,
+body.portal-dark .text-sky-800,
+body.portal-dark .text-sky-900 { color: #38bdf8; }
+body.portal-dark .text-cyan-700,
+body.portal-dark .hover\:text-cyan-700:hover,
+body.portal-dark .text-cyan-800,
+body.portal-dark .text-cyan-900 { color: #22d3ee; }
+body.portal-dark .text-violet-700,
+body.portal-dark .hover\:text-violet-700:hover,
+body.portal-dark .text-violet-800,
+body.portal-dark .text-violet-900 { color: #a78bfa; }
+body.portal-dark .text-purple-700,
+body.portal-dark .hover\:text-purple-700:hover,
+body.portal-dark .text-purple-800,
+body.portal-dark .text-purple-900 { color: #c084fc; }
+body.portal-dark .text-orange-700,
+body.portal-dark .hover\:text-orange-700:hover,
+body.portal-dark .text-orange-800,
+body.portal-dark .text-orange-900 { color: #fb923c; }
+body.portal-dark .text-teal-700,
+body.portal-dark .hover\:text-teal-700:hover,
+body.portal-dark .text-teal-800,
+body.portal-dark .text-teal-900 { color: #2dd4bf; }
+body.portal-dark .text-indigo-700,
+body.portal-dark .hover\:text-indigo-700:hover,
+body.portal-dark .text-indigo-800,
+body.portal-dark .text-indigo-900 { color: #818cf8; }
+body.portal-dark .text-pink-700,
+body.portal-dark .hover\:text-pink-700:hover,
+body.portal-dark .text-pink-800,
+body.portal-dark .text-pink-900 { color: #f472b6; }
+body.portal-dark .text-lime-700,
+body.portal-dark .hover\:text-lime-700:hover,
+body.portal-dark .text-lime-800,
+body.portal-dark .text-lime-900 { color: #a3e635; }
+body.portal-dark .text-fuchsia-700,
+body.portal-dark .hover\:text-fuchsia-700:hover,
+body.portal-dark .text-fuchsia-800,
+body.portal-dark .text-fuchsia-900 { color: #e879f9; }
+/* Grises con opacidad → gris secundario (#a1a1aa, 5,8:1). */
+body.portal-dark .text-muted-foreground\/30,
+body.portal-dark .text-muted-foreground\/40,
+body.portal-dark .text-muted-foreground\/50,
+body.portal-dark .text-muted-foreground\/60,
+body.portal-dark .text-muted-foreground\/70,
+body.portal-dark .text-muted-foreground\/75,
+body.portal-dark .text-muted-foreground\/80,
+body.portal-dark .text-muted-foreground\/90 { color: #a1a1aa; }
+
+/* Paginador del paquete: página activa legible. */
+body.portal-dark lib-paginator button.bg-accent.text-white { background-color: #12AFF0; border-color: #12AFF0; color: #04131B; }
+/* Menú lateral: elemento activo con el acento. */
+body.portal-dark lib-apolo-sidebar lib-sidebar-item button.bg-accent { background-color: rgba(18, 175, 240, 0.14) !important; color: #7dd3fc; }
+/* ui-button por defecto desactivado: gris neutro también en negro. */
+body.portal-dark button.bg-\[\#12AFF0\]:disabled { opacity: 1; background-color: #2f3134; color: #8b9097; }
+/* Zona para soltar archivos reconocible. */
+body.portal-dark ui-dropzone .bg-body.border.rounded-lg.cursor-pointer { border: 1.5px dashed #52525b; background-color: #1f2023; }
+body.portal-dark ui-dropzone .bg-body.border.rounded-lg.cursor-pointer:hover { border-color: #12AFF0; }
+/* Bordes de campos ≥ 3:1 sobre #17181A. */
+body.portal-dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+body.portal-dark select,
+body.portal-dark textarea { border-color: #6b6f76; }
+body.portal-dark input:focus, body.portal-dark select:focus, body.portal-dark textarea:focus { border-color: #12AFF0; }
+
+/* ── Colores propios de componentes nuevos, por tema ── */
+/* Tarifa en la tarjeta de oportunidad */
+.opp-tariff { color: #2f4b7c; }
+body.portal-dark .opp-tariff { color: #93b4e8; }
+
+/* Tema negro: tonos 500/600 que no llegan a 4,5:1 sobre #25272A/#17181A → tono 400 (red-500 daba 4,0; blue-600 2,9). */
+body.portal-dark .text-red-500,
+body.portal-dark .hover\:text-red-500:hover,
+body.portal-dark .text-red-600,
+body.portal-dark .hover\:text-red-600:hover { color: #f87171; }
+body.portal-dark .text-rose-500,
+body.portal-dark .hover\:text-rose-500:hover,
+body.portal-dark .text-rose-600,
+body.portal-dark .hover\:text-rose-600:hover { color: #fb7185; }
+body.portal-dark .text-blue-500,
+body.portal-dark .hover\:text-blue-500:hover,
+body.portal-dark .text-blue-600,
+body.portal-dark .hover\:text-blue-600:hover { color: #60a5fa; }
+body.portal-dark .text-indigo-500,
+body.portal-dark .hover\:text-indigo-500:hover,
+body.portal-dark .text-indigo-600,
+body.portal-dark .hover\:text-indigo-600:hover { color: #818cf8; }
+body.portal-dark .text-violet-500,
+body.portal-dark .hover\:text-violet-500:hover,
+body.portal-dark .text-violet-600,
+body.portal-dark .hover\:text-violet-600:hover { color: #a78bfa; }
+body.portal-dark .text-purple-500,
+body.portal-dark .hover\:text-purple-500:hover,
+body.portal-dark .text-purple-600,
+body.portal-dark .hover\:text-purple-600:hover { color: #c084fc; }
+body.portal-dark .text-pink-500,
+body.portal-dark .hover\:text-pink-500:hover,
+body.portal-dark .text-pink-600,
+body.portal-dark .hover\:text-pink-600:hover { color: #f472b6; }
+body.portal-dark .text-gray-500,
+body.portal-dark .hover\:text-gray-500:hover,
+body.portal-dark .text-gray-600,
+body.portal-dark .hover\:text-gray-600:hover { color: #a1a1aa; }
+body.portal-dark .text-slate-500,
+body.portal-dark .hover\:text-slate-500:hover,
+body.portal-dark .text-slate-600,
+body.portal-dark .hover\:text-slate-600:hover { color: #a1a1aa; }
+body.portal-dark .text-zinc-500,
+body.portal-dark .hover\:text-zinc-500:hover,
+body.portal-dark .text-zinc-600,
+body.portal-dark .hover\:text-zinc-600:hover { color: #a1a1aa; }
+
+/* Pestañas y segmentados: en alto contraste (forced colors) el relleno desaparece; se marca la
+   selección con un contorno para no depender solo del color (WCAG 1.4.1). */
+@media (forced-colors: active) {
+  [role="tab"][aria-selected="true"],
+  [aria-current="true"],
+  [aria-pressed="true"] { outline: 2px solid CanvasText; outline-offset: -2px; }
+}
+
+/* Tema negro: contadores rojos con letra blanca (bg-danger #f87171 + blanco = 2,8:1) → letra oscura. */
+body.portal-dark .bg-danger.text-white { color: #17181A; }
+
+/* ═══ Controles de formulario de los paquetes · contraste en ambos temas ═══ */
+/* ui-slider: recorrido y tirador usan var(--color-accent), que en el portal es el gris de hover.
+   Se les da el azul del tema; la pista vacía pasa a un gris visible (≥ 3:1 el tirador). */
+body.portal-light ui-slider { --color-accent: var(--color-primary); --color-border: #d3d7dd; }
+body.portal-dark  ui-slider { --color-accent: #12AFF0;               --color-border: #52525b; }
+/* El paquete quita el contorno de foco del slider: se restaura (teclado). */
+ui-slider input[type="range"]:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 4px; }
+
+/* ═══ Botón de acción con el azul de marca ═══════════
+   Mismo aspecto en blanco y en negro: azul #12AFF0 plano, sin degradado ni sombra,
+   con letra casi negra (7,5:1).
+   Cubre: ui-button por defecto (#12AFF0), bg-primary-button y los botones/estados activos
+   del portal con bg-primary + texto blanco. Los enlaces de texto siguen en azul oscuro (AA). */
+body.portal-light button.bg-\[\#12AFF0\]:not(:disabled),
+body.portal-dark  button.bg-\[\#12AFF0\]:not(:disabled),
+body.portal-light .bg-primary-button,
+body.portal-dark  .bg-primary-button,
+body.portal-light .bg-primary.text-white,
+body.portal-dark  .bg-primary.text-white {
+  background-color: #12AFF0;
+  background-image: none;
+  color: #04131B;
+  /* Sin el borde gris del paquete (border-border) ni brillo interior: se veían como una línea blanca. */
+  border-color: transparent;
+  opacity: 1;
+  box-shadow: none;
+}
+body.portal-light button.bg-\[\#12AFF0\]:not(:disabled):hover,
+body.portal-dark  button.bg-\[\#12AFF0\]:not(:disabled):hover,
+body.portal-light .bg-primary-button:hover,
+body.portal-dark  .bg-primary-button:hover,
+body.portal-light button.bg-primary.text-white:hover,
+body.portal-dark  button.bg-primary.text-white:hover,
+body.portal-light a.bg-primary.text-white:hover,
+body.portal-dark  a.bg-primary.text-white:hover {
+  background-image: none;
+  background-color: #0ea5e9;
+  opacity: 1;
+  box-shadow: none;
+}
+body.portal-light lib-apolo-header .bg-primary-button,
+body.portal-light lib-apolo-header .bg-primary-button lib-apolo-icons,
+body.portal-dark  lib-apolo-header .bg-primary-button lib-apolo-icons { color: #04131B; }
+/* Iconos y contadores dentro de esos botones heredan la letra oscura. */
+body.portal-light .bg-primary.text-white svg,
+body.portal-dark  .bg-primary.text-white svg { color: inherit; }
+
+
+/* ═══ Paleta de gráficos por tema ═══════════════════
+   Paleta categórica validada: blanco → todas
+   las comprobaciones PASS (3 tonos < 3:1: los gráficos llevan leyenda); negro → PASS y
+   todas ≥ 3:1 sobre #17181A. Asignar en orden fijo. `-ink` = letra legible sobre ese
+   color (la de mayor contraste). Para SVG hechos a mano: usar en style (fill: var(--…)),
+   no en atributos de presentación (no aceptan var()). Misma paleta que shared/utils/chart-theme.ts. */
+:root,
+body.portal-dark {
+  --series-1: #3987e5; --series-1-ink: #111111;
+  --series-2: #d95926; --series-2-ink: #111111;
+  --series-3: #199e70; --series-3-ink: #111111;
+  --series-4: #c98500; --series-4-ink: #111111;
+  --series-5: #d55181; --series-5-ink: #111111;
+  --series-6: #0ca30c; --series-6-ink: #111111;
+  --series-7: #9085e9; --series-7-ink: #111111;
+  --series-8: #e66767; --series-8-ink: #111111;
+  --chart-axis: #a1a1aa;
+  --chart-grid: rgba(255, 255, 255, 0.08);
+  --chart-tooltip-bg: #2a2c30;
+  --chart-tooltip-border: #3f3f46;
+  --chart-tooltip-fg: #fafafa;
+  --chart-surface: #17181A;
+}
+body.portal-light {
+  --series-1: #2a78d6; --series-1-ink: #ffffff;
+  --series-2: #eb6834; --series-2-ink: #111111;
+  --series-3: #1baf7a; --series-3-ink: #111111;
+  --series-4: #eda100; --series-4-ink: #111111;
+  --series-5: #e87ba4; --series-5-ink: #111111;
+  --series-6: #008300; --series-6-ink: #ffffff;
+  --series-7: #6250d6; --series-7-ink: #ffffff;
+  --series-8: #e34948; --series-8-ink: #111111;
+  --chart-axis: #5f6368;
+  --chart-grid: #e6e8eb;
+  --chart-tooltip-bg: #111111;
+  --chart-tooltip-border: #111111;
+  --chart-tooltip-fg: #ffffff;
+  --chart-surface: #ffffff;
+}
+
+/* ═══ Selector de tema en la cabecera ═══════════════════════════════════
+   Interruptor sol/luna, mismo alto y radio que el botón de usuario (h-10, rounded-xl).
+   El botón vive en el layout y se mueve a la cabecera del paquete; oculto hasta entonces. */
+.theme-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 2.5rem;
+  width: 4.75rem;
+  padding: 0.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-card);
+  color: var(--color-muted-foreground);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.theme-switch:not(.is-placed) { display: none; }
+.theme-switch:focus-visible { outline: 2px solid var(--color-ring); outline-offset: 2px; }
+.theme-switch__knob {
+  position: absolute;
+  inset-block: 0.25rem;
+  left: 0.25rem;
+  width: calc(50% - 0.25rem);
+  border-radius: 0.5rem;
+  background: var(--color-muted);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), inset 0 0 0 1px var(--color-border);
+  transition: transform 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+.theme-switch[aria-checked="true"] .theme-switch__knob { transform: translateX(100%); }
+.theme-switch__icon {
+  position: relative;
+  flex: 1;
+  height: 1.125rem;
+  transition: color 200ms ease;
+}
+.theme-switch[aria-checked="false"] .theme-switch__icon--sun,
+.theme-switch[aria-checked="true"]  .theme-switch__icon--moon { color: var(--color-foreground); }
+.theme-switch:hover .theme-switch__icon { color: var(--color-foreground); }
+body.portal-dark .theme-switch__knob { background: #33363b; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 0 0 1px #45484e; }
+body.portal-dark .theme-switch[aria-checked="true"] .theme-switch__icon--moon { color: #12AFF0; }
+body.portal-light .theme-switch[aria-checked="false"] .theme-switch__icon--sun { color: #965800; }
+@media (prefers-reduced-motion: reduce) {
+  .theme-switch__knob, .theme-switch__icon { transition: none; }
+}
+@media (forced-colors: active) {
+  .theme-switch__knob { border: 1px solid CanvasText; }
+}
+
+/* ═══ Tablas (lib-data-table): más contraste ═══════════
+   Cabecera con fondo propio y letra más oscura, separadores de fila visibles y texto
+   secundario más oscuro. Blanco: cabecera #3d4148 (10,6:1), secundario #52565c (7,4:1). */
+body.portal-light lib-data-table thead { background-color: #f3f5f7; border-bottom-color: #d5d9de; }
+body.portal-light lib-data-table thead th { color: #3d4148; font-weight: 600; }
+body.portal-light lib-data-table tbody tr { border-color: #e3e6ea; }
+body.portal-light lib-data-table tbody tr + tr { border-top: 1px solid #e3e6ea; }
+body.portal-light lib-data-table tbody .text-muted-foreground { color: #52565c; }
+
+body.portal-dark lib-data-table thead { background-color: #1d1e20; border-bottom-color: #3a3d42; }
+body.portal-dark lib-data-table thead th { color: #c4c7cc; font-weight: 600; }
+body.portal-dark lib-data-table tbody tr + tr { border-top: 1px solid #33363b; }
+body.portal-dark lib-data-table tbody .text-muted-foreground { color: #b0b4ba; }
+/* Filas alternas blanco / gris: se sigue mejor la fila larga. */
+body.portal-light lib-data-table tbody tr:nth-child(even) { background-color: #f7f8fa; }
+body.portal-dark  lib-data-table tbody tr:nth-child(even) { background-color: rgba(255, 255, 255, 0.035); }

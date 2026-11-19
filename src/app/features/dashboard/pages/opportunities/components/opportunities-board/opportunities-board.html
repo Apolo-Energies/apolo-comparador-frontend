@@ -1,22 +1,20 @@
 <div
-  class="flex gap-4 overflow-x-auto pb-3 items-start"
+  class="flex gap-3 overflow-x-auto pb-2 items-start"
   cdkDropListGroup
 >
   @for (col of columns(); track trackByStatus($index, col)) {
     @let palette = paletteFor(col.statuses[0]);
 
-    <section class="flex flex-col rounded-2xl border border-border bg-card backdrop-blur-sm
-                    transition-colors duration-300 hover:border-ring overflow-hidden
-                    shrink-0 w-72">
+    <section class="flex flex-col rounded-[10px] border border-border bg-muted overflow-hidden shrink-0 w-[250px]">
 
       <!-- Column header -->
-      <header class="flex items-center justify-between px-4 py-3 border-b border-border">
+      <header class="flex items-center justify-between px-3 py-2.5 border-b border-border">
         <div class="inline-flex items-center gap-2.5 min-w-0">
-          <span class="w-2 h-2 rounded-full shrink-0" [class]="palette.dot"></span>
-          <h2 class="text-sm font-semibold text-zinc-100 truncate tracking-wide">{{ col.label }}</h2>
+          <span class="size-[7px] rounded-full shrink-0" [class]="palette.dot"></span>
+          <h2 class="text-sm font-semibold text-foreground truncate">{{ col.label }}</h2>
         </div>
-        <span class="inline-flex items-center justify-center min-w-7 rounded-md px-1.5 py-0.5
-                     text-[11px] font-semibold ring-1 ring-inset"
+        <span class="inline-flex items-center justify-center min-w-7 rounded-full px-2 py-0.5
+                     text-xs font-medium tabular-nums ring-1 ring-inset"
               [class]="palette.badge">
           {{ col.totalCount | esNumber:0 }}
         </span>
@@ -24,7 +22,7 @@
 
       <!-- Drop list -->
       <div
-        class="flex-1 min-h-70 p-3 space-y-2 overflow-y-auto max-h-[calc(100vh-340px)] relative"
+        class="flex-1 min-h-70 p-2.5 space-y-2 overflow-y-auto max-h-[calc(100vh-340px)] relative"
         cdkDropList
         [id]="'column-' + col.statuses[0]"
         [cdkDropListData]="col.items"
@@ -40,33 +38,31 @@
             />
 
             <!-- Drag preview (rotated card) -->
-            <div *cdkDragPreview class="rotate-1 shadow-2xl shadow-black/40">
+            <div *cdkDragPreview class="rotate-1 shadow-xl shadow-black/15">
               <app-opportunity-card [opportunity]="item" />
             </div>
 
             <!-- Placeholder while dragging -->
             <div *cdkDragPlaceholder
-                 class="rounded-xl bg-body/60 border-2 border-dashed border-border h-28"></div>
+                 class="rounded-lg bg-card/60 border-2 border-dashed border-border h-28"></div>
           </div>
         } @empty {
           @if (col.loading) {
             <div class="space-y-2">
-              <div class="h-22 rounded-xl bg-body/60 animate-pulse"></div>
-              <div class="h-22 rounded-xl bg-body/40 animate-pulse"></div>
+              <div class="h-22 rounded-xl bg-card animate-pulse"></div>
+              <div class="h-22 rounded-xl bg-card/70 animate-pulse"></div>
             </div>
           } @else {
             <!-- Empty state -->
-            <div class="flex flex-col items-center justify-center text-center py-12 px-4
-                        border-2 border-dashed border-border rounded-xl">
-              <div class="w-14 h-14 rounded-full ring-1 flex items-center justify-center
-                          bg-body/60 mb-3 transition-transform duration-300 group-hover:scale-105"
+            <div class="flex flex-col items-center justify-center text-center py-10 px-4">
+              <div class="w-12 h-12 rounded-full ring-1 flex items-center justify-center bg-card mb-3"
                    [class]="palette.iconRing + ' ' + palette.iconText">
                 @if (palette.emptyIcon) {
                   <lib-apolo-icons [icon]="palette.emptyIcon" />
                 }
               </div>
-              <p class="text-sm font-medium text-zinc-200">Sin oportunidades</p>
-              <p class="text-xs text-zinc-500 mt-1 max-w-50">
+              <p class="text-sm font-medium text-foreground">Sin oportunidades</p>
+              <p class="text-xs text-muted-foreground mt-1 max-w-50">
                 {{ palette.emptyDescription }}
               </p>
             </div>
@@ -76,8 +72,8 @@
         <!-- Loading more skeletons -->
         @if (col.loadingMore) {
           <div class="space-y-2 pt-2">
-            <div class="h-22 rounded-xl bg-body/60 animate-pulse"></div>
-            <div class="h-22 rounded-xl bg-body/40 animate-pulse"></div>
+            <div class="h-22 rounded-xl bg-card animate-pulse"></div>
+            <div class="h-22 rounded-xl bg-card/70 animate-pulse"></div>
           </div>
         }
       </div>

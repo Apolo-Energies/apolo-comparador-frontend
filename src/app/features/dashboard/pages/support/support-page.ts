@@ -1,3 +1,7 @@
+import { ActivatedRoute } from '@angular/router';
+import { PageHeaderComponent } from '../../../../shared/ui/page-header/page-header';
+import { TabsComponent, TabOption } from '../../../../shared/ui/tabs/tabs';
+import { SupportTicketFormComponent } from './components/support-ticket-form/support-ticket-form';
 import { ChangeDetectionStrategy, Component, ElementRef, HostListener, ViewChild, computed, inject, signal } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { InputFieldComponent } from '@apolo-energies/ui';
@@ -15,10 +19,11 @@ import { TariffPreviewController } from './tariff-preview.controller';
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './support-page.html',
   styleUrl: './support-page.scss',
-  imports: [ApoloIcons, InputFieldComponent, BrandLoaderComponent, LucideAngularModule],
+  imports: [SupportTicketFormComponent, PageHeaderComponent, TabsComponent, ApoloIcons, InputFieldComponent, BrandLoaderComponent, LucideAngularModule],
 })
 export class SupportPageComponent {
   private sanitizer       = inject(DomSanitizer);
+  private route           = inject(ActivatedRoute);
   private providerService = inject(ProviderService);
 
   readonly topics     = SUPPORT_TOPICS;
@@ -63,6 +68,18 @@ export class SupportPageComponent {
 
   /** 'home' = Estado A (buscador + cards + FAQ); si no, key del topic abierto (Estado B). */
   readonly activeTab        = signal('home');
+
+  /** Pestañas de Soporte. Admite ?seccion=ticket|chatbot|videos para enlazar directo. */
+  readonly sectionTabs: TabOption[] = [
+    { value: 'videos',  label: 'Vídeos de soporte' },
+    { value: 'ticket',  label: 'Abrir ticket' },
+    { value: 'chatbot', label: 'Chatbot' },
+  ];
+  readonly section = signal<string>(
+    ['videos', 'ticket', 'chatbot'].includes(this.route.snapshot.queryParamMap.get('seccion') ?? '')
+      ? this.route.snapshot.queryParamMap.get('seccion')!
+      : 'videos',
+  );
   readonly selected          = signal<SupportTopic | null>(null);
   readonly currentVideoIndex = signal(0);
   readonly expanded          = signal(false);
