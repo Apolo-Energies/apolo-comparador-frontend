@@ -1,0 +1,45 @@
+<div class="mx-auto w-full max-w-[960px] py-4 sm:py-6">
+  <header class="mb-6">
+    <h1 class="text-[22px] font-semibold leading-tight tracking-[-0.01em] text-foreground">Oportunidades</h1>
+    <p class="mt-1 text-sm text-muted-foreground">Pipeline de ventas. Elija primero el tipo de suministro.</p>
+  </header>
+
+  <h2 id="opp-q" class="mb-3 text-base font-semibold text-foreground">¿Qué oportunidades quiere ver?</h2>
+
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-2" role="list" aria-labelledby="opp-q">
+    @for (c of choices; track c.key) {
+      <a [routerLink]="routes[c.key]" role="listitem"
+         class="alta-option group flex flex-col rounded-xl border border-border bg-card"
+         [class.alta-luz]="c.key === 'luz'" [class.alta-gas]="c.key === 'gas'">
+        <div class="alta-head flex items-center gap-4 rounded-t-xl px-5 py-5">
+          <span class="alta-icon flex size-14 shrink-0 items-center justify-center rounded-2xl bg-card shadow-[0_1px_2px_rgba(16,24,40,0.08)]">
+            <svg class="size-7" viewBox="0 0 24 24" fill="none" stroke="var(--tc)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              @if (c.key === 'luz') { <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/> }
+              @else { <path d="M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-3 2-4 2-7 1.5 1 2 2.5 2 4 1-2 1-5 1-8Z"/> }
+            </svg>
+          </span>
+          <div class="min-w-0 flex-1">
+            <p class="text-xl font-semibold leading-tight text-foreground">{{ c.title }}</p>
+            <p class="mt-0.5 text-sm text-foreground/75">{{ c.summary }}</p>
+          </div>
+        </div>
+
+        <div class="mx-5 mt-5 flex items-baseline justify-between rounded-lg bg-muted px-4 py-3">
+          <p class="text-xs font-medium uppercase tracking-[0.06em] text-muted-foreground">Pendientes</p>
+          @if (pending(); as p) {
+            <p class="text-2xl font-semibold tabular-nums text-foreground">{{ p[c.key] | esNumber:0 }}</p>
+          } @else {
+            <span class="h-7 w-12 animate-pulse rounded bg-card" aria-hidden="true"></span>
+          }
+        </div>
+
+        <div class="mt-auto p-5 pt-4">
+          <span class="bg-primary-button inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold">
+            {{ c.cta }}
+            <svg class="size-4 transition-transform duration-150 group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </span>
+        </div>
+      </a>
+    }
+  </div>
+</div>

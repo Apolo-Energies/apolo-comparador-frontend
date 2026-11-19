@@ -76,7 +76,10 @@ export function buildCrumbs(url: string, ownUserId: string | null, hasChooser: b
 
     case 'analytics': {
       const names: Record<string, string> = { history: 'Historial', statistics: 'Estadísticas', reports: 'Reportes' };
-      if (seg[1] === 'opportunities') return [{ label: 'Oportunidades' }, { label: seg[2] === 'gas' ? 'Gas' : 'Luz' }];
+      if (seg[1] === 'opportunities') {
+        if (!seg[2]) return [{ label: 'Oportunidades' }];
+        return [{ label: 'Oportunidades', url: '/dashboard/analytics/opportunities' }, { label: seg[2] === 'gas' ? 'Gas' : 'Luz' }];
+      }
       const n = names[seg[1] ?? ''];
       if (!n) return [{ label: 'Analítica' }];
       return seg[2] === 'gas' ? [{ label: 'Analítica' }, { label: n, url: `/dashboard/analytics/${seg[1]}` }, { label: 'Gas' }] : [{ label: 'Analítica' }, { label: n }];
