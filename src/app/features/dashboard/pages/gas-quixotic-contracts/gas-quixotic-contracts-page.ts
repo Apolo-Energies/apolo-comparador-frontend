@@ -10,6 +10,7 @@ import { GlobalLoadingService } from '../../../../core/services/global-loading.s
 import { TableSkeletonComponent } from '../../../../shared/components/table-skeleton/table-skeleton.component';
 import { fmtDate } from '../contracts/contracts-utils';
 import { DocumentPreviewModalComponent } from './document-preview-modal/document-preview-modal.component';
+import { QuixoticContractDetailModalComponent } from './contract-detail-modal/contract-detail-modal.component';
 
 const STATUS_LABELS: Record<string, string> = {
   new:                 'Nuevo',
@@ -25,6 +26,7 @@ const STATUS_LABELS: Record<string, string> = {
   imports: [
     DataTableComponent, InputFieldComponent, SelectFieldComponent,
     ButtonComponent, AlertComponent, TableSkeletonComponent, DocumentPreviewModalComponent,
+    QuixoticContractDetailModalComponent,
   ],
   templateUrl: './gas-quixotic-contracts-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -50,6 +52,9 @@ export class GasQuixoticContractsPageComponent implements AfterViewInit {
   readonly loadingDocumentId  = signal<string | null>(null);
   readonly documentModalOpen  = signal(false);
   readonly documentModalDoc   = signal<QuixoticContractDocument | null>(null);
+
+  readonly detailModalOpen  = signal(false);
+  readonly detailContractId = signal<string | null>(null);
 
   readonly statusOptions: SelectOption[] = [
     { value: '', label: 'Todos los estados' },
@@ -106,6 +111,16 @@ export class GasQuixoticContractsPageComponent implements AfterViewInit {
   onDocumentModalClosed(): void {
     this.documentModalOpen.set(false);
     this.documentModalDoc.set(null);
+  }
+
+  onViewDetails(contract: QuixoticContract): void {
+    this.detailContractId.set(contract.id);
+    this.detailModalOpen.set(true);
+  }
+
+  onDetailModalClosed(): void {
+    this.detailModalOpen.set(false);
+    this.detailContractId.set(null);
   }
 
   onSearch(): void {

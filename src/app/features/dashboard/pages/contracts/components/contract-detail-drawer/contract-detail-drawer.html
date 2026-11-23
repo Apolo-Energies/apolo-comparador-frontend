@@ -162,6 +162,56 @@
             </button>
           </div>
         </div>
+
+        <!-- Facturas del contrato de gas (Quixotic) -->
+        <div class="rounded-xl border border-border bg-card p-4 mt-4">
+          <p class="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-3">Facturas</p>
+          @if (loadingGasInvoices()) {
+            <p class="text-[11px] text-muted-foreground">Cargando facturas…</p>
+          } @else if (gasInvoicesError()) {
+            <p class="text-[11px] text-red-400">No se pudieron cargar las facturas.</p>
+          } @else if (gasInvoices().length === 0) {
+            <p class="text-[11px] text-muted-foreground">Sin facturas para este contrato.</p>
+          } @else {
+            <div class="overflow-x-auto">
+              <table class="w-full text-[11px]">
+                <thead class="text-muted-foreground">
+                  <tr>
+                    <th class="text-left font-medium py-1 pr-2">Nº</th>
+                    <th class="text-left font-medium py-1 px-2">Emisión</th>
+                    <th class="text-left font-medium py-1 px-2">Periodo</th>
+                    <th class="text-left font-medium py-1 px-2">Estado</th>
+                    <th class="text-right font-medium py-1 px-2">Importe</th>
+                    <th class="text-right font-medium py-1 pl-2">PDF</th>
+                  </tr>
+                </thead>
+                <tbody class="text-foreground">
+                  @for (f of gasInvoices(); track f.id) {
+                    <tr class="border-t border-border/60">
+                      <td class="py-1.5 pr-2 font-mono">{{ f.legalDocumentNumber || '—' }}</td>
+                      <td class="py-1.5 px-2">{{ fmtDate(f.issuedDate) }}</td>
+                      <td class="py-1.5 px-2">{{ fmtDate(f.billingPeriodFrom) }} – {{ fmtDate(f.billingPeriodTo) }}</td>
+                      <td class="py-1.5 px-2">{{ f.invoiceStatus || '—' }}</td>
+                      <td class="py-1.5 px-2 text-right font-mono">
+                        @if (f.totalAmount !== null) { {{ f.totalAmount | number:'1.2-2' }} € } @else { — }
+                      </td>
+                      <td class="py-1.5 pl-2 text-right">
+                        @if (f.pdfDocumentId) {
+                          <button type="button"
+                                  class="text-primary hover:underline font-semibold disabled:opacity-50"
+                                  [disabled]="downloadingInvoiceId() === f.id"
+                                  (click)="downloadInvoiceGas(f)">
+                            {{ downloadingInvoiceId() === f.id ? 'Descargando…' : 'Descargar' }}
+                          </button>
+                        } @else { — }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
       } @else if (loading()) {
         <div class="flex items-center justify-center py-10">
           <app-brand-loader

@@ -1,0 +1,246 @@
+<p-drawer
+  position="right"
+  [visible]="open()"
+  (visibleChange)="onVisibleChange($event)"
+  styleClass="contract-drawer w-screen md:!w-[55vw] md:!max-w-3xl"
+  [dismissible]="true"
+  [showCloseIcon]="false"
+  [modal]="true"
+  [closeOnEscape]="true"
+>
+  <!-- ===================== HEADER ===================== -->
+  <header class="sticky top-0 z-10 px-6 py-5 bg-zinc-900/95 backdrop-blur border-b border-zinc-800">
+    <div class="flex items-start gap-3">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+          <span class="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Contrato</span>
+          <span class="text-zinc-700">·</span>
+          <span class="text-[11px] text-zinc-400">Gas</span>
+        </div>
+        <h2 class="text-xl font-bold text-zinc-100 truncate">
+          {{ detail()?.contractName || 'Detalle del contrato' }}
+        </h2>
+        <p class="text-xs text-zinc-500 mt-0.5 font-mono">{{ detail()?.contractCode || '—' }}</p>
+      </div>
+
+      <button
+        type="button"
+        class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors duration-200"
+        (click)="closeDrawer()"
+        aria-label="Cerrar"
+      >
+        <lib-apolo-icons [icon]="iconClose" class="flex items-center" />
+      </button>
+    </div>
+  </header>
+
+  @if (loadingDetail()) {
+    <div class="flex items-center justify-center py-16">
+      <app-brand-loader
+        [inline]="true" [visible]="true" [showBackdrop]="false" [showWordmark]="false"
+        [showBar]="false" [showDescription]="false" [showMicrocopy]="false"
+        title="Cargando contrato…" [size]="64"
+      />
+    </div>
+  } @else if (detailError()) {
+    <div class="px-6 pt-6">
+      <div class="rounded-xl border-2 border-dashed border-red-900/50 bg-red-950/20 px-6 py-10 text-center">
+        <p class="text-sm font-medium text-red-300">No se pudo cargar el detalle del contrato.</p>
+      </div>
+    </div>
+  } @else if (detail(); as d) {
+
+    <!-- ===================== SUMMARY ===================== -->
+    <section class="px-6 pt-5">
+      <div class="rounded-xl border border-zinc-800/80 bg-zinc-950/50 p-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Estado</p>
+            <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold"
+                  [class]="statusClass()">
+              {{ statusLabel() }}
+            </span>
+          </div>
+          <div>
+            <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Servicio</p>
+            <p class="text-sm text-zinc-200">{{ d.serviceType || 'Gas' }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Inicio</p>
+            <p class="text-sm text-zinc-200">{{ fmtDate(d.contractStartDate) }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Fin</p>
+            <p class="text-sm text-zinc-200">{{ fmtDate(d.contractEndDate) }}</p>
+          </div>
+
+          <div class="col-span-2 md:col-span-4 grid grid-cols-2 md:grid-cols-4 gap-4 pt-3 border-t border-zinc-800/60">
+            <div>
+              <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Firma</p>
+              <p class="text-xs text-zinc-200">{{ fmtDate(d.contractSignatureDate) }}</p>
+            </div>
+            <div>
+              <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Duración</p>
+              <p class="text-xs text-zinc-200">{{ d.contractDuration !== null ? d.contractDuration + ' meses' : '—' }}</p>
+            </div>
+            <div>
+              <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Venc. factura</p>
+              <p class="text-xs text-zinc-200">{{ d.invoiceDueDays !== null ? d.invoiceDueDays + ' días' : '—' }}</p>
+            </div>
+            <div class="min-w-0">
+              <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-1">Punto de suministro</p>
+              <p class="text-xs text-zinc-200 font-mono truncate" [title]="d.supplyPointId || ''">{{ d.supplyPointId || '—' }}</p>
+            </div>
+          </div>
+
+          @if (d.contractStatusReason) {
+            <div class="col-span-2 md:col-span-4 flex items-start gap-2 text-xs text-zinc-400">
+              <lib-apolo-icons [icon]="iconInfo" class="flex items-center text-zinc-500 mt-0.5" />
+              <span>Motivo estado: <span class="text-zinc-200">{{ d.contractStatusReason }}</span></span>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== DETALLE ===================== -->
+    <section class="px-6 pt-6 pb-8 space-y-3">
+
+      <!-- Cliente + Facturación y pago -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="rounded-lg bg-zinc-900/50 border border-zinc-800/60 p-3">
+          <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-2 inline-flex items-center gap-1.5">
+            <lib-apolo-icons [icon]="iconUser" class="flex items-center" />
+            Cliente
+          </p>
+          <dl class="space-y-1.5 text-[12px]">
+            <div class="min-w-0">
+              <dt class="text-zinc-500 text-[11px]">Nombre</dt>
+              <dd class="text-zinc-200 truncate" [title]="d.customerFullName || ''">{{ d.customerFullName || '—' }}</dd>
+            </div>
+            <div class="min-w-0">
+              <dt class="text-zinc-500 text-[11px]">NIF / Documento</dt>
+              <dd class="text-zinc-200 font-mono">{{ d.customerDocumentNumber || '—' }}</dd>
+            </div>
+            <div class="min-w-0">
+              <dt class="text-zinc-500 text-[11px]">Tipo persona</dt>
+              <dd class="text-zinc-200 truncate">{{ d.customerPersonType || '—' }}</dd>
+            </div>
+            <div class="min-w-0">
+              <dt class="text-zinc-500 text-[11px]">Email</dt>
+              <dd class="text-zinc-200 truncate" [title]="d.customerEmail || ''">{{ d.customerEmail || '—' }}</dd>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="min-w-0">
+                <dt class="text-zinc-500 text-[11px]">Teléfono</dt>
+                <dd class="text-zinc-200">{{ telefono(d) }}</dd>
+              </div>
+              <div class="min-w-0">
+                <dt class="text-zinc-500 text-[11px]">CNAE</dt>
+                <dd class="text-zinc-200">{{ d.customerCnae || '—' }}</dd>
+              </div>
+            </div>
+          </dl>
+        </div>
+
+        <div class="rounded-lg bg-zinc-900/50 border border-zinc-800/60 p-3">
+          <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-2 inline-flex items-center gap-1.5">
+            <lib-apolo-icons [icon]="iconNote" class="flex items-center" />
+            Facturación y pago
+          </p>
+          <dl class="space-y-1.5 text-[12px]">
+            <div class="min-w-0">
+              <dt class="text-zinc-500 text-[11px]">Email facturación</dt>
+              <dd class="text-zinc-200 truncate" [title]="d.billingEmail || ''">{{ d.billingEmail || '—' }}</dd>
+            </div>
+            <div class="min-w-0">
+              <dt class="text-zinc-500 text-[11px]">Cuenta bancaria</dt>
+              <dd class="text-zinc-200 font-mono truncate">{{ d.paymentMethodBankAccountNumber || '—' }}</dd>
+            </div>
+            <div class="min-w-0">
+              <dt class="text-zinc-500 text-[11px]">Banco</dt>
+              <dd class="text-zinc-200 truncate">{{ d.paymentMethodBankName || '—' }}</dd>
+            </div>
+            <div class="min-w-0">
+              <dt class="text-zinc-500 text-[11px]">Mandato</dt>
+              <dd class="text-zinc-200 font-mono truncate">{{ d.paymentMethodMandateCode || '—' }}</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+
+      <!-- Observaciones -->
+      @if (d.observations) {
+        <div class="rounded-lg bg-zinc-900/50 border border-zinc-800/60 p-3">
+          <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-2 inline-flex items-center gap-1.5">
+            <lib-apolo-icons [icon]="iconInfo" class="flex items-center" />
+            Observaciones
+          </p>
+          <p class="text-[12px] text-zinc-200 whitespace-pre-wrap">{{ d.observations }}</p>
+        </div>
+      }
+
+      <!-- Facturas -->
+      <div class="rounded-lg bg-zinc-900/50 border border-zinc-800/60 p-3">
+        <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-2 inline-flex items-center gap-1.5">
+          <lib-apolo-icons [icon]="iconBill" class="flex items-center" />
+          Facturas
+        </p>
+
+        @if (loadingInvoices()) {
+          <p class="text-[11px] text-zinc-500">Cargando facturas…</p>
+        } @else if (invoicesError()) {
+          <p class="text-[11px] text-red-400">No se pudieron cargar las facturas.</p>
+        } @else if (invoices().length === 0) {
+          <p class="text-[11px] text-zinc-500">Sin facturas para este contrato.</p>
+        } @else {
+          <div class="overflow-x-auto">
+            <table class="w-full text-[11px]">
+              <thead class="text-zinc-500">
+                <tr>
+                  <th class="text-left font-medium py-1 pr-2">Nº</th>
+                  <th class="text-left font-medium py-1 px-2">Emisión</th>
+                  <th class="text-left font-medium py-1 px-2">Periodo</th>
+                  <th class="text-left font-medium py-1 px-2">Estado</th>
+                  <th class="text-right font-medium py-1 px-2">Consumo</th>
+                  <th class="text-right font-medium py-1 px-2">Importe</th>
+                  <th class="text-right font-medium py-1 pl-2">PDF</th>
+                </tr>
+              </thead>
+              <tbody class="text-zinc-300">
+                @for (f of invoices(); track f.id) {
+                  <tr class="border-t border-zinc-800/40">
+                    <td class="py-1.5 pr-2 font-mono">{{ f.legalDocumentNumber || '—' }}</td>
+                    <td class="py-1.5 px-2">{{ fmtDate(f.issuedDate) }}</td>
+                    <td class="py-1.5 px-2">{{ fmtDate(f.billingPeriodFrom) }} – {{ fmtDate(f.billingPeriodTo) }}</td>
+                    <td class="py-1.5 px-2">{{ f.invoiceStatus || '—' }}</td>
+                    <td class="py-1.5 px-2 text-right font-mono">
+                      @if (f.billedTotalEnergyActive !== null) {
+                        {{ f.billedTotalEnergyActive | number:'1.0-2' }} kWh
+                      } @else { — }
+                    </td>
+                    <td class="py-1.5 px-2 text-right font-mono">
+                      @if (f.totalAmount !== null) {
+                        {{ f.totalAmount | number:'1.2-2' }} €
+                      } @else { — }
+                    </td>
+                    <td class="py-1.5 pl-2 text-right">
+                      @if (f.pdfDocumentId) {
+                        <button type="button"
+                                class="text-primary-button hover:underline font-semibold disabled:opacity-50"
+                                [disabled]="downloadingInvoiceId() === f.id"
+                                (click)="downloadInvoice(f)">
+                          {{ downloadingInvoiceId() === f.id ? 'Descargando…' : 'Descargar' }}
+                        </button>
+                      } @else { — }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </section>
+  }
+</p-drawer>

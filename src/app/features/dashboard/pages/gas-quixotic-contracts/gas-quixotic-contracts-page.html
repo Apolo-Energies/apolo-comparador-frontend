@@ -84,12 +84,26 @@
   (closed)="onDocumentModalClosed()"
 />
 
+<app-quixotic-contract-detail-modal
+  [open]="detailModalOpen()"
+  [contractId]="detailContractId()"
+  (closed)="onDetailModalClosed()"
+/>
+
 <ng-template #actionsTpl let-row>
-  <ui-button
-    label="Ver documento"
-    variant="secondary"
-    size="sm"
-    [disabled]="loadingDocumentId() === row.id"
-    (click)="onViewDocument(row)"
-  />
+  <div class="inline-flex items-center gap-2">
+    <ui-button
+      label="Ver detalles"
+      variant="secondary"
+      size="sm"
+      (click)="onViewDetails(row)"
+    />
+    <ui-button
+      label="Ver documento"
+      variant="secondary"
+      size="sm"
+      [disabled]="loadingDocumentId() === row.id"
+      (click)="onViewDocument(row)"
+    />
+  </div>
 </ng-template>

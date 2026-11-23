@@ -17,6 +17,7 @@ import { ContratoClienteRow } from '../../../../../../core/models/contrato.model
 import { ServicioListItem } from '../../../../../../core/models/servicio.model';
 import { ContractService } from '../../../../../../core/services/contract.service';
 import { QuixoticContractService } from '../../../../../../core/services/quixotic-contract.service';
+import { QuixoticInvoice } from '../../../../../../core/models/quixotic-contract.model';
 import { IncidenceService, Incidence, IncidenceType, INCIDENCE_TYPES, INCIDENCE_TYPE_LABELS, INCIDENCE_STATUS_LABELS } from '../../../../../../core/services/incidence.service';
 import { TRAMITACION_TIPO_LABELS, TramitacionService, TramitacionTipo } from '../../../../../../core/services/tramitacion.service';
 import { BrandLoaderComponent } from '../../../../../../shared/components/brand-loader/brand-loader.component';
@@ -157,12 +158,19 @@ export class ContractDetailDrawerComponent {
       const c = this.client();
       if (c) {
         this.visible.set(true);
-        // Si la fila trae 1 CUPS, filtramos para no mostrar los demás servicios del cliente.
-        const singleCups = c.CUPS.length === 1 ? c.CUPS[0] : undefined;
-        this.loadServices(c.IdCliente, singleCups);
+        if (c.Origen === 'quixotic') {
+          // Gas (Quixotic): no hay servicios de EE; cargamos sus facturas desde Quixotic.
+          this.services.set([]);
+          this.loadGasInvoices(c.IdContratoQuixotic ?? null);
+        } else {
+          // Si la fila trae 1 CUPS, filtramos para no mostrar los demás servicios del cliente.
+          const singleCups = c.CUPS.length === 1 ? c.CUPS[0] : undefined;
+          this.loadServices(c.IdCliente, singleCups);
+        }
       } else {
         this.visible.set(false);
         this.services.set([]);
+        this.gasInvoices.set([]);
       }
     });
   }
@@ -281,6 +289,56 @@ export class ContractDetailDrawerComponent {
         this.showFeedback('error', 'Contrato no disponible',
           err?.status === 404 ? 'Este contrato de gas aún no tiene documento en Quixotic.'
                               : 'No se pudo obtener el contrato desde Quixotic.');
+      },
+    });
+  }
+
+  // ── Facturas del contrato de gas (Quixotic) ──────────────────────────────
+  readonly gasInvoices        = signal<QuixoticInvoice[]>([]);
+  readonly loadingGasInvoices = signal(false);
+  readonly gasInvoicesError   = signal(false);
+  readonly downloadingInvoiceId = signal<string | null>(null);
+
+  private loadGasInvoices(idContratoQuixotic: string | null): void {
+    this.gasInvoices.set([]);
+    this.gasInvoicesError.set(false);
+    if (!idContratoQuixotic) return;
+    this.loadingGasInvoices.set(true);
+    this.quixoticContracts.getInvoices(idContratoQuixotic).subscribe({
+      next: rows => {
+        this.gasInvoices.set(rows ?? []);
+        this.loadingGasInvoices.set(false);
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.gasInvoicesError.set(true);
+        this.loadingGasInvoices.set(false);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  // La URL de Quixotic viene firmada con Content-Disposition attachment → el navegador la descarga.
+  downloadInvoiceGas(invoice: QuixoticInvoice): void {
+    if (this.downloadingInvoiceId()) return;
+    if (!invoice.pdfDocumentId) {
+      this.showFeedback('error', 'Sin documento', 'Esta factura no tiene un PDF disponible.');
+      return;
+    }
+    this.downloadingInvoiceId.set(invoice.id);
+    this.quixoticContracts.getInvoiceDocument(invoice.id).subscribe({
+      next: doc => {
+        this.downloadingInvoiceId.set(null);
+        const a = document.createElement('a');
+        a.href = doc.publicUrl;
+        a.download = doc.fileName;
+        a.rel = 'noopener noreferrer';
+        a.click();
+      },
+      error: err => {
+        this.downloadingInvoiceId.set(null);
+        this.showFeedback('error', 'Factura no disponible',
+          err?.error?.error ?? 'No se pudo obtener el documento de la factura.');
       },
     });
   }

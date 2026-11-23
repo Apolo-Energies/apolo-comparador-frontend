@@ -6,8 +6,10 @@ import {
   CreateQuixoticContractRequest,
   CreateQuixoticContractResponse,
   QuixoticContract,
+  QuixoticContractDetail,
   QuixoticContractDocument,
   QuixoticContractFilters,
+  QuixoticInvoice,
 } from '../models/quixotic-contract.model';
 
 @Injectable({ providedIn: 'root' })
@@ -29,5 +31,18 @@ export class QuixoticContractService {
 
   getDocument(id: string): Observable<QuixoticContractDocument> {
     return this.http.get<QuixoticContractDocument>(`${this.base}/${id}/document`);
+  }
+
+  getContractDetail(id: string): Observable<QuixoticContractDetail> {
+    return this.http.get<QuixoticContractDetail>(`${this.base}/${id}`);
+  }
+
+  getInvoices(id: string, limit = 100): Observable<QuixoticInvoice[]> {
+    const params = new HttpParams().set('limit', String(limit));
+    return this.http.get<QuixoticInvoice[]>(`${this.base}/${id}/invoices`, { params });
+  }
+
+  getInvoiceDocument(invoiceId: string): Observable<QuixoticContractDocument> {
+    return this.http.get<QuixoticContractDocument>(`${environment.apiUrl}/quixotic/invoices/${invoiceId}/document`);
   }
 }
